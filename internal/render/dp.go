@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
@@ -22,20 +23,18 @@ type Deployment struct {
 }
 
 // ColorerFunc colors a resource row.
-func (d Deployment) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, h, re)
-		if !Happy(ns, h, re.Row) {
-			return ErrColor
-		}
-		rdCol := h.IndexOf("READY", true)
-		if rdCol == -1 {
+func (d Deployment) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
+
+		idx, ok := h.IndexOf("READY", true)
+		if !ok {
 			return c
 		}
-		ready := strings.TrimSpace(re.Row.Fields[rdCol])
+		ready := strings.TrimSpace(re.Row.Fields[idx])
 		tt := strings.Split(ready, "/")
 		if len(tt) == 2 && tt[1] == "0" {
-			return PendingColor
+			return model1.PendingColor
 		}
 
 		return c
@@ -43,24 +42,22 @@ func (d Deployment) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Deployment) Header(ns string) Header {
-	h := Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS", VS: true},
-		HeaderColumn{Name: "READY", Align: tview.AlignRight},
-		HeaderColumn{Name: "UP-TO-DATE", Align: tview.AlignRight},
-		HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (Deployment) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "READY", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "UP-TO-DATE", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
-
-	return h
 }
 
 // Render renders a K8s resource to screen.
-func (d Deployment) Render(o interface{}, ns string, r *Row) error {
+func (d Deployment) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Deployment, but got %T", o)
@@ -73,7 +70,7 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(dp.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		dp.Namespace,
 		dp.Name,
 		computeVulScore(dp.ObjectMeta, &dp.Spec.Template.Spec),

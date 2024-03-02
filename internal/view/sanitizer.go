@@ -110,7 +110,7 @@ func (s *Sanitizer) ExtraHints() map[string]string {
 func (s *Sanitizer) SetInstance(string) {}
 
 func (s *Sanitizer) bindKeys() {
-	s.Actions().Add(ui.KeyActions{
+	s.Actions().Bulk(ui.KeyMap{
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", s.activateCmd, false),
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", s.resetCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Goto", s.gotoCmd, true),
@@ -209,7 +209,7 @@ func (s *Sanitizer) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (s *Sanitizer) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.CmdBuff().IsActive() {
-		if ui.IsLabelSelector(s.CmdBuff().GetText()) {
+		if internal.IsLabelSelector(s.CmdBuff().GetText()) {
 			s.Start()
 		}
 		s.CmdBuff().SetActive(false)
@@ -238,16 +238,16 @@ func (s *Sanitizer) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (s *Sanitizer) filter(root *xray.TreeNode) *xray.TreeNode {
 	q := s.CmdBuff().GetText()
-	if s.CmdBuff().Empty() || ui.IsLabelSelector(q) {
+	if s.CmdBuff().Empty() || internal.IsLabelSelector(q) {
 		return root
 	}
 
 	s.UpdateTitle()
-	if f, ok := dao.HasFuzzySelector(q); ok {
+	if f, ok := internal.IsFuzzySelector(q); ok {
 		return root.Filter(f, fuzzyFilter)
 	}
 
-	if dao.IsInverseSelector(q) {
+	if internal.IsInverseSelector(q) {
 		return root.Filter(q, rxInverseFilter)
 	}
 
@@ -427,7 +427,7 @@ func (s *Sanitizer) styleTitle() string {
 	if buff == "" {
 		return title
 	}
-	if ui.IsLabelSelector(buff) {
+	if internal.IsLabelSelector(buff) {
 		buff = ui.TrimLabelSelector(buff)
 	}
 

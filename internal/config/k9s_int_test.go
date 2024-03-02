@@ -119,7 +119,7 @@ func Test_screenDumpDirOverride(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			cfg := NewConfig(nil)
-			assert.NoError(t, cfg.Load("testdata/configs/k9s.yaml"))
+			assert.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 
 			cfg.K9s.manualScreenDumpDir = &u.dir
 			assert.Equal(t, u.e, cfg.K9s.AppScreenDumpDir())

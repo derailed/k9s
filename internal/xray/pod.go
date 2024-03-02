@@ -65,7 +65,6 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 
 func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	var re render.Pod
-
 	phase := re.Phase(&po)
 	ss := po.Status.ContainerStatuses
 	cr, _, _ := re.Statuses(ss)

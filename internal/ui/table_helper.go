@@ -6,15 +6,11 @@ package ui
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
-	"github.com/sahilm/fuzzy"
 )
 
 const (
@@ -40,11 +36,6 @@ const (
 	NoNSFmat = "%s-%d.csv"
 )
 
-var (
-	// LabelRx identifies a label query.
-	LabelRx = regexp.MustCompile(`\A\-l`)
-)
-
 func mustExtractStyles(ctx context.Context) *config.Styles {
 	styles, ok := ctx.Value(internal.KeyStyles).(*config.Styles)
 	if !ok {
@@ -61,15 +52,6 @@ func TrimCell(tv *SelectTable, row, col int) string {
 		return ""
 	}
 	return strings.TrimSpace(c.Text)
-}
-
-// IsLabelSelector checks if query is a label query.
-func IsLabelSelector(s string) bool {
-	if LabelRx.MatchString(s) {
-		return true
-	}
-
-	return !strings.Contains(s, " ") && cmd.ToLabels(s) != nil
 }
 
 // TrimLabelSelector extracts label query.
@@ -115,76 +97,4 @@ func formatCell(field string, padding int) string {
 	}
 
 	return field
-}
-
-func filterToast(data *render.TableData) *render.TableData {
-	validX := data.Header.IndexOf("VALID", true)
-	if validX == -1 {
-		return data
-	}
-
-	toast := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	for _, re := range data.RowEvents {
-		if re.Row.Fields[validX] != "" {
-			toast.RowEvents = append(toast.RowEvents, re)
-		}
-	}
-
-	return &toast
-}
-
-func rxFilter(q string, inverse bool, data *render.TableData) (*render.TableData, error) {
-	if inverse {
-		q = q[1:]
-	}
-	rx, err := regexp.Compile(`(?i)(` + q + `)`)
-	if err != nil {
-		return data, fmt.Errorf("%w -- %s", err, q)
-	}
-
-	filtered := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	ageIndex := data.Header.IndexOf("AGE", true)
-
-	const spacer = " "
-	for _, re := range data.RowEvents {
-		ff := re.Row.Fields
-		if ageIndex >= 0 && ageIndex+1 <= len(ff) {
-			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
-		}
-		fields := strings.Join(ff, spacer)
-		if (inverse && !rx.MatchString(fields)) ||
-			((!inverse) && rx.MatchString(fields)) {
-			filtered.RowEvents = append(filtered.RowEvents, re)
-		}
-	}
-
-	return &filtered, nil
-}
-
-func fuzzyFilter(q string, data *render.TableData) *render.TableData {
-	q = strings.TrimSpace(q)
-	ss := make([]string, 0, len(data.RowEvents))
-	for _, re := range data.RowEvents {
-		ss = append(ss, re.Row.ID)
-	}
-
-	filtered := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	mm := fuzzy.Find(q, ss)
-	for _, m := range mm {
-		filtered.RowEvents = append(filtered.RowEvents, data.RowEvents[m.Index])
-	}
-
-	return &filtered
 }

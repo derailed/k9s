@@ -6,13 +6,14 @@ package ui
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
 )
@@ -91,7 +92,7 @@ func (c *Configurator) RefreshCustomViews() error {
 
 // SkinsDirWatcher watches for skin directory file changes.
 func (c *Configurator) SkinsDirWatcher(ctx context.Context, s synchronizer) error {
-	if _, err := os.Stat(config.AppSkinsDir); os.IsNotExist(err) {
+	if _, err := os.Stat(config.AppSkinsDir); errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
 	w, err := fsnotify.NewWatcher()
@@ -139,7 +140,7 @@ func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error 
 				if evt.Has(fsnotify.Create) || evt.Has(fsnotify.Write) {
 					log.Debug().Msgf("ConfigWatcher file changed: %s", evt.Name)
 					if evt.Name == config.AppConfigFile {
-						if err := c.Config.Load(evt.Name); err != nil {
+						if err := c.Config.Load(evt.Name, false); err != nil {
 							log.Error().Err(err).Msgf("k9s config reload failed")
 							s.Flash().Warn("k9s config reload failed. Check k9s logs!")
 							s.Logo().Warn("K9s config reload failed!")
@@ -190,14 +191,14 @@ func (c *Configurator) activeSkin() (string, bool) {
 	}
 
 	if ct, err := c.Config.K9s.ActiveContext(); err == nil && ct.Skin != "" {
-		if _, err := os.Stat(config.SkinFileFromName(ct.Skin)); !os.IsNotExist(err) {
+		if _, err := os.Stat(config.SkinFileFromName(ct.Skin)); err == nil {
 			skin = ct.Skin
 			log.Debug().Msgf("[Skin] Loading context skin (%q) from %q", skin, c.Config.K9s.ActiveContextName())
 		}
 	}
 
 	if sk := c.Config.K9s.UI.Skin; skin == "" && sk != "" {
-		if _, err := os.Stat(config.SkinFileFromName(sk)); !os.IsNotExist(err) {
+		if _, err := os.Stat(config.SkinFileFromName(sk)); err == nil {
 			skin = sk
 			log.Debug().Msgf("[Skin] Loading global skin (%q)", skin)
 		}
@@ -272,12 +273,12 @@ func (c *Configurator) updateStyles(f string) {
 	}
 	c.Styles.Update()
 
-	render.ModColor = c.Styles.Frame().Status.ModifyColor.Color()
-	render.AddColor = c.Styles.Frame().Status.AddColor.Color()
-	render.ErrColor = c.Styles.Frame().Status.ErrorColor.Color()
-	render.StdColor = c.Styles.Frame().Status.NewColor.Color()
-	render.PendingColor = c.Styles.Frame().Status.PendingColor.Color()
-	render.HighlightColor = c.Styles.Frame().Status.HighlightColor.Color()
-	render.KillColor = c.Styles.Frame().Status.KillColor.Color()
-	render.CompletedColor = c.Styles.Frame().Status.CompletedColor.Color()
+	model1.ModColor = c.Styles.Frame().Status.ModifyColor.Color()
+	model1.AddColor = c.Styles.Frame().Status.AddColor.Color()
+	model1.ErrColor = c.Styles.Frame().Status.ErrorColor.Color()
+	model1.StdColor = c.Styles.Frame().Status.NewColor.Color()
+	model1.PendingColor = c.Styles.Frame().Status.PendingColor.Color()
+	model1.HighlightColor = c.Styles.Frame().Status.HighlightColor.Color()
+	model1.KillColor = c.Styles.Frame().Status.KillColor.Color()
+	model1.CompletedColor = c.Styles.Frame().Status.CompletedColor.Color()
 }

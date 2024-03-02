@@ -53,13 +53,13 @@ func (h *History) HistoryContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (h *History) bindKeys(aa ui.KeyActions) {
+func (h *History) bindKeys(aa *ui.KeyActions) {
 	if !h.App().Config.K9s.IsReadOnly() {
 		h.bindDangerousKeys(aa)
 	}
 
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlD)
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftN: ui.NewKeyAction("Sort Revision", h.GetTable().SortColCmd("REVISION", true), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", h.GetTable().SortColCmd("STATUS", true), false),
 		ui.KeyShiftA: ui.NewKeyAction("Sort Age", h.GetTable().SortColCmd("AGE", true), false),
@@ -81,17 +81,13 @@ func (h *History) getValsCmd(app *App, _ ui.Tabular, _ client.GVR, path string) 
 	}
 }
 
-func (h *History) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyR: ui.NewKeyActionWithOpts(
-			"RollBackTo...",
-			h.rollbackCmd,
-			ui.ActionOpts{
-				Visible:   true,
-				Dangerous: true,
-			},
-		),
-	})
+func (h *History) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyR, ui.NewKeyActionWithOpts("RollBackTo...", h.rollbackCmd,
+		ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		},
+	))
 }
 
 func (h *History) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {

@@ -36,18 +36,14 @@ func NewWorkload(gvr client.GVR) ResourceViewer {
 	return &w
 }
 
-func (w *Workload) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyE: ui.NewKeyActionWithOpts(
-			"Edit",
-			w.editCmd,
+func (w *Workload) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyE: ui.NewKeyActionWithOpts("Edit", w.editCmd,
 			ui.ActionOpts{
 				Visible:   true,
 				Dangerous: true,
 			}),
-		tcell.KeyCtrlD: ui.NewKeyActionWithOpts(
-			"Delete",
-			w.deleteCmd,
+		tcell.KeyCtrlD: ui.NewKeyActionWithOpts("Delete", w.deleteCmd,
 			ui.ActionOpts{
 				Visible:   true,
 				Dangerous: true,
@@ -55,12 +51,12 @@ func (w *Workload) bindDangerousKeys(aa ui.KeyActions) {
 	})
 }
 
-func (w *Workload) bindKeys(aa ui.KeyActions) {
+func (w *Workload) bindKeys(aa *ui.KeyActions) {
 	if !w.App().Config.K9s.IsReadOnly() {
 		w.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftK: ui.NewKeyAction("Sort Kind", w.GetTable().SortColCmd("KIND", true), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", w.GetTable().SortColCmd(statusCol, true), false),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", w.GetTable().SortColCmd("READY", true), false),
@@ -114,7 +110,7 @@ func (w *Workload) defaultContext(gvr client.GVR, fqn string) context.Context {
 	if fqn != "" {
 		ctx = context.WithValue(ctx, internal.KeyPath, fqn)
 	}
-	if ui.IsLabelSelector(w.GetTable().CmdBuff().GetText()) {
+	if internal.IsLabelSelector(w.GetTable().CmdBuff().GetText()) {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(w.GetTable().CmdBuff().GetText()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(w.App().Config.ActiveNamespace()))
@@ -208,34 +204,3 @@ func (w *Workload) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	return nil
 }
-
-// func (w *Workload) editCmd(evt *tcell.EventKey) *tcell.EventKey {
-// 	path := w.GetTable().GetSelectedItem()
-// 	if path == "" {
-// 		return evt
-// 	}
-// 	gvr, fqn, ok := parsePath(path)
-// 	if !ok {
-// 		w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
-// 		return evt
-// 	}
-
-// 	w.Stop()
-// 	defer w.Start()
-// 	{
-// 		ns, n := client.Namespaced(fqn)
-// 		args := make([]string, 0, 10)
-// 		args = append(args, "edit")
-// 		args = append(args, gvr.R())
-// 		args = append(args, "-n", ns)
-// 		args = append(args, "--context", w.App().Config.K9s.CurrentContext)
-// 		if cfg := w.App().Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
-// 			args = append(args, "--kubeconfig", *cfg)
-// 		}
-// 		if err := runK(w.App(), shellOpts{args: append(args, n)}); err != nil {
-// 			w.App().Flash().Errf("Edit exec failed: %s", err)
-// 		}
-// 	}
-
-// 	return evt
-// }

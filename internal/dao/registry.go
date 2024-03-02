@@ -89,29 +89,32 @@ func NewMeta() *Meta {
 // Customize here for non resource types or types with metrics or logs.
 func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	m := Accessors{
-		client.NewGVR("workloads"):              &Workload{},
-		client.NewGVR("contexts"):               &Context{},
-		client.NewGVR("containers"):             &Container{},
-		client.NewGVR("scans"):                  &ImageScan{},
-		client.NewGVR("screendumps"):            &ScreenDump{},
-		client.NewGVR("benchmarks"):             &Benchmark{},
-		client.NewGVR("portforwards"):           &PortForward{},
-		client.NewGVR("v1/services"):            &Service{},
-		client.NewGVR("v1/pods"):                &Pod{},
-		client.NewGVR("v1/nodes"):               &Node{},
-		client.NewGVR("apps/v1/deployments"):    &Deployment{},
-		client.NewGVR("apps/v1/daemonsets"):     &DaemonSet{},
-		client.NewGVR("apps/v1/statefulsets"):   &StatefulSet{},
-		client.NewGVR("apps/v1/replicasets"):    &ReplicaSet{},
-		client.NewGVR("batch/v1/cronjobs"):      &CronJob{},
-		client.NewGVR("batch/v1beta1/cronjobs"): &CronJob{},
-		client.NewGVR("batch/v1/jobs"):          &Job{},
-		client.NewGVR("v1/namespaces"):          &Namespace{},
-		// !!BOZO!!
+		client.NewGVR("workloads"):                                         &Workload{},
+		client.NewGVR("contexts"):                                          &Context{},
+		client.NewGVR("containers"):                                        &Container{},
+		client.NewGVR("scans"):                                             &ImageScan{},
+		client.NewGVR("screendumps"):                                       &ScreenDump{},
+		client.NewGVR("benchmarks"):                                        &Benchmark{},
+		client.NewGVR("portforwards"):                                      &PortForward{},
+		client.NewGVR("dir"):                                               &Dir{},
+		client.NewGVR("v1/services"):                                       &Service{},
+		client.NewGVR("v1/pods"):                                           &Pod{},
+		client.NewGVR("v1/nodes"):                                          &Node{},
+		client.NewGVR("v1/namespaces"):                                     &Namespace{},
+		client.NewGVR("v1/configmap"):                                      &ConfigMap{},
+		client.NewGVR("v1/secrets"):                                        &Secret{},
+		client.NewGVR("apps/v1/deployments"):                               &Deployment{},
+		client.NewGVR("apps/v1/daemonsets"):                                &DaemonSet{},
+		client.NewGVR("apps/v1/statefulsets"):                              &StatefulSet{},
+		client.NewGVR("apps/v1/replicasets"):                               &ReplicaSet{},
+		client.NewGVR("batch/v1/cronjobs"):                                 &CronJob{},
+		client.NewGVR("batch/v1beta1/cronjobs"):                            &CronJob{},
+		client.NewGVR("batch/v1/jobs"):                                     &Job{},
+		client.NewGVR("helm"):                                              &HelmChart{},
+		client.NewGVR("helm-history"):                                      &HelmHistory{},
+		client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions"): &CustomResourceDefinition{},
+		// !!BOZO!! Popeye
 		//client.NewGVR("popeye"):                 &Popeye{},
-		client.NewGVR("helm"):         &HelmChart{},
-		client.NewGVR("helm-history"): &HelmHistory{},
-		client.NewGVR("dir"):          &Dir{},
 	}
 
 	r, ok := m[gvr]
@@ -369,6 +372,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	if err != nil {
 		return err
 	}
+	dial.Invalidate()
 	rr, err := dial.ServerPreferredResources()
 	if err != nil {
 		log.Debug().Err(err).Msgf("Failed to load preferred resources")

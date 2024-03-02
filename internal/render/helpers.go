@@ -5,7 +5,6 @@ package render
 
 import (
 	"context"
-	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,10 +18,20 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
+
+// ExtractImages returns a collection of container images.
+// !!BOZO!! If this has any legs?? enable scans on other container types.
+func ExtractImages(spec *v1.PodSpec) []string {
+	ii := make([]string, 0, len(spec.Containers))
+	for _, c := range spec.Containers {
+		ii = append(ii, c.Image)
+	}
+
+	return ii
+}
 
 func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
 	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(m) {
@@ -46,60 +55,10 @@ func runesToNum(rr []rune) int64 {
 	return r
 }
 
-func durationToSeconds(duration string) int64 {
-	if len(duration) == 0 {
-		return 0
-	}
-	if duration == NAValue {
-		return math.MaxInt64
-	}
-
-	num := make([]rune, 0, 5)
-	var n, m int64
-	for _, r := range duration {
-		switch r {
-		case 'y':
-			m = 365 * 24 * 60 * 60
-		case 'd':
-			m = 24 * 60 * 60
-		case 'h':
-			m = 60 * 60
-		case 'm':
-			m = 60
-		case 's':
-			m = 1
-		default:
-			num = append(num, r)
-			continue
-		}
-		n, num = n+runesToNum(num)*m, num[:0]
-	}
-
-	return n
-}
-
-func capacityToNumber(capacity string) int64 {
-	quantity := resource.MustParse(capacity)
-	return quantity.Value()
-}
-
 // AsThousands prints a number with thousand separator.
 func AsThousands(n int64) string {
 	p := message.NewPrinter(language.English)
 	return p.Sprintf("%d", n)
-}
-
-// Happy returns true if resource is happy, false otherwise.
-func Happy(ns string, h Header, r Row) bool {
-	if len(r.Fields) == 0 {
-		return true
-	}
-	validCol := h.IndexOf("VALID", true)
-	if validCol < 0 {
-		return true
-	}
-
-	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
 
 // AsStatus returns error as string.
@@ -333,15 +292,15 @@ func strPtrToStr(s *string) string {
 	return *s
 }
 
-// Check if string is in a string list.
-func in(ll []string, s string) bool {
-	for _, l := range ll {
-		if l == s {
-			return true
-		}
-	}
-	return false
-}
+// // Check if string is in a string list.
+// func in(ll []string, s string) bool {
+// 	for _, l := range ll {
+// 		if l == s {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 // Pad a string up to the given length or truncates if greater than length.
 func Pad(s string, width int) string {
@@ -356,29 +315,29 @@ func Pad(s string, width int) string {
 	return s + strings.Repeat(" ", width-len(s))
 }
 
-// Converts labels string to map.
-func labelize(labels string) map[string]string {
-	ll := strings.Split(labels, ",")
-	data := make(map[string]string, len(ll))
+// // Converts labels string to map.
+// func labelize(labels string) map[string]string {
+// 	ll := strings.Split(labels, ",")
+// 	data := make(map[string]string, len(ll))
 
-	for _, l := range ll {
-		tokens := strings.Split(l, "=")
-		if len(tokens) == 2 {
-			data[tokens[0]] = tokens[1]
-		}
-	}
+// 	for _, l := range ll {
+// 		tokens := strings.Split(l, "=")
+// 		if len(tokens) == 2 {
+// 			data[tokens[0]] = tokens[1]
+// 		}
+// 	}
 
-	return data
-}
+// 	return data
+// }
 
-func sortLabels(m map[string]string) (keys, vals []string) {
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		vals = append(vals, m[k])
-	}
+// func sortLabels(m map[string]string) (keys, vals []string) {
+// 	for k := range m {
+// 		keys = append(keys, k)
+// 	}
+// 	sort.Strings(keys)
+// 	for _, k := range keys {
+// 		vals = append(vals, m[k])
+// 	}
 
-	return
-}
+// 	return
+// }

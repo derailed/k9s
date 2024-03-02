@@ -39,8 +39,8 @@ func (n *Node) nodeContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyPodCounting, !n.App().Config.K9s.DisablePodCounting)
 }
 
-func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (n *Node) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyC: ui.NewKeyActionWithOpts(
 			"Cordon",
 			n.toggleCordonCmd(true),
@@ -72,18 +72,16 @@ func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
 		return
 	}
 	if ct.FeatureGates.NodeShell {
-		aa.Add(ui.KeyActions{
-			ui.KeyS: ui.NewKeyAction("Shell", n.sshCmd, true),
-		})
+		aa.Add(ui.KeyS, ui.NewKeyAction("Shell", n.sshCmd, true))
 	}
 }
 
-func (n *Node) bindKeys(aa ui.KeyActions) {
+func (n *Node) bindKeys(aa *ui.KeyActions) {
 	if !n.App().Config.K9s.IsReadOnly() {
 		n.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyY:      ui.NewKeyAction(yamlAction, n.yamlCmd, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort ROLE", n.GetTable().SortColCmd("ROLE", true), false),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),

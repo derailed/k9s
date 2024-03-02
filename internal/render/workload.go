@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,17 +20,17 @@ type Workload struct {
 }
 
 // ColorerFunc colors a resource row.
-func (n Workload) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, h, re)
+func (n Workload) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
 
-		statusCol := h.IndexOf("STATUS", true)
-		if statusCol == -1 {
+		idx, ok := h.IndexOf("STATUS", true)
+		if !ok {
 			return c
 		}
-		status := strings.TrimSpace(re.Row.Fields[statusCol])
+		status := strings.TrimSpace(re.Row.Fields[idx])
 		if status == "DEGRADED" {
-			c = PendingColor
+			c = model1.PendingColor
 		}
 
 		return c
@@ -37,27 +38,27 @@ func (n Workload) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header rbw.
-func (Workload) Header(string) Header {
-	return Header{
-		HeaderColumn{Name: "KIND"},
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "READY"},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (Workload) Header(string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "KIND"},
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "READY"},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n Workload) Render(o interface{}, _ string, r *Row) error {
+func (n Workload) Render(o interface{}, _ string, r *model1.Row) error {
 	res, ok := o.(*WorkloadRes)
 	if !ok {
 		return fmt.Errorf("expected allRes but got %T", o)
 	}
 
 	r.ID = fmt.Sprintf("%s|%s|%s", res.Row.Cells[0].(string), res.Row.Cells[1].(string), res.Row.Cells[2].(string))
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		res.Row.Cells[0].(string),
 		res.Row.Cells[1].(string),
 		res.Row.Cells[2].(string),

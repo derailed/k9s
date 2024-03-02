@@ -13,7 +13,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
 )
@@ -41,8 +41,8 @@ func computeFilename(dumpPath, ns, title, path string) (string, error) {
 	return strings.ToLower(filepath.Join(dir, fName)), nil
 }
 
-func saveTable(dir, title, path string, data *render.TableData) (string, error) {
-	ns := data.Namespace
+func saveTable(dir, title, path string, data *model1.TableData) (string, error) {
+	ns := data.GetNamespace()
 	if client.IsClusterWide(ns) {
 		ns = client.NamespaceAll
 	}
@@ -65,15 +65,12 @@ func saveTable(dir, title, path string, data *render.TableData) (string, error) 
 	}()
 
 	w := csv.NewWriter(out)
-	if err := w.Write(data.Header.Columns(true)); err != nil {
-		return "", err
-	}
+	_ = w.Write(data.ColumnNames(true))
 
-	for _, re := range data.RowEvents {
-		if err := w.Write(re.Row.Fields); err != nil {
-			return "", err
-		}
-	}
+	data.RowsRange(func(_ int, re model1.RowEvent) bool {
+		_ = w.Write(re.Row.Fields)
+		return true
+	})
 	w.Flush()
 	if err := w.Error(); err != nil {
 		return "", err

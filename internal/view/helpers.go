@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
@@ -106,16 +107,16 @@ func k8sEnv(c *client.Config) Env {
 	}
 }
 
-func defaultEnv(c *client.Config, path string, header render.Header, row *render.Row) Env {
+func defaultEnv(c *client.Config, path string, header model1.Header, row *model1.Row) Env {
 	env := k8sEnv(c)
 	env["NAMESPACE"], env["NAME"] = client.Namespaced(path)
 	if row == nil {
 		return env
 	}
-	for _, col := range header.Columns(true) {
-		i := header.IndexOf(col, true)
-		if i >= 0 && i < len(row.Fields) {
-			env["COL-"+col] = row.Fields[i]
+	for _, col := range header.ColumnNames(true) {
+		idx, ok := header.IndexOf(col, true)
+		if ok && idx < len(row.Fields) {
+			env["COL-"+col] = row.Fields[idx]
 		}
 	}
 
@@ -218,8 +219,8 @@ func fqn(ns, n string) string {
 	return ns + "/" + n
 }
 
-func decorateCpuMemHeaderRows(app *App, data *render.TableData) {
-	for colIndex, header := range data.Header {
+func decorateCpuMemHeaderRows(app *App, data *model1.TableData) {
+	for colIndex, header := range data.Header() {
 		var check string
 		if header.Name == "%CPU/L" {
 			check = "cpu"
@@ -230,26 +231,28 @@ func decorateCpuMemHeaderRows(app *App, data *render.TableData) {
 		if len(check) == 0 {
 			continue
 		}
-		for _, re := range data.RowEvents {
+		data.RowsRange(func(_ int, re model1.RowEvent) bool {
 			if re.Row.Fields[colIndex] == render.NAValue {
-				continue
+				return true
 			}
 			n, err := strconv.Atoi(re.Row.Fields[colIndex])
 			if err != nil {
-				continue
+				return true
 			}
 			if n > 100 {
 				n = 100
 			}
 			severity := app.Config.K9s.Thresholds.LevelFor(check, n)
 			if severity == config.SeverityLow {
-				continue
+				return true
 			}
 			color := app.Config.K9s.Thresholds.SeverityColor(check, n)
 			if len(color) > 0 {
 				re.Row.Fields[colIndex] = "[" + color + "::b]" + re.Row.Fields[colIndex]
 			}
-		}
+
+			return true
+		})
 	}
 }
 

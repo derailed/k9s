@@ -143,8 +143,6 @@ func (c *ClusterInfo) Refresh() {
 		var mx client.ClusterMetrics
 		if err := c.cluster.Metrics(ctx, &mx); err == nil {
 			data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
-		} else {
-			log.Warn().Err(err).Msgf("Cluster metrics failed")
 		}
 	}
 	data.K9sVer = c.version

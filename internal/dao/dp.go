@@ -49,11 +49,6 @@ func (d *Deployment) ListImages(ctx context.Context, fqn string) ([]string, erro
 	return render.ExtractImages(&dp.Spec.Template.Spec), nil
 }
 
-// IsHappy check for happy deployments.
-func (d *Deployment) IsHappy(dp appsv1.Deployment) bool {
-	return dp.Status.Replicas == dp.Status.AvailableReplicas
-}
-
 // Scale a Deployment.
 func (d *Deployment) Scale(ctx context.Context, path string, replicas int32) error {
 	ns, n := client.Namespaced(path)

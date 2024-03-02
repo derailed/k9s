@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
@@ -43,60 +44,58 @@ type Container struct {
 }
 
 // ColorerFunc colors a resource row.
-func (c Container) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		if !Happy(ns, h, re.Row) {
-			return ErrColor
-		}
+func (c Container) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
 
-		stateCol := h.IndexOf("STATE", true)
-		if stateCol == -1 {
-			return DefaultColorer(ns, h, re)
+		idx, ok := h.IndexOf("STATE", true)
+		if !ok {
+			return c
 		}
-		switch strings.TrimSpace(re.Row.Fields[stateCol]) {
+		switch strings.TrimSpace(re.Row.Fields[idx]) {
 		case Pending:
-			return PendingColor
+			return model1.PendingColor
 		case ContainerCreating, PodInitializing:
-			return AddColor
+			return model1.AddColor
 		case Terminating, Initialized:
-			return HighlightColor
+			return model1.HighlightColor
 		case Completed:
-			return CompletedColor
+			return model1.CompletedColor
 		case Running:
-			return DefaultColorer(ns, h, re)
+			return c
 		default:
-			return ErrColor
+			return model1.ErrColor
 		}
 	}
 }
 
 // Header returns a header row.
-func (Container) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "PF"},
-		HeaderColumn{Name: "IMAGE"},
-		HeaderColumn{Name: "READY"},
-		HeaderColumn{Name: "STATE"},
-		HeaderColumn{Name: "INIT"},
-		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
-		HeaderColumn{Name: "PROBES(L:R)"},
-		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight},
-		HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight},
-		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "PORTS"},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (Container) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "PF"},
+		model1.HeaderColumn{Name: "IMAGE"},
+		model1.HeaderColumn{Name: "READY"},
+		model1.HeaderColumn{Name: "STATE"},
+		model1.HeaderColumn{Name: "INIT"},
+		model1.HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "PROBES(L:R)"},
+		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "PORTS"},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (c Container) Render(o interface{}, name string, r *Row) error {
+func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 	co, ok := o.(ContainerRes)
 	if !ok {
 		return fmt.Errorf("expected ContainerRes, but got %T", o)
@@ -109,7 +108,7 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 	}
 
 	r.ID = co.Container.Name
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		co.Container.Name,
 		"●",
 		co.Container.Image,

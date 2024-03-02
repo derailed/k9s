@@ -28,10 +28,8 @@ func NewConfigMap(gvr client.GVR) ResourceViewer {
 	return &s
 }
 
-func (s *ConfigMap) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyU: ui.NewKeyAction("UsedBy", s.refCmd, true),
-	})
+func (s *ConfigMap) bindKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyU, ui.NewKeyAction("UsedBy", s.refCmd, true))
 }
 
 func (s *ConfigMap) refCmd(evt *tcell.EventKey) *tcell.EventKey {

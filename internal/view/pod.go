@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -34,6 +36,7 @@ const (
 	osBetaSelector = "beta." + osSelector
 	trUpload       = "Upload"
 	trDownload     = "Download"
+	pfIndicator    = "[orange::b]Ⓕ"
 )
 
 // Pod represents a pod viewer.
@@ -58,20 +61,25 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	return &p
 }
 
-func (p *Pod) portForwardIndicator(data *render.TableData) {
+func (p *Pod) portForwardIndicator(data *model1.TableData) {
 	ff := p.App().factory.Forwarders()
 
-	col := data.IndexOfHeader("PF")
-	for _, re := range data.RowEvents {
-		if ff.IsPodForwarded(re.Row.ID) {
-			re.Row.Fields[col] = "[orange::b]Ⓕ"
-		}
+	defer decorateCpuMemHeaderRows(p.App(), data)
+	idx, ok := data.IndexOfHeader("PF")
+	if !ok {
+		return
 	}
-	decorateCpuMemHeaderRows(p.App(), data)
+
+	data.RowsRange(func(_ int, re model1.RowEvent) bool {
+		if ff.IsPodForwarded(re.Row.ID) {
+			re.Row.Fields[idx] = pfIndicator
+		}
+		return true
+	})
 }
 
-func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (p *Pod) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		tcell.KeyCtrlK: ui.NewKeyActionWithOpts(
 			"Kill",
 			p.killCmd,
@@ -110,12 +118,12 @@ func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
 	})
 }
 
-func (p *Pod) bindKeys(aa ui.KeyActions) {
+func (p *Pod) bindKeys(aa *ui.KeyActions) {
 	if !p.App().Config.K9s.IsReadOnly() {
 		p.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyO:      ui.NewKeyAction("Show Node", p.showNode, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
@@ -123,7 +131,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftI: ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd("IP", true), false),
 		ui.KeyShiftO: ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd("NODE", true), false),
 	})
-	aa.Add(resourceSorters(p.GetTable()))
+	aa.Merge(resourceSorters(p.GetTable()))
 }
 
 func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
@@ -307,7 +315,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if !download {
 			local = from
 		}
-		if _, err := os.Stat(local); !download && os.IsNotExist(err) {
+		if _, err := os.Stat(local); !download && errors.Is(err, fs.ErrNotExist) {
 			p.App().Flash().Err(err)
 			return false
 		}
@@ -555,13 +563,13 @@ func osFromSelector(s map[string]string) (string, bool) {
 	return os, ok
 }
 
-func resourceSorters(t *Table) ui.KeyActions {
-	return ui.KeyActions{
+func resourceSorters(t *Table) *ui.KeyActions {
+	return ui.NewKeyActionsFromMap(ui.KeyMap{
 		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", t.SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", t.SortColCmd(memCol, false), false),
 		ui.KeyShiftX:   ui.NewKeyAction("Sort CPU/R", t.SortColCmd("%CPU/R", false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort MEM/R", t.SortColCmd("%MEM/R", false), false),
 		tcell.KeyCtrlX: ui.NewKeyAction("Sort CPU/L", t.SortColCmd("%CPU/L", false), false),
 		tcell.KeyCtrlQ: ui.NewKeyAction("Sort MEM/L", t.SortColCmd("%MEM/L", false), false),
-	}
+	})
 }

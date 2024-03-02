@@ -17,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
@@ -35,6 +35,7 @@ type Browser struct {
 	contextFn  ContextFunc
 	cancelFn   context.CancelFunc
 	mx         sync.RWMutex
+	updating   bool
 }
 
 // NewBrowser returns a new browser.
@@ -44,6 +45,18 @@ func NewBrowser(gvr client.GVR) ResourceViewer {
 	}
 }
 
+func (b *Browser) setUpdating(f bool) {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+	b.updating = f
+}
+
+func (b *Browser) getUpdating() bool {
+	b.mx.RLock()
+	defer b.mx.RUnlock()
+	return b.updating
+}
+
 // Init watches all running pods in given namespace.
 func (b *Browser) Init(ctx context.Context) error {
 	var err error
@@ -51,8 +64,8 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	colorerFn := render.DefaultColorer
-	if r, ok := model.Registry[b.GVR().String()]; ok {
+	colorerFn := model1.DefaultColorer
+	if r, ok := model.Registry[b.GVR().String()]; ok && r.Renderer != nil {
 		colorerFn = r.Renderer.ColorerFunc()
 	}
 	b.GetTable().SetColorerFn(colorerFn)
@@ -118,8 +131,8 @@ func (b *Browser) suggestFilter() model.SuggestionFunc {
 	}
 }
 
-func (b *Browser) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (b *Browser) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
 		tcell.KeyHelp:   ui.NewSharedKeyAction("Help", b.helpCmd, false),
@@ -179,7 +192,7 @@ func (b *Browser) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
 func (b *Browser) BufferCompleted(text, _ string) {
-	if ui.IsLabelSelector(text) {
+	if internal.IsLabelSelector(text) {
 		b.GetModel().SetLabelFilter(ui.TrimLabelSelector(text))
 	} else {
 		b.GetModel().SetLabelFilter("")
@@ -191,26 +204,48 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 	if state {
 		return
 	}
-	if err := b.GetModel().Refresh(b.prepareContext()); err != nil {
+	if err := b.GetModel().Refresh(b.GetContext()); err != nil {
 		log.Error().Err(err).Msgf("Refresh failed for %s", b.GVR())
 	}
+	data := b.GetModel().Peek()
+	cdata := b.Update(data, b.App().Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
-		b.Update(b.GetModel().Peek(), b.App().Conn().HasMetrics())
+		if b.getUpdating() {
+			return
+		}
+		b.setUpdating(true)
+		defer b.setUpdating(false)
+		b.UpdateUI(cdata, data)
 		if b.GetRowCount() > 1 {
 			b.App().filterHistory.Push(b.CmdBuff().GetText())
 		}
+
 	})
 }
 
 func (b *Browser) prepareContext() context.Context {
 	ctx := b.defaultContext()
-	ctx, b.cancelFn = context.WithCancel(ctx)
+
+	b.mx.Lock()
+	{
+		if b.cancelFn != nil {
+			b.cancelFn()
+		}
+		ctx, b.cancelFn = context.WithCancel(ctx)
+	}
+	b.mx.Unlock()
+
 	if b.contextFn != nil {
 		ctx = b.contextFn(ctx)
 	}
 	if path, ok := ctx.Value(internal.KeyPath).(string); ok && path != "" {
 		b.Path = path
 	}
+	b.mx.Lock()
+	{
+		b.SetContext(ctx)
+	}
+	b.mx.Unlock()
 
 	return ctx
 }
@@ -237,7 +272,7 @@ func (b *Browser) Aliases() map[string]struct{} {
 // Model Protocol...
 
 // TableDataChanged notifies view new data is available.
-func (b *Browser) TableDataChanged(data *render.TableData) {
+func (b *Browser) TableDataChanged(data *model1.TableData) {
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -247,9 +282,15 @@ func (b *Browser) TableDataChanged(data *render.TableData) {
 		return
 	}
 
+	cdata := b.Update(data, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
+		if b.getUpdating() {
+			return
+		}
+		b.setUpdating(true)
+		defer b.setUpdating(false)
 		b.refreshActions()
-		b.Update(data, b.app.Conn().HasMetrics())
+		b.UpdateUI(cdata, data)
 	})
 }
 
@@ -287,14 +328,17 @@ func (b *Browser) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !b.CmdBuff().InCmdMode() {
+		hasFilter := !b.CmdBuff().Empty()
 		b.CmdBuff().ClearText(false)
-		b.GetModel().SetLabelFilter("")
+		if hasFilter {
+			b.GetModel().SetLabelFilter("")
+			b.Refresh()
+		}
 		return b.App().PrevCmd(evt)
-
 	}
 
 	b.CmdBuff().Reset()
-	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
+	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
 		b.Start()
 	}
 	b.Refresh()
@@ -308,7 +352,7 @@ func (b *Browser) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	b.CmdBuff().SetActive(false)
-	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
+	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
 		b.Start()
 		return nil
 	}
@@ -471,7 +515,7 @@ func (b *Browser) defaultContext() context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, b.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR())
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
-	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
+	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.CmdBuff().GetText()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
@@ -484,41 +528,41 @@ func (b *Browser) refreshActions() {
 	if b.App().Content.Top() != nil && b.App().Content.Top().Name() != b.Name() {
 		return
 	}
-	aa := ui.KeyActions{
+	aa := ui.NewKeyActionsFromMap(ui.KeyMap{
 		ui.KeyC:        ui.NewKeyAction("Copy", b.cpCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("View", b.enterCmd, false),
 		tcell.KeyCtrlR: ui.NewKeyAction("Refresh", b.refreshCmd, false),
-	}
+	})
 
 	if b.app.ConOK() {
 		b.namespaceActions(aa)
 		if !b.app.Config.K9s.IsReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
-				aa[ui.KeyE] = ui.NewKeyActionWithOpts("Edit", b.editCmd,
+				aa.Add(ui.KeyE, ui.NewKeyActionWithOpts("Edit", b.editCmd,
 					ui.ActionOpts{
 						Visible:   true,
 						Dangerous: true,
-					})
+					}))
 			}
 			if client.Can(b.meta.Verbs, "delete") {
-				aa[tcell.KeyCtrlD] = ui.NewKeyActionWithOpts("Delete", b.deleteCmd,
+				aa.Add(tcell.KeyCtrlD, ui.NewKeyActionWithOpts("Delete", b.deleteCmd,
 					ui.ActionOpts{
 						Visible:   true,
 						Dangerous: true,
-					})
+					}))
 			}
 		} else {
 			b.Actions().ClearDanger()
 		}
 	}
 	if !dao.IsK9sMeta(b.meta) {
-		aa[ui.KeyY] = ui.NewKeyAction(yamlAction, b.viewCmd, true)
-		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
+		aa.Add(ui.KeyY, ui.NewKeyAction(yamlAction, b.viewCmd, true))
+		aa.Add(ui.KeyD, ui.NewKeyAction("Describe", b.describeCmd, true))
 	}
 	for _, f := range b.bindKeysFn {
 		f(aa)
 	}
-	b.Actions().Add(aa)
+	b.Actions().Merge(aa)
 
 	if err := pluginActions(b, b.Actions()); err != nil {
 		log.Warn().Msgf("Plugins load failed: %s", err)
@@ -528,25 +572,24 @@ func (b *Browser) refreshActions() {
 		log.Warn().Msgf("Hotkeys load failed: %s", err)
 		b.app.Logo().Warn("HotKeys load failed!")
 	}
-
 	b.app.Menu().HydrateMenu(b.Hints())
 }
 
-func (b *Browser) namespaceActions(aa ui.KeyActions) {
+func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 	if !b.meta.Namespaced || b.GetTable().Path != "" {
 		return
 	}
-	aa[ui.KeyN] = ui.NewKeyAction("Copy Namespace", b.cpNsCmd, false)
+	aa.Add(ui.KeyN, ui.NewKeyAction("Copy Namespace", b.cpNsCmd, false))
 
 	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
-	aa[ui.Key0] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
+	aa.Add(ui.Key0, ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true))
 	b.namespaces[0] = client.NamespaceAll
 	index := 1
 	for _, ns := range b.app.Config.FavNamespaces() {
 		if ns == client.NamespaceAll {
 			continue
 		}
-		aa[ui.NumKeys[index]] = ui.NewKeyAction(ns, b.switchNamespaceCmd, true)
+		aa.Add(ui.NumKeys[index], ui.NewKeyAction(ns, b.switchNamespaceCmd, true))
 		b.namespaces[index] = ns
 		index++
 	}

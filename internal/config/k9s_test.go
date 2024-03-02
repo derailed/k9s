@@ -136,13 +136,13 @@ func TestContextScreenDumpDir(t *testing.T) {
 	_, err := cfg.K9s.ActivateContext("ct-1-1")
 
 	assert.NoError(t, err)
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml"))
+	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, "/tmp/k9s-test/screen-dumps/cl-1/ct-1-1", cfg.K9s.ContextScreenDumpDir())
 }
 
 func TestAppScreenDumpDir(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml"))
+	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, "/tmp/k9s-test/screen-dumps", cfg.K9s.AppScreenDumpDir())
 }

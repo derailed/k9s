@@ -82,7 +82,7 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Alias{},
 		Renderer: &render.Alias{},
 	},
-	// !!BOZO!!
+	// !!BOZO!! Popeye
 	//"popeye": {
 	//	DAO:      &dao.Popeye{},
 	//	Renderer: &render.Popeye{},
@@ -102,7 +102,16 @@ var Registry = map[string]ResourceMeta{
 		TreeRenderer: &xray.Pod{},
 	},
 	"v1/namespaces": {
+		DAO:      &dao.Namespace{},
 		Renderer: &render.Namespace{},
+	},
+	"v1/secrets": {
+		DAO:      &dao.Secret{},
+		Renderer: &render.Secret{},
+	},
+	"v1/configmaps": {
+		DAO:      &dao.ConfigMap{},
+		Renderer: &render.ConfigMap{},
 	},
 	"v1/nodes": {
 		DAO:      &dao.Node{},
@@ -113,6 +122,10 @@ var Registry = map[string]ResourceMeta{
 		Renderer:     &render.Service{},
 		TreeRenderer: &xray.Service{},
 	},
+	"v1/events": {
+		DAO:      &dao.Table{},
+		Renderer: &render.Event{},
+	},
 	"v1/serviceaccounts": {
 		Renderer: &render.ServiceAccount{},
 	},
@@ -121,14 +134,6 @@ var Registry = map[string]ResourceMeta{
 	},
 	"v1/persistentvolumeclaims": {
 		Renderer: &render.PersistentVolumeClaim{},
-	},
-	"v1/events": {
-		DAO:      &dao.Table{},
-		Renderer: &render.Event{},
-	},
-	"v1/secrets": {
-		DAO:      &dao.Secret{},
-		Renderer: &render.Generic{},
 	},
 
 	// Apps...
@@ -169,6 +174,7 @@ var Registry = map[string]ResourceMeta{
 
 	// CRDs...
 	"apiextensions.k8s.io/v1/customresourcedefinitions": {
+		DAO:      &dao.CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 

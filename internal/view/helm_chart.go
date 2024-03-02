@@ -37,9 +37,9 @@ func (c *HelmChart) chartContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (c *HelmChart) bindKeys(aa ui.KeyActions) {
+func (c *HelmChart) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlS)
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyR:      ui.NewKeyAction("Releases", c.historyCmd, true),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", c.GetTable().SortColCmd(statusCol, true), false),
 	})

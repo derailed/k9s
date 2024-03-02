@@ -5,8 +5,7 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config/data"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 )
@@ -33,8 +32,8 @@ func NewNamespace(gvr client.GVR) ResourceViewer {
 	return &n
 }
 
-func (n *Namespace) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (n *Namespace) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyU:      ui.NewKeyAction("Use", n.useNsCmd, true),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", n.GetTable().SortColCmd(statusCol, true), false),
 	})
@@ -70,32 +69,37 @@ func (n *Namespace) useNamespace(fqn string) {
 	}
 }
 
-func (n *Namespace) decorate(td *render.TableData) {
-	if n.App().Conn() == nil || len(td.RowEvents) == 0 {
+func (n *Namespace) decorate(td *model1.TableData) {
+	if n.App().Conn() == nil || td.RowCount() == 0 {
 		return
 	}
-
 	// checks if all ns is in the list if not add it.
-	if _, ok := td.RowEvents.FindIndex(client.NamespaceAll); !ok {
-		td.RowEvents = append(td.RowEvents,
-			render.RowEvent{
-				Kind: render.EventUnchanged,
-				Row: render.Row{
-					ID:     client.NamespaceAll,
-					Fields: render.Fields{client.NamespaceAll, "Active", "", "", ""},
-				},
+	if _, ok := td.FindRow(client.NamespaceAll); !ok {
+		td.AddRow(model1.RowEvent{
+			Kind: model1.EventUnchanged,
+			Row: model1.Row{
+				ID:     client.NamespaceAll,
+				Fields: model1.Fields{client.NamespaceAll, "Active", "", "", ""},
 			},
+		},
 		)
 	}
 
-	for _, re := range td.RowEvents {
-		if data.InList(n.App().Config.FavNamespaces(), re.Row.ID) {
-			re.Row.Fields[0] += favNSIndicator
-			re.Kind = render.EventUnchanged
-		}
-		if n.App().Config.ActiveNamespace() == re.Row.ID {
-			re.Row.Fields[0] += defaultNSIndicator
-			re.Kind = render.EventUnchanged
-		}
+	favs := make(map[string]struct{})
+	for _, ns := range n.App().Config.FavNamespaces() {
+		favs[ns] = struct{}{}
 	}
+	ans := n.App().Config.ActiveNamespace()
+	td.RowsRange(func(i int, re model1.RowEvent) bool {
+		_, n := client.Namespaced(re.Row.ID)
+		if _, ok := favs[n]; ok {
+			re.Row.Fields[0] += favNSIndicator
+		}
+		if ans == re.Row.ID {
+			re.Row.Fields[0] += defaultNSIndicator
+		}
+		re.Kind = model1.EventUnchanged
+		td.SetRow(i, re)
+		return true
+	})
 }

@@ -54,9 +54,9 @@ func TestAppGetActions(t *testing.T) {
 	a := ui.NewApp(mock.NewMockConfig(), "")
 	a.Init()
 
-	a.AddActions(ui.KeyActions{ui.KeyZ: ui.KeyAction{Description: "zorg"}})
+	a.GetActions().Add(ui.KeyZ, ui.KeyAction{Description: "zorg"})
 
-	assert.Equal(t, 6, len(a.GetActions()))
+	assert.Equal(t, 7, a.GetActions().Len())
 }
 
 func TestAppViews(t *testing.T) {

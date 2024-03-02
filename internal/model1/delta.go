@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package render
+package model1
 
-import (
-	"reflect"
-)
+import "reflect"
 
 // DeltaRow represents a collection of row deltas between old and new row.
 type DeltaRow []string

@@ -57,13 +57,13 @@ func inScope(scopes []string, aliases map[string]struct{}) bool {
 	return false
 }
 
-func hotKeyActions(r Runner, aa ui.KeyActions) error {
+func hotKeyActions(r Runner, aa *ui.KeyActions) error {
 	hh := config.NewHotKeys()
-	for k, a := range aa {
+	aa.Range(func(k tcell.Key, a ui.KeyAction) {
 		if a.Opts.HotKey {
-			delete(aa, k)
+			aa.Delete(k)
 		}
-	}
+	})
 
 	var errs error
 	if err := hh.Load(r.App().Config.ContextHotkeysPath()); err != nil {
@@ -75,7 +75,7 @@ func hotKeyActions(r Runner, aa ui.KeyActions) error {
 			errs = errors.Join(errs, err)
 			continue
 		}
-		if _, ok := aa[key]; ok {
+		if _, ok := aa.Get(key); ok {
 			if !hk.Override {
 				errs = errors.Join(errs, fmt.Errorf("duplicate hotkey found for %q in %q", hk.ShortCut, k))
 				continue
@@ -89,14 +89,14 @@ func hotKeyActions(r Runner, aa ui.KeyActions) error {
 			continue
 		}
 
-		aa[key] = ui.NewKeyActionWithOpts(
+		aa.Add(key, ui.NewKeyActionWithOpts(
 			hk.Description,
 			gotoCmd(r, command, "", !hk.KeepHistory),
 			ui.ActionOpts{
 				Shared: true,
 				HotKey: true,
 			},
-		)
+		))
 	}
 
 	return errs
@@ -109,18 +109,23 @@ func gotoCmd(r Runner, cmd, path string, clearStack bool) ui.ActionHandler {
 	}
 }
 
-func pluginActions(r Runner, aa ui.KeyActions) error {
+func pluginActions(r Runner, aa *ui.KeyActions) error {
 	pp := config.NewPlugins()
-	for k, a := range aa {
+	aa.Range(func(k tcell.Key, a ui.KeyAction) {
 		if a.Opts.Plugin {
-			delete(aa, k)
+			aa.Delete(k)
 		}
+	})
+
+	path, err := r.App().Config.ContextPluginsPath()
+	if err != nil {
+		return err
+	}
+	if err := pp.Load(path); err != nil {
+		return err
 	}
 
 	var errs error
-	if err := pp.Load(r.App().Config.ContextPluginsPath()); err != nil {
-		errs = errors.Join(errs, err)
-	}
 	aliases := r.Aliases()
 	for k, plugin := range pp.Plugins {
 		if !inScope(plugin.Scopes, aliases) {
@@ -131,7 +136,7 @@ func pluginActions(r Runner, aa ui.KeyActions) error {
 			errs = errors.Join(errs, err)
 			continue
 		}
-		if _, ok := aa[key]; ok {
+		if _, ok := aa.Get(key); ok {
 			if !plugin.Override {
 				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", plugin.ShortCut, k))
 				continue
@@ -139,13 +144,14 @@ func pluginActions(r Runner, aa ui.KeyActions) error {
 			log.Info().Msgf("Action %q has been overridden by plugin in %q", plugin.ShortCut, k)
 		}
 
-		aa[key] = ui.NewKeyActionWithOpts(
+		aa.Add(key, ui.NewKeyActionWithOpts(
 			plugin.Description,
 			pluginAction(r, plugin),
 			ui.ActionOpts{
 				Visible: true,
 				Plugin:  true,
-			})
+			},
+		))
 	}
 
 	return errs

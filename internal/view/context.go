@@ -37,11 +37,9 @@ func NewContext(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *Context) bindKeys(aa ui.KeyActions) {
+func (c *Context) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
-	aa.Add(ui.KeyActions{
-		ui.KeyR: ui.NewKeyAction("Rename", c.renameCmd, true),
-	})
+	aa.Add(ui.KeyR, ui.NewKeyAction("Rename", c.renameCmd, true))
 }
 
 func (c *Context) renameCmd(evt *tcell.EventKey) *tcell.EventKey {

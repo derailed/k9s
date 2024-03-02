@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -38,25 +39,29 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *Container) portForwardIndicator(data *render.TableData) {
+func (c *Container) portForwardIndicator(data *model1.TableData) {
 	ff := c.App().factory.Forwarders()
-	col := data.IndexOfHeader("PF")
-	for _, re := range data.RowEvents {
+	col, ok := data.IndexOfHeader("PF")
+	if !ok {
+		return
+	}
+	data.RowsRange(func(_ int, re model1.RowEvent) bool {
 		if ff.IsContainerForwarded(c.GetTable().Path, re.Row.ID) {
 			re.Row.Fields[col] = "[orange::b]Ⓕ"
 		}
-	}
+		return true
+	})
 }
 
-func (c *Container) decorateRows(data *render.TableData) {
+func (c *Container) decorateRows(data *model1.TableData) {
 	decorateCpuMemHeaderRows(c.App(), data)
 }
 
 // Name returns the component name.
 func (c *Container) Name() string { return containerTitle }
 
-func (c *Container) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (c *Container) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyS: ui.NewKeyActionWithOpts(
 			"Shell",
 			c.shellCmd,
@@ -74,25 +79,25 @@ func (c *Container) bindDangerousKeys(aa ui.KeyActions) {
 	})
 }
 
-func (c *Container) bindKeys(aa ui.KeyActions) {
+func (c *Container) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlSpace, ui.KeySpace)
 
 	if !c.App().Config.K9s.IsReadOnly() {
 		c.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
 	})
-	aa.Add(resourceSorters(c.GetTable()))
+	aa.Merge(resourceSorters(c.GetTable()))
 }
 
 func (c *Container) k9sEnv() Env {
 	path := c.GetTable().GetSelectedItem()
 	row := c.GetTable().GetSelectedRow(path)
-	env := defaultEnv(c.App().Conn().Config(), path, c.GetTable().GetModel().Peek().Header, row)
+	env := defaultEnv(c.App().Conn().Config(), path, c.GetTable().GetModel().Peek().Header(), row)
 	env["NAMESPACE"], env["POD"] = client.Namespaced(c.GetTable().Path)
 
 	return env

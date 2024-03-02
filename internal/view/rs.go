@@ -29,8 +29,8 @@ func NewReplicaSet(gvr client.GVR) ResourceViewer {
 	return &r
 }
 
-func (r *ReplicaSet) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (r *ReplicaSet) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftD:   ui.NewKeyAction("Sort Desired", r.GetTable().SortColCmd("DESIRED", true), false),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort Current", r.GetTable().SortColCmd("CURRENT", true), false),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", r.GetTable().SortColCmd(readyCol, true), false),

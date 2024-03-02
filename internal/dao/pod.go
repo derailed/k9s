@@ -37,25 +37,13 @@ var (
 )
 
 const (
-	logRetryCount              = 20
-	logRetryWait               = 1 * time.Second
-	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
+	logRetryCount = 20
+	logRetryWait  = 1 * time.Second
 )
 
 // Pod represents a pod resource.
 type Pod struct {
 	Resource
-}
-
-// IsHappy check for happy deployments.
-func (p *Pod) IsHappy(po v1.Pod) bool {
-	for _, c := range po.Status.Conditions {
-		if c.Status == v1.ConditionFalse {
-			return false
-		}
-	}
-
-	return true
 }
 
 // Get returns a resource instance if found, else an error.
@@ -425,24 +413,6 @@ func MetaFQN(m metav1.ObjectMeta) string {
 	return FQN(m.Namespace, m.Name)
 }
 
-// FQN returns a fully qualified resource name.
-func FQN(ns, n string) string {
-	if ns == "" {
-		return n
-	}
-	return ns + "/" + n
-}
-
-func extractFQN(o runtime.Object) string {
-	u, ok := o.(*unstructured.Unstructured)
-	if !ok {
-		log.Error().Err(fmt.Errorf("expecting unstructured but got %T", o))
-		return client.NA
-	}
-
-	return FQN(u.GetNamespace(), u.GetName())
-}
-
 // GetPodSpec returns a pod spec given a resource.
 func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 	pod, err := p.GetInstance(path)
@@ -498,21 +468,6 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 		return fmt.Sprintf("%s/%s", references[0].Kind, references[0].Name), true, nil
 	}
 	return "", false, nil
-}
-
-// GetDefaultContainer returns a container name if specified in an annotation.
-func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
-	defaultContainer, ok := m.Annotations[defaultContainerAnnotation]
-	if ok {
-		for _, container := range spec.Containers {
-			if container.Name == defaultContainer {
-				return defaultContainer, true
-			}
-		}
-		log.Warn().Msg(defaultContainer + " container  not found. " + defaultContainerAnnotation + " annotation will be ignored")
-	}
-
-	return "", false
 }
 
 func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {

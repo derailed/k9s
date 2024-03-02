@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package render
+package model1
 
 import (
 	"reflect"
@@ -34,18 +34,24 @@ func (h HeaderColumn) Clone() HeaderColumn {
 // Header represents a table header.
 type Header []HeaderColumn
 
+func (h Header) Clear() Header {
+	h = h[:0]
+
+	return h
+}
+
 // Clone duplicates a header.
 func (h Header) Clone() Header {
-	header := make(Header, len(h))
-	for i, c := range h {
-		header[i] = c.Clone()
+	he := make(Header, 0, len(h))
+	for _, h := range h {
+		he = append(he, h.Clone())
 	}
 
-	return header
+	return he
 }
 
 // Labelize returns a new Header based on labels.
-func (h Header) Labelize(cols []int, labelCol int, rr RowEvents) Header {
+func (h Header) Labelize(cols []int, labelCol int, rr *RowEvents) Header {
 	header := make(Header, 0, len(cols)+1)
 	for _, c := range cols {
 		header = append(header, h[c])
@@ -63,8 +69,8 @@ func (h Header) MapIndices(cols []string, wide bool) []int {
 	ii := make([]int, 0, len(cols))
 	cc := make(map[int]struct{}, len(cols))
 	for _, col := range cols {
-		idx := h.IndexOf(col, true)
-		if idx < 0 {
+		idx, ok := h.IndexOf(col, true)
+		if !ok {
 			log.Warn().Msgf("Column %q not found on resource", col)
 		}
 		ii, cc[idx] = append(ii, idx), struct{}{}
@@ -90,13 +96,10 @@ func (h Header) Customize(cols []string, wide bool) Header {
 	cc := make(Header, 0, len(h))
 	xx := make(map[int]struct{}, len(h))
 	for _, c := range cols {
-		idx := h.IndexOf(c, true)
-		if idx == -1 {
+		idx, ok := h.IndexOf(c, true)
+		if !ok {
 			log.Warn().Msgf("Column %s is not available on this resource", c)
-			col := HeaderColumn{
-				Name: c,
-			}
-			cc = append(cc, col)
+			cc = append(cc, HeaderColumn{Name: c})
 			continue
 		}
 		xx[idx] = struct{}{}
@@ -129,8 +132,8 @@ func (h Header) Diff(header Header) bool {
 	return !reflect.DeepEqual(h, header)
 }
 
-// Columns return header as a collection of strings.
-func (h Header) Columns(wide bool) []string {
+// ColumnNames return header col names
+func (h Header) ColumnNames(wide bool) []string {
 	if len(h) == 0 {
 		return nil
 	}
@@ -147,7 +150,9 @@ func (h Header) Columns(wide bool) []string {
 
 // HasAge returns true if table has an age column.
 func (h Header) HasAge() bool {
-	return h.IndexOf(ageCol, true) != -1
+	_, ok := h.IndexOf(ageCol, true)
+
+	return ok
 }
 
 // IsMetricsCol checks if given column index represents metrics.
@@ -177,22 +182,17 @@ func (h Header) IsCapacityCol(col int) bool {
 	return h[col].Capacity
 }
 
-// ValidColIndex returns the valid col index or -1 if none.
-func (h Header) ValidColIndex() int {
-	return h.IndexOf("VALID", true)
-}
-
 // IndexOf returns the col index or -1 if none.
-func (h Header) IndexOf(colName string, includeWide bool) int {
+func (h Header) IndexOf(colName string, includeWide bool) (int, bool) {
 	for i, c := range h {
 		if c.Wide && !includeWide {
 			continue
 		}
 		if c.Name == colName {
-			return i
+			return i, true
 		}
 	}
-	return -1
+	return -1, false
 }
 
 // Dump for debugging.

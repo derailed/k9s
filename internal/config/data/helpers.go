@@ -4,6 +4,8 @@
 package data
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -38,7 +40,7 @@ func EnsureDirPath(path string, mod os.FileMode) error {
 
 // EnsureFullPath ensures a directory exist from the given path.
 func EnsureFullPath(path string, mod os.FileMode) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		if err = os.MkdirAll(path, mod); err != nil {
 			return err
 		}

@@ -26,6 +26,15 @@ func NewConfig(ct *api.Context) *Config {
 	}
 }
 
+func (c *Config) Merge(c1 *Config) {
+	if c1 == nil {
+		return
+	}
+	if c.Context != nil && c1.Context != nil {
+		c.Context.merge(c1.Context)
+	}
+}
+
 // Validate ensures config is in norms.
 func (c *Config) Validate(conn client.Connection, ks KubeSettings) {
 	c.mx.Lock()

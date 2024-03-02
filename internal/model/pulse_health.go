@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/health"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -123,14 +124,14 @@ func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check,
 		if !ok {
 			return nil, fmt.Errorf("expecting a meta table but got %T", oo[0])
 		}
-		rows := make(render.Rows, len(table.Rows))
-		re, _ := meta.Renderer.(Generic)
+		rows := make(model1.Rows, len(table.Rows))
+		re, _ := meta.Renderer.(model1.Generic)
 		re.SetTable(ns, table)
 		for i, row := range table.Rows {
 			if err := re.Render(row, ns, &rows[i]); err != nil {
 				return nil, err
 			}
-			if !render.Happy(ns, re.Header(ns), rows[i]) {
+			if !model1.IsValid(ns, re.Header(ns), rows[i]) {
 				c.Inc(health.S2)
 				continue
 			}
@@ -140,12 +141,12 @@ func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check,
 		return c, nil
 	}
 	c.Total(int64(len(oo)))
-	rr, re := make(render.Rows, len(oo)), meta.Renderer
+	rr, re := make(model1.Rows, len(oo)), meta.Renderer
 	for i, o := range oo {
 		if err := re.Render(o, ns, &rr[i]); err != nil {
 			return nil, err
 		}
-		if !render.Happy(ns, re.Header(ns), rr[i]) {
+		if !model1.IsValid(ns, re.Header(ns), rr[i]) {
 			c.Inc(health.S2)
 			continue
 		}

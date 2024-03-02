@@ -5,7 +5,9 @@ package view_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"testing"
 
@@ -139,7 +141,7 @@ func TestAllContainerKeyBinding(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			v := view.NewLog(client.NewGVR("v1/pods"), u.opts)
 			assert.NoError(t, v.Init(makeContext()))
-			_, got := v.Logs().Actions()[ui.KeyA]
+			_, got := v.Logs().Actions().Get(ui.KeyA)
 			assert.Equal(t, u.e, got)
 		})
 	}
@@ -154,7 +156,7 @@ func makeApp() *view.App {
 
 func ensureDumpDir(n string) error {
 	config.AppDumpsDir = n
-	if _, err := os.Stat(n); os.IsNotExist(err) {
+	if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
 		return os.MkdirAll(n, 0700)
 	}
 	if err := os.RemoveAll(n); err != nil {

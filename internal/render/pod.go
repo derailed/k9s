@@ -18,6 +18,7 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 )
 
 const (
@@ -51,84 +52,67 @@ type Pod struct {
 }
 
 // ColorerFunc colors a resource row.
-func (p Pod) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, h, re)
+func (p Pod) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
 
-		statusCol := h.IndexOf("STATUS", true)
-		if statusCol == -1 {
+		idx, ok := h.IndexOf("STATUS", true)
+		if !ok {
 			return c
 		}
-		status := strings.TrimSpace(re.Row.Fields[statusCol])
+		status := strings.TrimSpace(re.Row.Fields[idx])
 		switch status {
 		case Pending, ContainerCreating:
-			c = PendingColor
+			c = model1.PendingColor
 		case PodInitializing:
-			c = AddColor
+			c = model1.AddColor
 		case Initialized:
-			c = HighlightColor
+			c = model1.HighlightColor
 		case Completed:
-			c = CompletedColor
+			c = model1.CompletedColor
 		case Running:
-			c = StdColor
-			if !Happy(ns, h, re.Row) {
-				c = ErrColor
+			if c != model1.ErrColor {
+				c = model1.StdColor
 			}
 		case Terminating:
-			c = KillColor
-		default:
-			if !Happy(ns, h, re.Row) {
-				c = ErrColor
-			}
+			c = model1.KillColor
 		}
+
 		return c
 	}
 }
 
 // Header returns a header row.
-func (Pod) Header(ns string) Header {
-	h := Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS", VS: true},
-		HeaderColumn{Name: "PF"},
-		HeaderColumn{Name: "READY"},
-		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
-		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight, Wide: true},
-		HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight, Wide: true},
-		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "IP"},
-		HeaderColumn{Name: "NODE"},
-		HeaderColumn{Name: "NOMINATED NODE", Wide: true},
-		HeaderColumn{Name: "READINESS GATES", Wide: true},
-		HeaderColumn{Name: "QOS", Wide: true},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (p Pod) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "PF"},
+		model1.HeaderColumn{Name: "READY"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight, Wide: true},
+		model1.HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight, Wide: true},
+		model1.HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "IP"},
+		model1.HeaderColumn{Name: "NODE"},
+		model1.HeaderColumn{Name: "NOMINATED NODE", Wide: true},
+		model1.HeaderColumn{Name: "READINESS GATES", Wide: true},
+		model1.HeaderColumn{Name: "QOS", Wide: true},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
-
-	return h
-}
-
-// ExtractImages returns a collection of container images.
-// !!BOZO!! If this has any legs?? enable scans on other container types.
-func ExtractImages(spec *v1.PodSpec) []string {
-	ii := make([]string, 0, len(spec.Containers))
-	for _, c := range spec.Containers {
-		ii = append(ii, c.Image)
-	}
-
-	return ii
 }
 
 // Render renders a K8s resource to screen.
-func (p Pod) Render(o interface{}, ns string, row *Row) error {
+func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	pwm, ok := o.(*PodWithMetrics)
 	if !ok {
 		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
@@ -151,9 +135,10 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 	c, r := gatherCoMX(po.Spec.Containers, ccmx)
 	phase := p.Phase(&po)
 	row.ID = client.MetaFQN(po.ObjectMeta)
-	row.Fields = Fields{
+
+	row.Fields = model1.Fields{
 		po.Namespace,
-		po.ObjectMeta.Name,
+		po.Name,
 		computeVulScore(po.ObjectMeta, &po.Spec),
 		"●",
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),

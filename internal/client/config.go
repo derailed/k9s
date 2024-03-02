@@ -20,7 +20,7 @@ const (
 	defaultCallTimeoutDuration time.Duration = 15 * time.Second
 
 	// UsePersistentConfig caches client config to avoid reloads.
-	UsePersistentConfig = false
+	UsePersistentConfig = true
 )
 
 // Config tracks a kubernetes configuration.

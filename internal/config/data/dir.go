@@ -6,6 +6,7 @@ package data
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
@@ -34,20 +35,21 @@ func (d *Dir) Load(n string, ct *api.Context) (*Config, error) {
 	if ct == nil {
 		return nil, errors.New("api.Context must not be nil")
 	}
-	var (
-		path = filepath.Join(d.root, SanitizeContextSubpath(ct.Cluster, n), MainConfigFile)
-		cfg  *Config
-		err  error
-	)
-	if f, e := os.Stat(path); os.IsNotExist(e) || f.Size() == 0 {
+	var path = filepath.Join(d.root, SanitizeContextSubpath(ct.Cluster, n), MainConfigFile)
+
+	f, err := os.Stat(path)
+	if errors.Is(err, fs.ErrPermission) {
+		return nil, err
+	}
+	if errors.Is(err, fs.ErrNotExist) || (f != nil && f.Size() == 0) {
 		log.Debug().Msgf("Context config not found! Generating... %q", path)
-		cfg, err = d.genConfig(path, ct)
-	} else {
-		log.Debug().Msgf("Found existing context config: %q", path)
-		cfg, err = d.loadConfig(path)
+		return d.genConfig(path, ct)
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	return cfg, err
+	return d.loadConfig(path)
 }
 
 func (d *Dir) genConfig(path string, ct *api.Context) (*Config, error) {
@@ -60,6 +62,10 @@ func (d *Dir) genConfig(path string, ct *api.Context) (*Config, error) {
 }
 
 func (d *Dir) Save(path string, c *Config) error {
+	if cfg, err := d.loadConfig(path); err == nil {
+		c.Merge(cfg)
+	}
+
 	d.mx.Lock()
 	defer d.mx.Unlock()
 

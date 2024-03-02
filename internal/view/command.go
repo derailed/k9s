@@ -157,7 +157,7 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 
 	if context, ok := p.HasContext(); ok {
 		if context != c.app.Config.ActiveContextName() {
-			if err := c.app.Config.Save(); err != nil {
+			if err := c.app.Config.Save(true); err != nil {
 				log.Error().Err(err).Msg("config save failed!")
 			} else {
 				log.Debug().Msgf("Saved context config for: %q", context)

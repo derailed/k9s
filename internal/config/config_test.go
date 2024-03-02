@@ -4,6 +4,7 @@
 package config_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,7 +59,7 @@ func TestConfigSave(t *testing.T) {
 				c.K9s.Override(u.k9sFlags)
 				assert.NoError(t, c.Refine(u.flags, u.k9sFlags, client.NewConfig(u.flags)))
 			}
-			assert.NoError(t, c.Save())
+			assert.NoError(t, c.Save(true))
 			bb, err := os.ReadFile(config.AppConfigFile)
 			assert.NoError(t, err)
 			ee, err := os.ReadFile("testdata/configs/default.yaml")
@@ -265,16 +266,19 @@ func TestContextAliasesPath(t *testing.T) {
 
 func TestContextPluginsPath(t *testing.T) {
 	uu := map[string]struct {
-		ct string
-		e  string
+		ct, e string
+		err   error
 	}{
-		"empty": {},
+		"empty": {
+			err: errors.New(`no context found for: ""`),
+		},
 		"happy": {
 			ct: "ct-1-1",
 			e:  "/tmp/test/cl-1/ct-1-1/plugins.yaml",
 		},
 		"not-exists": {
-			ct: "fred",
+			ct:  "fred",
+			err: errors.New(`no context found for: "fred"`),
 		},
 	}
 
@@ -283,7 +287,11 @@ func TestContextPluginsPath(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			c := mock.NewMockConfig()
 			_, _ = c.K9s.ActivateContext(u.ct)
-			assert.Equal(t, u.e, c.ContextPluginsPath())
+			s, err := c.ContextPluginsPath()
+			if err != nil {
+				assert.Equal(t, u.err, err)
+			}
+			assert.Equal(t, u.e, s)
 		})
 	}
 }
@@ -309,7 +317,7 @@ Invalid type. Expected: boolean, given: string`,
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			cfg := config.NewConfig(nil)
-			if err := cfg.Load(u.f); err != nil {
+			if err := cfg.Load(u.f, true); err != nil {
 				assert.Equal(t, u.err, err.Error())
 			}
 		})
@@ -520,14 +528,14 @@ func TestConfigValidate(t *testing.T) {
 	cfg := mock.NewMockConfig()
 	cfg.SetConnection(mock.NewMockConnection())
 
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml"))
+	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	cfg.Validate()
 }
 
 func TestConfigLoad(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml"))
+	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
 	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
 	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
@@ -536,13 +544,13 @@ func TestConfigLoad(t *testing.T) {
 func TestConfigLoadCrap(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.NotNil(t, cfg.Load("testdata/configs/k9s_not_there.yaml"))
+	assert.NotNil(t, cfg.Load("testdata/configs/k9s_not_there.yaml", true))
 }
 
 func TestConfigSaveFile(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml"))
+	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.ReadOnly = true
@@ -561,7 +569,7 @@ func TestConfigSaveFile(t *testing.T) {
 
 func TestConfigReset(t *testing.T) {
 	cfg := mock.NewMockConfig()
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml"))
+	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	cfg.Reset()
 	cfg.Validate()
 

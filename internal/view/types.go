@@ -40,7 +40,7 @@ type (
 	ContextFunc func(context.Context) context.Context
 
 	// BindKeysFunc adds new menu actions.
-	BindKeysFunc func(ui.KeyActions)
+	BindKeysFunc func(*ui.KeyActions)
 )
 
 // ActionExtender enhances a given viewer by adding new menu actions.
@@ -60,7 +60,7 @@ type Viewer interface {
 	model.Component
 
 	// Actions returns active menu bindings.
-	Actions() ui.KeyActions
+	Actions() *ui.KeyActions
 
 	// App returns an app handle.
 	App() *App

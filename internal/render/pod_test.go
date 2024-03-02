@@ -6,6 +6,7 @@ package render_test
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
@@ -16,128 +17,128 @@ import (
 )
 
 func init() {
-	render.AddColor = tcell.ColorBlue
-	render.HighlightColor = tcell.ColorYellow
-	render.CompletedColor = tcell.ColorGray
-	render.StdColor = tcell.ColorWhite
-	render.ErrColor = tcell.ColorRed
-	render.KillColor = tcell.ColorGray
+	model1.AddColor = tcell.ColorBlue
+	model1.HighlightColor = tcell.ColorYellow
+	model1.CompletedColor = tcell.ColorGray
+	model1.StdColor = tcell.ColorWhite
+	model1.ErrColor = tcell.ColorRed
+	model1.KillColor = tcell.ColorGray
 }
 
 func TestPodColorer(t *testing.T) {
-	stdHeader := render.Header{
-		render.HeaderColumn{Name: "NAMESPACE"},
-		render.HeaderColumn{Name: "NAME"},
-		render.HeaderColumn{Name: "READY"},
-		render.HeaderColumn{Name: "RESTARTS"},
-		render.HeaderColumn{Name: "STATUS"},
-		render.HeaderColumn{Name: "VALID"},
+	stdHeader := model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "READY"},
+		model1.HeaderColumn{Name: "RESTARTS"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "VALID"},
 	}
 
 	uu := map[string]struct {
-		re render.RowEvent
-		h  render.Header
+		re model1.RowEvent
+		h  model1.Header
 		e  tcell.Color
 	}{
 		"valid": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.Running, ""},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Running, ""},
 				},
 			},
-			e: render.StdColor,
+			e: model1.StdColor,
 		},
 		"init": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.PodInitializing, ""},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.PodInitializing, ""},
 				},
 			},
-			e: render.AddColor,
+			e: model1.AddColor,
 		},
 		"init-err": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.PodInitializing, "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.PodInitializing, "blah"},
 				},
 			},
-			e: render.AddColor,
+			e: model1.AddColor,
 		},
 		"initialized": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.Initialized, "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Initialized, "blah"},
 				},
 			},
-			e: render.HighlightColor,
+			e: model1.HighlightColor,
 		},
 		"completed": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.Completed, "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Completed, "blah"},
 				},
 			},
-			e: render.CompletedColor,
+			e: model1.CompletedColor,
 		},
 		"terminating": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.Terminating, "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Terminating, "blah"},
 				},
 			},
-			e: render.KillColor,
+			e: model1.KillColor,
 		},
 		"invalid": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", "Running", "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "Running", "blah"},
 				},
 			},
-			e: render.ErrColor,
+			e: model1.ErrColor,
 		},
 		"unknown-cool": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", "blee", ""},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "blee", ""},
 				},
 			},
-			e: render.AddColor,
+			e: model1.AddColor,
 		},
 		"unknown-err": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", "blee", "doh"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "blee", "doh"},
 				},
 			},
-			e: render.ErrColor,
+			e: model1.ErrColor,
 		},
 		"status": {
 			h: stdHeader[0:3],
-			re: render.RowEvent{
-				Kind: render.EventDelete,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", "blee", ""},
+			re: model1.RowEvent{
+				Kind: model1.EventDelete,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "blee", ""},
 				},
 			},
-			e: render.KillColor,
+			e: model1.KillColor,
 		},
 	}
 
@@ -145,7 +146,7 @@ func TestPodColorer(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, r.ColorerFunc()("", u.h, u.re))
+			assert.Equal(t, u.e, r.ColorerFunc()("", u.h, &u.re))
 		})
 	}
 }
@@ -157,12 +158,12 @@ func TestPodRender(t *testing.T) {
 	}
 
 	var po render.Pod
-	r := render.NewRow(14)
+	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "<none>", "<none>"}
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "<none>", "<none>"}
 	assert.Equal(t, e, r.Fields[:19])
 }
 
@@ -172,7 +173,7 @@ func BenchmarkPodRender(b *testing.B) {
 		MX:  makePodMX("nginx", "10m", "10Mi"),
 	}
 	var po render.Pod
-	r := render.NewRow(12)
+	r := model1.NewRow(12)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -188,12 +189,12 @@ func TestPodInitRender(t *testing.T) {
 	}
 
 	var po render.Pod
-	r := render.NewRow(14)
+	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "<none>", "<none>"}
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "<none>", "<none>"}
 	assert.Equal(t, e, r.Fields[:19])
 }
 

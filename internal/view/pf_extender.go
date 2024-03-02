@@ -36,8 +36,8 @@ func NewPortForwardExtender(r ResourceViewer) ResourceViewer {
 	return &p
 }
 
-func (p *PortForwardExtender) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (p *PortForwardExtender) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", p.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("Port-Forward", p.portFwdCmd, true),
 	})
