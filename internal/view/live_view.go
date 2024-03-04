@@ -5,7 +5,9 @@ package view
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -157,6 +159,10 @@ func (v *LiveView) bindKeys() {
 	}
 	if v.title == yamlAction {
 		v.actions.Add(ui.KeyM, ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true))
+
+		if !v.app.Config.K9s.IsReadOnly() {
+			v.actions.Add(ui.KeyShiftD, ui.NewKeyAction("Duplicate", v.duplicateCmd, true))
+		}
 	}
 	if v.model != nil && v.model.GVR().IsDecodable() {
 		v.actions.Add(ui.KeyX, ui.NewKeyAction("Toggle Decode", v.toggleEncodedDecodedCmd, true))
@@ -380,6 +386,30 @@ func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
+}
+
+func (v *LiveView) duplicateCmd(_ *tcell.EventKey) *tcell.EventKey {
+	tmpFile, err := createTmpYaml()
+	if err != nil {
+		v.app.Flash().Err(errors.New("Failed to create temporary resource file: " + err.Error()))
+		return nil
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	_, err = tmpFile.WriteString(strings.Join([]string{
+		"# To duplicate a resource, edit the resource and make the necessary changes.",
+		"# Make sure to change the resource name and remove owner references if necessary.",
+		"# When done, save and close the editor, K9s will then `kubectl create` the resource.",
+		"",
+		v.text.GetText(true),
+	}, "\n"))
+	if err != nil {
+		v.app.Flash().Err(errors.New("Failed to write to temporary resource file: " + err.Error()))
+		return nil
+	}
+
+	return editAndCreateFromFile(v.app, tmpFile.Name())
 }
 
 func (v *LiveView) updateTitle() {

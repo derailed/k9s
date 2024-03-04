@@ -5,7 +5,9 @@ package view
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
@@ -305,6 +308,29 @@ func (b *Browser) TableLoadFailed(err error) {
 // ----------------------------------------------------------------------------
 // Actions...
 
+func (b *Browser) createCmd(_ *tcell.EventKey) *tcell.EventKey {
+	tmpFile, err := createTmpYaml()
+	if err != nil {
+		b.App().Flash().Err(errors.New("Failed to create temporary resource file: " + err.Error()))
+		return nil
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	_, err = tmpFile.WriteString(strings.Join([]string{
+		"# To create a new resource, provide a definition below.",
+		"# Multiple documents are supported.",
+		"# When done, save and close the editor, K9s will then `kubectl create` the resource.",
+		"",
+	}, "\n"))
+	if err != nil {
+		b.App().Flash().Err(errors.New("Failed to write to temporary resource file: " + err.Error()))
+		return nil
+	}
+
+	return editAndCreateFromFile(b.App(), tmpFile.Name())
+}
+
 func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
@@ -558,6 +584,10 @@ func (b *Browser) refreshActions() {
 	if !dao.IsK9sMeta(b.meta) {
 		aa.Add(ui.KeyY, ui.NewKeyAction(yamlAction, b.viewCmd, true))
 		aa.Add(ui.KeyD, ui.NewKeyAction("Describe", b.describeCmd, true))
+
+		if !b.app.Config.K9s.IsReadOnly() {
+			aa.Add(tcell.KeyCtrlN, ui.NewKeyAction("Create", b.createCmd, true))
+		}
 	}
 	for _, f := range b.bindKeysFn {
 		f(aa)
@@ -643,4 +673,69 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 		b.refresh()
 	}
 	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, okFn, func() {})
+}
+
+func editAndCreateFromFile(app *App, filePath string) *tcell.EventKey {
+	if !edit(app, shellOpts{clear: true, args: []string{filePath}}) {
+		app.Flash().Errf("Failed to launch editor")
+		return nil
+	}
+
+	if isEmpty, err := isFileEmpty(filePath); err != nil || isEmpty {
+		if err != nil {
+			app.Flash().Err(err)
+		}
+		return nil
+	}
+
+	return createFromFile(app, filePath)
+}
+
+func isFileEmpty(filePath string) (bool, error) {
+	fileStat, err := os.Stat(filePath)
+	if err != nil {
+		return false, errors.New("Failed to get temporary resource file information: " + err.Error())
+	}
+
+	return fileStat.Size() == 0, nil
+}
+
+func createFromFile(app *App, filePath string) *tcell.EventKey {
+	args := []string{
+		"create",
+		"-f",
+		filePath,
+	}
+	res, err := runKu(app, shellOpts{clear: false, args: args})
+	if err != nil {
+		res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
+	} else {
+		res = "message:\n" + fmtResults(res)
+	}
+
+	details := NewDetails(app, "Applied Manifest", filePath, contentYAML, true).Update(res)
+	if err := app.inject(details, false); err != nil {
+		app.Flash().Err(err)
+		return nil
+	}
+
+	return nil
+}
+
+func createTmpYaml() (*os.File, error) {
+	tmpDir, err := config.UserTmpDir()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ensureDir(tmpDir); err != nil {
+		return nil, err
+	}
+
+	tmpFile, err := os.CreateTemp(tmpDir, "tmp--*.yml")
+	if err != nil {
+		return nil, err
+	}
+
+	return tmpFile, nil
 }
