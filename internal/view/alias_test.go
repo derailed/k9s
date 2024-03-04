@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/derailed/tcell/v2"
@@ -93,9 +93,9 @@ func (t *mockModel) SetInstance(string)                 {}
 func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) GetLabelFilter() string             { return "" }
 func (t *mockModel) Empty() bool                        { return false }
-func (t *mockModel) Count() int                         { return 1 }
+func (t *mockModel) RowCount() int                      { return 1 }
 func (t *mockModel) HasMetrics() bool                   { return true }
-func (t *mockModel) Peek() *render.TableData            { return makeTableData() }
+func (t *mockModel) Peek() *model1.TableData            { return makeTableData() }
 func (t *mockModel) ClusterWide() bool                  { return false }
 func (t *mockModel) GetNamespace() string               { return "blee" }
 func (t *mockModel) SetNamespace(string)                {}
@@ -123,27 +123,27 @@ func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
 func (t *mockModel) InNamespace(string) bool      { return true }
 func (t *mockModel) SetRefreshRate(time.Duration) {}
 
-func makeTableData() *render.TableData {
-	return &render.TableData{
-		Namespace: client.ClusterScope,
-		Header: render.Header{
-			render.HeaderColumn{Name: "RESOURCE"},
-			render.HeaderColumn{Name: "COMMAND"},
-			render.HeaderColumn{Name: "APIGROUP"},
+func makeTableData() *model1.TableData {
+	return model1.NewTableDataWithRows(
+		client.NewGVR("test"),
+		model1.Header{
+			model1.HeaderColumn{Name: "RESOURCE"},
+			model1.HeaderColumn{Name: "COMMAND"},
+			model1.HeaderColumn{Name: "APIGROUP"},
 		},
-		RowEvents: render.RowEvents{
-			render.RowEvent{
-				Row: render.Row{
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{
+				Row: model1.Row{
 					ID:     "r1",
-					Fields: render.Fields{"blee", "duh", "fred"},
+					Fields: model1.Fields{"blee", "duh", "fred"},
 				},
 			},
-			render.RowEvent{
-				Row: render.Row{
+			model1.RowEvent{
+				Row: model1.Row{
 					ID:     "r2",
-					Fields: render.Fields{"fred", "duh", "zorg"},
+					Fields: model1.Fields{"fred", "duh", "zorg"},
 				},
 			},
-		},
-	}
+		),
+	)
 }

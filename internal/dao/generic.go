@@ -106,7 +106,7 @@ func (g *Generic) ToYAML(path string, showManaged bool) (string, error) {
 // Delete deletes a resource.
 func (g *Generic) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, grace Grace) error {
 	ns, n := client.Namespaced(path)
-	auth, err := g.Client().CanI(ns, g.gvrStr(), []string{client.DeleteVerb})
+	auth, err := g.Client().CanI(ns, g.gvrStr(), n, []string{client.DeleteVerb})
 	if err != nil {
 		return err
 	}

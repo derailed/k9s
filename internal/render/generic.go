@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -20,7 +21,7 @@ const ageTableCol = "Age"
 type Generic struct {
 	Base
 	table    *metav1.Table
-	header   Header
+	header   model1.Header
 	ageIndex int
 }
 
@@ -35,38 +36,38 @@ func (g *Generic) SetTable(ns string, t *metav1.Table) {
 }
 
 // ColorerFunc colors a resource row.
-func (*Generic) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+func (*Generic) ColorerFunc() model1.ColorerFunc {
+	return model1.DefaultColorer
 }
 
 // Header returns a header row.
-func (g *Generic) Header(ns string) Header {
+func (g *Generic) Header(ns string) model1.Header {
 	if g.header != nil {
 		return g.header
 	}
 	if g.table == nil {
-		return Header{}
+		return model1.Header{}
 	}
-	h := make(Header, 0, len(g.table.ColumnDefinitions))
+	h := make(model1.Header, 0, len(g.table.ColumnDefinitions))
 	if !client.IsClusterScoped(ns) {
-		h = append(h, HeaderColumn{Name: "NAMESPACE"})
+		h = append(h, model1.HeaderColumn{Name: "NAMESPACE"})
 	}
 	for i, c := range g.table.ColumnDefinitions {
 		if c.Name == ageTableCol {
 			g.ageIndex = i
 			continue
 		}
-		h = append(h, HeaderColumn{Name: strings.ToUpper(c.Name)})
+		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name)})
 	}
 	if g.ageIndex > 0 {
-		h = append(h, HeaderColumn{Name: "AGE", Time: true})
+		h = append(h, model1.HeaderColumn{Name: "AGE", Time: true})
 	}
 
 	return h
 }
 
 // Render renders a K8s resource to screen.
-func (g *Generic) Render(o interface{}, ns string, r *Row) error {
+func (g *Generic) Render(o interface{}, ns string, r *model1.Row) error {
 	row, ok := o.(metav1.TableRow)
 	if !ok {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
@@ -80,7 +81,7 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 		return fmt.Errorf("expecting row 0 to be a string but got %T", row.Cells[0])
 	}
 	r.ID = client.FQN(nns, name)
-	r.Fields = make(Fields, 0, len(g.Header(ns)))
+	r.Fields = make(model1.Fields, 0, len(g.Header(ns)))
 	if !client.IsClusterScoped(ns) {
 		r.Fields = append(r.Fields, nns)
 	}

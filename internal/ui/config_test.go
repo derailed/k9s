@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
@@ -47,8 +47,8 @@ func TestSkinnedContext(t *testing.T) {
 	cfg.Config.K9s.UI = config.UI{Skin: "black-and-wtf"}
 	cfg.RefreshStyles(newMockSynchronizer())
 	assert.True(t, cfg.HasSkin())
-	assert.Equal(t, tcell.ColorGhostWhite.TrueColor(), render.StdColor)
-	assert.Equal(t, tcell.ColorWhiteSmoke.TrueColor(), render.ErrColor)
+	assert.Equal(t, tcell.ColorGhostWhite.TrueColor(), model1.StdColor)
+	assert.Equal(t, tcell.ColorWhiteSmoke.TrueColor(), model1.ErrColor)
 }
 
 func TestBenchConfig(t *testing.T) {

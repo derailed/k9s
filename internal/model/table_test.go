@@ -14,7 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -36,9 +36,9 @@ func TestTableRefresh(t *testing.T) {
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
 	assert.NoError(t, ta.Refresh(ctx))
 	data := ta.Peek()
-	assert.Equal(t, 23, len(data.Header))
-	assert.Equal(t, 1, len(data.RowEvents))
-	assert.Equal(t, client.NamespaceAll, data.Namespace)
+	assert.Equal(t, 23, data.HeaderCount())
+	assert.Equal(t, 1, data.RowCount())
+	assert.Equal(t, client.NamespaceAll, data.GetNamespace())
 	assert.Equal(t, 1, l.count)
 	assert.Equal(t, 0, l.errs)
 }
@@ -75,7 +75,7 @@ type tableListener struct {
 	count, errs int
 }
 
-func (l *tableListener) TableDataChanged(*render.TableData) {
+func (l *tableListener) TableDataChanged(*model1.TableData) {
 	l.count++
 }
 

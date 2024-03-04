@@ -50,15 +50,10 @@ func (s *StatefulSet) ListImages(ctx context.Context, fqn string) ([]string, err
 	return render.ExtractImages(&sts.Spec.Template.Spec), nil
 }
 
-// IsHappy check for happy sts.
-func (s *StatefulSet) IsHappy(sts appsv1.StatefulSet) bool {
-	return sts.Status.Replicas == sts.Status.ReadyReplicas
-}
-
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(ctx context.Context, path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
-	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets:scale", []string{client.GetVerb, client.UpdateVerb})
+	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets:scale", n, []string{client.GetVerb, client.UpdateVerb})
 	if err != nil {
 		return err
 	}
@@ -87,7 +82,7 @@ func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 		return err
 	}
 
-	ns, _ := client.Namespaced(path)
+	ns, n := client.Namespaced(path)
 	pp, err := podsFromSelector(s.Factory, ns, sts.Spec.Selector.MatchLabels)
 	if err != nil {
 		return err
@@ -96,7 +91,7 @@ func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 		s.Forwarders().Kill(client.FQN(p.Namespace, p.Name))
 	}
 
-	auth, err := s.Client().CanI(sts.Namespace, "apps/v1/statefulsets", []string{client.PatchVerb})
+	auth, err := s.Client().CanI(sts.Namespace, "apps/v1/statefulsets", n, []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}
@@ -296,7 +291,7 @@ func (s *StatefulSet) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (s *StatefulSet) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := s.Client().CanI(ns, "apps/v1/statefulset", []string{client.PatchVerb})
+	auth, err := s.Client().CanI(ns, "apps/v1/statefulset", n, []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}

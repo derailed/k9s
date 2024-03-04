@@ -38,6 +38,21 @@ func NewActiveNamespace(n string) *Namespace {
 	}
 }
 
+func (n *Namespace) merge(old *Namespace) {
+	n.mx.Lock()
+	defer n.mx.Unlock()
+
+	if n.LockFavorites {
+		return
+	}
+	for _, fav := range old.Favorites {
+		if InList(n.Favorites, fav) {
+			continue
+		}
+		n.Favorites = append(n.Favorites, fav)
+	}
+}
+
 // Validate validates a namespace is setup correctly.
 func (n *Namespace) Validate(c client.Connection) {
 	n.mx.RLock()

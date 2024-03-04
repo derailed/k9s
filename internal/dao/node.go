@@ -106,7 +106,7 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 	dd, errs := h.GetPodsForDeletion(path)
 	if len(errs) != 0 {
 		for _, e := range errs {
-			if _, err := h.ErrOut.Write([]byte(e.Error() + "\n")); err != nil {
+			if _, err := h.ErrOut.Write([]byte(fmt.Sprintf("[%s] %s\n", path, e.Error()))); err != nil {
 				return err
 			}
 		}
@@ -247,7 +247,8 @@ func (n *Node) ensureCordoned(path string) (bool, error) {
 
 // FetchNode retrieves a node.
 func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
-	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", []string{"get"})
+	_, n := client.Namespaced(path)
+	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", n, []string{"get"})
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +272,7 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 
 // FetchNodes retrieves all nodes.
 func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList, error) {
-	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", []string{client.ListVerb})
+	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", "", []string{client.ListVerb})
 	if err != nil {
 		return nil, err
 	}

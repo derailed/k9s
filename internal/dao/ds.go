@@ -51,11 +51,6 @@ func (d *DaemonSet) ListImages(ctx context.Context, fqn string) ([]string, error
 	return render.ExtractImages(&ds.Spec.Template.Spec), nil
 }
 
-// IsHappy check for happy deployments.
-func (d *DaemonSet) IsHappy(ds appsv1.DaemonSet) bool {
-	return ds.Status.DesiredNumberScheduled == ds.Status.CurrentNumberScheduled
-}
-
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 	o, err := d.getFactory().Get("apps/v1/daemonsets", path, true, labels.Everything())
@@ -68,7 +63,7 @@ func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 		return err
 	}
 
-	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", []string{client.PatchVerb})
+	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", ds.Name, []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}
@@ -140,7 +135,7 @@ func podLogs(ctx context.Context, sel map[string]string, opts *LogOptions) ([]Lo
 	}
 	opts.MultiPods = true
 
-	po := Pod{}
+	var po Pod
 	po.Init(f, client.NewGVR("v1/pods"))
 
 	outs := make([]LogChan, 0, len(oo))
@@ -285,7 +280,7 @@ func (d *DaemonSet) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (d *DaemonSet) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/daemonset", []string{client.PatchVerb})
+	auth, err := d.Client().CanI(ns, "apps/v1/daemonset", n, []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}

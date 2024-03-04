@@ -85,6 +85,24 @@ func (c *Config) SwitchContext(name string) error {
 	return nil
 }
 
+func (c *Config) Clone(ns string) (*genericclioptions.ConfigFlags, error) {
+	flags := genericclioptions.NewConfigFlags(false)
+	ct, err := c.CurrentContextName()
+	if err != nil {
+		return nil, err
+	}
+	cl, err := c.CurrentClusterName()
+	if err != nil {
+		return nil, err
+	}
+	flags.Context, flags.ClusterName = &ct, &cl
+	flags.Namespace = &ns
+	flags.Timeout = c.Flags().Timeout
+	flags.KubeConfig = c.Flags().KubeConfig
+
+	return flags, nil
+}
+
 // CurrentClusterName returns the currently active cluster name.
 func (c *Config) CurrentClusterName() (string, error) {
 	if isSet(c.flags.ClusterName) {

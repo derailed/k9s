@@ -28,7 +28,7 @@ type Details struct {
 	*tview.Flex
 
 	text                      *tview.TextView
-	actions                   ui.KeyActions
+	actions                   *ui.KeyActions
 	app                       *App
 	title, subject            string
 	cmdBuff                   *model.FishBuff
@@ -47,7 +47,7 @@ func NewDetails(app *App, title, subject, contentType string, searchable bool) *
 		app:         app,
 		title:       title,
 		subject:     subject,
-		actions:     make(ui.KeyActions),
+		actions:     ui.NewKeyActions(),
 		cmdBuff:     model.NewFishBuff('/', model.FilterBuffer),
 		model:       model.NewText(),
 		searchable:  searchable,
@@ -132,7 +132,7 @@ func (d *Details) BufferActive(state bool, k model.BufferKind) {
 }
 
 func (d *Details) bindKeys() {
-	d.actions.Set(ui.KeyActions{
+	d.actions.Bulk(ui.KeyMap{
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", d.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", d.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", d.saveCmd, false),
@@ -150,7 +150,7 @@ func (d *Details) bindKeys() {
 }
 
 func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	if a, ok := d.actions[ui.AsKey(evt)]; ok {
+	if a, ok := d.actions.Get(ui.AsKey(evt)); ok {
 		return a.Action(evt)
 	}
 
@@ -181,7 +181,7 @@ func (d *Details) SetSubject(s string) {
 }
 
 // Actions returns menu actions.
-func (d *Details) Actions() ui.KeyActions {
+func (d *Details) Actions() *ui.KeyActions {
 	return d.actions
 }
 

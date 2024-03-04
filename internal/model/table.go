@@ -14,7 +14,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,7 +25,7 @@ const initRefreshRate = 300 * time.Millisecond
 // TableListener represents a table model listener.
 type TableListener interface {
 	// TableDataChanged notifies the model data changed.
-	TableDataChanged(*render.TableData)
+	TableDataChanged(*model1.TableData)
 
 	// TableLoadFailed notifies the load failed.
 	TableLoadFailed(error)
@@ -34,21 +34,20 @@ type TableListener interface {
 // Table represents a table model.
 type Table struct {
 	gvr         client.GVR
-	namespace   string
-	data        *render.TableData
+	data        *model1.TableData
 	listeners   []TableListener
 	inUpdate    int32
 	refreshRate time.Duration
 	instance    string
-	mx          sync.RWMutex
 	labelFilter string
+	mx          sync.RWMutex
 }
 
 // NewTable returns a new table model.
 func NewTable(gvr client.GVR) *Table {
 	return &Table{
 		gvr:         gvr,
-		data:        render.NewTableData(),
+		data:        model1.NewTableData(gvr),
 		refreshRate: 2 * time.Second,
 	}
 }
@@ -141,18 +140,17 @@ func (t *Table) Delete(ctx context.Context, path string, propagation *metav1.Del
 
 // GetNamespace returns the model namespace.
 func (t *Table) GetNamespace() string {
-	return t.namespace
+	return t.data.GetNamespace()
 }
 
 // SetNamespace sets up model namespace.
 func (t *Table) SetNamespace(ns string) {
-	t.namespace = ns
-	t.data.Clear()
+	t.data.Reset(ns)
 }
 
 // InNamespace checks if current namespace matches desired namespace.
 func (t *Table) InNamespace(ns string) bool {
-	return len(t.data.RowEvents) > 0 && t.namespace == ns
+	return t.data.GetNamespace() == ns && !t.data.Empty()
 }
 
 // SetRefreshRate sets model refresh duration.
@@ -162,7 +160,7 @@ func (t *Table) SetRefreshRate(d time.Duration) {
 
 // ClusterWide checks if resource is scope for all namespaces.
 func (t *Table) ClusterWide() bool {
-	return client.IsClusterWide(t.namespace)
+	return client.IsClusterWide(t.data.GetNamespace())
 }
 
 // Empty returns true if no model data.
@@ -170,13 +168,13 @@ func (t *Table) Empty() bool {
 	return t.data.Empty()
 }
 
-// Count returns the row count.
-func (t *Table) Count() int {
-	return t.data.Count()
+// RowCount returns the row count.
+func (t *Table) RowCount() int {
+	return t.data.RowCount()
 }
 
 // Peek returns model data.
-func (t *Table) Peek() *render.TableData {
+func (t *Table) Peek() *model1.TableData {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
@@ -184,8 +182,6 @@ func (t *Table) Peek() *render.TableData {
 }
 
 func (t *Table) updater(ctx context.Context) {
-	defer log.Debug().Msgf("TABLE-UPDATER canceled -- %q", t.gvr)
-
 	bf := backoff.NewExponentialBackOff()
 	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxReaderRetryInterval
 	rate := initRefreshRate
@@ -199,7 +195,7 @@ func (t *Table) updater(ctx context.Context) {
 				return t.refresh(ctx)
 			}, backoff.WithContext(bf, ctx))
 			if err != nil {
-				log.Error().Err(err).Msgf("Retry failed")
+				log.Warn().Err(err).Msgf("reconciler exited")
 				t.fireTableLoadFailed(err)
 				return
 			}
@@ -229,24 +225,25 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	}
 	a.Init(factory, t.gvr)
 
-	ns := client.CleanseNamespace(t.namespace)
-	if client.IsClusterScoped(t.namespace) {
+	t.mx.RLock()
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
+	t.mx.RUnlock()
+
+	ns := client.CleanseNamespace(t.data.GetNamespace())
+	if client.IsClusterScoped(ns) {
 		ns = client.BlankNamespace
 	}
-	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 
 	return a.List(ctx, ns)
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	t.mx.Lock()
-	defer t.mx.Unlock()
-	meta := resourceMeta(t.gvr)
-	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	var (
 		oo  []runtime.Object
 		err error
 	)
+	meta := resourceMeta(t.gvr)
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	if t.instance == "" {
 		oo, err = t.list(ctx, meta.DAO)
 	} else {
@@ -257,41 +254,10 @@ func (t *Table) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	var rows render.Rows
-	if len(oo) > 0 {
-		if meta.Renderer.IsGeneric() {
-			table, ok := oo[0].(*metav1.Table)
-			if !ok {
-				return fmt.Errorf("expecting a meta table but got %T", oo[0])
-			}
-			rows = make(render.Rows, len(table.Rows))
-			if err := genericHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
-				return err
-			}
-		} else {
-			rows = make(render.Rows, len(oo))
-			if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
-				return err
-			}
-		}
-	}
-
-	// if labelSelector in place might as well clear the model data.
-	sel, ok := ctx.Value(internal.KeyLabels).(string)
-	if ok && sel != "" {
-		t.data.Clear()
-	}
-	t.data.Update(rows)
-	t.data.SetHeader(t.namespace, meta.Renderer.Header(t.namespace))
-
-	if len(t.data.Header) == 0 {
-		return fmt.Errorf("fail to list resource %s", t.gvr)
-	}
-
-	return nil
+	return t.data.Reconcile(ctx, meta.Renderer, oo)
 }
 
-func (t *Table) fireTableChanged(data *render.TableData) {
+func (t *Table) fireTableChanged(data *model1.TableData) {
 	var ll []TableListener
 	t.mx.RLock()
 	ll = t.listeners
@@ -311,44 +277,4 @@ func (t *Table) fireTableLoadFailed(err error) {
 	for _, l := range ll {
 		l.TableLoadFailed(err)
 	}
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error {
-	for i, o := range oo {
-		if err := re.Render(o, ns, &rr[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Generic represents a generic resource.
-type Generic interface {
-	// SetTable sets up the resource tabular definition.
-	SetTable(ns string, table *metav1.Table)
-
-	// Header returns a resource header.
-	Header(ns string) render.Header
-
-	// Render renders the resource.
-	Render(o interface{}, ns string, row *render.Row) error
-}
-
-func genericHydrate(ns string, table *metav1.Table, rr render.Rows, re Renderer) error {
-	gr, ok := re.(Generic)
-	if !ok {
-		return fmt.Errorf("expecting generic renderer but got %T", re)
-	}
-	gr.SetTable(ns, table)
-	for i, row := range table.Rows {
-		if err := gr.Render(row, ns, &rr[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

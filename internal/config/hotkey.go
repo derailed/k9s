@@ -4,7 +4,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/derailed/k9s/internal/config/data"
@@ -20,6 +22,7 @@ type HotKeys struct {
 // HotKey describes a K9s hotkey.
 type HotKey struct {
 	ShortCut    string `yaml:"shortCut"`
+	Override    bool   `yaml:"override"`
 	Description string `yaml:"description"`
 	Command     string `yaml:"command"`
 	KeepHistory bool   `yaml:"keepHistory"`
@@ -37,7 +40,7 @@ func (h HotKeys) Load(path string) error {
 	if err := h.LoadHotKeys(AppHotKeysFile); err != nil {
 		return err
 	}
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 
@@ -46,7 +49,7 @@ func (h HotKeys) Load(path string) error {
 
 // LoadHotKeys loads plugins from a given file.
 func (h HotKeys) LoadHotKeys(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 	bb, err := os.ReadFile(path)

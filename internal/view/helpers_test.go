@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/mock"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog"
@@ -149,12 +150,12 @@ func TestK9sEnv(t *testing.T) {
 		KubeConfig:   &cfg,
 	}
 	c := client.NewConfig(&flags)
-	h := render.Header{
+	h := model1.Header{
 		{Name: "A"},
 		{Name: "B"},
 		{Name: "C"},
 	}
-	r := render.Row{
+	r := model1.Row{
 		Fields: []string{"a1", "b1", "c1"},
 	}
 	env := defaultEnv(c, "fred/blee", h, &r)

@@ -6,6 +6,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/derailed/k9s/internal/client"
@@ -52,14 +53,13 @@ func (c *Config) ContextAliasesPath() string {
 }
 
 // ContextPluginsPath returns a context specific plugins file spec.
-func (c *Config) ContextPluginsPath() string {
+func (c *Config) ContextPluginsPath() (string, error) {
 	ct, err := c.K9s.ActiveContext()
 	if err != nil {
-		log.Error().Err(err).Msgf("active context load failed")
-		return ""
+		return "", err
 	}
 
-	return AppContextPluginsFile(ct.GetClusterName(), c.K9s.activeContextName)
+	return AppContextPluginsFile(ct.GetClusterName(), c.K9s.activeContextName), nil
 }
 
 // Refine the configuration based on cli args.
@@ -209,9 +209,9 @@ func (c *Config) Merge(c1 *Config) {
 }
 
 // Load loads K9s configuration from file.
-func (c *Config) Load(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := c.Save(); err != nil {
+func (c *Config) Load(path string, force bool) error {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		if err := c.Save(force); err != nil {
 			return err
 		}
 	}
@@ -234,12 +234,12 @@ func (c *Config) Load(path string) error {
 }
 
 // Save configuration to disk.
-func (c *Config) Save() error {
+func (c *Config) Save(force bool) error {
 	c.Validate()
-	if err := c.K9s.Save(); err != nil {
+	if err := c.K9s.Save(force); err != nil {
 		return err
 	}
-	if _, err := os.Stat(AppConfigFile); os.IsNotExist(err) {
+	if _, err := os.Stat(AppConfigFile); errors.Is(err, fs.ErrNotExist) {
 		return c.SaveFile(AppConfigFile)
 	}
 

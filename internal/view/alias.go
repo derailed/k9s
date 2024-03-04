@@ -47,10 +47,10 @@ func (a *Alias) aliasContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyAliases, a.App().command.alias)
 }
 
-func (a *Alias) bindKeys(aa ui.KeyActions) {
+func (a *Alias) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL)
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, true),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Resource", a.GetTable().SortColCmd("RESOURCE", true), false),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort Command", a.GetTable().SortColCmd("COMMAND", true), false),

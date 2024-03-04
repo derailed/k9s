@@ -80,10 +80,8 @@ func (s *StatefulSet) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (s *StatefulSet) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", s.GetTable().SortColCmd(readyCol, true), false),
-	})
+func (s *StatefulSet) bindKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyShiftR, ui.NewKeyAction("Sort Ready", s.GetTable().SortColCmd(readyCol, true), false))
 }
 
 func (s *StatefulSet) showPods(app *App, _ ui.Tabular, _ client.GVR, path string) {

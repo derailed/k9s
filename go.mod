@@ -11,7 +11,7 @@ require (
 	github.com/anchore/syft v0.100.0
 	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/derailed/popeye v0.11.2
+	github.com/derailed/popeye v0.11.3
 	github.com/derailed/tcell/v2 v2.3.1-rc.3
 	github.com/derailed/tview v0.8.3
 	github.com/fatih/color v1.16.0
@@ -22,7 +22,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
-	github.com/rs/zerolog v1.31.0
+	github.com/rs/zerolog v1.32.0
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
@@ -30,15 +30,15 @@ require (
 	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.14.0
-	k8s.io/api v0.29.1
-	k8s.io/apiextensions-apiserver v0.29.1
-	k8s.io/apimachinery v0.29.1
-	k8s.io/cli-runtime v0.29.1
-	k8s.io/client-go v0.29.1
+	helm.sh/helm/v3 v3.14.2
+	k8s.io/api v0.29.2
+	k8s.io/apiextensions-apiserver v0.29.2
+	k8s.io/apimachinery v0.29.2
+	k8s.io/cli-runtime v0.29.2
+	k8s.io/client-go v0.29.2
 	k8s.io/klog/v2 v2.120.1
-	k8s.io/kubectl v0.29.1
-	k8s.io/metrics v0.29.1
+	k8s.io/kubectl v0.29.2
+	k8s.io/metrics v0.29.2
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -313,8 +313,8 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gorm.io/gorm v1.25.5 // indirect
-	k8s.io/apiserver v0.29.1 // indirect
-	k8s.io/component-base v0.29.1 // indirect
+	k8s.io/apiserver v0.29.2 // indirect
+	k8s.io/component-base v0.29.2 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	modernc.org/libc v1.29.0 // indirect

@@ -3,6 +3,10 @@
 
 package render
 
+import (
+	"github.com/derailed/k9s/internal/model1"
+)
+
 // DecoratorFunc decorates a string.
 type DecoratorFunc func(string) string
 
@@ -19,11 +23,11 @@ func (Base) IsGeneric() bool {
 }
 
 // ColorerFunc colors a resource row.
-func (Base) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+func (Base) ColorerFunc() model1.ColorerFunc {
+	return model1.DefaultColorer
 }
 
 // Happy returns true if resource is happy, false otherwise.
-func (Base) Happy(_ string, _ Row) bool {
+func (Base) Happy(string, *model1.Row) bool {
 	return true
 }

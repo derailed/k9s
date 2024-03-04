@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 )
 
@@ -26,24 +27,24 @@ func (History) IsGeneric() bool {
 }
 
 // ColorerFunc colors a resource row.
-func (History) ColorerFunc() render.ColorerFunc {
-	return render.DefaultColorer
+func (History) ColorerFunc() model1.ColorerFunc {
+	return model1.DefaultColorer
 }
 
 // Header returns a header row.
-func (History) Header(_ string) render.Header {
-	return render.Header{
-		render.HeaderColumn{Name: "REVISION"},
-		render.HeaderColumn{Name: "STATUS"},
-		render.HeaderColumn{Name: "CHART"},
-		render.HeaderColumn{Name: "APP VERSION"},
-		render.HeaderColumn{Name: "DESCRIPTION"},
-		render.HeaderColumn{Name: "VALID", Wide: true},
+func (History) Header(_ string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "REVISION"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "CHART"},
+		model1.HeaderColumn{Name: "APP VERSION"},
+		model1.HeaderColumn{Name: "DESCRIPTION"},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
 	}
 }
 
 // Render renders a chart to screen.
-func (c History) Render(o interface{}, ns string, r *render.Row) error {
+func (c History) Render(o interface{}, ns string, r *model1.Row) error {
 	h, ok := o.(ReleaseRes)
 	if !ok {
 		return fmt.Errorf("expected HistoryRes, but got %T", o)
@@ -51,7 +52,7 @@ func (c History) Render(o interface{}, ns string, r *render.Row) error {
 
 	r.ID = client.FQN(h.Release.Namespace, h.Release.Name)
 	r.ID += ":" + strconv.Itoa(h.Release.Version)
-	r.Fields = render.Fields{
+	r.Fields = model1.Fields{
 		strconv.Itoa(h.Release.Version),
 		h.Release.Info.Status.String(),
 		h.Release.Chart.Metadata.Name + "-" + h.Release.Chart.Metadata.Version,

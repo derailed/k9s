@@ -6,6 +6,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,6 +30,7 @@ type Plugin struct {
 	Scopes      []string `yaml:"scopes"`
 	Args        []string `yaml:"args"`
 	ShortCut    string   `yaml:"shortCut"`
+	Override    bool     `yaml:"override"`
 	Pipes       []string `yaml:"pipes"`
 	Description string   `yaml:"description"`
 	Command     string   `yaml:"command"`
@@ -93,7 +95,7 @@ func (p Plugins) loadPluginDir(dir string) error {
 }
 
 func (p *Plugins) load(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 	bb, err := os.ReadFile(path)

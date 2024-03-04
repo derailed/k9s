@@ -80,7 +80,7 @@ type PodsMetricsMap map[string]*mv1beta1.PodMetrics
 // Authorizer checks what a user can or cannot do to a resource.
 type Authorizer interface {
 	// CanI returns true if the user can use these actions for a given resource.
-	CanI(ns, gvr string, verbs []string) (bool, error)
+	CanI(ns, gvr, n string, verbs []string) (bool, error)
 }
 
 // Connection represents a Kubernetes apiserver connection.

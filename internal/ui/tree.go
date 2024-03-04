@@ -18,7 +18,7 @@ type KeyListenerFunc func()
 type Tree struct {
 	*tview.TreeView
 
-	actions      KeyActions
+	actions      *KeyActions
 	selectedItem string
 	cmdBuff      *model.FishBuff
 	expandNodes  bool
@@ -31,7 +31,7 @@ func NewTree() *Tree {
 	return &Tree{
 		TreeView:    tview.NewTreeView(),
 		expandNodes: true,
-		actions:     make(KeyActions),
+		actions:     NewKeyActions(),
 		cmdBuff:     model.NewFishBuff('/', model.FilterBuffer),
 	}
 }
@@ -75,7 +75,7 @@ func (t *Tree) SetKeyListenerFn(f KeyListenerFunc) {
 }
 
 // Actions returns active menu bindings.
-func (t *Tree) Actions() KeyActions {
+func (t *Tree) Actions() *KeyActions {
 	return t.actions
 }
 
@@ -91,14 +91,14 @@ func (t *Tree) ExtraHints() map[string]string {
 
 // BindKeys binds default mnemonics.
 func (t *Tree) BindKeys() {
-	t.Actions().Add(KeyActions{
+	t.Actions().Merge(NewKeyActionsFromMap(KeyMap{
 		KeySpace: NewKeyAction("Expand/Collapse", t.noopCmd, true),
 		KeyX:     NewKeyAction("Expand/Collapse All", t.toggleCollapseCmd, true),
-	})
+	}))
 }
 
 func (t *Tree) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	if a, ok := t.actions[AsKey(evt)]; ok {
+	if a, ok := t.actions.Get(AsKey(evt)); ok {
 		return a.Action(evt)
 	}
 

@@ -74,7 +74,7 @@ func TestMakeSAR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.sar, makeSAR(u.ns, u.gvr.String()))
+			assert.Equal(t, u.sar, makeSAR(u.ns, u.gvr.String(), ""))
 		})
 	}
 }

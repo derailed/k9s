@@ -6,7 +6,6 @@ package data
 import (
 	"fmt"
 	"io"
-	"os"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -27,8 +26,19 @@ func NewConfig(ct *api.Context) *Config {
 	}
 }
 
+func (c *Config) Merge(c1 *Config) {
+	if c1 == nil {
+		return
+	}
+	if c.Context != nil && c1.Context != nil {
+		c.Context.merge(c1.Context)
+	}
+}
+
 // Validate ensures config is in norms.
 func (c *Config) Validate(conn client.Connection, ks KubeSettings) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 
 	if c.Context == nil {
 		c.Context = NewContext()
@@ -41,20 +51,4 @@ func (c *Config) Dump(w io.Writer) {
 	bb, _ := yaml.Marshal(&c)
 
 	fmt.Fprintf(w, "%s\n", string(bb))
-}
-
-// Save saves the config to disk.
-func (c *Config) Save(path string) error {
-	c.mx.RLock()
-	defer c.mx.RUnlock()
-
-	if err := EnsureDirPath(path, DefaultDirMod); err != nil {
-		return err
-	}
-	cfg, err := yaml.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(path, cfg, DefaultFileMod)
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,15 +25,15 @@ type ImageScan struct {
 }
 
 // ColorerFunc colors a resource row.
-func (c ImageScan) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, h, re)
+func (c ImageScan) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
 
-		sevCol := h.IndexOf(sevColName, true)
-		if sevCol == -1 {
+		idx, ok := h.IndexOf(sevColName, true)
+		if !ok {
 			return c
 		}
-		sev := strings.TrimSpace(re.Row.Fields[sevCol])
+		sev := strings.TrimSpace(re.Row.Fields[idx])
 		switch sev {
 		case vul.Sev1:
 			c = tcell.ColorRed
@@ -54,27 +55,27 @@ func (c ImageScan) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (ImageScan) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "SEVERITY"},
-		HeaderColumn{Name: "VULNERABILITY"},
-		HeaderColumn{Name: "IMAGE"},
-		HeaderColumn{Name: "LIBRARY"},
-		HeaderColumn{Name: "VERSION"},
-		HeaderColumn{Name: "FIXED-IN"},
-		HeaderColumn{Name: "TYPE"},
+func (ImageScan) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "SEVERITY"},
+		model1.HeaderColumn{Name: "VULNERABILITY"},
+		model1.HeaderColumn{Name: "IMAGE"},
+		model1.HeaderColumn{Name: "LIBRARY"},
+		model1.HeaderColumn{Name: "VERSION"},
+		model1.HeaderColumn{Name: "FIXED-IN"},
+		model1.HeaderColumn{Name: "TYPE"},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (is ImageScan) Render(o interface{}, name string, r *Row) error {
+func (is ImageScan) Render(o interface{}, name string, r *model1.Row) error {
 	res, ok := o.(ImageScanRes)
 	if !ok {
 		return fmt.Errorf("expected ImageScanRes, but got %T", o)
 	}
 
 	r.ID = fmt.Sprintf("%s|%s", res.Image, strings.Join(res.Row, "|"))
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		res.Row.Severity(),
 		res.Row.Vulnerability(),
 		res.Image,

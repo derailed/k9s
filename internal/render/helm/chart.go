@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,33 +25,33 @@ func (Chart) IsGeneric() bool {
 }
 
 // ColorerFunc colors a resource row.
-func (Chart) ColorerFunc() render.ColorerFunc {
-	return render.DefaultColorer
+func (Chart) ColorerFunc() model1.ColorerFunc {
+	return model1.DefaultColorer
 }
 
 // Header returns a header row.
-func (Chart) Header(_ string) render.Header {
-	return render.Header{
-		render.HeaderColumn{Name: "NAMESPACE"},
-		render.HeaderColumn{Name: "NAME"},
-		render.HeaderColumn{Name: "REVISION"},
-		render.HeaderColumn{Name: "STATUS"},
-		render.HeaderColumn{Name: "CHART"},
-		render.HeaderColumn{Name: "APP VERSION"},
-		render.HeaderColumn{Name: "VALID", Wide: true},
-		render.HeaderColumn{Name: "AGE", Time: true},
+func (Chart) Header(_ string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "REVISION"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "CHART"},
+		model1.HeaderColumn{Name: "APP VERSION"},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a chart to screen.
-func (c Chart) Render(o interface{}, ns string, r *render.Row) error {
+func (c Chart) Render(o interface{}, ns string, r *model1.Row) error {
 	h, ok := o.(ReleaseRes)
 	if !ok {
 		return fmt.Errorf("expected ReleaseRes, but got %T", o)
 	}
 
 	r.ID = client.FQN(h.Release.Namespace, h.Release.Name)
-	r.Fields = render.Fields{
+	r.Fields = model1.Fields{
 		h.Release.Namespace,
 		h.Release.Name,
 		strconv.Itoa(h.Release.Version),

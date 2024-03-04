@@ -30,10 +30,8 @@ func NewValueExtender(r ResourceViewer) ResourceViewer {
 	return &p
 }
 
-func (v *ValueExtender) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyV: ui.NewKeyAction("Values", v.valuesCmd, true),
-	})
+func (v *ValueExtender) bindKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyV, ui.NewKeyAction("Values", v.valuesCmd, true))
 }
 
 func (v *ValueExtender) valuesCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -72,10 +70,7 @@ func showValues(ctx context.Context, app *App, path string, gvr client.GVR) {
 	}
 
 	v := NewLiveView(app, "Values", vm)
-	v.actions.Add(ui.KeyActions{
-		ui.KeyV: ui.NewKeyAction("Toggle All Values", toggleValuesCmd, true),
-	})
-
+	v.actions.Add(ui.KeyV, ui.NewKeyAction("Toggle All Values", toggleValuesCmd, true))
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
 	}

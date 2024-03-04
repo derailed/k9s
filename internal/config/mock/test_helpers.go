@@ -4,7 +4,9 @@
 package mock
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -21,7 +23,7 @@ import (
 )
 
 func EnsureDir(d string) error {
-	if _, err := os.Stat(d); os.IsNotExist(err) {
+	if _, err := os.Stat(d); errors.Is(err, fs.ErrNotExist) {
 		return os.MkdirAll(d, 0700)
 	}
 	if err := os.RemoveAll(d); err != nil {
@@ -115,7 +117,7 @@ func NewMockConnectionWithContext(ct string) mockConnection {
 	return mockConnection{ct: ct}
 }
 
-func (m mockConnection) CanI(ns, gvr string, verbs []string) (bool, error) {
+func (m mockConnection) CanI(ns, gvr, n string, verbs []string) (bool, error) {
 	return true, nil
 }
 func (m mockConnection) Config() *client.Config {

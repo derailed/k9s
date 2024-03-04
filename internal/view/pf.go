@@ -51,8 +51,8 @@ func (p *PortForward) portForwardContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (p *PortForward) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (p *PortForward) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("View Benchmarks", p.showBenchCmd, true),
 		ui.KeyB:        ui.NewKeyAction("Benchmark Run/Stop", p.toggleBenchCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),

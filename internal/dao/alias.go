@@ -37,6 +37,10 @@ func NewAlias(f Factory) *Alias {
 	return &a
 }
 
+func (a *Alias) AliasesFor(s string) []string {
+	return a.Aliases.AliasesFor(s)
+}
+
 // Check verifies an alias is defined for this command.
 func (a *Alias) Check(cmd string) (string, bool) {
 	return a.Aliases.Get(cmd)

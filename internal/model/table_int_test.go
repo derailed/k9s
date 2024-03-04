@@ -13,11 +13,11 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
@@ -35,9 +35,9 @@ func TestTableReconcile(t *testing.T) {
 	err := ta.reconcile(ctx)
 	assert.Nil(t, err)
 	data := ta.Peek()
-	assert.Equal(t, 23, len(data.Header))
-	assert.Equal(t, 1, len(data.RowEvents))
-	assert.Equal(t, client.NamespaceAll, data.Namespace)
+	assert.Equal(t, 23, data.HeaderCount())
+	assert.Equal(t, 1, data.RowCount())
+	assert.Equal(t, client.NamespaceAll, data.GetNamespace())
 }
 
 func TestTableList(t *testing.T) {
@@ -66,12 +66,10 @@ func TestTableGet(t *testing.T) {
 }
 
 func TestTableMeta(t *testing.T) {
-	pd := dao.Pod{}
-	pd.Init(makeFactory(), client.NewGVR("v1/pods"))
 	uu := map[string]struct {
 		gvr      string
 		accessor dao.Accessor
-		renderer Renderer
+		renderer model1.Renderer
 	}{
 		"generic": {
 			gvr:      "containers",
@@ -84,9 +82,9 @@ func TestTableMeta(t *testing.T) {
 			renderer: &render.Node{},
 		},
 		"table": {
-			gvr:      "v1/configmaps",
+			gvr:      "v1/events",
 			accessor: &dao.Table{},
-			renderer: &render.Generic{},
+			renderer: &render.Event{},
 		},
 	}
 
@@ -98,44 +96,6 @@ func TestTableMeta(t *testing.T) {
 		assert.Equal(t, u.accessor, m.DAO)
 		assert.Equal(t, u.renderer, m.Renderer)
 	}
-}
-
-func TestTableHydrate(t *testing.T) {
-	oo := []runtime.Object{
-		&render.PodWithMetrics{Raw: load(t, "p1")},
-	}
-	rr := make([]render.Row, 1)
-
-	assert.Nil(t, hydrate("blee", oo, rr, render.Pod{}))
-	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, 23, len(rr[0].Fields))
-}
-
-func TestTableGenericHydrate(t *testing.T) {
-	raw := raw(t, "p1")
-	tt := metav1beta1.Table{
-		ColumnDefinitions: []metav1beta1.TableColumnDefinition{
-			{Name: "c1"},
-			{Name: "c2"},
-		},
-		Rows: []metav1beta1.TableRow{
-			{
-				Cells:  []interface{}{"fred", 10},
-				Object: runtime.RawExtension{Raw: raw},
-			},
-			{
-				Cells:  []interface{}{"blee", 20},
-				Object: runtime.RawExtension{Raw: raw},
-			},
-		},
-	}
-	rr := make([]render.Row, 2)
-	re := render.Generic{}
-	re.SetTable("blee", &tt)
-
-	assert.Nil(t, genericHydrate("blee", &tt, rr, &re))
-	assert.Equal(t, 2, len(rr))
-	assert.Equal(t, 3, len(rr[0].Fields))
 }
 
 // ----------------------------------------------------------------------------
@@ -160,12 +120,6 @@ func load(t *testing.T, n string) *unstructured.Unstructured {
 	err = json.Unmarshal(raw, &o)
 	assert.Nil(t, err)
 	return &o
-}
-
-func raw(t *testing.T, n string) []byte {
-	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
-	assert.Nil(t, err)
-	return raw
 }
 
 // ----------------------------------------------------------------------------

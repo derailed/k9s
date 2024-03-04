@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,32 +31,32 @@ type Node struct {
 }
 
 // Header returns a header row.
-func (Node) Header(_ string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "ROLE"},
-		HeaderColumn{Name: "ARCH", Wide: true},
-		HeaderColumn{Name: "TAINTS"},
-		HeaderColumn{Name: "VERSION"},
-		HeaderColumn{Name: "KERNEL", Wide: true},
-		HeaderColumn{Name: "INTERNAL-IP", Wide: true},
-		HeaderColumn{Name: "EXTERNAL-IP", Wide: true},
-		HeaderColumn{Name: "PODS", Align: tview.AlignRight},
-		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "CPU/A", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (Node) Header(string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "ROLE"},
+		model1.HeaderColumn{Name: "ARCH", Wide: true},
+		model1.HeaderColumn{Name: "TAINTS"},
+		model1.HeaderColumn{Name: "VERSION"},
+		model1.HeaderColumn{Name: "KERNEL", Wide: true},
+		model1.HeaderColumn{Name: "INTERNAL-IP", Wide: true},
+		model1.HeaderColumn{Name: "EXTERNAL-IP", Wide: true},
+		model1.HeaderColumn{Name: "PODS", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "CPU/A", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n Node) Render(o interface{}, ns string, r *Row) error {
+func (n Node) Render(o interface{}, ns string, r *model1.Row) error {
 	oo, ok := o.(*NodeWithMetrics)
 	if !ok {
 		return fmt.Errorf("expected *NodeAndMetrics, but got %T", o)
@@ -87,7 +88,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		podCount = NAValue
 	}
 	r.ID = client.FQN("", na)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		no.Name,
 		join(statuses, ","),
 		join(roles, ","),

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,10 +24,10 @@ func TestPortForwardRender(t *testing.T) {
 	}
 
 	var p render.PortForward
-	var r render.Row
+	var r model1.Row
 	assert.Nil(t, p.Render(o, "fred", &r))
 	assert.Equal(t, "blee/fred", r.ID)
-	assert.Equal(t, render.Fields{
+	assert.Equal(t, model1.Fields{
 		"blee",
 		"fred",
 		"co",

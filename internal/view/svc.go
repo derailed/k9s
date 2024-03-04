@@ -46,8 +46,8 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 // Protocol...
 
-func (s *Service) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (s *Service) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyB:      ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
 	})

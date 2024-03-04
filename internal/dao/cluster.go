@@ -38,7 +38,7 @@ var (
 	_ RefScanner = (*DaemonSet)(nil)
 	_ RefScanner = (*Job)(nil)
 	_ RefScanner = (*CronJob)(nil)
-	_ RefScanner = (*Pod)(nil)
+	// _ RefScanner = (*Pod)(nil)
 )
 
 func scanners() map[string]RefScanner {
@@ -48,7 +48,7 @@ func scanners() map[string]RefScanner {
 		"apps/v1/daemonsets":   &DaemonSet{},
 		"batch/v1/jobs":        &Job{},
 		"batch/v1/cronjobs":    &CronJob{},
-		"v1/pods":              &Pod{},
+		// "v1/pods":              &Pod{},
 	}
 }
 

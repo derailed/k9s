@@ -1,28 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package render
+package model1
 
 import (
+	"fmt"
 	"sort"
 )
 
-const (
-	// EventUnchanged notifies listener resource has not changed.
-	EventUnchanged ResEvent = 1 << iota
-
-	// EventAdd notifies listener of a resource was added.
-	EventAdd
-
-	// EventUpdate notifies listener of a resource updated.
-	EventUpdate
-
-	// EventDelete  notifies listener of a resource was deleted.
-	EventDelete
-
-	// EventClear the stack was reset.
-	EventClear
-)
+type ReRangeFn func(int, RowEvent) bool
 
 // ResEvent represents a resource event.
 type ResEvent int
@@ -103,13 +89,58 @@ func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
 
 // ----------------------------------------------------------------------------
 
+type reIndex map[string]int
+
 // RowEvents a collection of row events.
-type RowEvents []RowEvent
+type RowEvents struct {
+	events []RowEvent
+	index  reIndex
+}
+
+func NewRowEvents(size int) *RowEvents {
+	return &RowEvents{
+		events: make([]RowEvent, 0, size),
+		index:  make(reIndex, size),
+	}
+}
+
+func NewRowEventsWithEvts(ee ...RowEvent) *RowEvents {
+	re := NewRowEvents(len(ee))
+	for _, e := range ee {
+		re.Add(e)
+	}
+
+	return re
+}
+
+func (r *RowEvents) reindex() {
+	for i, e := range r.events {
+		r.index[e.Row.ID] = i
+	}
+}
+
+func (r *RowEvents) At(i int) (RowEvent, bool) {
+	if i < 0 || i > len(r.events) {
+		return RowEvent{}, false
+	}
+
+	return r.events[i], true
+}
+
+func (r *RowEvents) Set(i int, re RowEvent) {
+	r.events[i] = re
+	r.index[re.Row.ID] = i
+}
+
+func (r *RowEvents) Add(re RowEvent) {
+	r.events = append(r.events, re)
+	r.index[re.Row.ID] = len(r.events) - 1
+}
 
 // ExtractHeaderLabels extract header labels.
-func (r RowEvents) ExtractHeaderLabels(labelCol int) []string {
+func (r *RowEvents) ExtractHeaderLabels(labelCol int) []string {
 	ll := make([]string, 0, 10)
-	for _, re := range r {
+	for _, re := range r.events {
 		ll = append(ll, re.ExtractHeaderLabels(labelCol)...)
 	}
 
@@ -117,32 +148,32 @@ func (r RowEvents) ExtractHeaderLabels(labelCol int) []string {
 }
 
 // Labelize converts labels into a row event.
-func (r RowEvents) Labelize(cols []int, labelCol int, labels []string) RowEvents {
-	out := make(RowEvents, 0, len(r))
-	for _, re := range r {
+func (r *RowEvents) Labelize(cols []int, labelCol int, labels []string) *RowEvents {
+	out := make([]RowEvent, 0, len(r.events))
+	for _, re := range r.events {
 		out = append(out, re.Labelize(cols, labelCol, labels))
 	}
 
-	return out
+	return NewRowEventsWithEvts(out...)
 }
 
 // Customize returns custom row events based on columns layout.
-func (r RowEvents) Customize(cols []int) RowEvents {
-	ee := make(RowEvents, 0, len(cols))
-	for _, re := range r {
+func (r *RowEvents) Customize(cols []int) *RowEvents {
+	ee := make([]RowEvent, 0, len(cols))
+	for _, re := range r.events {
 		ee = append(ee, re.Customize(cols))
 	}
-	return ee
+
+	return NewRowEventsWithEvts(ee...)
 }
 
 // Diff returns true if the event changed.
-func (r RowEvents) Diff(re RowEvents, ageCol int) bool {
-	if len(r) != len(re) {
+func (r *RowEvents) Diff(re *RowEvents, ageCol int) bool {
+	if len(r.events) != len(re.events) {
 		return true
 	}
-
-	for i := range r {
-		if r[i].Diff(re[i], ageCol) {
+	for i := range r.events {
+		if r.events[i].Diff(re.events[i], ageCol) {
 			return true
 		}
 	}
@@ -150,53 +181,80 @@ func (r RowEvents) Diff(re RowEvents, ageCol int) bool {
 	return false
 }
 
-// Clone returns a rowevents deep copy.
-func (r RowEvents) Clone() RowEvents {
-	res := make(RowEvents, len(r))
-	for i, re := range r {
-		res[i] = re.Clone()
+// Clone returns a deep copy.
+func (r *RowEvents) Clone() *RowEvents {
+	re := make([]RowEvent, 0, len(r.events))
+	for _, e := range r.events {
+		re = append(re, e.Clone())
 	}
 
-	return res
+	return NewRowEventsWithEvts(re...)
 }
 
 // Upsert add or update a row if it exists.
-func (r RowEvents) Upsert(re RowEvent) RowEvents {
+func (r *RowEvents) Upsert(re RowEvent) {
 	if idx, ok := r.FindIndex(re.Row.ID); ok {
-		r[idx] = re
+		r.events[idx] = re
 	} else {
-		r = append(r, re)
+		r.Add(re)
 	}
-	return r
 }
 
 // Delete removes an element by id.
-func (r RowEvents) Delete(id string) RowEvents {
-	victim, ok := r.FindIndex(id)
+func (r *RowEvents) Delete(fqn string) error {
+	victim, ok := r.FindIndex(fqn)
 	if !ok {
-		return r
+		return fmt.Errorf("unable to delete row with fqn: %q", fqn)
 	}
-	return append(r[0:victim], r[victim+1:]...)
+	r.events = append(r.events[0:victim], r.events[victim+1:]...)
+	delete(r.index, fqn)
+	r.reindex()
+
+	return nil
+}
+
+func (r *RowEvents) Len() int {
+	return len(r.events)
+}
+
+func (r *RowEvents) Empty() bool {
+	return len(r.events) == 0
 }
 
 // Clear delete all row events.
-func (r RowEvents) Clear() RowEvents {
-	return RowEvents{}
+func (r *RowEvents) Clear() {
+	r.events = r.events[:0]
+	for k := range r.index {
+		delete(r.index, k)
+	}
+}
+
+func (r *RowEvents) Range(f ReRangeFn) {
+	for i, e := range r.events {
+		if !f(i, e) {
+			return
+		}
+	}
+}
+
+func (r *RowEvents) Get(id string) (RowEvent, bool) {
+	i, ok := r.index[id]
+	if !ok {
+		return RowEvent{}, false
+	}
+
+	return r.At(i)
 }
 
 // FindIndex locates a row index by id. Returns false is not found.
-func (r RowEvents) FindIndex(id string) (int, bool) {
-	for i, re := range r {
-		if re.Row.ID == id {
-			return i, true
-		}
-	}
+func (r *RowEvents) FindIndex(id string) (int, bool) {
+	i, ok := r.index[id]
 
-	return 0, false
+	return i, ok
 }
 
 // Sort rows based on column index and order.
-func (r RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, asc bool) {
+func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, asc bool) {
 	if sortCol == -1 {
 		return
 	}
@@ -211,13 +269,14 @@ func (r RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, 
 		IsCapacity: isCapacity,
 	}
 	sort.Sort(t)
+	r.reindex()
 }
 
 // ----------------------------------------------------------------------------
 
 // RowEventSorter sorts row events by a given colon.
 type RowEventSorter struct {
-	Events     RowEvents
+	Events     *RowEvents
 	Index      int
 	NS         string
 	IsNumber   bool
@@ -227,16 +286,16 @@ type RowEventSorter struct {
 }
 
 func (r RowEventSorter) Len() int {
-	return len(r.Events)
+	return len(r.Events.events)
 }
 
 func (r RowEventSorter) Swap(i, j int) {
-	r.Events[i], r.Events[j] = r.Events[j], r.Events[i]
+	r.Events.events[i], r.Events.events[j] = r.Events.events[j], r.Events.events[i]
 }
 
 func (r RowEventSorter) Less(i, j int) bool {
-	f1, f2 := r.Events[i].Row.Fields, r.Events[j].Row.Fields
-	id1, id2 := r.Events[i].Row.ID, r.Events[j].Row.ID
+	f1, f2 := r.Events.events[i].Row.Fields, r.Events.events[j].Row.Fields
+	id1, id2 := r.Events.events[i].Row.ID, r.Events.events[j].Row.ID
 	less := Less(r.IsNumber, r.IsDuration, r.IsCapacity, id1, id2, f1[r.Index], f2[r.Index])
 	if r.Asc {
 		return less

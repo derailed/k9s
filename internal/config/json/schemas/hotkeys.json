@@ -10,6 +10,7 @@
         "type": "object",
         "properties": {
           "shortCut": {"type": "string"},
+          "override": { "type": "boolean" },
           "description": {"type": "string"},
           "command": {"type": "string"},
           "keepHistory": {"type": "boolean"}

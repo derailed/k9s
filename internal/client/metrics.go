@@ -93,7 +93,7 @@ func (m *MetricsServer) checkAccess(ns, gvr, msg string) error {
 		return errors.New("no metrics-server detected on cluster")
 	}
 
-	auth, err := m.CanI(ns, gvr, ListAccess)
+	auth, err := m.CanI(ns, gvr, "", ListAccess)
 	if err != nil {
 		return err
 	}

@@ -15,6 +15,7 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 var (
@@ -31,7 +32,7 @@ type HelmChart struct {
 
 // List returns a collection of resources.
 func (h *HelmChart) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	cfg, err := ensureHelmConfig(h.Client(), ns)
+	cfg, err := ensureHelmConfig(h.Client().Config().Flags(), ns)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +56,7 @@ func (h *HelmChart) List(ctx context.Context, ns string) ([]runtime.Object, erro
 // Get returns a resource.
 func (h *HelmChart) Get(_ context.Context, path string) (runtime.Object, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := ensureHelmConfig(h.Client(), ns)
+	cfg, err := ensureHelmConfig(h.Client().Config().Flags(), ns)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +71,7 @@ func (h *HelmChart) Get(_ context.Context, path string) (runtime.Object, error) 
 // GetValues returns values for a release
 func (h *HelmChart) GetValues(path string, allValues bool) ([]byte, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := ensureHelmConfig(h.Client(), ns)
+	cfg, err := ensureHelmConfig(h.Client().Config().Flags(), ns)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (h *HelmChart) GetValues(path string, allValues bool) ([]byte, error) {
 // Describe returns the chart notes.
 func (h *HelmChart) Describe(path string) (string, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := ensureHelmConfig(h.Client(), ns)
+	cfg, err := ensureHelmConfig(h.Client().Config().Flags(), ns)
 	if err != nil {
 		return "", err
 	}
@@ -102,7 +103,7 @@ func (h *HelmChart) Describe(path string) (string, error) {
 // ToYAML returns the chart manifest.
 func (h *HelmChart) ToYAML(path string, showManaged bool) (string, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := ensureHelmConfig(h.Client(), ns)
+	cfg, err := ensureHelmConfig(h.Client().Config().Flags(), ns)
 	if err != nil {
 		return "", err
 	}
@@ -122,10 +123,13 @@ func (h *HelmChart) Delete(_ context.Context, path string, _ *metav1.DeletionPro
 // Uninstall uninstalls a HelmChart.
 func (h *HelmChart) Uninstall(path string, keepHist bool) error {
 	ns, n := client.Namespaced(path)
-	cfg, err := ensureHelmConfig(h.Client(), ns)
+	flags := h.Client().Config().Flags()
+	flags.Namespace = &ns
+	cfg, err := ensureHelmConfig(flags, ns)
 	if err != nil {
 		return err
 	}
+
 	u := action.NewUninstall(cfg)
 	u.KeepHistory = keepHist
 	res, err := u.Run(n)
@@ -140,13 +144,13 @@ func (h *HelmChart) Uninstall(path string, keepHist bool) error {
 }
 
 // ensureHelmConfig return a new configuration.
-func ensureHelmConfig(c client.Connection, ns string) (*action.Configuration, error) {
+func ensureHelmConfig(flags *genericclioptions.ConfigFlags, ns string) (*action.Configuration, error) {
 	cfg := new(action.Configuration)
-	err := cfg.Init(c.Config().Flags(), ns, os.Getenv("HELM_DRIVER"), helmLogger)
+	err := cfg.Init(flags, ns, os.Getenv("HELM_DRIVER"), helmLogger)
 
 	return cfg, err
 }
 
-func helmLogger(s string, args ...interface{}) {
-	log.Debug().Msgf("%s %v", s, args)
+func helmLogger(fmt string, args ...interface{}) {
+	log.Debug().Msgf("[Helm] "+fmt, args...)
 }

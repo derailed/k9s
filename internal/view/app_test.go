@@ -15,5 +15,5 @@ func TestAppNew(t *testing.T) {
 	a := view.NewApp(mock.NewMockConfig())
 	_ = a.Init("blee", 10)
 
-	assert.Equal(t, 11, len(a.GetActions()))
+	assert.Equal(t, 12, a.GetActions().Len())
 }

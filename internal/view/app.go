@@ -243,14 +243,14 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) bindKeys() {
-	a.AddActions(ui.KeyActions{
+	a.AddActions(ui.NewKeyActionsFromMap(ui.KeyMap{
 		ui.KeyShift9:   ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
 		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
-	})
+	}))
 }
 
 func (a *App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
@@ -434,9 +434,6 @@ func (a *App) switchNS(ns string) error {
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		return err
 	}
-	if err := a.Config.Save(); err != nil {
-		return err
-	}
 
 	return a.factory.SetActiveNS(ns)
 }
@@ -486,8 +483,10 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 				return err
 			}
 		}
-		if err := a.Config.Save(); err != nil {
+		if err := a.Config.Save(true); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
+		} else {
+			log.Debug().Msgf("Saved context config for: %q", name)
 		}
 		a.initFactory(ns)
 		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
@@ -516,6 +515,10 @@ func (a *App) BailOut() {
 			log.Error().Msgf("Bailing out %v", err)
 		}
 	}()
+
+	if err := a.Config.Save(true); err != nil {
+		log.Error().Err(err).Msg("config save failed!")
+	}
 
 	if err := nukeK9sShell(a); err != nil {
 		log.Error().Err(err).Msgf("nuking k9s shell pod")
@@ -718,7 +721,6 @@ func (a *App) inject(c model.Component, clearStack bool) error {
 	if clearStack {
 		a.Content.Stack.Clear()
 	}
-
 	a.Content.Push(c)
 
 	return nil

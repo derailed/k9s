@@ -19,7 +19,7 @@ import (
 type Cow struct {
 	*tview.TextView
 
-	actions ui.KeyActions
+	actions *ui.KeyActions
 	app     *App
 	says    string
 }
@@ -29,7 +29,7 @@ func NewCow(app *App, says string) *Cow {
 	return &Cow{
 		TextView: tview.NewTextView(),
 		app:      app,
-		actions:  make(ui.KeyActions),
+		actions:  ui.NewKeyActions(),
 		says:     says,
 	}
 }
@@ -88,13 +88,11 @@ func cowTalk(says string, w int) string {
 }
 
 func (c *Cow) bindKeys() {
-	c.actions.Set(ui.KeyActions{
-		tcell.KeyEscape: ui.NewKeyAction("Back", c.resetCmd, false),
-	})
+	c.actions.Add(tcell.KeyEscape, ui.NewKeyAction("Back", c.resetCmd, false))
 }
 
 func (c *Cow) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	if a, ok := c.actions[ui.AsKey(evt)]; ok {
+	if a, ok := c.actions.Get(ui.AsKey(evt)); ok {
 		return a.Action(evt)
 	}
 
@@ -113,7 +111,7 @@ func (c *Cow) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 // Actions returns menu actions.
-func (c *Cow) Actions() ui.KeyActions {
+func (c *Cow) Actions() *ui.KeyActions {
 	return c.actions
 }
 

@@ -134,7 +134,7 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 
-	if err := k9sCfg.Load(config.AppConfigFile); err != nil {
+	if err := k9sCfg.Load(config.AppConfigFile, false); err != nil {
 		errs = errors.Join(errs, err)
 	}
 	k9sCfg.K9s.Override(k9sFlags)
@@ -151,7 +151,7 @@ func loadConfiguration() (*config.Config, error) {
 	}
 
 	log.Info().Msg("✅ Kubernetes connectivity")
-	if err := k9sCfg.Save(); err != nil {
+	if err := k9sCfg.Save(false); err != nil {
 		log.Error().Err(err).Msg("Config save")
 		errs = errors.Join(errs, err)
 	}

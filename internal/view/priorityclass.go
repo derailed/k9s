@@ -25,10 +25,8 @@ func NewPriorityClass(gvr client.GVR) ResourceViewer {
 	return &s
 }
 
-func (s *PriorityClass) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyU: ui.NewKeyAction("UsedBy", s.refCmd, true),
-	})
+func (s *PriorityClass) bindKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyU, ui.NewKeyAction("UsedBy", s.refCmd, true))
 }
 
 func (s *PriorityClass) refCmd(evt *tcell.EventKey) *tcell.EventKey {

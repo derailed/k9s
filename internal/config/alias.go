@@ -4,7 +4,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"sync"
 
@@ -31,6 +33,20 @@ func NewAliases() *Aliases {
 	return &Aliases{
 		Alias: make(Alias, 50),
 	}
+}
+
+func (a *Aliases) AliasesFor(s string) []string {
+	aa := make([]string, 0, 10)
+
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+	for k, v := range a.Alias {
+		if v == s {
+			aa = append(aa, k)
+		}
+	}
+
+	return aa
 }
 
 // Keys returns all aliases keys.
@@ -122,7 +138,7 @@ func (a *Aliases) LoadFile(path string) error {
 	if path == "" {
 		return nil
 	}
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 

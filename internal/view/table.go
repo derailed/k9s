@@ -93,7 +93,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if a, ok := t.Actions()[ui.AsKey(evt)]; ok && !t.app.Content.IsTopDialog() {
+	if a, ok := t.Actions().Get(ui.AsKey(evt)); ok && !t.app.Content.IsTopDialog() {
 		return a.Action(evt)
 	}
 
@@ -119,7 +119,7 @@ func (t *Table) EnvFn() EnvFunc {
 func (t *Table) defaultEnv() Env {
 	path := t.GetSelectedItem()
 	row := t.GetSelectedRow(path)
-	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header, row)
+	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header(), row)
 	env["FILTER"] = t.CmdBuff().GetText()
 	if env["FILTER"] == "" {
 		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)
@@ -186,7 +186,7 @@ func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) bindKeys() {
-	t.Actions().Add(ui.KeyActions{
+	t.Actions().Bulk(ui.KeyMap{
 		ui.KeyHelp:             ui.NewKeyAction("Help", t.App().helpCmd, true),
 		ui.KeySpace:            ui.NewSharedKeyAction("Mark", t.markCmd, false),
 		tcell.KeyCtrlSpace:     ui.NewSharedKeyAction("Mark Range", t.markSpanCmd, false),
@@ -220,7 +220,22 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		t.app.Flash().Err(err)
 		return nil
 	}
-	t.app.Flash().Info("Current selection copied to clipboard...")
+	t.app.Flash().Info("Resource name copied to clipboard...")
+
+	return nil
+}
+
+func (t *Table) cpNsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := t.GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+	ns, _ := client.Namespaced(path)
+	if err := clipboardWrite(ns); err != nil {
+		t.app.Flash().Err(err)
+		return nil
+	}
+	t.app.Flash().Info("Resource namespace copied to clipboard...")
 
 	return nil
 }

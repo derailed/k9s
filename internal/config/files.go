@@ -5,6 +5,8 @@ package config
 
 import (
 	_ "embed"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -238,7 +240,7 @@ func EnsureBenchmarksCfgFile(cluster, context string) (string, error) {
 	if err := data.EnsureDirPath(f, data.DefaultDirMod); err != nil {
 		return "", err
 	}
-	if _, err := os.Stat(f); os.IsNotExist(err) {
+	if _, err := os.Stat(f); errors.Is(err, fs.ErrNotExist) {
 		return f, os.WriteFile(f, benchmarkTpl, data.DefaultFileMod)
 	}
 
@@ -251,7 +253,7 @@ func EnsureAliasesCfgFile() (string, error) {
 	if err := data.EnsureDirPath(f, data.DefaultDirMod); err != nil {
 		return "", err
 	}
-	if _, err := os.Stat(f); os.IsNotExist(err) {
+	if _, err := os.Stat(f); errors.Is(err, fs.ErrNotExist) {
 		return f, os.WriteFile(f, aliasesTpl, data.DefaultFileMod)
 	}
 
@@ -264,7 +266,7 @@ func EnsureHotkeysCfgFile() (string, error) {
 	if err := data.EnsureDirPath(f, data.DefaultDirMod); err != nil {
 		return "", err
 	}
-	if _, err := os.Stat(f); os.IsNotExist(err) {
+	if _, err := os.Stat(f); errors.Is(err, fs.ErrNotExist) {
 		return f, os.WriteFile(f, hotkeysTpl, data.DefaultFileMod)
 	}
 

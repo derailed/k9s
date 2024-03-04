@@ -58,6 +58,14 @@ func InNSList(nn []interface{}, ns string) bool {
 func MustK9sUser() string {
 	usr, err := user.Current()
 	if err != nil {
+		envUsr := os.Getenv("USER")
+		if envUsr != "" {
+			return envUsr
+		}
+		envUsr = os.Getenv("LOGNAME")
+		if envUsr != "" {
+			return envUsr
+		}
 		log.Fatal().Err(err).Msg("Die on retrieving user info")
 	}
 	return usr.Username

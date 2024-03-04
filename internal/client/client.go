@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -84,7 +85,7 @@ func (a *APIClient) ConnectionOK() bool {
 	return a.connOK
 }
 
-func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
+func makeSAR(ns, gvr, name string) *authorizationv1.SelfSubjectAccessReview {
 	if ns == ClusterScope {
 		ns = BlankNamespace
 	}
@@ -98,13 +99,14 @@ func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 				Version:     res.Version,
 				Resource:    res.Resource,
 				Subresource: spec.SubResource(),
+				Name:        name,
 			},
 		},
 	}
 }
 
-func makeCacheKey(ns, gvr string, vv []string) string {
-	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
+func makeCacheKey(ns, gvr, n string, vv []string) string {
+	return ns + ":" + gvr + ":" + n + "::" + strings.Join(vv, ",")
 }
 
 // ActiveContext returns the current context name.
@@ -142,14 +144,14 @@ func (a *APIClient) clearCache() {
 }
 
 // CanI checks if user has access to a certain resource.
-func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
+func (a *APIClient) CanI(ns, gvr, name string, verbs []string) (auth bool, err error) {
 	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
 	if IsClusterWide(ns) {
 		ns = BlankNamespace
 	}
-	key := makeCacheKey(ns, gvr, verbs)
+	key := makeCacheKey(ns, gvr, name, verbs)
 	if v, ok := a.cache.Get(key); ok {
 		if auth, ok = v.(bool); ok {
 			return auth, nil
@@ -160,7 +162,7 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	client, sar := dial.AuthorizationV1().SelfSubjectAccessReviews(), makeSAR(ns, gvr)
+	client, sar := dial.AuthorizationV1().SelfSubjectAccessReviews(), makeSAR(ns, gvr, name)
 
 	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
 	defer cancel()
@@ -210,64 +212,26 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 	return info, nil
 }
 
-func (a *APIClient) IsValidNamespace(ns string) bool {
-	if IsClusterWide(ns) || ns == NotNamespaced {
-		return true
+func (a *APIClient) IsValidNamespace(n string) bool {
+	ok, err := a.isValidNamespace(n)
+	if err != nil {
+		log.Warn().Err(err).Msgf("namespace validation failed for: %q", n)
 	}
 
-	ok, err := a.CanI(ClusterScope, "v1/namespaces", []string{ListVerb})
-	if ok && err == nil {
-		nn, _ := a.ValidNamespaceNames()
-		_, ok = nn[ns]
-		return ok
-	}
-
-	ok, err = a.isValidNamespace(ns)
-	if ok && err == nil {
-		return ok
-	}
-	log.Warn().Err(err).Msgf("namespace validation failed for: %q", ns)
-
-	return false
-}
-
-func (a *APIClient) cachedNamespaceNames() NamespaceNames {
-	cns, ok := a.cache.Get(cacheNSKey)
-	if !ok {
-		return make(NamespaceNames)
-	}
-
-	return cns.(NamespaceNames)
+	return ok
 }
 
 func (a *APIClient) isValidNamespace(n string) (bool, error) {
 	if IsClusterWide(n) || n == NotNamespaced {
 		return true, nil
 	}
-
-	if a == nil {
-		return false, errors.New("invalid client")
-	}
-
-	cnss := a.cachedNamespaceNames()
-	if _, ok := cnss[n]; ok {
-		return true, nil
-	}
-
-	dial, err := a.Dial()
+	nn, err := a.ValidNamespaceNames()
 	if err != nil {
 		return false, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
-	defer cancel()
-	_, err = dial.CoreV1().Namespaces().Get(ctx, n, metav1.GetOptions{})
-	if err != nil {
-		return false, err
-	}
-	cnss[n] = struct{}{}
-	a.cache.Add(cacheNSKey, cnss, cacheExpiry)
+	_, ok := nn[n]
 
-	return true, nil
+	return ok, nil
 }
 
 // ValidNamespaceNames returns all available namespaces.
@@ -281,6 +245,12 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 			return nss, nil
 		}
 	}
+
+	ok, err := a.CanI(ClusterScope, "v1/namespaces", "", []string{ListVerb})
+	if !ok || err != nil {
+		return nil, fmt.Errorf("user not authorized to list all namespaces")
+	}
+
 	dial, err := a.Dial()
 	if err != nil {
 		return nil, err
@@ -498,8 +468,13 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 		return nil, err
 	}
 
-	httpCacheDir := filepath.Join(mustHomeDir(), ".kube", "http-cache")
-	discCacheDir := filepath.Join(mustHomeDir(), ".kube", "cache", "discovery", toHostDir(cfg.Host))
+	baseCacheDir := os.Getenv("KUBECACHEDIR")
+	if baseCacheDir == "" {
+		baseCacheDir = filepath.Join(mustHomeDir(), ".kube", "cache")
+	}
+
+	httpCacheDir := filepath.Join(baseCacheDir, "http")
+	discCacheDir := filepath.Join(baseCacheDir, "discovery", toHostDir(cfg.Host))
 
 	c, err := disk.NewCachedDiscoveryClientForConfig(cfg, discCacheDir, httpCacheDir, cacheExpiry)
 	if err != nil {

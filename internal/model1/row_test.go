@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package render_test
+package model1_test
 
 import (
 	"fmt"
@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkRowCustomize(b *testing.B) {
-	row := render.Row{ID: "fred", Fields: render.Fields{"f1", "f2", "f3"}}
+	row := model1.Row{ID: "fred", Fields: model1.Fields{"f1", "f2", "f3"}}
 	cols := []int{0, 1, 2}
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -25,36 +25,36 @@ func BenchmarkRowCustomize(b *testing.B) {
 
 func TestFieldCustomize(t *testing.T) {
 	uu := map[string]struct {
-		fields render.Fields
+		fields model1.Fields
 		cols   []int
-		e      render.Fields
+		e      model1.Fields
 	}{
 		"empty": {
-			fields: render.Fields{},
+			fields: model1.Fields{},
 			cols:   []int{0, 1, 2},
-			e:      render.Fields{"", "", ""},
+			e:      model1.Fields{"", "", ""},
 		},
 		"no-cols": {
-			fields: render.Fields{"f1", "f2", "f3"},
+			fields: model1.Fields{"f1", "f2", "f3"},
 			cols:   []int{},
-			e:      render.Fields{},
+			e:      model1.Fields{},
 		},
 		"reverse": {
-			fields: render.Fields{"f1", "f2", "f3"},
+			fields: model1.Fields{"f1", "f2", "f3"},
 			cols:   []int{1, 0},
-			e:      render.Fields{"f2", "f1"},
+			e:      model1.Fields{"f2", "f1"},
 		},
 		"missing": {
-			fields: render.Fields{"f1", "f2", "f3"},
+			fields: model1.Fields{"f1", "f2", "f3"},
 			cols:   []int{10, 0},
-			e:      render.Fields{"", "f1"},
+			e:      model1.Fields{"", "f1"},
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			ff := make(render.Fields, len(u.cols))
+			ff := make(model1.Fields, len(u.cols))
 			u.fields.Customize(u.cols, ff)
 			assert.Equal(t, u.e, ff)
 		})
@@ -62,7 +62,7 @@ func TestFieldCustomize(t *testing.T) {
 }
 
 func TestFieldClone(t *testing.T) {
-	f := render.Fields{"a", "b", "c"}
+	f := model1.Fields{"a", "b", "c"}
 	f1 := f.Clone()
 
 	assert.True(t, reflect.DeepEqual(f, f1))
@@ -71,24 +71,24 @@ func TestFieldClone(t *testing.T) {
 
 func TestRowlabelize(t *testing.T) {
 	uu := map[string]struct {
-		row  render.Row
+		row  model1.Row
 		cols []int
-		e    render.Row
+		e    model1.Row
 	}{
 		"empty": {
-			row:  render.Row{},
+			row:  model1.Row{},
 			cols: []int{0, 1, 2},
-			e:    render.Row{ID: "", Fields: render.Fields{"", "", ""}},
+			e:    model1.Row{ID: "", Fields: model1.Fields{"", "", ""}},
 		},
 		"no-cols-no-data": {
-			row:  render.Row{},
+			row:  model1.Row{},
 			cols: []int{},
-			e:    render.Row{ID: "", Fields: render.Fields{}},
+			e:    model1.Row{ID: "", Fields: model1.Fields{}},
 		},
 		"no-cols-data": {
-			row:  render.Row{ID: "fred", Fields: render.Fields{"f1", "f2", "f3"}},
+			row:  model1.Row{ID: "fred", Fields: model1.Fields{"f1", "f2", "f3"}},
 			cols: []int{},
-			e:    render.Row{ID: "fred", Fields: render.Fields{}},
+			e:    model1.Row{ID: "fred", Fields: model1.Fields{}},
 		},
 	}
 
@@ -103,24 +103,24 @@ func TestRowlabelize(t *testing.T) {
 
 func TestRowCustomize(t *testing.T) {
 	uu := map[string]struct {
-		row  render.Row
+		row  model1.Row
 		cols []int
-		e    render.Row
+		e    model1.Row
 	}{
 		"empty": {
-			row:  render.Row{},
+			row:  model1.Row{},
 			cols: []int{0, 1, 2},
-			e:    render.Row{ID: "", Fields: render.Fields{"", "", ""}},
+			e:    model1.Row{ID: "", Fields: model1.Fields{"", "", ""}},
 		},
 		"no-cols-no-data": {
-			row:  render.Row{},
+			row:  model1.Row{},
 			cols: []int{},
-			e:    render.Row{ID: "", Fields: render.Fields{}},
+			e:    model1.Row{ID: "", Fields: model1.Fields{}},
 		},
 		"no-cols-data": {
-			row:  render.Row{ID: "fred", Fields: render.Fields{"f1", "f2", "f3"}},
+			row:  model1.Row{ID: "fred", Fields: model1.Fields{"f1", "f2", "f3"}},
 			cols: []int{},
-			e:    render.Row{ID: "fred", Fields: render.Fields{}},
+			e:    model1.Row{ID: "fred", Fields: model1.Fields{}},
 		},
 	}
 
@@ -135,49 +135,49 @@ func TestRowCustomize(t *testing.T) {
 
 func TestRowsDelete(t *testing.T) {
 	uu := map[string]struct {
-		rows render.Rows
+		rows model1.Rows
 		id   string
-		e    render.Rows
+		e    model1.Rows
 	}{
 		"first": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 			},
 			id: "a",
-			e: render.Rows{
+			e: model1.Rows{
 				{ID: "b", Fields: []string{"albert", "blee"}},
 			},
 		},
 		"last": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 			},
 			id: "b",
-			e: render.Rows{
+			e: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 			},
 		},
 		"middle": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 				{ID: "c", Fields: []string{"fred", "zorg"}},
 			},
 			id: "b",
-			e: render.Rows{
+			e: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "c", Fields: []string{"fred", "zorg"}},
 			},
 		},
 		"missing": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 			},
 			id: "zorg",
-			e: render.Rows{
+			e: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 			},
@@ -195,29 +195,29 @@ func TestRowsDelete(t *testing.T) {
 
 func TestRowsUpsert(t *testing.T) {
 	uu := map[string]struct {
-		rows render.Rows
-		row  render.Row
-		e    render.Rows
+		rows model1.Rows
+		row  model1.Row
+		e    model1.Rows
 	}{
 		"add": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 			},
-			row: render.Row{ID: "c", Fields: []string{"f1", "f2"}},
-			e: render.Rows{
+			row: model1.Row{ID: "c", Fields: []string{"f1", "f2"}},
+			e: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 				{ID: "c", Fields: []string{"f1", "f2"}},
 			},
 		},
 		"update": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{ID: "a", Fields: []string{"blee", "duh"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 			},
-			row: render.Row{ID: "a", Fields: []string{"f1", "f2"}},
-			e: render.Rows{
+			row: model1.Row{ID: "a", Fields: []string{"f1", "f2"}},
+			e: model1.Rows{
 				{ID: "a", Fields: []string{"f1", "f2"}},
 				{ID: "b", Fields: []string{"albert", "blee"}},
 			},
@@ -235,69 +235,69 @@ func TestRowsUpsert(t *testing.T) {
 
 func TestRowsSortText(t *testing.T) {
 	uu := map[string]struct {
-		rows     render.Rows
+		rows     model1.Rows
 		col      int
 		asc, num bool
-		e        render.Rows
+		e        model1.Rows
 	}{
 		"plainAsc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"blee", "duh"}},
 				{Fields: []string{"albert", "blee"}},
 			},
 			col: 0,
 			asc: true,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"albert", "blee"}},
 				{Fields: []string{"blee", "duh"}},
 			},
 		},
 		"plainDesc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"blee", "duh"}},
 				{Fields: []string{"albert", "blee"}},
 			},
 			col: 0,
 			asc: false,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"blee", "duh"}},
 				{Fields: []string{"albert", "blee"}},
 			},
 		},
 		"numericAsc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"10", "duh"}},
 				{Fields: []string{"1", "blee"}},
 			},
 			col: 0,
 			num: true,
 			asc: true,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"1", "blee"}},
 				{Fields: []string{"10", "duh"}},
 			},
 		},
 		"numericDesc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"10", "duh"}},
 				{Fields: []string{"1", "blee"}},
 			},
 			col: 0,
 			num: true,
 			asc: false,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"10", "duh"}},
 				{Fields: []string{"1", "blee"}},
 			},
 		},
 		"composite": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"blee-duh", "duh"}},
 				{Fields: []string{"blee", "blee"}},
 			},
 			col: 0,
 			asc: true,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"blee", "blee"}},
 				{Fields: []string{"blee-duh", "duh"}},
 			},
@@ -315,54 +315,54 @@ func TestRowsSortText(t *testing.T) {
 
 func TestRowsSortDuration(t *testing.T) {
 	uu := map[string]struct {
-		rows render.Rows
+		rows model1.Rows
 		col  int
 		asc  bool
-		e    render.Rows
+		e    model1.Rows
 	}{
 		"fred": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"2m24s", "blee"}},
 				{Fields: []string{"2m12s", "duh"}},
 			},
 			col: 0,
 			asc: true,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"2m12s", "duh"}},
 				{Fields: []string{"2m24s", "blee"}},
 			},
 		},
 		"years": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},
 				{Fields: []string{testTime().String(), "duh"}},
 			},
 			col: 0,
 			asc: true,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{testTime().String(), "duh"}},
 				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},
 			},
 		},
 		"durationAsc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
 				{Fields: []string{testTime().String(), "blee"}},
 			},
 			col: 0,
 			asc: true,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{testTime().String(), "blee"}},
 				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
 			},
 		},
 		"durationDesc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
 				{Fields: []string{testTime().String(), "blee"}},
 			},
 			col: 0,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
 				{Fields: []string{testTime().String(), "blee"}},
 			},
@@ -380,31 +380,31 @@ func TestRowsSortDuration(t *testing.T) {
 
 func TestRowsSortMetrics(t *testing.T) {
 	uu := map[string]struct {
-		rows render.Rows
+		rows model1.Rows
 		col  int
 		asc  bool
-		e    render.Rows
+		e    model1.Rows
 	}{
 		"metricAsc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"10m", "duh"}},
 				{Fields: []string{"1m", "blee"}},
 			},
 			col: 0,
 			asc: true,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"1m", "blee"}},
 				{Fields: []string{"10m", "duh"}},
 			},
 		},
 		"metricDesc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"10000m", "1000Mi"}},
 				{Fields: []string{"1m", "50Mi"}},
 			},
 			col: 1,
 			asc: false,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"10000m", "1000Mi"}},
 				{Fields: []string{"1m", "50Mi"}},
 			},
@@ -422,31 +422,31 @@ func TestRowsSortMetrics(t *testing.T) {
 
 func TestRowsSortCapacity(t *testing.T) {
 	uu := map[string]struct {
-		rows render.Rows
+		rows model1.Rows
 		col  int
 		asc  bool
-		e    render.Rows
+		e    model1.Rows
 	}{
 		"capacityAsc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"10Gi", "duh"}},
 				{Fields: []string{"10G", "blee"}},
 			},
 			col: 0,
 			asc: true,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"10G", "blee"}},
 				{Fields: []string{"10Gi", "duh"}},
 			},
 		},
 		"capacityDesc": {
-			rows: render.Rows{
+			rows: model1.Rows{
 				{Fields: []string{"10000m", "1000Mi"}},
 				{Fields: []string{"1m", "50Mi"}},
 			},
 			col: 1,
 			asc: false,
-			e: render.Rows{
+			e: model1.Rows{
 				{Fields: []string{"10000m", "1000Mi"}},
 				{Fields: []string{"1m", "50Mi"}},
 			},
@@ -514,7 +514,7 @@ func TestLess(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, render.Less(u.isNumber, u.isDuration, u.isCapacity, u.id1, u.id2, u.v1, u.v2))
+			assert.Equal(t, u.e, model1.Less(u.isNumber, u.isDuration, u.isCapacity, u.id1, u.id2, u.v1, u.v2))
 		})
 	}
 }
