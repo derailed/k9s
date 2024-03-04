@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/render"
+	"github.com/mattn/go-shellwords"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -39,6 +40,8 @@ const (
 )
 
 var editorEnvVars = []string{"KUBE_EDITOR", "K9S_EDITOR", "EDITOR"}
+
+var lookPath func(file string) (string, error) = exec.LookPath
 
 type shellOpts struct {
 	clear, background bool
@@ -116,25 +119,55 @@ func run(a *App, opts shellOpts) (bool, chan error, chan string) {
 	}), errChan, statusChan
 }
 
-func edit(a *App, opts shellOpts) bool {
-	var (
-		bin string
-		err error
-	)
+func findEditor(opts shellOpts) (shellOpts, error) {
+	var bin string
+	var args []string
+
 	for _, e := range editorEnvVars {
-		env := os.Getenv(e)
-		if env == "" {
+		var _cmd string
+		var _args []string
+
+		v := os.Getenv(e)
+		if v == "" {
 			continue
 		}
-		if bin, err = exec.LookPath(env); err == nil {
+
+		words, err := shellwords.Parse(v)
+		if err != nil {
+			continue
+		}
+
+		switch len(words) {
+		case 0:
+			continue
+		case 1:
+			_cmd, _args = words[0], nil
+		default:
+			_cmd, _args = words[0], words[1:]
+		}
+
+		if bin, err = lookPath(_cmd); err == nil {
+			args = _args
 			break
 		}
 	}
+
 	if bin == "" {
-		a.Flash().Errf("You must set at least one of those env vars: %s", strings.Join(editorEnvVars, "|"))
+		return opts, fmt.Errorf("You must set at least one of those env vars: %s", strings.Join(editorEnvVars, "|"))
+	}
+
+	opts.args = append(args, opts.args...)
+	opts.binary, opts.background = bin, false
+
+	return opts, nil
+}
+
+func edit(a *App, opts shellOpts) bool {
+	opts, err := findEditor(opts)
+	if err != nil {
+		a.Flash().Err(err)
 		return false
 	}
-	opts.binary, opts.background = bin, false
 
 	suspended, errChan, _ := run(a, opts)
 	if !suspended {
