@@ -23,7 +23,7 @@ require (
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
 	github.com/rs/zerolog v1.32.0
-	github.com/sahilm/fuzzy v0.1.0
+	github.com/sahilm/fuzzy v0.1.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	github.com/xeipuuv/gojsonschema v1.2.0
