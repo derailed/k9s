@@ -1,6 +1,6 @@
 <img src="assets/k9s.png" alt="k9s">
 
-## K9s - Kubernetes CLI To Manage Your Clusters In Style!
+## K9s - Kubernetes CLI To Manage Your Clusters In Style
 
 K9s provides a terminal UI to interact with your Kubernetes clusters.
 The aim of this project is to make it easier to navigate, observe and manage
@@ -9,7 +9,7 @@ for changes and offers subsequent commands to interact with your observed resour
 
 ---
 
-## Note...
+## Note
 
 K9s is not pimped out by a big corporation with deep pockets.
 It is a complex OSS project that demands a lot of my time to maintain and support.
@@ -356,8 +356,10 @@ K9s uses aliases to navigate most K8s resources.
 | To view and switch directly to another Kubernetes context (Last used view)      | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace                              | `:`ns⏎                        |                                                                        |
 | To view all saved resources                                                     | `:`screendump or sd⏎          |                                                                        |
+| To launch a new editor to create a new resource                                 | `ctrl-n`                      |                                                                        |
 | To delete a resource (TAB and ENTER to confirm)                                 | `ctrl-d`                      |                                                                        |
 | To kill a resource (no confirmation dialog, equivalent to kubectl delete --now) | `ctrl-k`                      |                                                                        |
+| To duplicate a resource                                                         | `shift-d`                     | Only in YAML view, opens a new editor with the current resource        |
 | Launch pulses view                                                              | `:`pulses or pu⏎              |                                                                        |
 | Launch XRay view                                                                | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
 | Launch Popeye view                                                              | `:`popeye or pop⏎             | See [popeye](#popeye)                                                  |
@@ -1056,7 +1058,7 @@ K9s will most likely blow up if...
 
 ---
 
-## ATTA Girls/Boys!
+## ATTA Girls/Boys
 
 K9s sits on top of many open source projects and libraries. Our *sincere*
 appreciations to all the OSS contributors that work nights and weekends
@@ -1064,10 +1066,10 @@ to make this project a reality!
 
 ---
 
-## Meet The Core Team!
+## Meet The Core Team
 
 * [Fernand Galiana](https://github.com/derailed)
-  * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  fernand@imhotep.io
+  * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  <fernand@imhotep.io>
   * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
 
 * [Aleksei Romanenko](https://github.com/slimus)
