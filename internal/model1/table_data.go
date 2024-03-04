@@ -376,6 +376,7 @@ func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {
 			psc.Name = t.header[0].Name
 		}
 	}
+	psc.ASC = true
 
 	return psc, nil
 }
