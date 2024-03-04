@@ -30,13 +30,14 @@ import (
 )
 
 const (
-	windowsOS      = "windows"
-	powerShell     = "powershell"
-	osSelector     = "kubernetes.io/os"
-	osBetaSelector = "beta." + osSelector
-	trUpload       = "Upload"
-	trDownload     = "Download"
-	pfIndicator    = "[orange::b]Ⓕ"
+	windowsOS        = "windows"
+	powerShell       = "powershell"
+	osSelector       = "kubernetes.io/os"
+	osBetaSelector   = "beta." + osSelector
+	trUpload         = "Upload"
+	trDownload       = "Download"
+	pfIndicator      = "[orange::b]Ⓕ"
+	defaultTxRetries = 999
 )
 
 // Pod represents a pod viewer.
@@ -310,36 +311,36 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	ns, n := client.Namespaced(path)
-	ack := func(from, to, co string, download, no_preserve bool) bool {
-		local := to
-		if !download {
-			local = from
+	ack := func(args dialog.TransferArgs) bool {
+		local := args.To
+		if !args.Download {
+			local = args.From
 		}
-		if _, err := os.Stat(local); !download && errors.Is(err, fs.ErrNotExist) {
+		if _, err := os.Stat(local); !args.Download && errors.Is(err, fs.ErrNotExist) {
 			p.App().Flash().Err(err)
 			return false
 		}
 
-		args := make([]string, 0, 10)
-		args = append(args, "cp")
-		args = append(args, strings.TrimSpace(from))
-		args = append(args, strings.TrimSpace(to))
-		args = append(args, fmt.Sprintf("--no-preserve=%t", no_preserve))
-		if co != "" {
-			args = append(args, "-c="+co)
+		opts := make([]string, 0, 10)
+		opts = append(opts, "cp")
+		opts = append(opts, strings.TrimSpace(args.From))
+		opts = append(opts, strings.TrimSpace(args.To))
+		opts = append(opts, fmt.Sprintf("--no-preserve=%t", args.NoPreserve))
+		if args.CO != "" {
+			opts = append(opts, "-c="+args.CO)
 		}
 
-		opts := shellOpts{
+		cliOpts := shellOpts{
 			background: true,
-			args:       args,
+			args:       opts,
 		}
 		op := trUpload
-		if download {
+		if args.Download {
 			op = trDownload
 		}
 
-		fqn := path + ":" + co
-		if err := runK(p.App(), opts); err != nil {
+		fqn := path + ":" + args.CO
+		if err := runK(p.App(), cliOpts); err != nil {
 			p.App().cowCmd(err.Error())
 		} else {
 			p.App().Flash().Infof("%s successful on %s!", op, fqn)
@@ -359,6 +360,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		Message:    "Download Files",
 		Pod:        fmt.Sprintf("%s/%s:", ns, n),
 		Ack:        ack,
+		Retries:    defaultTxRetries,
 		Cancel:     func() {},
 	}
 	dialog.ShowUploads(p.App().Styles.Dialog(), p.App().Content.Pages, opts)
