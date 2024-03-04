@@ -12,6 +12,8 @@ var fakeLookPath = func(file string) (string, error) {
 }
 
 func TestFindEditor(t *testing.T) {
+	lookPath = fakeLookPath
+
 	type result struct {
 		binary string
 		args   []string
