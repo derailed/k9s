@@ -398,10 +398,12 @@ func (v *LiveView) duplicateCmd(_ *tcell.EventKey) *tcell.EventKey {
 	defer tmpFile.Close()
 
 	_, err = tmpFile.WriteString(strings.Join([]string{
-		"# To duplicate a resource, edit the resource and make the necessary changes.",
+		"# To duplicate a resource, please edit the definition below and make the necessary changes.",
 		"# Make sure to change the resource name and remove owner references if necessary.",
 		"# When done, save and close the editor, K9s will then `kubectl create` the resource.",
-		"",
+		fmt.Sprintf("# The content will also be saved in '%s'", v.app.Config.K9s.ContextScreenDumpDir()),
+		"# in case you need to recover it.",
+		"#",
 		v.text.GetText(true),
 	}, "\n"))
 	if err != nil {

@@ -318,10 +318,12 @@ func (b *Browser) createCmd(_ *tcell.EventKey) *tcell.EventKey {
 	defer tmpFile.Close()
 
 	_, err = tmpFile.WriteString(strings.Join([]string{
-		"# To create a new resource, provide a definition below.",
-		"# Multiple documents are supported.",
+		"# Please add your resource definitions below. Lines beginning with a '#' will be ignored.",
+		"# Multiple resources are supported and can be separated by '---'.",
 		"# When done, save and close the editor, K9s will then `kubectl create` the resource.",
-		"",
+		fmt.Sprintf("# The content will also be saved in '%s'", b.App().Config.K9s.ContextScreenDumpDir()),
+		"# in case you need to recover it.",
+		"#",
 	}, "\n"))
 	if err != nil {
 		b.App().Flash().Err(errors.New("Failed to write to temporary resource file: " + err.Error()))
