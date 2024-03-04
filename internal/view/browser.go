@@ -688,7 +688,19 @@ func editAndCreateFromFile(app *App, filePath string) *tcell.EventKey {
 		return nil
 	}
 
-	return createFromFile(app, filePath)
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		app.Flash().Errf("Failed to create resource from file %s", err)
+		return nil
+	}
+
+	dumpedFile, err := saveYAML(app.Config.K9s.ContextScreenDumpDir(), "create", string(content))
+	if err != nil {
+		app.Flash().Err(err)
+		return nil
+	}
+
+	return createFromFile(app, dumpedFile)
 }
 
 func isFileEmpty(filePath string) (bool, error) {
