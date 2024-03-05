@@ -326,6 +326,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		opts = append(opts, strings.TrimSpace(args.From))
 		opts = append(opts, strings.TrimSpace(args.To))
 		opts = append(opts, fmt.Sprintf("--no-preserve=%t", args.NoPreserve))
+		opts = append(opts, fmt.Sprintf("--retries=%d", args.Retries))
 		if args.CO != "" {
 			opts = append(opts, "-c="+args.CO)
 		}

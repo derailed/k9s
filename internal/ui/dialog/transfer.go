@@ -85,6 +85,10 @@ func ShowUploads(styles config.Dialog, pages *ui.Pages, opts TransferDialogOpts)
 	retries := strconv.Itoa(opts.Retries)
 	f.AddInputField("Retries:", retries, 30, nil, func(v string) {
 		retries = v
+
+		if retriesInt, err := strconv.Atoi(retries); err == nil {
+			args.Retries = retriesInt
+		}
 	})
 
 	f.AddButton("OK", func() {
