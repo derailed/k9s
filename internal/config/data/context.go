@@ -10,9 +10,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-// DefaultPFAddress specifies the default PortForward host address.
-const DefaultPFAddress = "localhost"
-
 // Context tracks K9s context configuration.
 type Context struct {
 	ClusterName        string       `yaml:"cluster,omitempty"`
@@ -30,20 +27,18 @@ func NewContext() *Context {
 	return &Context{
 		Namespace:          NewNamespace(),
 		View:               NewView(),
-		PortForwardAddress: DefaultPFAddress,
+		PortForwardAddress: defaultPFAddress(),
 		FeatureGates:       NewFeatureGates(),
 	}
 }
 
 // NewContextFromConfig returns a config based on a kubecontext.
 func NewContextFromConfig(cfg *api.Context) *Context {
-	return &Context{
-		Namespace:          NewActiveNamespace(cfg.Namespace),
-		ClusterName:        cfg.Cluster,
-		View:               NewView(),
-		PortForwardAddress: DefaultPFAddress,
-		FeatureGates:       NewFeatureGates(),
-	}
+	ct := NewContext()
+	ct.Namespace, ct.ClusterName = NewActiveNamespace(cfg.Namespace), cfg.Cluster
+
+	return ct
+
 }
 
 // NewContextFromKubeConfig returns a new instance based on kubesettings or an error.
@@ -61,8 +56,8 @@ func (c *Context) merge(old *Context) {
 		return
 	}
 	c.Namespace.merge(old.Namespace)
-
 }
+
 func (c *Context) GetClusterName() string {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
@@ -76,7 +71,7 @@ func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
 	defer c.mx.Unlock()
 
 	if c.PortForwardAddress == "" {
-		c.PortForwardAddress = DefaultPFAddress
+		c.PortForwardAddress = defaultPFAddress()
 	}
 	if cl, err := ks.CurrentClusterName(); err == nil {
 		c.ClusterName = cl
