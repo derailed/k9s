@@ -101,7 +101,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("v1/pods"):                                           &Pod{},
 		client.NewGVR("v1/nodes"):                                          &Node{},
 		client.NewGVR("v1/namespaces"):                                     &Namespace{},
-		client.NewGVR("v1/configmap"):                                      &ConfigMap{},
+		client.NewGVR("v1/configmaps"):                                     &ConfigMap{},
 		client.NewGVR("v1/secrets"):                                        &Secret{},
 		client.NewGVR("apps/v1/deployments"):                               &Deployment{},
 		client.NewGVR("apps/v1/daemonsets"):                                &DaemonSet{},
