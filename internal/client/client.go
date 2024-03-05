@@ -246,7 +246,7 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 		}
 	}
 
-	ok, err := a.CanI(ClusterScope, "v1/namespaces", "", []string{ListVerb})
+	ok, err := a.CanI(ClusterScope, "v1/namespaces", "", ListAccess)
 	if !ok || err != nil {
 		return nil, fmt.Errorf("user not authorized to list all namespaces")
 	}
@@ -524,10 +524,23 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 	return a.getMxsClient(), err
 }
 
+func (a *APIClient) invalidateCache() error {
+	dial, err := a.CachedDiscovery()
+	if err != nil {
+		return err
+	}
+	dial.Invalidate()
+
+	return nil
+}
+
 // SwitchContext handles kubeconfig context switches.
 func (a *APIClient) SwitchContext(name string) error {
 	log.Debug().Msgf("Switching context %q", name)
 	if err := a.config.SwitchContext(name); err != nil {
+		return err
+	}
+	if err := a.invalidateCache(); err != nil {
 		return err
 	}
 	a.reset()
