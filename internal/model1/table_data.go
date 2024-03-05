@@ -244,7 +244,6 @@ func (t *TableData) Reset(ns string) {
 
 func (t *TableData) Reconcile(ctx context.Context, r Renderer, oo []runtime.Object) error {
 	var rows Rows
-
 	if len(oo) > 0 {
 		if r.IsGeneric() {
 			table, ok := oo[0].(*metav1.Table)
@@ -399,6 +398,7 @@ func (t *TableData) Clone() *TableData {
 		header:    t.header.Clone(),
 		rowEvents: t.rowEvents.Clone(),
 		namespace: t.namespace,
+		gvr:       t.gvr,
 	}
 }
 

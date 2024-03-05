@@ -204,6 +204,10 @@ func (t *Table) updater(ctx context.Context) {
 }
 
 func (t *Table) refresh(ctx context.Context) error {
+	defer func(ti time.Time) {
+		log.Trace().Msgf("Refresh [%s](%d) %s ", t.gvr, t.data.RowCount(), time.Since(ti))
+	}(time.Now())
+
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
 		return nil
