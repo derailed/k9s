@@ -91,7 +91,7 @@ func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 		s.Forwarders().Kill(client.FQN(p.Namespace, p.Name))
 	}
 
-	auth, err := s.Client().CanI(sts.Namespace, "apps/v1/statefulsets", n, []string{client.PatchVerb})
+	auth, err := s.Client().CanI(sts.Namespace, "apps/v1/statefulsets", n, client.PatchAccess)
 	if err != nil {
 		return err
 	}
@@ -291,7 +291,7 @@ func (s *StatefulSet) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (s *StatefulSet) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := s.Client().CanI(ns, "apps/v1/statefulset", n, []string{client.PatchVerb})
+	auth, err := s.Client().CanI(ns, "apps/v1/statefulset", n, client.PatchAccess)
 	if err != nil {
 		return err
 	}

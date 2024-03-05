@@ -117,7 +117,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 	p.path, p.tunnel, p.age = path, tt, time.Now()
 
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods", n, []string{client.GetVerb})
+	auth, err := p.Client().CanI(ns, "v1/pods", n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}

@@ -121,7 +121,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods:log", n, []string{client.GetVerb})
+	auth, err := p.Client().CanI(ns, "v1/pods:log", n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +426,7 @@ func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (p *Pod) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pod", n, []string{client.PatchVerb})
+	auth, err := p.Client().CanI(ns, "v1/pod", n, client.PatchAccess)
 	if err != nil {
 		return err
 	}
