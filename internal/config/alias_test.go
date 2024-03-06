@@ -6,6 +6,7 @@ package config_test
 import (
 	"fmt"
 	"os"
+	"path"
 	"slices"
 	"testing"
 
@@ -109,8 +110,8 @@ func TestAliasesLoad(t *testing.T) {
 	config.AppConfigDir = "testdata/aliases"
 	a := config.NewAliases()
 
-	assert.Nil(t, a.Load("testdata/aliases/plain.yaml"))
-	assert.Equal(t, 56, len(a.Alias))
+	assert.Nil(t, a.Load(path.Join(config.AppConfigDir, "plain.yaml")))
+	assert.Equal(t, 54, len(a.Alias))
 }
 
 func TestAliasesSave(t *testing.T) {
@@ -123,7 +124,7 @@ func TestAliasesSave(t *testing.T) {
 
 	assert.Equal(t, c, len(a.Alias))
 	assert.Nil(t, a.Save())
-	assert.Nil(t, a.LoadFile("/tmp/test-aliases/aliases.yaml"))
+	assert.Nil(t, a.LoadFile(config.AppAliasesFile))
 	assert.Equal(t, c, len(a.Alias))
 }
 

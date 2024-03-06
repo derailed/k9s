@@ -177,7 +177,8 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("help", "h", "?")
 	a.declare("quit", "q", "q!", "qa", "Q")
 	a.declare("aliases", "alias", "a")
-	a.declare("popeye", "pop")
+	// !!BOZO!!
+	// a.declare("popeye", "pop")
 	a.declare("helm", "charts", "chart", "hm")
 	a.declare("dir", "d")
 	a.declare("contexts", "context", "ctx")

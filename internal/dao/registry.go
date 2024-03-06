@@ -21,50 +21,24 @@ const (
 	crdCat  = "crd"
 	k9sCat  = "k9s"
 	helmCat = "helm"
+	crdGVR  = "apiextensions.k8s.io/v1/customresourcedefinitions"
 )
 
 // MetaAccess tracks resources metadata.
 var MetaAccess = NewMeta()
 
-var stdGroups = []string{
-	"admissionregistration.k8s.io/v1",
-	"admissionregistration.k8s.io/v1beta1",
-	"apiextensions.k8s.io/v1",
-	"apiextensions.k8s.io/v1beta1",
-	"apiregistration.k8s.io/v1",
-	"apiregistration.k8s.io/v1beta1",
-	"apps/v1",
-	"authentication.k8s.io/v1",
-	"authentication.k8s.io/v1beta1",
-	"authorization.k8s.io/v1",
-	"authorization.k8s.io/v1beta1",
-	"autoscaling/v1",
-	"autoscaling/v2beta1",
-	"autoscaling/v2beta2",
-	"batch/v1",
-	"batch/v1beta1",
-	"certificates.k8s.io/v1",
-	"certificates.k8s.io/v1beta1",
-	"coordination.k8s.io/v1",
-	"coordination.k8s.io/v1beta1",
-	"discovery.k8s.io/v1beta1",
-	"dynatrace.com/v1alpha1",
-	"events.k8s.io/v1",
-	"extensions/v1beta1",
-	"flowcontrol.apiserver.k8s.io/v1beta1",
-	"metrics.k8s.io/v1beta1",
-	"networking.k8s.io/v1",
-	"networking.k8s.io/v1beta1",
-	"node.k8s.io/v1",
-	"node.k8s.io/v1beta1",
-	"policy/v1beta1",
-	"rbac.authorization.k8s.io/v1",
-	"rbac.authorization.k8s.io/v1beta1",
-	"scheduling.k8s.io/v1",
-	"scheduling.k8s.io/v1beta1",
-	"storage.k8s.io/v1",
-	"storage.k8s.io/v1beta1",
-	"v1",
+var stdGroups = map[string]struct{}{
+	"apps/v1":             {},
+	"autoscaling/v1":      {},
+	"autoscaling/v2":      {},
+	"autoscaling/v2beta1": {},
+	"autoscaling/v2beta2": {},
+	"batch/v1":            {},
+	"batch/v1beta1":       {},
+	"extensions/v1beta1":  {},
+	"policy/v1beta1":      {},
+	"policy/v1":           {},
+	"v1":                  {},
 }
 
 func (m ResourceMetas) clear() {
@@ -372,7 +346,6 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	if err != nil {
 		return err
 	}
-	dial.Invalidate()
 	rr, err := dial.ServerPreferredResources()
 	if err != nil {
 		log.Debug().Err(err).Msgf("Failed to load preferred resources")
@@ -387,7 +360,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 			if res.SingularName == "" {
 				res.SingularName = strings.ToLower(res.Kind)
 			}
-			if !isStandardGroup(res.Group) {
+			if !isStandardGroup(r.GroupVersion) {
 				res.Categories = append(res.Categories, crdCat)
 			}
 			m[gvr] = res
@@ -397,14 +370,12 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	return nil
 }
 
-func isStandardGroup(r string) bool {
-	for _, res := range stdGroups {
-		if strings.Index(res, r) == 0 {
-			return true
-		}
+func isStandardGroup(gv string) bool {
+	if _, ok := stdGroups[gv]; ok {
+		return true
 	}
 
-	return false
+	return strings.Contains(gv, "k8s.io")
 }
 
 var deprecatedGVRs = map[client.GVR]struct{}{
@@ -420,7 +391,6 @@ func loadCRDs(f Factory, m ResourceMetas) {
 	if f.Client() == nil || !f.Client().ConnectionOK() {
 		return
 	}
-	const crdGVR = "apiextensions.k8s.io/v1/customresourcedefinitions"
 	oo, err := f.List(crdGVR, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		log.Warn().Err(err).Msgf("Fail CRDs load")

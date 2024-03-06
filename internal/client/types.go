@@ -55,6 +55,9 @@ const (
 )
 
 var (
+	// PatchAccess patch a resource.
+	PatchAccess = []string{PatchVerb}
+
 	// GetAccess reads a resource.
 	GetAccess = []string{GetVerb}
 
