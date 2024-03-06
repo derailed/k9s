@@ -169,7 +169,12 @@ func (a *APIClient) CanI(ns, gvr, name string, verbs []string) (auth bool, err e
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := client.Create(ctx, sar, metav1.CreateOptions{})
-		log.Trace().Msgf("[CAN] %s(%s) %v <<%v>>", gvr, verbs, resp, err)
+		log.Trace().Msgf("[CAN] %s(%q/%q) <%v>", gvr, ns, name, verbs)
+		if resp != nil {
+			log.Trace().Msgf("  Spec: %#v", resp.Spec)
+			log.Trace().Msgf("  Auth: %t [%q]", resp.Status.Allowed, resp.Status.Reason)
+		}
+		log.Trace().Msgf("  <<%v>>", err)
 		if err != nil {
 			log.Warn().Err(err).Msgf("  Dial Failed!")
 			a.cache.Add(key, false, cacheExpiry)
