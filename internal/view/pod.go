@@ -329,6 +329,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if args.CO != "" {
 			opts = append(opts, "-c="+args.CO)
 		}
+		opts = append(opts, fmt.Sprintf("--retries=%d", args.Retries))
 
 		cliOpts := shellOpts{
 			background: true,
