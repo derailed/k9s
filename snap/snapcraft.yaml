@@ -1,5 +1,5 @@
 name: k9s
-base: core20
+base: core22
 version: 'v0.32.3'
 summary: K9s is a CLI to view and manage your Kubernetes clusters.
 description: |
@@ -14,33 +14,21 @@ architectures:
   - armhf
   - i386
 
-plugs:
-  kube-config:
-    interface: personal-files
-    read:
-      - $HOME/.kube/config
-
 apps:
   k9s:
     command: bin/k9s
-    plugs:
-      - network
-      - network-bind
-      - home
-      - kube-config
 
 parts:
   build:
-    plugins: go
-    source: https://github.com/derailed/k9s.git
+    plugin: go
+    source: https://github.com/derailed/k9s
+    source-type: git
     source-tag: $SNAPCRAFT_PROJECT_VERSION
     override-build: |
       make test
       make build
       install $SNAPCRAFT_PART_BUILD/execs/k9s -D $SNAPCRAFT_PART_INSTALL/bin/k9s
-      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
-      if [ ! -e $SNAPCRAFT_PART_INSTALL/bin/k9s ]; then
-        ln -s $SNAPCRAFT_PART_INSTALL/bin/k9s $SNAPCRAFT_PART_INSTALL/bin/k9s
-      fi
     build-packages:
       - build-essential
+    build-snaps:
+      - go
