@@ -80,7 +80,7 @@ func hotKeyActions(r Runner, aa *ui.KeyActions) error {
 				errs = errors.Join(errs, fmt.Errorf("duplicate hotkey found for %q in %q", hk.ShortCut, k))
 				continue
 			}
-			log.Info().Msgf("Action %q has been overridden by hotkey in %q", hk.ShortCut, k)
+			log.Debug().Msgf("Action %q has been overridden by hotkey in %q", hk.ShortCut, k)
 		}
 
 		command, err := r.EnvFn()().Substitute(hk.Command)
@@ -141,7 +141,7 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", plugin.ShortCut, k))
 				continue
 			}
-			log.Info().Msgf("Action %q has been overridden by plugin in %q", plugin.ShortCut, k)
+			log.Debug().Msgf("Action %q has been overridden by plugin in %q", plugin.ShortCut, k)
 		}
 
 		aa.Add(key, ui.NewKeyActionWithOpts(
