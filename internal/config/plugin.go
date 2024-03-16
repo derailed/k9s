@@ -36,6 +36,7 @@ type Plugin struct {
 	Command     string   `yaml:"command"`
 	Confirm     bool     `yaml:"confirm"`
 	Background  bool     `yaml:"background"`
+	Dangerous   bool     `yaml:"dangerous"`
 }
 
 func (p Plugin) String() string {

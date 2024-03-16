@@ -3,6 +3,7 @@ plugins:
   k3d-root-shell:
     shortCut: Shift-S
     confirm: false
+    dangerous: true
     description: "Root Shell"
     scopes:
       - containers
