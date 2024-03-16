@@ -217,10 +217,10 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 	return info, nil
 }
 
-func (a *APIClient) IsValidNamespace(n string) bool {
-	ok, err := a.isValidNamespace(n)
+func (a *APIClient) IsValidNamespace(ns string) bool {
+	ok, err := a.isValidNamespace(ns)
 	if err != nil {
-		log.Warn().Err(err).Msgf("namespace validation failed for: %q", n)
+		log.Warn().Err(err).Msgf("namespace validation failed for: %q", ns)
 	}
 
 	return ok

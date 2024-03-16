@@ -32,6 +32,7 @@ func NewActiveNamespace(n string) *Namespace {
 	if n == client.BlankNamespace {
 		n = client.DefaultNamespace
 	}
+
 	return &Namespace{
 		Active:    n,
 		Favorites: []string{client.DefaultNamespace},
