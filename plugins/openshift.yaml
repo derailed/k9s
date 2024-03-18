@@ -1,0 +1,36 @@
+plugins:
+  # openshift community plugin (no official support by Red Hat)
+  # Requires the oc command-line tool in PATH
+  # Install using https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html
+  openshift-shell:
+    shortCut: Shift-X
+    description: Debug Node
+    scopes:
+      - nodes
+    command: oc
+    background: false
+    args:
+      - debug
+      - node/$NAME
+      - -n
+      - $NAMESPACE
+      - -q
+  openshift-root-shell:
+    shortCut: Ctrl-X
+    description: Debug Node (Root)
+    scopes:
+      - nodes
+    command: oc
+    background: false
+    args:
+      - debug
+      - node/$NAME
+      - -n
+      - $NAMESPACE
+      - --as-user=0
+      - --as-root=true
+      - -q
+      - -t
+      - --
+      - chroot
+      - /host
