@@ -38,6 +38,7 @@ const (
 	trDownload       = "Download"
 	pfIndicator      = "[orange::b]Ⓕ"
 	defaultTxRetries = 999
+	magicPrompt      = "Yes Please!"
 )
 
 // Pod represents a pod viewer.
@@ -146,24 +147,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	cc, cfg := fetchContainers(pod.ObjectMeta, pod.Spec, true), p.App().Config.K9s.Logger
-	opts := dao.LogOptions{
-		Path:            path,
-		Lines:           int64(cfg.TailCount),
-		SinceSeconds:    cfg.SinceSeconds,
-		SingleContainer: len(cc) == 1,
-		ShowTimestamp:   cfg.ShowTime,
-		Previous:        prev,
-	}
-	if c, ok := dao.GetDefaultContainer(pod.ObjectMeta, pod.Spec); ok {
-		opts.Container, opts.DefaultContainer = c, c
-	} else if len(cc) == 1 {
-		opts.Container = cc[0]
-	} else {
-		opts.AllContainers = true
-	}
-
-	return &opts, nil
+	return podLogOptions(p.App(), path, prev, pod.ObjectMeta, pod.Spec), nil
 }
 
 func (p *Pod) showContainers(app *App, _ ui.Tabular, _ client.GVR, _ string) {
@@ -287,9 +271,8 @@ func (p *Pod) sanitizeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	ack := "sanitize me pods!"
-	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", ack)
-	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, ack, true, "Sanitize", msg, func() {
+	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", magicPrompt)
+	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*p.App().Conn().Config().CallTimeout())
 		defer cancel()
 		total, err := s.Sanitize(ctx, p.GetTable().GetModel().GetNamespace())
