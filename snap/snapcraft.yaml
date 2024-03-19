@@ -17,6 +17,7 @@ architectures:
 apps:
   k9s:
     command: bin/k9s
+    completer: k9s-completion.bash
 
 parts:
   build:
@@ -28,6 +29,7 @@ parts:
       make test
       make build
       install $SNAPCRAFT_PART_BUILD/execs/k9s -D $SNAPCRAFT_PART_INSTALL/bin/k9s
+      "${CRAFT_PART_INSTALL}/bin/k9s" completion bash > "${CRAFT_PART_INSTALL}/k9s-completion.bash"
     build-packages:
       - build-essential
     build-snaps:
