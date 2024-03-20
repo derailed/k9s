@@ -207,19 +207,19 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 		return append(outs, tailLogs(ctx, p, opts)), nil
 	}
 	for _, co := range po.Spec.InitContainers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 	for _, co := range po.Spec.Containers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 	for _, co := range po.Spec.EphemeralContainers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 
 	return outs, nil

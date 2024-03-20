@@ -168,6 +168,7 @@ func (d *Details) StylesChanged(s *config.Styles) {
 // Update updates the view content.
 func (d *Details) Update(buff string) *Details {
 	d.model.SetText(buff)
+
 	return d
 }
 

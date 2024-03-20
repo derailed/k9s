@@ -4,6 +4,7 @@ plugins:
   helm-purge:
     shortCut: Ctrl-P
     description: Helm Purge
+    dangerous: true
     scopes:
     - po
     command: kubectl

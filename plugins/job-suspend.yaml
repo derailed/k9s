@@ -3,6 +3,7 @@ plugins:
   toggleCronjob:
     shortCut: Ctrl-S
     confirm: true
+    dangerous: true
     scopes:
       - cj
     description: Toggle to suspend or resume a running cronjob

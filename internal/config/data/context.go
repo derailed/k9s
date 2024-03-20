@@ -4,6 +4,7 @@
 package data
 
 import (
+	"os"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -70,6 +71,9 @@ func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
+	if a := os.Getenv(envPFAddress); a != "" {
+		c.PortForwardAddress = a
+	}
 	if c.PortForwardAddress == "" {
 		c.PortForwardAddress = defaultPFAddress()
 	}

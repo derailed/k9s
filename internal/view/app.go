@@ -111,10 +111,6 @@ func (a *App) Init(version string, rate int) error {
 	ns := a.Config.ActiveNamespace()
 
 	a.factory = watch.NewFactory(a.Conn())
-	ok, err := a.isValidNS(ns)
-	if !ok && err == nil {
-		return fmt.Errorf("app-init - invalid namespace: %q", ns)
-	}
 	a.initFactory(ns)
 
 	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s)
@@ -438,18 +434,6 @@ func (a *App) switchNS(ns string) error {
 	return a.factory.SetActiveNS(ns)
 }
 
-func (a *App) isValidNS(ns string) (bool, error) {
-	if ns == client.BlankNamespace || ns == client.NamespaceAll {
-		return true, nil
-	}
-
-	if !a.Conn().IsValidNamespace(ns) {
-		return false, fmt.Errorf("invalid namespace: %q", ns)
-	}
-
-	return true, nil
-}
-
 func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 	name, ok := ci.HasContext()
 	if !ok || a.Config.ActiveContextName() == name {
@@ -477,12 +461,13 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		}
 		ns := a.Config.ActiveNamespace()
 		if !a.Conn().IsValidNamespace(ns) {
-			a.Flash().Errf("Unable to validate namespace %q. Using %q namespace", ns, client.DefaultNamespace)
-			ns = client.DefaultNamespace
+			log.Warn().Msgf("Unable to validate namespace: %q. Using %q as active namespace", ns, ns)
 			if err := a.Config.SetActiveNamespace(ns); err != nil {
 				return err
 			}
 		}
+		a.Flash().Errf("Using %q namespace", ns)
+
 		if err := a.Config.Save(true); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
 		} else {

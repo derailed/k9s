@@ -42,42 +42,12 @@ func (s *StatefulSet) logOptions(prev bool) (*dao.LogOptions, error) {
 	if path == "" {
 		return nil, errors.New("you must provide a selection")
 	}
-
 	sts, err := s.getInstance(path)
 	if err != nil {
 		return nil, err
 	}
 
-	cc := sts.Spec.Template.Spec.Containers
-	var (
-		co, dco string
-		allCos  bool
-	)
-	if c, ok := dao.GetDefaultContainer(sts.Spec.Template.ObjectMeta, sts.Spec.Template.Spec); ok {
-		co, dco = c, c
-	} else if len(cc) == 1 {
-		co = cc[0].Name
-	} else {
-		dco, allCos = cc[0].Name, true
-	}
-
-	cfg := s.App().Config.K9s.Logger
-	opts := dao.LogOptions{
-		Path:            path,
-		Container:       co,
-		Lines:           int64(cfg.TailCount),
-		SingleContainer: len(cc) == 1,
-		SinceSeconds:    cfg.SinceSeconds,
-		AllContainers:   allCos,
-		ShowTimestamp:   cfg.ShowTime,
-		Previous:        prev,
-	}
-	if co == "" {
-		opts.AllContainers = true
-	}
-	opts.DefaultContainer = dco
-
-	return &opts, nil
+	return podLogOptions(s.App(), path, prev, sts.ObjectMeta, sts.Spec.Template.Spec), nil
 }
 
 func (s *StatefulSet) bindKeys(aa *ui.KeyActions) {
@@ -96,5 +66,6 @@ func (s *StatefulSet) showPods(app *App, _ ui.Tabular, _ client.GVR, path string
 
 func (s *StatefulSet) getInstance(path string) (*appsv1.StatefulSet, error) {
 	var sts dao.StatefulSet
+
 	return sts.GetInstance(s.App().factory, path)
 }

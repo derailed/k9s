@@ -53,49 +53,16 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 	if path == "" {
 		return nil, errors.New("you must provide a selection")
 	}
-
-	sts, err := d.dp(path)
+	dp, err := d.getInstance(path)
 	if err != nil {
 		return nil, err
 	}
 
-	cc := sts.Spec.Template.Spec.Containers
-	var (
-		co, dco string
-		allCos  bool
-	)
-	if c, ok := dao.GetDefaultContainer(sts.Spec.Template.ObjectMeta, sts.Spec.Template.Spec); ok {
-		co, dco = c, c
-	} else if len(cc) == 1 {
-		co = cc[0].Name
-	} else {
-		dco, allCos = cc[0].Name, true
-	}
-
-	cfg := d.App().Config.K9s.Logger
-	opts := dao.LogOptions{
-		Path:            path,
-		Container:       co,
-		Lines:           int64(cfg.TailCount),
-		SinceSeconds:    cfg.SinceSeconds,
-		SingleContainer: len(cc) == 1,
-		AllContainers:   allCos,
-		ShowTimestamp:   cfg.ShowTime,
-		Previous:        prev,
-	}
-	if co == "" {
-		opts.AllContainers = true
-	}
-	opts.DefaultContainer = dco
-
-	return &opts, nil
+	return podLogOptions(d.App(), path, prev, dp.ObjectMeta, dp.Spec.Template.Spec), nil
 }
 
 func (d *Deploy) showPods(app *App, model ui.Tabular, gvr client.GVR, fqn string) {
-	var ddp dao.Deployment
-	ddp.Init(d.App().factory, d.GVR())
-
-	dp, err := ddp.GetInstance(fqn)
+	dp, err := d.getInstance(fqn)
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -104,7 +71,7 @@ func (d *Deploy) showPods(app *App, model ui.Tabular, gvr client.GVR, fqn string
 	showPodsFromSelector(app, fqn, dp.Spec.Selector)
 }
 
-func (d *Deploy) dp(fqn string) (*appsv1.Deployment, error) {
+func (d *Deploy) getInstance(fqn string) (*appsv1.Deployment, error) {
 	var dp dao.Deployment
 	dp.Init(d.App().factory, d.GVR())
 

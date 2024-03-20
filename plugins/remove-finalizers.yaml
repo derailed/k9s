@@ -11,11 +11,12 @@ plugins:
   remove_finalizers:
     shortCut: Ctrl-F
     confirm: true
+    dangerous: true
     scopes:
       - all
     description: |
       Removes all finalizers from selected resource. Be careful when using it,
-      it may leave dangling resources or delete them 
+      it may leave dangling resources or delete them
     command: kubectl
     background: true
     args:

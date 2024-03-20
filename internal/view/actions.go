@@ -80,7 +80,7 @@ func hotKeyActions(r Runner, aa *ui.KeyActions) error {
 				errs = errors.Join(errs, fmt.Errorf("duplicate hotkey found for %q in %q", hk.ShortCut, k))
 				continue
 			}
-			log.Info().Msgf("Action %q has been overridden by hotkey in %q", hk.ShortCut, k)
+			log.Debug().Msgf("Action %q has been overridden by hotkey in %q", hk.ShortCut, k)
 		}
 
 		command, err := r.EnvFn()().Substitute(hk.Command)
@@ -110,7 +110,6 @@ func gotoCmd(r Runner, cmd, path string, clearStack bool) ui.ActionHandler {
 }
 
 func pluginActions(r Runner, aa *ui.KeyActions) error {
-	pp := config.NewPlugins()
 	aa.Range(func(k tcell.Key, a ui.KeyAction) {
 		if a.Opts.Plugin {
 			aa.Delete(k)
@@ -121,12 +120,16 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 	if err != nil {
 		return err
 	}
+	pp := config.NewPlugins()
 	if err := pp.Load(path); err != nil {
 		return err
 	}
 
-	var errs error
-	aliases := r.Aliases()
+	var (
+		errs    error
+		aliases = r.Aliases()
+		ro      = r.App().Config.K9s.IsReadOnly()
+	)
 	for k, plugin := range pp.Plugins {
 		if !inScope(plugin.Scopes, aliases) {
 			continue
@@ -141,15 +144,19 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", plugin.ShortCut, k))
 				continue
 			}
-			log.Info().Msgf("Action %q has been overridden by plugin in %q", plugin.ShortCut, k)
+			log.Debug().Msgf("Action %q has been overridden by plugin in %q", plugin.ShortCut, k)
 		}
 
+		if plugin.Dangerous && ro {
+			continue
+		}
 		aa.Add(key, ui.NewKeyActionWithOpts(
 			plugin.Description,
 			pluginAction(r, plugin),
 			ui.ActionOpts{
-				Visible: true,
-				Plugin:  true,
+				Visible:   true,
+				Plugin:    true,
+				Dangerous: plugin.Dangerous,
 			},
 		))
 	}
