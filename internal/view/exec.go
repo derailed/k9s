@@ -52,13 +52,29 @@ func (s shellOpts) String() string {
 	return fmt.Sprintf("%s %s", s.binary, strings.Join(s.args, " "))
 }
 
-func runK(a *App, opts shellOpts) error {
-	bin, err := exec.LookPath("kubectl")
-	if errors.Is(err, exec.ErrDot) {
-		return fmt.Errorf("kubectl command must not be in the current working directory: %w", err)
+func findKubectlBinary() (string, error) {
+	kubectlBinaries := []string{"kubectl", "microk8s.kubectl"}
+	for _, binary := range kubectlBinaries {
+		path, err := exec.LookPath(binary)
+		if err != nil {
+			if errors.Is(err, exec.ErrDot) {
+				return "", fmt.Errorf(
+					"%s command must not be in the current working directory: %w",
+					binary,
+					err,
+				)
+			}
+			continue
+		}
+		return path, nil
 	}
+	return "", fmt.Errorf("kubectl command is not in your path")
+}
+
+func runK(a *App, opts shellOpts) error {
+	bin, err := findKubectlBinary()
 	if err != nil {
-		return fmt.Errorf("kubectl command is not in your path: %w", err)
+		return err
 	}
 	args := []string{opts.args[0]}
 	if u, err := a.Conn().Config().ImpersonateUser(); err == nil {
@@ -203,10 +219,9 @@ func execute(opts shellOpts, statusChan chan<- string) error {
 }
 
 func runKu(a *App, opts shellOpts) (string, error) {
-	bin, err := exec.LookPath("kubectl")
-	if errors.Is(err, exec.ErrDot) {
-		log.Error().Err(err).Msgf("kubectl command must not be in the current working directory")
-		return "", err
+	bin, err := findKubectlBinary()
+	if err != nil {
+		return err
 	}
 	if err != nil {
 		log.Error().Err(err).Msgf("kubectl command is not in your path")
