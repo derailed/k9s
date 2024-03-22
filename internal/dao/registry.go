@@ -123,6 +123,24 @@ func (m *Meta) AllGVRs() client.GVRs {
 	return kk
 }
 
+func (m *Meta) FindGVRForAPIVersionAndKind(apiVersion, kind string) *client.GVR {
+	m.mx.RLock()
+	defer m.mx.RUnlock()
+
+	g, v, hasGroup := strings.Cut(apiVersion, "/")
+	if !hasGroup {
+		// if no slash, the first part is the version (no group)
+		g, v = "", g
+	}
+
+	for gvr, rsrc := range m.resMetas {
+		if strings.EqualFold(rsrc.Group, g) && strings.EqualFold(rsrc.Version, v) && strings.EqualFold(rsrc.Kind, kind) {
+			return &gvr
+		}
+	}
+	return nil
+}
+
 // IsCRD checks if resource represents a CRD
 func IsCRD(r metav1.APIResource) bool {
 	for _, c := range r.Categories {
