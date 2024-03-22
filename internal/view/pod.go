@@ -52,7 +52,11 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	p.ResourceViewer = NewPortForwardExtender(
 		NewVulnerabilityExtender(
 			NewImageExtender(
-				NewLogsExtender(NewBrowser(gvr), p.logOptions),
+				NewOwnerExtender(
+					NewLogsExtender(
+						NewBrowser(gvr),
+						p.logOptions),
+				),
 			),
 		),
 	)

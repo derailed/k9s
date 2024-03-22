@@ -5,6 +5,8 @@ package dao
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"path"
 	"sort"
 	"strings"
 	"sync"
@@ -99,6 +101,39 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	r.Init(f, gvr)
 
 	return r, nil
+}
+
+// GVRForKind returns the client.GVR corresponding to a kind.
+func GVRForKind(c client.Connection, apiVersion string, kind string) (client.GVR, bool, error) {
+	mapper := RestMapper{Connection: c}
+
+	m, err := mapper.ToRESTMapper()
+	if err != nil {
+		return client.GVR{}, false, err
+	}
+
+	var g, v string
+
+	if strings.Contains(apiVersion, "/") {
+		parts := strings.Split(apiVersion, "/")
+		g, v = parts[0], parts[1]
+	} else {
+		v = apiVersion
+	}
+
+	rm, err := m.RESTMapping(schema.GroupKind{Group: g, Kind: kind}, v)
+	if err != nil {
+		return client.GVR{}, false, err
+	}
+
+	gvr := client.NewGVR(path.Join(rm.Resource.Group, rm.Resource.Version, rm.Resource.Resource))
+
+	meta, err := MetaAccess.MetaFor(gvr)
+	if err != nil {
+		return client.GVR{}, false, err
+	}
+
+	return gvr, meta.Namespaced, nil
 }
 
 // RegisterMeta registers a new resource meta object.
