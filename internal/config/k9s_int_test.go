@@ -11,9 +11,10 @@ import (
 
 func Test_k9sOverrides(t *testing.T) {
 	var (
-		true = true
-		cmd  = "po"
-		dir  = "/tmp/blee"
+		true   = true
+		cmd    = "po"
+		filter = "flt"
+		dir    = "/tmp/blee"
 	)
 
 	uu := map[string]struct {
@@ -78,6 +79,7 @@ func Test_k9sOverrides(t *testing.T) {
 				manualLogoless:      &true,
 				manualCrumbsless:    &true,
 				manualCommand:       &cmd,
+				manualFilter:        &filter,
 				manualScreenDumpDir: &dir,
 			},
 			rate: 100,

@@ -37,6 +37,7 @@ type K9s struct {
 	manualCrumbsless    *bool
 	manualReadOnly      *bool
 	manualCommand       *string
+	manualFilter        *string
 	manualScreenDumpDir *string
 	dir                 *data.Dir
 	activeContextName   string
@@ -264,6 +265,7 @@ func (k *K9s) Override(k9sFlags *Flags) {
 		k.manualReadOnly = &false
 	}
 	k.manualCommand = k9sFlags.Command
+	k.manualFilter = k9sFlags.Filter
 	k.manualScreenDumpDir = k9sFlags.ScreenDumpDir
 }
 
