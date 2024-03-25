@@ -129,7 +129,7 @@ func (t *Table) SetContext(ctx context.Context) {
 }
 
 // Init initializes the component.
-func (t *Table) Init(ctx context.Context) {
+func (t *Table) Init(ctx context.Context, filter string) {
 	t.SetFixed(1, 0)
 	t.SetBorder(true)
 	t.SetBorderAttributes(tcell.AttrBold)
@@ -137,6 +137,9 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectable(true, false)
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetBackgroundColor(tcell.ColorDefault)
+	if len(filter) > 0 {
+		t.cmdBuff.CmdBuff.SetText(filter, filter)
+	}
 	t.Select(1, 0)
 	if cfg, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView); ok && cfg != nil {
 		cfg.AddListener(t.GVR().String(), t)

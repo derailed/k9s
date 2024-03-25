@@ -53,9 +53,13 @@ func (t *Table) Init(ctx context.Context) (err error) {
 			t.app.Logo().Warn("Views load failed!")
 		}
 	}
+	activeFilter := t.app.Config.ActiveFilter()
+	if len(activeFilter) > 0 {
+		t.app.filterHistory.Push(activeFilter)
+	}
 
 	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
-	t.Table.Init(ctx)
+	t.Table.Init(ctx, activeFilter)
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)

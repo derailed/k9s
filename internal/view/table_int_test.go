@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"os"
 	"testing"
 	"time"
@@ -69,6 +70,53 @@ func TestTableNew(t *testing.T) {
 	v.UpdateUI(cdata, data)
 
 	assert.Equal(t, 3, v.GetRowCount())
+}
+
+func TestTableNewWithFilter(t *testing.T) {
+	v := NewTable(client.NewGVR("test"))
+	filter := "a"
+	cl, ct := "cl-1", "ct-1-1"
+	ks := mock.NewMockKubeSettings(&genericclioptions.ConfigFlags{
+		ClusterName: &cl,
+		Context:     &ct,
+	})
+	k9s := config.NewK9s(nil, ks)
+	k9s.Override(&config.Flags{
+		Filter: &filter,
+	})
+	_, err := k9s.ActivateContext("ct-1-1")
+	assert.NoError(t, err)
+	appConfig := config.NewConfig(ks)
+	appConfig.K9s = k9s
+	app := NewApp(appConfig)
+	assert.NoError(t, v.Init(context.WithValue(makeContext(), internal.KeyApp, app)))
+
+	data := model1.NewTableDataWithRows(
+		client.NewGVR("test"),
+		model1.Header{
+			model1.HeaderColumn{Name: "NAMESPACE"},
+			model1.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
+			model1.HeaderColumn{Name: "FRED"},
+			model1.HeaderColumn{Name: "AGE", Time: true, Decorator: render.AgeDecorator},
+		},
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"ns1", "a", "10", "3m"},
+				},
+			},
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"ns1", "b", "15", "1m"},
+				},
+			},
+		),
+	)
+	cdata := v.Update(data, false)
+	v.UpdateUI(cdata, data)
+
+	assert.Equal(t, 2, v.GetRowCount())
+	assert.Equal(t, []string{"a"}, app.filterHistory.List())
 }
 
 func TestTableViewFilter(t *testing.T) {

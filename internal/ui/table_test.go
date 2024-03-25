@@ -22,14 +22,23 @@ import (
 
 func TestTableNew(t *testing.T) {
 	v := ui.NewTable(client.NewGVR("fred"))
-	v.Init(makeContext())
+	v.Init(makeContext(), "")
 
 	assert.Equal(t, "fred", v.GVR().String())
+	assert.Equal(t, "", v.CmdBuff().GetText())
+}
+
+func TestTableNewWithFilter(t *testing.T) {
+	v := ui.NewTable(client.NewGVR(""))
+	v.Init(makeContext(), "flt")
+
+	assert.Equal(t, "", v.GVR().String())
+	assert.Equal(t, "flt", v.CmdBuff().GetText())
 }
 
 func TestTableUpdate(t *testing.T) {
 	v := ui.NewTable(client.NewGVR("fred"))
-	v.Init(makeContext())
+	v.Init(makeContext(), "")
 
 	data := makeTableData()
 	cdata := v.Update(data, false)
@@ -41,7 +50,7 @@ func TestTableUpdate(t *testing.T) {
 
 func TestTableSelection(t *testing.T) {
 	v := ui.NewTable(client.NewGVR("fred"))
-	v.Init(makeContext())
+	v.Init(makeContext(), "")
 	m := &mockModel{}
 	v.SetModel(m)
 	data := m.Peek()
