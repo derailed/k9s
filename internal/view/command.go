@@ -11,9 +11,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 )
@@ -210,18 +212,35 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
-		return c.run(cmd.NewInterpreter("context"), "", true)
+	makeLine := func(s string) string {
+		return s
+	}
+	filter := c.app.Config.ActiveFilter()
+	if filter != "" {
+		c.app.filterHistory.Push(filter)
+		if internal.IsLabelSelector(filter) {
+			makeLine = func(s string) string {
+				return s + " " + ui.TrimLabelSelector(filter)
+			}
+		} else {
+			makeLine = func(s string) string {
+				return s + " /" + filter
+			}
+		}
 	}
 
-	p := cmd.NewInterpreter(c.app.Config.ActiveView())
+	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
+		return c.run(cmd.NewInterpreter(makeLine("context")), "", true)
+	}
+
+	p := cmd.NewInterpreter(makeLine(c.app.Config.ActiveView()))
 	if p.IsBlank() {
-		return c.run(p.Reset("pod"), "", true)
+		return c.run(p.Reset(makeLine("pod")), "", true)
 	}
 
 	if err := c.run(p, "", true); err != nil {
 		log.Error().Err(err).Msgf("Default run command failed %q", p.GetLine())
-		return c.run(p.Reset("pod"), "", true)
+		return c.run(p.Reset(makeLine("pod")), "", true)
 	}
 
 	return nil

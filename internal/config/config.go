@@ -196,6 +196,20 @@ func (c *Config) ResetActiveView() {
 	}
 }
 
+// ActiveFilter returns the active filter
+func (c *Config) ActiveFilter() string {
+	filter := ""
+	if c.K9s.manualFilter != nil && *c.K9s.manualFilter != "" {
+		filter = *c.K9s.manualFilter
+		// We reset the manualFilter property because
+		// the command-line switch should only be considered once,
+		// on startup.
+		*c.K9s.manualFilter = ""
+	}
+
+	return filter
+}
+
 // SetActiveView sets current context active view.
 func (c *Config) SetActiveView(view string) {
 	if ct, err := c.K9s.ActiveContext(); err == nil {

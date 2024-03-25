@@ -12,6 +12,9 @@ const (
 
 	// DefaultCommand represents the default command to run.
 	DefaultCommand = ""
+
+	// DefaultFilter represents the default filter to use.
+	DefaultFilter = ""
 )
 
 // Flags represents K9s configuration flags.
@@ -22,6 +25,7 @@ type Flags struct {
 	Headless      *bool
 	Logoless      *bool
 	Command       *string
+	Filter        *string
 	AllNamespaces *bool
 	ReadOnly      *bool
 	Write         *bool
@@ -38,6 +42,7 @@ func NewFlags() *Flags {
 		Headless:      boolPtr(false),
 		Logoless:      boolPtr(false),
 		Command:       strPtr(DefaultCommand),
+		Filter:        strPtr(DefaultFilter),
 		AllNamespaces: boolPtr(false),
 		ReadOnly:      boolPtr(false),
 		Write:         boolPtr(false),

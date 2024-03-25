@@ -226,6 +226,12 @@ func initK9sFlags() {
 		config.DefaultCommand,
 		"Overrides the default resource to load when the application launches",
 	)
+	rootCmd.Flags().StringVarP(
+		k9sFlags.Filter,
+		"filter", "f",
+		config.DefaultFilter,
+		"Overrides the default resource filter when the application launches",
+	)
 	rootCmd.Flags().BoolVar(
 		k9sFlags.ReadOnly,
 		"readonly",
