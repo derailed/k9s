@@ -34,8 +34,9 @@ import (
 )
 
 const (
-	shellCheck = `command -v bash >/dev/null && exec bash || exec sh`
-	bannerFmt  = "<<K9s-Shell>> Pod: %s | Container: %s \n"
+	shellCheck   = `command -v bash >/dev/null && exec bash || exec sh`
+	bannerFmt    = "<<K9s-Shell>> Pod: %s | Container: %s \n"
+	outputPrefix = "[output]"
 )
 
 var editorEnvVars = []string{"KUBE_EDITOR", "K9S_EDITOR", "EDITOR"}
@@ -492,7 +493,7 @@ func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e *byt
 				} else {
 					for _, l := range strings.Split(w.String(), "\n") {
 						if l != "" {
-							statusChan <- fmt.Sprintf("[output] %s", l)
+							statusChan <- fmt.Sprintf("%s %s", outputPrefix, l)
 						}
 					}
 					statusChan <- fmt.Sprintf("Command completed successfully: %q", render.Truncate(cmd.String(), 20))
