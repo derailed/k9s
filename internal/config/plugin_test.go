@@ -22,23 +22,25 @@ var pluginYmlTestData = Plugin{
 }
 
 var test1YmlTestData = Plugin{
-	Scopes:      []string{"po", "dp"},
-	Args:        []string{"-n", "$NAMESPACE", "-boolean"},
-	ShortCut:    "shift-s",
-	Description: "blee",
-	Command:     "duh",
-	Confirm:     true,
-	Background:  false,
+	Scopes:          []string{"po", "dp"},
+	Args:            []string{"-n", "$NAMESPACE", "-boolean"},
+	ShortCut:        "shift-s",
+	Description:     "blee",
+	Command:         "duh",
+	Confirm:         true,
+	Background:      false,
+	OverwriteOutput: true,
 }
 
 var test2YmlTestData = Plugin{
-	Scopes:      []string{"svc", "ing"},
-	Args:        []string{"-n", "$NAMESPACE", "-oyaml"},
-	ShortCut:    "shift-r",
-	Description: "bla",
-	Command:     "duha",
-	Confirm:     false,
-	Background:  true,
+	Scopes:          []string{"svc", "ing"},
+	Args:            []string{"-n", "$NAMESPACE", "-oyaml"},
+	ShortCut:        "shift-r",
+	Description:     "bla",
+	Command:         "duha",
+	Confirm:         false,
+	Background:      true,
+	OverwriteOutput: false,
 }
 
 func TestPluginLoad(t *testing.T) {
