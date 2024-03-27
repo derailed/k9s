@@ -208,12 +208,10 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 				for st := range statusChan {
 					if !p.OverwriteOutput {
 						r.App().Flash().Infof("Plugin command launched successfully: %q", st)
-					} else {
-						if strings.Contains(st, outputPrefix) {
-							infoMsg := strings.TrimPrefix(st, outputPrefix)
-							r.App().Flash().Info(strings.TrimSpace(infoMsg))
-							return
-						}
+					} else if strings.Contains(st, outputPrefix) {
+						infoMsg := strings.TrimPrefix(st, outputPrefix)
+						r.App().Flash().Info(strings.TrimSpace(infoMsg))
+						return
 					}
 				}
 			}()
