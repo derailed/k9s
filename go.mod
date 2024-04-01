@@ -10,7 +10,7 @@ require (
 	github.com/anchore/grype v0.74.0
 	github.com/anchore/syft v0.100.0
 	github.com/atotto/clipboard v0.1.4
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/derailed/popeye v0.11.3
 	github.com/derailed/tcell/v2 v2.3.1-rc.3
 	github.com/derailed/tview v0.8.3
