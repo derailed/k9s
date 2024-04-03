@@ -48,8 +48,7 @@ func (c *Context) renameCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	app := c.App()
-	c.showRenameModal(app, contextName, c.renameDialogCallback)
+	c.showRenameModal(contextName, c.renameDialogCallback)
 
 	return nil
 }
@@ -65,39 +64,42 @@ func (c *Context) renameDialogCallback(form *tview.Form, contextName string) err
 	return nil
 }
 
-func (c *Context) showRenameModal(a *App, name string, ok func(form *tview.Form, contextName string) error) {
-	p := a.Content.Pages
-	f := c.makeStyledForm()
+func (c *Context) showRenameModal(name string, ok func(form *tview.Form, contextName string) error) {
+	app := c.App()
+	styles := app.Styles.Dialog()
+
+	f := tview.NewForm().
+		SetItemPadding(0).
+		SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
 	f.AddInputField(inputField, name, 0, nil, nil).
 		AddButton("OK", func() {
 			if err := ok(f, name); err != nil {
-				c.App().Flash().Err(err)
+				app.Flash().Err(err)
 				return
 			}
-			p.RemovePage(renamePage)
+			app.Content.Pages.RemovePage(renamePage)
 		}).
 		AddButton("Cancel", func() {
-			p.RemovePage(renamePage)
+			app.Content.Pages.RemovePage(renamePage)
 		})
+
 	m := tview.NewModalForm("<Rename>", f)
 	m.SetText(fmt.Sprintf("Rename context %q?", name))
 	m.SetDoneFunc(func(int, string) {
-		p.RemovePage(renamePage)
+		app.Content.Pages.RemovePage(renamePage)
 	})
-	p.AddPage(renamePage, m, false, false)
-	p.ShowPage(renamePage)
-}
+	app.Content.Pages.AddPage(renamePage, m, false, false)
+	app.Content.Pages.ShowPage(renamePage)
 
-func (c *Context) makeStyledForm() *tview.Form {
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
-
-	return f
+	for i := 0; i < f.GetButtonCount(); i++ {
+		f.GetButton(i).
+			SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color()).
+			SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	}
 }
 
 func (c *Context) useCtx(app *App, model ui.Tabular, gvr client.GVR, path string) {
