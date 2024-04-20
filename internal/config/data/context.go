@@ -53,8 +53,11 @@ func NewContextFromKubeConfig(ks KubeSettings) (*Context, error) {
 }
 
 func (c *Context) merge(old *Context) {
-	if old == nil {
+	if old == nil || old.Namespace == nil {
 		return
+	}
+	if c.Namespace == nil {
+		c.Namespace = NewNamespace()
 	}
 	c.Namespace.merge(old.Namespace)
 }

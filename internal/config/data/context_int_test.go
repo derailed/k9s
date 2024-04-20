@@ -70,6 +70,11 @@ func Test_contextMerge(t *testing.T) {
 				},
 			},
 		},
+		"no-namespace": {
+			c1: NewContext(),
+			c2: &Context{},
+			e:  NewContext(),
+		},
 	}
 
 	for k, u := range uu {

@@ -466,7 +466,7 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 				return err
 			}
 		}
-		a.Flash().Errf("Using %q namespace", ns)
+		a.Flash().Infof("Using %q namespace", ns)
 
 		if err := a.Config.Save(true); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
