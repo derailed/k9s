@@ -151,6 +151,10 @@ func (a *App) bindKeys() {
 
 // BailOut exits the application.
 func (a *App) BailOut() {
+	if err := a.Config.Save(true); err != nil {
+		log.Error().Err(err).Msg("config save failed!")
+	}
+
 	a.Stop()
 	os.Exit(0)
 }
