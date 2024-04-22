@@ -27,9 +27,13 @@ func NewOwnerExtender(v ResourceViewer) ResourceViewer {
 }
 
 // BindKeys injects new menu actions.
-func (o *OwnerExtender) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyO: ui.NewKeyAction("Show Owner", o.ownerCmd(), true),
+func (o *OwnerExtender) bindKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyW, ui.KeyAction{
+		Description: "Show Owner",
+		Action:      o.ownerCmd(),
+		Opts: ui.ActionOpts{
+			Visible: true,
+		},
 	})
 }
 
