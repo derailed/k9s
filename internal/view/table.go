@@ -5,6 +5,8 @@ package view
 
 import (
 	"context"
+	"github.com/derailed/k9s/internal/dao"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
 	"strings"
 	"time"
@@ -194,6 +196,7 @@ func (t *Table) bindKeys() {
 		tcell.KeyCtrlS:         ui.NewSharedKeyAction("Save", t.saveCmd, false),
 		ui.KeySlash:            ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
 		tcell.KeyCtrlZ:         ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
+		tcell.KeyCtrlO:         ui.NewKeyAction("Goto Owner", t.gotoOwnerCmd, false),
 		tcell.KeyCtrlW:         ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
 		ui.KeyShiftN:           ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
 		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
@@ -202,6 +205,35 @@ func (t *Table) bindKeys() {
 
 func (t *Table) toggleFaultCmd(evt *tcell.EventKey) *tcell.EventKey {
 	t.ToggleToast()
+	return nil
+}
+
+func (t *Table) gotoOwnerCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := t.GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+	if !strings.Contains(path, "/") {
+		path = client.FQN(client.ClusterScope, path)
+	}
+	obj, err := t.App().factory.Get(t.GVR().String(), path, false, nil)
+	if err != nil {
+		t.app.Flash().Err(err)
+		return nil
+	}
+	if oo, ok := obj.(v1.Object); ok {
+		ns := oo.GetNamespace()
+		if ns == "" {
+			ns = client.ClusterScope
+		}
+		for _, oref := range oo.GetOwnerReferences() {
+			if gvr := dao.MetaAccess.FindGVRForAPIVersionAndKind(oref.APIVersion, oref.Kind); gvr != nil {
+				t.App().gotoResource(gvr.String(), ns+"/"+oref.Name, false)
+				return nil
+			}
+		}
+	}
+	t.app.Flash().Warn("No owner for " + path)
 	return nil
 }
 
