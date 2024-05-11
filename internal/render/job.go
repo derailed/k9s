@@ -64,15 +64,16 @@ func (j Job) Render(o interface{}, ns string, r *model1.Row) error {
 		jobSelector(job.Spec),
 		cc,
 		ii,
-		AsStatus(j.diagnose(job.Status)),
+		AsStatus(j.diagnose(ready, job.Status)),
 		ToAge(job.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (Job) diagnose(status batchv1.JobStatus) error {
-	if status.Failed > 0 {
+func (Job) diagnose(ready string, status batchv1.JobStatus) error {
+	tokens := strings.Split(ready, "/")
+	if tokens[0] != tokens[1] && status.Failed > 0 {
 		return fmt.Errorf("%d pods failed", status.Failed)
 	}
 	return nil
