@@ -5,7 +5,6 @@ package ui
 
 import (
 	"fmt"
-
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
@@ -32,7 +31,7 @@ func NewPages() *Pages {
 func (p *Pages) IsTopDialog() bool {
 	_, pa := p.GetFrontPage()
 	switch pa.(type) {
-	case *tview.ModalForm:
+	case *tview.ModalForm, *ModalList:
 		return true
 	default:
 		return false

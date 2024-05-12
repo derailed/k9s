@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -121,6 +122,20 @@ func (m *Meta) AllGVRs() client.GVRs {
 	sort.Sort(kk)
 
 	return kk
+}
+
+// GVK2GVR convert gvk to gvr
+func (m *Meta) GVK2GVR(gv schema.GroupVersion, kind string) (client.GVR, bool) {
+	m.mx.RLock()
+	defer m.mx.RUnlock()
+
+	for gvr, meta := range m.resMetas {
+		if gv.Group == meta.Group && gv.Version == meta.Version && kind == meta.Kind {
+			return gvr, true
+		}
+	}
+
+	return client.NoGVR, false
 }
 
 // IsCRD checks if resource represents a CRD
