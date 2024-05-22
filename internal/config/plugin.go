@@ -58,8 +58,12 @@ func (p Plugins) Load(path string) error {
 	if err := p.load(AppPluginsFile); err != nil {
 		errs = errors.Join(errs, err)
 	}
-	if err := p.load(path); err != nil {
-		errs = errors.Join(errs, err)
+	// Don't load any configuration from a context path if the path comes
+	// empty because the current context is also empty.
+	if path != "" {
+		if err := p.load(path); err != nil {
+			errs = errors.Join(errs, err)
+		}
 	}
 
 	for _, dataDir := range xdg.DataDirs {

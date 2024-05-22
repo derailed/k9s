@@ -117,7 +117,11 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 	})
 
 	path, err := r.App().Config.ContextPluginsPath()
-	if err != nil {
+	// The current context can be empty, and in that case the
+	// ContextPluginsPath() method will return an empty string and an error.
+	// In this particular case, the fact that there is no context plugin
+	// path if there is no context by itself is not really an error.
+	if err != nil && path != "" {
 		return err
 	}
 	pp := config.NewPlugins()
