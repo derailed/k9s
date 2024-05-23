@@ -12,7 +12,7 @@ ARG LINODE_CLI_VERSION="5.48.1"
 
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends sudo apt-transport-https ca-certificates vim fish jq \
+    && apt-get install -y --no-install-recommends sudo apt-transport-https ca-certificates neovim fish jq \
     && pip install azure-cli==${AZURE_CLI_VERSION} linode-cli==${LINODE_CLI_VERSION} \
     # Install k9s
     && ARCHITECTURE=$(dpkg --print-architecture) \
@@ -45,6 +45,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ./kubeconfig-gen.py /usr/local/bin/linode-kubeconfig
+COPY ./in-cluster-config.sh /usr/local/bin/in-cluster-config
 
 USER k9s
 WORKDIR /home/k9s
