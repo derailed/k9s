@@ -93,12 +93,19 @@ func (v *OwnerExtender) jumpOwner(ns string, owner metav1.OwnerReference) error 
 		return err
 	}
 
-	gvr, found := dao.MetaAccess.GVK2GVR(gv, owner.Kind)
+	gvr, namespaced, found := dao.MetaAccess.GVK2GVR(gv, owner.Kind)
 	if !found {
 		return errors.Errorf("unsupported GVK: %s/%s", owner.APIVersion, owner.Kind)
 	}
 
-	v.App().gotoResource(gvr.String(), client.FQN(ns, owner.Name), false)
+	var ownerFQN string
+	if namespaced {
+		ownerFQN = client.FQN(ns, owner.Name)
+	} else {
+		ownerFQN = owner.Name
+	}
+
+	v.App().gotoResource(gvr.String(), ownerFQN, false)
 	return nil
 }
 
