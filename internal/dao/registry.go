@@ -125,17 +125,17 @@ func (m *Meta) AllGVRs() client.GVRs {
 }
 
 // GVK2GVR convert gvk to gvr
-func (m *Meta) GVK2GVR(gv schema.GroupVersion, kind string) (client.GVR, bool) {
+func (m *Meta) GVK2GVR(gv schema.GroupVersion, kind string) (client.GVR, bool, bool) {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
 
 	for gvr, meta := range m.resMetas {
 		if gv.Group == meta.Group && gv.Version == meta.Version && kind == meta.Kind {
-			return gvr, true
+			return gvr, meta.Namespaced, true
 		}
 	}
 
-	return client.NoGVR, false
+	return client.NoGVR, false, false
 }
 
 // IsCRD checks if resource represents a CRD
