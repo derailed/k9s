@@ -1035,6 +1035,14 @@ k9s:
 
 ---
 
+## Environment Variables
+
+K9s supports the following environment variables:
+
+- `TZ` - Timezone to use for timestamps.
+
+---
+
 ## Contributors
 
 Without the contributions from these fine folks, this project would be a total dud!
