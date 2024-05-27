@@ -16,6 +16,8 @@ type LogChan chan *LogItem
 
 var ItemEOF = new(LogItem)
 
+var locationFromTZ *time.Location = nil
+
 // LogItem represents a container log line.
 type LogItem struct {
 	Pod, Container  string
@@ -79,14 +81,16 @@ func (l *LogItem) RenderTimestampWithTimezone(date []byte, bb *bytes.Buffer) {
 		return
 	}
 
-	loc, err := time.LoadLocation(os.Getenv("TZ"))
+	if locationFromTZ == nil {
+		locationFromTZ, err = time.LoadLocation(os.Getenv("TZ"))
 
-	if err != nil {
-		log.Error().Err(err).Msg("Invalid timezone")
-		return
+		if err != nil {
+			log.Error().Err(err).Msg("Invalid timezone")
+			return
+		}
 	}
 
-	bb.Write([]byte(t.In(loc).Format("2006-01-02T15:04:05.000000000Z")))
+	bb.Write([]byte(t.In(locationFromTZ).Format("2006-01-02T15:04:05.000000000Z")))
 }
 
 // RenderTimestamp write the date in bb.

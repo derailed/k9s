@@ -119,6 +119,22 @@ func BenchmarkLogItemRenderTS(b *testing.B) {
 	}
 }
 
+func BenchmarkLogItemRenderTSWithTimezone(b *testing.B) {
+	os.Setenv("TZ", "Europe/Paris")
+	s := []byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))
+	i := dao.NewLogItem(s)
+	i.Pod, i.Container = "fred", "blee"
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for n := 0; n < b.N; n++ {
+		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
+		i.Render("yellow", true, bb)
+	}
+
+	os.Unsetenv("TZ")
+}
+
 func BenchmarkLogItemRenderNoTS(b *testing.B) {
 	s := []byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))
 	i := dao.NewLogItem(s)
