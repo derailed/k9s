@@ -20,6 +20,7 @@ func TestNewFlags(t *testing.T) {
 	assert.Equal(t, "/tmp/k9s-test/k9s.log", *f.LogFile)
 	assert.Equal(t, config.AppDumpsDir, *f.ScreenDumpDir)
 	assert.Empty(t, *f.Command)
+	assert.Empty(t, *f.Filter)
 	assert.False(t, *f.Headless)
 	assert.False(t, *f.Logoless)
 	assert.False(t, *f.AllNamespaces)
