@@ -13,7 +13,6 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -65,19 +64,18 @@ func (j Job) Render(o interface{}, ns string, r *model1.Row) error {
 		jobSelector(job.Spec),
 		cc,
 		ii,
-		AsStatus(j.diagnose(ready, job.Status.CompletionTime)),
+		AsStatus(j.diagnose(ready, job.Status)),
 		ToAge(job.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (Job) diagnose(ready string, completed *metav1.Time) error {
+func (Job) diagnose(ready string, status batchv1.JobStatus) error {
 	tokens := strings.Split(ready, "/")
-	if tokens[0] != tokens[1] {
-		return fmt.Errorf("expecting %s completion got %s", tokens[1], tokens[0])
+	if tokens[0] != tokens[1] && status.Failed > 0 {
+		return fmt.Errorf("%d pods failed", status.Failed)
 	}
-
 	return nil
 }
 

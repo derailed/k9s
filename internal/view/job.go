@@ -25,7 +25,9 @@ func NewJob(gvr client.GVR) ResourceViewer {
 	var j Job
 
 	j.ResourceViewer = NewVulnerabilityExtender(
-		NewLogsExtender(NewBrowser(gvr), j.logOptions),
+		NewOwnerExtender(
+			NewLogsExtender(NewBrowser(gvr), j.logOptions),
+		),
 	)
 	j.GetTable().SetEnterFn(j.showPods)
 	j.GetTable().SetSortCol("AGE", true)

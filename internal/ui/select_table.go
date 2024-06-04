@@ -59,7 +59,7 @@ func (s *SelectTable) GetSelectedItems() []string {
 	return items
 }
 
-// GetRowID returns the row id at at given location.
+// GetRowID returns the row id at given location.
 func (s *SelectTable) GetRowID(index int) (string, bool) {
 	cell := s.GetCell(index, 0)
 	if cell == nil {
