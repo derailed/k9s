@@ -158,7 +158,9 @@ func readiness(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefiniti
 func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
 	case PodGVR:
-		if !isReady(r.Cells[indexOf("Ready", h)].(string)) || r.Cells[indexOf("Status", h)] != render.PhaseRunning {
+		if status := r.Cells[indexOf("Status", h)]; status == render.PhaseCompleted {
+			return StatusOK
+		} else if !isReady(r.Cells[indexOf("Ready", h)].(string)) || status != render.PhaseRunning {
 			return DegradedStatus
 		}
 	case DpGVR, StsGVR:
