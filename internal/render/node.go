@@ -35,7 +35,8 @@ func (Node) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "ROLE"},
+		model1.HeaderColumn{Name: "ROLE", Wide: true},
+		model1.HeaderColumn{Name: "POOL"},
 		model1.HeaderColumn{Name: "ARCH", Wide: true},
 		model1.HeaderColumn{Name: "TAINTS"},
 		model1.HeaderColumn{Name: "VERSION"},
@@ -82,6 +83,7 @@ func (n Node) Render(o interface{}, ns string, r *model1.Row) error {
 	roles := make(sort.StringSlice, 10)
 	nodeRoles(&no, roles)
 	sort.Sort(roles)
+	pool := nodePool(&no)
 
 	podCount := strconv.Itoa(oo.PodCount)
 	if pc := oo.PodCount; pc == -1 {
@@ -92,6 +94,7 @@ func (n Node) Render(o interface{}, ns string, r *model1.Row) error {
 		no.Name,
 		join(statuses, ","),
 		join(roles, ","),
+		pool,
 		no.Status.NodeInfo.Architecture,
 		strconv.Itoa(len(no.Spec.Taints)),
 		no.Status.NodeInfo.KubeletVersion,
@@ -193,6 +196,15 @@ func nodeRoles(node *v1.Node, res []string) {
 	if empty(res) {
 		res[index] = MissingValue
 	}
+}
+
+func nodePool(node *v1.Node) string {
+	for k, v := range node.Labels {
+		if k == "segment.com/pool" {
+			return v
+		}
+	}
+	return UnsetValue
 }
 
 func getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
