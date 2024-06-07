@@ -184,7 +184,7 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// Policy...
-	"policy/v1beta1/poddisruptionbudgets": {
+	"policy/v1/poddisruptionbudgets": {
 		Renderer: &render.PodDisruptionBudget{},
 	},
 
