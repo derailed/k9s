@@ -9,6 +9,7 @@
       "properties": {
         "liveViewAutoRefresh": { "type": "boolean" },
         "screenDumpDir": {"type": "string"},
+        "shell": {"type": "string"},
         "refreshRate": { "type": "integer" },
         "maxConnRetry": { "type": "integer" },
         "readOnly": { "type": "boolean" },
