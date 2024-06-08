@@ -489,7 +489,7 @@ func toEmoji(gvr string) string {
 		return "👨🏻‍"
 	case "networking.k8s.io/v1/networkpolicies":
 		return "📕"
-	case "policy/v1beta1/poddisruptionbudgets":
+	case "policy/v1/poddisruptionbudgets":
 		return "🏷 "
 	case "policy/v1beta1/podsecuritypolicies":
 		return "👮‍♂️"
