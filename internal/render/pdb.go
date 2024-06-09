@@ -10,7 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
-	v1beta1 "k8s.io/api/policy/v1beta1"
+	v1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -44,7 +44,7 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *model1.Row) err
 	if !ok {
 		return fmt.Errorf("expected PodDisruptionBudget, but got %T", o)
 	}
-	var pdb v1beta1.PodDisruptionBudget
+	var pdb v1.PodDisruptionBudget
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pdb)
 	if err != nil {
 		return err
