@@ -106,11 +106,16 @@ func (t *Table) getMSort() bool {
 	return t.manualSort
 }
 
-func (t *Table) setVs(vs *config.ViewSetting) {
+func (t *Table) setVs(vs *config.ViewSetting) bool {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	t.viewSetting = vs
+	if !t.viewSetting.Equals(vs) {
+		t.viewSetting = vs
+		return true
+	}
+
+	return false
 }
 
 func (t *Table) getVs() *config.ViewSetting {
@@ -150,9 +155,10 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
 func (t *Table) ViewSettingsChanged(vs config.ViewSetting) {
-	t.setVs(&vs)
-	t.setMSort(false)
-	t.Refresh()
+	if t.setVs(&vs) {
+		t.setMSort(false)
+		t.Refresh()
+	}
 }
 
 // StylesChanged notifies the skin changed.
