@@ -101,6 +101,19 @@ func (c *Command) contextCmd(p *cmd.Interpreter) error {
 	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true)
 }
 
+func (c *Command) namespaceCmd(p *cmd.Interpreter) bool {
+	ns, ok := p.NSArg()
+	if !ok {
+		return false
+	}
+
+	if ns != "" {
+		_ = p.Reset("pod " + ns)
+	}
+
+	return false
+}
+
 func (c *Command) aliasCmd(p *cmd.Interpreter) error {
 	filter, _ := p.FilterArg()
 
@@ -244,6 +257,8 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 		if err := c.contextCmd(p); err != nil {
 			c.app.Flash().Err(err)
 		}
+	case p.IsNamespaceCmd():
+		return c.namespaceCmd(p)
 	case p.IsDirCmd():
 		if a, ok := p.DirArg(); !ok {
 			c.app.Flash().Errf("Invalid command. Use `dir xxx`")

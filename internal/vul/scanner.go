@@ -28,7 +28,7 @@ import (
 	"github.com/anchore/grype/grype/pkg"
 	"github.com/anchore/grype/grype/store"
 	"github.com/anchore/grype/grype/vex"
-	"github.com/anchore/syft/syft/pkg/cataloger"
+	"github.com/anchore/syft/syft"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -177,7 +177,7 @@ func (s *imageScanner) scan(ctx context.Context, img string, sc *Scan) error {
 		Store:          *s.store,
 		IgnoreRules:    s.opts.Ignore,
 		NormalizeByCVE: s.opts.ByCVE,
-		FailSeverity:   s.opts.FailOnServerity(),
+		FailSeverity:   s.opts.FailOnSeverity(),
 		Matchers:       getMatchers(s.opts),
 		VexProcessor: vex.NewProcessor(vex.ProcessorOptions{
 			Documents:   s.opts.VexDocuments,
@@ -199,9 +199,9 @@ func (s *imageScanner) scan(ctx context.Context, img string, sc *Scan) error {
 func getProviderConfig(opts *options.Grype) pkg.ProviderConfig {
 	return pkg.ProviderConfig{
 		SyftProviderConfig: pkg.SyftProviderConfig{
+			SBOMOptions:            syft.DefaultCreateSBOMConfig(),
 			RegistryOptions:        opts.Registry.ToOptions(),
 			Exclusions:             opts.Exclusions,
-			CatalogingOptions:      cataloger.DefaultConfig(),
 			Platform:               opts.Platform,
 			Name:                   opts.Name,
 			DefaultImagePullSource: opts.DefaultImagePullSource,

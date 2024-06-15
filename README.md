@@ -340,7 +340,7 @@ K9s uses aliases to navigate most K8s resources.
 |---------------------------------------------------------------------------------|-------------------------------|------------------------------------------------------------------------|
 | Show active keyboard mnemonics and help                                         | `?`                           |                                                                        |
 | Show all available resource alias                                               | `ctrl-a`                      |                                                                        |
-| To bail out of K9s                                                              | `:q`, `ctrl-c`                |                                                                        |
+| To bail out of K9s                                                              | `:quit`, `:q`, `ctrl-c`                |                                                                        |
 | View a Kubernetes resource using singular/plural or short-name                  | `:`pod⏎                       | accepts singular, plural, short-name or alias ie pod or pods           |
 | View a Kubernetes resource in a given namespace                                 | `:`pod ns-x⏎                  |                                                                        |
 | View filtered pods (New v0.30.0!)                                               | `:`pod /fred⏎                 | View all pods filtered by fred                                         |
@@ -373,6 +373,8 @@ K9s uses aliases to navigate most K8s resources.
   | `~/.config/k9s` | `~/Library/Application Support/k9s` | `%LOCALAPPDATA%\k9s`  |
 
   > NOTE: This is still in flux and will change while in pre-release stage!
+
+You can now override the context portForward default address configuration by setting an env variable that can override all clusters portForward local address using `K9S_DEFAULT_PF_ADDRESS=a.b.c.d`
 
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yaml
@@ -449,6 +451,8 @@ K9s has integration with [Popeye](https://popeyecli.io/), which is a Kubernetes 
 ## Node Shell
 
 By enabling the nodeShell feature gate on a given cluster, K9s allows you to shell into your cluster nodes. Once enabled, you will have a new `s` for `shell` menu option while in node view. K9s will launch a pod on the selected node using a special k9s_shell pod. Furthermore, you can refine your shell pod by using a custom docker image preloaded with the shell tools you love. By default k9s uses a BusyBox image, but you can configure it as follows:
+
+Alternatively, you can now override the context configuration by setting an env variable that can override all clusters node shell gate using `K9S_FEATURE_GATE_NODE_SHELL=true|false`
 
 ```yaml
 # $XDG_CONFIG_HOME/k9s/config.yaml
