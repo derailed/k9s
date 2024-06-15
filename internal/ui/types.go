@@ -16,6 +16,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type (
+	// SortChange changes the column on which to sort
+	SortChange bool
+)
+
+const (
+	SortNextCol SortChange = true
+	SortPrevCol SortChange = false
+)
+
 const (
 	unlockedIC = "[RW]"
 	lockedIC   = "[R]"
