@@ -1,13 +1,12 @@
 module github.com/derailed/k9s
 
-go 1.21.1
-
-toolchain go1.21.4
+go 1.22.0
 
 require (
 	github.com/adrg/xdg v0.4.0
 	github.com/anchore/clio v0.0.0-20240209204744-cb94e40a4f65
 	github.com/anchore/grype v0.77.0
+	github.com/anchore/syft v1.2.0
 	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/derailed/popeye v0.11.3
@@ -16,6 +15,7 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fvbommel/sortorder v1.1.0
+	github.com/go-errors/errors v1.4.2
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/olekukonko/tablewriter v0.0.5
@@ -30,14 +30,14 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.4
-	k8s.io/api v0.29.3
-	k8s.io/apiextensions-apiserver v0.29.3
-	k8s.io/apimachinery v0.29.3
-	k8s.io/cli-runtime v0.29.3
-	k8s.io/client-go v0.29.3
+	k8s.io/api v0.30.1
+	k8s.io/apiextensions-apiserver v0.30.1
+	k8s.io/apimachinery v0.30.1
+	k8s.io/cli-runtime v0.30.1
+	k8s.io/client-go v0.30.1
 	k8s.io/klog/v2 v2.120.1
-	k8s.io/kubectl v0.29.3
-	k8s.io/metrics v0.29.3
+	k8s.io/kubectl v0.30.1
+	k8s.io/metrics v0.30.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -72,7 +72,6 @@ require (
 	github.com/anchore/go-version v1.2.2-0.20210903204242-51efa5b487c4 // indirect
 	github.com/anchore/packageurl-go v0.1.1-0.20240312213626-055233e539b4 // indirect
 	github.com/anchore/stereoscope v0.0.2-0.20240229175558-fe426d1b1c84 // indirect
-	github.com/anchore/syft v1.2.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/aquasecurity/go-pep440-version v0.0.0-20210121094942-22b2f8951d46 // indirect
@@ -126,7 +125,6 @@ require (
 	github.com/github/go-spdx/v2 v2.2.0 // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
 	github.com/glebarez/sqlite v1.11.0 // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-git/go-git/v5 v5.12.0 // indirect
@@ -226,7 +224,7 @@ require (
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/onsi/gomega v1.29.0 // indirect
+	github.com/onsi/gomega v1.31.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc6 // indirect
 	github.com/opencontainers/runtime-spec v1.1.0 // indirect
@@ -302,7 +300,7 @@ require (
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.17.0 // indirect
+	golang.org/x/tools v0.18.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.152.0 // indirect
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
@@ -314,9 +312,9 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gorm.io/gorm v1.25.9 // indirect
-	k8s.io/apiserver v0.29.3 // indirect
-	k8s.io/component-base v0.29.3 // indirect
-	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
+	k8s.io/apiserver v0.30.1 // indirect
+	k8s.io/component-base v0.30.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 	modernc.org/libc v1.41.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
