@@ -6,7 +6,6 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/anchore/clio v0.0.0-20240209204744-cb94e40a4f65
 	github.com/anchore/grype v0.77.0
-	github.com/anchore/syft v1.2.0
 	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/derailed/popeye v0.11.3
@@ -72,6 +71,7 @@ require (
 	github.com/anchore/go-version v1.2.2-0.20210903204242-51efa5b487c4 // indirect
 	github.com/anchore/packageurl-go v0.1.1-0.20240312213626-055233e539b4 // indirect
 	github.com/anchore/stereoscope v0.0.2-0.20240229175558-fe426d1b1c84 // indirect
+	github.com/anchore/syft v1.2.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/aquasecurity/go-pep440-version v0.0.0-20210121094942-22b2f8951d46 // indirect
@@ -125,6 +125,7 @@ require (
 	github.com/github/go-spdx/v2 v2.2.0 // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
 	github.com/glebarez/sqlite v1.11.0 // indirect
+	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-git/go-git/v5 v5.12.0 // indirect
