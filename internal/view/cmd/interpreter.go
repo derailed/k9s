@@ -114,6 +114,13 @@ func (c *Interpreter) IsContextCmd() bool {
 	return ok
 }
 
+// IsNamespaceCmd returns true if ns cmd is detected.
+func (c *Interpreter) IsNamespaceCmd() bool {
+	_, ok := namespaceCmd[c.cmd]
+
+	return ok
+}
+
 // IsDirCmd returns true if dir cmd is detected.
 func (c *Interpreter) IsDirCmd() bool {
 	_, ok := dirCmd[c.cmd]

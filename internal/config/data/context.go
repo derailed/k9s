@@ -83,6 +83,9 @@ func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
 	if cl, err := ks.CurrentClusterName(); err == nil {
 		c.ClusterName = cl
 	}
+	if b := os.Getenv(envFGNodeShell); b != "" {
+		c.FeatureGates.NodeShell = defaultFGNodeShell()
+	}
 
 	if c.Namespace == nil {
 		c.Namespace = NewNamespace()

@@ -13,6 +13,7 @@ import (
 
 const (
 	envPFAddress          = "K9S_DEFAULT_PF_ADDRESS"
+	envFGNodeShell        = "K9S_FEATURE_GATE_NODE_SHELL"
 	defaultPortFwdAddress = "localhost"
 )
 
@@ -34,6 +35,14 @@ func defaultPFAddress() string {
 	}
 
 	return defaultPortFwdAddress
+}
+
+func defaultFGNodeShell() bool {
+	if a := os.Getenv(envFGNodeShell); a != "" {
+		return a == "true"
+	}
+
+	return false
 }
 
 // InList check if string is in a collection of strings.
