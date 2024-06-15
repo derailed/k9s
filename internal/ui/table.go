@@ -254,6 +254,26 @@ func (t *Table) SetSortCol(name string, asc bool) {
 	t.setSortCol(model1.SortColumn{Name: name, ASC: asc})
 }
 
+func (t *Table) GetSortCol() (string, bool) {
+	return t.sortCol.Name, t.sortCol.ASC
+}
+
+func (t *Table) isVisible(h model1.HeaderColumn) bool {
+	if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
+		return false
+	}
+	if h.MX && !t.hasMetrics {
+		return false
+	}
+	if h.Wide && !t.wide {
+		return false
+	}
+	if h.VS && vul.ImgScanner == nil {
+		return false
+	}
+	return true
+}
+
 // Update table content.
 func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableData {
 	if t.decorateFn != nil {
@@ -321,6 +341,20 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 		return true
 	})
 
+	colIndex, ok := cdata.Header().IndexOf(t.sortCol.Name, false)
+	if ok {
+		events := cdata.GetRowEvents()
+		events.Sort(
+			cdata.GetNamespace(),
+			colIndex,
+			t.sortCol.Name == "AGE",
+			data.Header().IsMetricsCol(colIndex),
+			t.sortCol.Name == "CAPACITY",
+			t.sortCol.ASC,
+		)
+		cdata.SetRowEvents(events)
+	}
+
 	t.updateSelection(true)
 	t.UpdateTitle()
 }
@@ -343,13 +377,7 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 			continue
 		}
 
-		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
-			continue
-		}
-		if h[c].MX && !t.hasMetrics {
-			continue
-		}
-		if h[c].VS && vul.ImgScanner == nil {
+		if !t.isVisible(h[c]) {
 			continue
 		}
 
@@ -392,6 +420,48 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 		t.setSortCol(sc)
 		t.setMSort(true)
 		t.Refresh()
+		return nil
+	}
+}
+
+// SortColChange changes on which column to sort
+func (t *Table) SortColChange(direction SortChange) func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		sortCol := t.sortCol.Name
+		sortColIdx := -1
+		newSortColIdx := -1
+		prevSortColIdx := -1
+		header := t.GetModel().Peek().GetHeader()
+
+		for i, h := range header {
+			if !t.isVisible(h) {
+				continue
+			}
+
+			if h.Name == sortCol {
+				sortColIdx = i
+				break
+			}
+
+			prevSortColIdx = i
+		}
+
+		if direction == SortPrevCol {
+			newSortColIdx = prevSortColIdx
+		} else {
+			for i := sortColIdx + 1; i < len(header); i++ {
+				if t.isVisible(header[i]) {
+					newSortColIdx = i
+					break
+				}
+			}
+		}
+
+		if newSortColIdx != -1 {
+			t.sortCol.Name = header[newSortColIdx].Name
+			t.Refresh()
+		}
+
 		return nil
 	}
 }
