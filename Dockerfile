@@ -6,9 +6,11 @@ ARG K9S_VERSION="v0.32.4"
 ARG USERNAME=k9s
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-ARG KUBECTL_VERSION="v1.28.9"
+ARG KUBECTL_VERSION="v1.29.2"
 #ARG KUBELOGIN_VERSION="v0.0.27"
 ARG LINODE_CLI_VERSION="5.48.1"
+#ARG ARGO_CLI_VERSION="v3.5.2"
+ARG HELM_VERSION="v3.13.2"
 
 
 RUN apt-get update \
@@ -23,6 +25,10 @@ RUN apt-get update \
     && curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/${ARCHITECTURE}/kubectl \
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/bin/ \
+    # Install helm 
+    && curl -L -o /tmp/helm.tar.gz https://get.helm.sh/helm-${HELM_VERSION}-linux-${ARCHITECTURE}.tar.gz \
+    && cd /tmp && tar xzf helm.tar.gz \
+    && mv linux-${ARCHITECTURE}/helm /usr/local/bin/helm && chmod +x /usr/local/bin/helm \
     # Install azure kubelogin
     # && cd /tmp \
     # && curl -LO https://github.com/Azure/kubelogin/releases/download/${KUBELOGIN_VERSION}/kubelogin-linux-${ARCHITECTURE}.zip \
@@ -32,6 +38,12 @@ RUN apt-get update \
     && curl -L -o /tmp/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${ARCHITECTURE} \
     && chmod +x /tmp/yq \
     && mv /tmp/yq /usr/local/bin/ \
+    # Install argo
+    #&& cd /tmp \
+    #&& echo "https://github.com/argoproj/argo-workflows/releases/download/${ARGO_CLI_VERSION}/argo-${ARGO_CLI_VERSION}-linux-${ARCHITECTURE}.tar.gz" \
+    #&& curl -L -o /tmp/argo.tar.gz argo-linux-amd64.gz https://github.com/argoproj/argo-workflows/releases/download/${ARGO_CLI_VERSION}/argo-linux-${ARCHITECTURE}.gz \
+    #&& tar xvf argo.tar.gz \
+    #&& mv argo /usr/local/bin/ \    
     # Create a non-root user to use if preferred - see https://aka.ms/vscode-remote/containers/non-root-user.
     && groupadd --gid $USER_GID $USERNAME \
     && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
@@ -40,6 +52,7 @@ RUN apt-get update \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME \
     # Clean up
+    && rm -rf /tmp/* \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
