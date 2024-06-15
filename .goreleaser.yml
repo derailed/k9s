@@ -1,3 +1,5 @@
+version: 2
+
 project_name: k9s
 
 before:
@@ -90,7 +92,7 @@ brews:
     commit_author:
       name: derailed
       email: fernand@imhotep.io
-    folder: Formula
+    directory: Formula
     homepage: https://k9scli.io/
     description: Kubernetes CLI To Manage Your Clusters In Style!
     test: |
