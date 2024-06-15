@@ -73,7 +73,7 @@ type Viewer interface {
 type TableViewer interface {
 	Viewer
 
-	// Table returns a table component.
+	// GetTable returns a table component.
 	GetTable() *Table
 }
 
@@ -90,7 +90,7 @@ type ResourceViewer interface {
 	// SetContextFn provision a custom context.
 	SetContextFn(ContextFunc)
 
-	// AddBindKeys provision additional key bindings.
+	// AddBindKeysFn provision additional key bindings.
 	AddBindKeysFn(BindKeysFunc)
 
 	// SetInstance sets a parent FQN
