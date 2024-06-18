@@ -160,14 +160,6 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 		return err
 	}
 
-	ns := c.app.Config.ActiveNamespace()
-	if cns, ok := p.NSArg(); ok {
-		ns = cns
-	}
-	if err := c.app.switchNS(ns); err != nil {
-		return err
-	}
-
 	if context, ok := p.HasContext(); ok {
 		if context != c.app.Config.ActiveContextName() {
 			if err := c.app.Config.Save(true); err != nil {
@@ -191,6 +183,14 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 		if err := c.app.switchContext(p, false); err != nil {
 			return err
 		}
+	}
+
+	ns := c.app.Config.ActiveNamespace()
+	if cns, ok := p.NSArg(); ok {
+		ns = cns
+	}
+	if err := c.app.switchNS(ns); err != nil {
+		return err
 	}
 
 	co := c.componentFor(gvr, fqn, v)
