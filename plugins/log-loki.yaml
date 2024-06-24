@@ -1,6 +1,6 @@
 plugins:
   # https://grafana.com/docs/loki/latest/query/logcli/
-  # you must set the LOKI_ADDR environment variable ("export LOKI_ADDR=https://loki.internal" in bas)  before starting k9s to use logcli
+  # you must set the LOKI_ADDR environment variable ("export LOKI_ADDR=https://loki.internal" in bash) before starting k9s to use logcli
   loki-container:
     shortCut: Shift-L
     description: "loki fmt"
