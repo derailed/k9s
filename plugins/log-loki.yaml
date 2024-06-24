@@ -33,7 +33,7 @@ plugins:
     background: false
     args:
     - query
-    - "{ namespace = \"$NAMESPACE\", pod = \"$COL-NAME\" }"
+    - "{ namespace = \"$NAMESPACE\", pod = \"$NAME\" }"
     - -f
   loki-pods-raw:
     shortCut: Ctrl-L
@@ -44,7 +44,7 @@ plugins:
     background: false
     args:
     - query
-    - "{ namespace = \"$NAMESPACE\", pod = \"$COL-NAME\" }"
+    - "{ namespace = \"$NAMESPACE\", pod = \"$NAME\" }"
     - -f
     - -oraw
   loki-node:
@@ -56,7 +56,7 @@ plugins:
     background: false
     args:
     - query
-    - "{ node_name = \"$COL-NAME\" }"
+    - "{ node_name = \"$NAME\" }"
     - -f
   loki-node-raw:
     shortCut: Ctrl-L
@@ -67,7 +67,7 @@ plugins:
     background: false
     args:
     - query
-    - "{ node_name = \"$COL-NAME\" }"
+    - "{ node_name = \"$NAME\" }"
     - -f
     - -oraw
   loki-ns:
