@@ -18,7 +18,7 @@ type PersistentVolumeClaim struct {
 // NewPersistentVolumeClaim returns a new viewer.
 func NewPersistentVolumeClaim(gvr client.GVR) ResourceViewer {
 	v := PersistentVolumeClaim{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
 	v.AddBindKeysFn(v.bindKeys)
 

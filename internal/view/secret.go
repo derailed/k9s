@@ -21,7 +21,7 @@ type Secret struct {
 // NewSecret returns a new viewer.
 func NewSecret(gvr client.GVR) ResourceViewer {
 	s := Secret{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
 	s.AddBindKeysFn(s.bindKeys)
 

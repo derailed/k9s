@@ -25,7 +25,9 @@ func NewStatefulSet(gvr client.GVR) ResourceViewer {
 			NewRestartExtender(
 				NewScaleExtender(
 					NewImageExtender(
-						NewLogsExtender(NewBrowser(gvr), s.logOptions),
+						NewOwnerExtender(
+							NewLogsExtender(NewBrowser(gvr), s.logOptions),
+						),
 					),
 				),
 			),
