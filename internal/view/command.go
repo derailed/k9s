@@ -286,7 +286,11 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (client.GVR, *MetaViewer, erro
 		p.Amend(ap)
 	}
 
-	v := MetaViewer{viewerFn: NewBrowser}
+	v := MetaViewer{
+		viewerFn: func(gvr client.GVR) ResourceViewer {
+			return NewOwnerExtender(NewBrowser(gvr))
+		},
+	}
 	if mv, ok := customViewers[gvr]; ok {
 		v = mv
 	}
