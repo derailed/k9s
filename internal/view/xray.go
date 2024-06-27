@@ -312,7 +312,7 @@ func (x *Xray) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		path = *spec.ParentPath()
 	}
 
-	if err := containerShellin(x.app, x, path, co); err != nil {
+	if err := containerShellIn(x.app, x, path, co); err != nil {
 		x.app.Flash().Err(err)
 	}
 
