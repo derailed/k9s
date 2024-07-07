@@ -81,6 +81,7 @@ func (c *CronJob) Run(path string) error {
 					APIVersion:         c.gvr.GV().String(),
 					Kind:               "CronJob",
 					BlockOwnerDeletion: &true,
+					Controller:         &true,
 					Name:               cj.Name,
 					UID:                cj.UID,
 				},
