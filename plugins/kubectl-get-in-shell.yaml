@@ -1,4 +1,6 @@
 plugins:
+  # provides a way to continue working on the currently selected object in a new shell without doing lengthy copy/paste of current context.
+  # It simply formats the `kubectl get` command, taking care to omit -n when the namespace is not defined (typically for cluster-wide resources)
   kubectl-get-cmd:
     shortCut: Shift-B
     confirm: false
