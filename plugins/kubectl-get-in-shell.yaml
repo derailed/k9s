@@ -1,0 +1,14 @@
+plugins:
+  kubectl-get-cmd:
+    shortCut: Shift-B
+    confirm: false
+    description: get into shell
+    scopes:
+      - all
+    command: bash
+    background: false
+    args:
+      - -c
+      - (printf "copy/paste in a shell:\n\n"; if [ "$NAMESPACE" != "" -a  "$NAMESPACE" != "-"  ]; then printf "kubectl get  --context $CONTEXT -n $NAMESPACE $RESOURCE_NAME $NAME \n" ; else printf "kubectl get  --context $CONTEXT $RESOURCE_NAME $NAME \n"; fi ) |& less
+
+
