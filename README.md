@@ -687,6 +687,7 @@ plugins:
     shortCut: Ctrl-L
     override: false
     confirm: false
+    dangerous: false # if true, disable the plugin when read-only mode is set. See https://github.com/derailed/k9s/issues/2604
     description: Pod logs
     scopes:
     - pods
