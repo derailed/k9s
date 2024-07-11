@@ -655,6 +655,7 @@ A plugin is defined as follows:
 * Background specifies whether or not the command runs in the background
 * Args specifies the various arguments that should apply to the command above
 * OverwriteOutput boolean option allows plugin developers to provide custom messages on plugin stdout execution. See example in [#2644](https://github.com/derailed/k9s/pull/2644)
+* Dangerous boolean option enables disabling the plugin when read-only mode is set. See [#2604](https://github.com/derailed/k9s/issues/2604) 
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
@@ -688,6 +689,7 @@ plugins:
     override: false
     overwriteOutput: false 
     confirm: false
+    dangerous: false 
     description: Pod logs
     scopes:
     - pods
