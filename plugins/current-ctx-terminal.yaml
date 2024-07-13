@@ -1,0 +1,16 @@
+plugins:  
+  open-terminal:
+    shortCut: Ctrl-T
+    confirm: false
+    description: Open a terminal in the current context
+    scopes:
+      - all
+    command: /usr/bin/sh
+    background: false
+    args:
+      - -c
+      - bash -c "kubectl config use-context $CONTEXT && echo -e \"\e[1;42mk9s bash terminal.\nCtrl + d or 'exit' to go back to k9s\e[0m\" && bash"
+      # New window for terminal can be opened with any emulator
+      #- x-terminal-emulator -e bash -c "kubectl config use-context $CONTEXT && echo -e \"\e[1;42mk9s bash terminal.\nCtrl + d or 'exit' to go back to k9s\e[0m\" && bash"
+      # example with tilix:
+      #- tilix -e bash -c "kubectl config use-context $CONTEXT && echo -e \"\e[1;42mk9s bash terminal.\nCtrl + d or 'exit' to go back to k9s\e[0m\" && bash"
