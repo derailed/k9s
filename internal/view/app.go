@@ -737,22 +737,14 @@ func (a *App) lastView(evt *tcell.EventKey) *tcell.EventKey {
 			"No previous view to switch to")
 		return evt
 	} else {
-		currentCmd := cmds[0]
-		previousCmd := cmds[1]
-		// switch the two latest commands
-		cmds[0] = previousCmd
-		cmds[1] = currentCmd
-		newHistory := model.NewHistory(model.MaxHistory)
-		for i := range cmds {
-			// the order must be reversed to preserve history
-			i = len(cmds) - 1 - i
-			newHistory.Push(cmds[i])
-		}
-		a.Lock()
-		a.cmdHistory = newHistory
-		a.Unlock()
-		a.gotoResource(previousCmd, "", true)
-		a.ResetCmd()
+		current := cmds[0]
+		last := cmds[1]
+		a.gotoResource(last, "", true)
+		// remove current page and last page
+		a.cmdHistory.Pop(2)
+		// re add in opposite order
+		a.cmdHistory.Push(current)
+		a.cmdHistory.Push(last)
 	}
 
 	return nil
