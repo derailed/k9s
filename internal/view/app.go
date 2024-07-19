@@ -244,6 +244,8 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
+		ui.KeyB:        ui.NewSharedKeyAction("Previous View", a.previousView, false),
+		ui.KeyDash:     ui.NewSharedKeyAction("Last View", a.lastView, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 		tcell.KeyCtrlC: ui.NewKeyAction("Quit", a.quitCmd, false),
@@ -688,6 +690,65 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	a.Prompt().Deactivate()
+	return nil
+}
+
+// previousView returns to the view prior to the current one in the history
+func (a *App) previousView(evt *tcell.EventKey) *tcell.EventKey {
+	cmds := a.cmdHistory.List()
+	if !(len(cmds) > 1) {
+		dialog.ShowError(
+			a.Styles.Dialog(),
+			a.Content.Pages,
+			"Can't go back any further")
+		return evt
+	} else {
+		previousCmd := cmds[1]
+		cmds := cmds[1:]
+		newHistory := model.NewHistory(model.MaxHistory)
+		for i := range cmds {
+			// the order must be reversed to preserve history
+			i = len(cmds) - 1 - i
+			newHistory.Push(cmds[i])
+		}
+		a.Lock()
+		a.cmdHistory = newHistory
+		a.Unlock()
+		a.gotoResource(previousCmd, "", true)
+		a.ResetCmd()
+	}
+
+	return nil
+}
+
+// lastView switches between the last view and this one a la `cd -`
+func (a *App) lastView(evt *tcell.EventKey) *tcell.EventKey {
+	cmds := a.cmdHistory.List()
+	if !(len(cmds) > 1) {
+		dialog.ShowError(
+			a.Styles.Dialog(),
+			a.Content.Pages,
+			"No previous view to switch to")
+		return evt
+	} else {
+		currentCmd := cmds[0]
+		previousCmd := cmds[1]
+		// switch the two latest commands
+		cmds[0] = previousCmd
+		cmds[1] = currentCmd
+		newHistory := model.NewHistory(model.MaxHistory)
+		for i := range cmds {
+			// the order must be reversed to preserve history
+			i = len(cmds) - 1 - i
+			newHistory.Push(cmds[i])
+		}
+		a.Lock()
+		a.cmdHistory = newHistory
+		a.Unlock()
+		a.gotoResource(previousCmd, "", true)
+		a.ResetCmd()
+	}
+
 	return nil
 }
 
