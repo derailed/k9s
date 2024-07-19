@@ -695,6 +695,9 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // previousView returns to the view prior to the current one in the history
 func (a *App) previousView(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == 'b' && a.Prompt().InCmdMode() {
+		return evt
+	}
 	cmds := a.cmdHistory.List()
 	if !(len(cmds) > 1) {
 		dialog.ShowError(
@@ -723,6 +726,9 @@ func (a *App) previousView(evt *tcell.EventKey) *tcell.EventKey {
 
 // lastView switches between the last view and this one a la `cd -`
 func (a *App) lastView(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == '-' && a.Prompt().InCmdMode() {
+		return evt
+	}
 	cmds := a.cmdHistory.List()
 	if !(len(cmds) > 1) {
 		dialog.ShowError(
