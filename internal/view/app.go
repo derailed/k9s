@@ -707,7 +707,7 @@ func (a *App) previousView(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	} else {
 		previousCmd := cmds[1]
-		a.cmdHistory.Pop(1)
+		a.cmdHistory.Pop()
 		a.gotoResource(previousCmd, "", true)
 		a.ResetCmd()
 	}
