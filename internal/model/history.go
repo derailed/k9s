@@ -39,7 +39,15 @@ func (h *History) Pop(n ...int) bool {
 		return false
 	}
 
-	h.commands = h.commands[n[0]:]
+	count := 1
+	if len(n) > 1 {
+		// only one argument is expected
+		return false
+	} else if len(n) == 1 {
+		count = n[0]
+	}
+
+	h.commands = h.commands[count:]
 	return true
 }
 
