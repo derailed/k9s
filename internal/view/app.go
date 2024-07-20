@@ -707,16 +707,7 @@ func (a *App) previousView(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	} else {
 		previousCmd := cmds[1]
-		cmds := cmds[1:]
-		newHistory := model.NewHistory(model.MaxHistory)
-		for i := range cmds {
-			// the order must be reversed to preserve history
-			i = len(cmds) - 1 - i
-			newHistory.Push(cmds[i])
-		}
-		a.Lock()
-		a.cmdHistory = newHistory
-		a.Unlock()
+		a.cmdHistory.Pop(1)
 		a.gotoResource(previousCmd, "", true)
 		a.ResetCmd()
 	}
