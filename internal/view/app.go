@@ -244,7 +244,7 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
-		ui.KeyB:        ui.NewSharedKeyAction("Previous View", a.previousView, false),
+		ui.KeyB:        ui.NewSharedKeyAction("Go Back", a.previousView, false),
 		ui.KeyDash:     ui.NewSharedKeyAction("Last View", a.lastView, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
