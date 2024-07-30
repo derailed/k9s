@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,9 +44,9 @@ func (Dir) Render(o interface{}, ns string, r *model1.Row) error {
 		return fmt.Errorf("expected DirRes, but got %T", o)
 	}
 
-	name := "🦄 "
+	name := config.Config.K9s.UI.Icons.okIcon
 	if d.Entry.IsDir() {
-		name = "📁 "
+		name = config.Config.K9s.UI.Icons.folderIcon
 	}
 	name += d.Entry.Name()
 	r.ID, r.Fields = d.Path, append(r.Fields, name)

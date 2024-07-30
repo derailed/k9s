@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -20,9 +21,9 @@ func TestFlash(t *testing.T) {
 		l    model.FlashLevel
 		i, e string
 	}{
-		"info": {l: model.FlashInfo, i: "hello", e: "😎 hello\n"},
-		"warn": {l: model.FlashWarn, i: "hello", e: "😗 hello\n"},
-		"err":  {l: model.FlashErr, i: "hello", e: "😡 hello\n"},
+		"info": {l: model.FlashInfo, i: "hello", e: config.Config.K9s.UI.Icons.infoIcon + " hello\n"},
+		"warn": {l: model.FlashWarn, i: "hello", e: config.Config.K9s.UI.Icons.warnIcon + " hello\n"},
+		"err":  {l: model.FlashErr, i: "hello", e: config.Config.K9s.UI.Icons.errIcon + " hello\n"},
 	}
 
 	a := ui.NewApp(mock.NewMockConfig(), "test")
