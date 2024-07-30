@@ -340,7 +340,8 @@ K9s uses aliases to navigate most K8s resources.
 |---------------------------------------------------------------------------------|-------------------------------|------------------------------------------------------------------------|
 | Show active keyboard mnemonics and help                                         | `?`                           |                                                                        |
 | Show all available resource alias                                               | `ctrl-a`                      |                                                                        |
-| To bail out of K9s                                                              | `:quit`, `:q`, `ctrl-c`                |                                                                        |
+| To bail out of K9s                                                              | `:quit`, `:q`, `ctrl-c`       |                                                                        |
+| To go up/back to the previous view                                              | `esc`                         | If you have crumbs on, this will go to the previous one                |
 | View a Kubernetes resource using singular/plural or short-name                  | `:`pod⏎                       | accepts singular, plural, short-name or alias ie pod or pods           |
 | View a Kubernetes resource in a given namespace                                 | `:`pod ns-x⏎                  |                                                                        |
 | View filtered pods (New v0.30.0!)                                               | `:`pod /fred⏎                 | View all pods filtered by fred                                         |
