@@ -124,7 +124,6 @@ func (h *HelmChart) Delete(_ context.Context, path string, _ *metav1.DeletionPro
 func (h *HelmChart) Uninstall(path string, keepHist bool) error {
 	ns, n := client.Namespaced(path)
 	flags := h.Client().Config().Flags()
-	flags.Namespace = &ns
 	cfg, err := ensureHelmConfig(flags, ns)
 	if err != nil {
 		return err
@@ -145,8 +144,21 @@ func (h *HelmChart) Uninstall(path string, keepHist bool) error {
 
 // ensureHelmConfig return a new configuration.
 func ensureHelmConfig(flags *genericclioptions.ConfigFlags, ns string) (*action.Configuration, error) {
+	settings := &genericclioptions.ConfigFlags{
+		Namespace:        &ns,
+		Context:          flags.Context,
+		BearerToken:      flags.BearerToken,
+		APIServer:        flags.APIServer,
+		CAFile:           flags.CAFile,
+		KubeConfig:       flags.KubeConfig,
+		Impersonate:      flags.Impersonate,
+		Insecure:         flags.Insecure,
+		TLSServerName:    flags.TLSServerName,
+		ImpersonateGroup: flags.ImpersonateGroup,
+		WrapConfigFn:     flags.WrapConfigFn,
+	}
 	cfg := new(action.Configuration)
-	err := cfg.Init(flags, ns, os.Getenv("HELM_DRIVER"), helmLogger)
+	err := cfg.Init(settings, ns, os.Getenv("HELM_DRIVER"), helmLogger)
 
 	return cfg, err
 }
