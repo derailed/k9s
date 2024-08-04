@@ -13,7 +13,7 @@ ARG LINODE_CLI_VERSION="5.50.0"
 ARG HELM_VERSION="v3.15.3"
 
 
-RUN apt-get update \
+RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends sudo apt-transport-https ca-certificates neovim fish jq \
     && pip install azure-cli==${AZURE_CLI_VERSION} linode-cli==${LINODE_CLI_VERSION} \
     # Install k9s
