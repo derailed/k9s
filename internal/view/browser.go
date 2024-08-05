@@ -6,6 +6,8 @@ package view
 import (
 	"context"
 	"fmt"
+	"github.com/derailed/k9s/internal/view/cmd"
+	"k8s.io/apimachinery/pkg/labels"
 	"sort"
 	"strconv"
 	"strings"
@@ -90,6 +92,11 @@ func (b *Browser) Init(ctx context.Context) error {
 	b.accessor, err = dao.AccessorFor(b.app.factory, b.GVR())
 	if err != nil {
 		return err
+	}
+
+	if target, found := b.App().Config.K9s.CustomResourceLinks[b.GVR().String()]; found {
+		log.Info().Msgf("Enabling custom resource link from %s to %s", b.GVR().String(), target.Target)
+		b.enterFn = b.showLinkedCustomResources
 	}
 
 	b.setNamespace(ns)
@@ -643,4 +650,52 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 		b.refresh()
 	}
 	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, okFn, func() {})
+}
+
+func (b *Browser) showLinkedCustomResources(app *App, tabular ui.Tabular, gvr client.GVR, path string) {
+	gvrValue := gvr.String()
+
+	o, err := app.factory.Get(gvrValue, path, true, labels.Everything())
+	if err != nil {
+		app.Flash().Err(err)
+		return
+	}
+
+	resourceLink, ok := app.Config.K9s.CustomResourceLinks[gvrValue]
+
+	if !ok {
+		b.app.Flash().Errf("Custom resource link for resource %s not found", gvrValue)
+		return
+	}
+
+	labelSelector, fieldSelector, err := dao.SelectorsForLink(resourceLink, o)
+	if err != nil {
+		app.Flash().Err(err)
+		return
+	}
+
+	log.Debug().Msgf("Generated labelSelector: %s", labelSelector.String())
+	if fieldSelector != nil {
+		log.Debug().Msgf("Generated fieldSelector: %s", fieldSelector.String())
+	}
+
+	// new browser for linked resource
+	browser := NewBrowser(client.NewGVR(resourceLink.Target))
+	browser.SetLabelFilter(cmd.ToLabels(labelSelector.String()))
+	browser.SetContextFn(func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		lSel := labelSelector.String()
+		if lSel != labels.Everything().String() {
+			ctx = context.WithValue(ctx, internal.KeyLabels, lSel)
+		}
+
+		if fieldSelector != nil {
+			ctx = context.WithValue(ctx, internal.KeyFields, fieldSelector.String())
+		}
+		return ctx
+	})
+
+	if err := app.inject(browser, false); err != nil {
+		app.Flash().Err(err)
+	}
 }
