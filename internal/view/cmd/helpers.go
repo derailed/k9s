@@ -113,6 +113,10 @@ func completeCtx(s string, cc []string) []string {
 	var suggests []string
 	for _, ctxName := range cc {
 		if suggest, ok := ShouldAddSuggest(s, ctxName); ok {
+			if len(s) == 0 {
+				suggests = append(suggests, " "+suggest)
+				continue
+			}
 			suggests = append(suggests, suggest)
 		}
 	}
