@@ -394,7 +394,7 @@ func shellIn(a *App, fqn, co string) {
 	if err != nil {
 		log.Warn().Err(err).Msgf("os detect failed")
 	}
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+	args := computeShellArgs(a, fqn, co, a.Conn().Config().Flags().KubeConfig, os)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	err = runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args})
@@ -445,12 +445,16 @@ func attachIn(a *App, path, co string) {
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string, os string) []string {
+func computeShellArgs(a *App, path, co string, kcfg *string, os string) []string {
+	shell := a.Config.K9s.Shell
+	if shell == "" {
+		shell = "sh"
+	}
 	args := buildShellArgs("exec", path, co, kcfg)
 	if os == windowsOS {
 		return append(args, "--", powerShell)
 	}
-	return append(args, "--", "sh", "-c", shellCheck)
+	return append(args, "--", shell, "-c", shellCheck)
 }
 
 func buildShellArgs(cmd, path, co string, kcfg *string) []string {
