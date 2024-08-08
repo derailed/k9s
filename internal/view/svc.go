@@ -35,7 +35,9 @@ type Service struct {
 func NewService(gvr client.GVR) ResourceViewer {
 	s := Service{
 		ResourceViewer: NewPortForwardExtender(
-			NewLogsExtender(NewBrowser(gvr), nil),
+			NewOwnerExtender(
+				NewLogsExtender(NewBrowser(gvr), nil),
+			),
 		),
 	}
 	s.AddBindKeysFn(s.bindKeys)

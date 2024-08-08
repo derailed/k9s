@@ -21,7 +21,7 @@ type ServiceAccount struct {
 // NewServiceAccount returns a new viewer.
 func NewServiceAccount(gvr client.GVR) ResourceViewer {
 	s := ServiceAccount{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
 	s.AddBindKeysFn(s.bindKeys)
 	s.SetContextFn(s.subjectCtx)

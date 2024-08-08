@@ -16,5 +16,5 @@ func TestStatefulSetNew(t *testing.T) {
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "StatefulSets", s.Name())
-	assert.Equal(t, 13, len(s.Hints()))
+	assert.Equal(t, 14, len(s.Hints()))
 }

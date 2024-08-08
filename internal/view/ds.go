@@ -24,7 +24,9 @@ func NewDaemonSet(gvr client.GVR) ResourceViewer {
 		NewVulnerabilityExtender(
 			NewRestartExtender(
 				NewImageExtender(
-					NewLogsExtender(NewBrowser(gvr), d.logOptions),
+					NewOwnerExtender(
+						NewLogsExtender(NewBrowser(gvr), d.logOptions),
+					),
 				),
 			),
 		),
