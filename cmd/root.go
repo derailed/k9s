@@ -123,7 +123,7 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func loadConfiguration() (*config.Config, error) {
-	log.Info().Msg("🐶 K9s starting up...")
+	log.Info().Msg(config.Config.K9s.UI.Icons.startupIcon + " K9s starting up...")
 
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
@@ -150,7 +150,7 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
 	}
 
-	log.Info().Msg("✅ Kubernetes connectivity")
+	log.Info().Msg(config.Config.K9s.UI.Icons.okIcon + " Kubernetes connectivity")
 	if err := k9sCfg.Save(false); err != nil {
 		log.Error().Err(err).Msg("Config save")
 		errs = errors.Join(errs, err)
