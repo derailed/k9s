@@ -39,14 +39,16 @@ plugins:
         INSTRUCTIONS="# Edit the line below. Lines starting with '#' will be ignored."
         DEFAULT_ASK_COMMAND="why is $NAME of $RESOURCE_NAME in -n $NAMESPACE not working as expected"
 
-        echo "$INSTRUCTIONS" > temp-ask.txt
-        echo "$DEFAULT_ASK_COMMAND" >> temp-ask.txt
+        QUESTION_FILE=$(mktemp)
+
+        echo "$INSTRUCTIONS" > "$QUESTION_FILE"
+        echo "$DEFAULT_ASK_COMMAND" >> "$QUESTION_FILE"
 
         # Open the line in the default text editor
-        ${EDITOR:-nano} temp-ask.txt
+        ${EDITOR:-nano} "$QUESTION_FILE"
 
         # Read the modified line, ignoring lines starting with '#'
-        user_input=$(grep -v '^#' temp-ask.txt)
+        user_input=$(grep -v '^#' "$QUESTION_FILE")
 
         echo running: holmes ask "\"$user_input\""
         holmes ask "$user_input"
