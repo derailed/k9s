@@ -73,6 +73,15 @@ func (p Pod) ColorerFunc() model1.ColorerFunc {
 		case Running:
 			if c != model1.ErrColor {
 				c = model1.StdColor
+
+				idx, ok = h.IndexOf("READINESS GATES", true)
+				if ok {
+					rg := strings.TrimSpace(re.Row.Fields[idx])
+					rgs := strings.Split(rg, "/")
+					if (len(rgs) == 2) && (rgs[0] != rgs[1]) {
+						c = model1.ErrColor
+					}
+				}
 			}
 		case Terminating:
 			c = model1.KillColor
