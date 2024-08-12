@@ -23,12 +23,32 @@ func NewHistory(limit int) *History {
 	}
 }
 
-func (h *History) Pop() string {
+// Last returns the most recent history item
+func (h *History) Last() string {
 	if h.Empty() {
 		return ""
 	}
 
 	return h.commands[0]
+}
+
+// Pop removes the most recent history item and returns a bool if the list changed.
+// Optional argument specifies how many to remove from the history
+func (h *History) Pop(n ...int) bool {
+	if len(h.commands) == 0 {
+		return false
+	}
+
+	count := 1
+	if len(n) > 1 {
+		// only one argument is expected
+		return false
+	} else if len(n) == 1 {
+		count = n[0]
+	}
+
+	h.commands = h.commands[count:]
+	return true
 }
 
 // List returns the current command history.

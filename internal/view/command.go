@@ -323,7 +323,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 			log.Error().Msg(string(debug.Stack()))
 
 			p := cmd.NewInterpreter("pod")
-			if cmd := c.app.cmdHistory.Pop(); cmd != "" {
+			if cmd := c.app.cmdHistory.Last(); cmd != "" {
 				p = p.Reset(cmd)
 			}
 			err = c.run(p, "", true)
