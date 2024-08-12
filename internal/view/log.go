@@ -27,7 +27,7 @@ import (
 
 const (
 	logTitle            = "logs"
-	logMessage          = "Waiting for logs...\n"
+	logMessage          = "No logs were received for the last 5m...\n"
 	logFmt              = "([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	logCoFmt            = "([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	defaultFlushTimeout = 50 * time.Millisecond
