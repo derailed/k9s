@@ -1,15 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
 	"testing"
+	"time"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPortForwardRender(t *testing.T) {
-	var p render.PortForward
-	var r render.Row
 	o := render.ForwardRes{
 		Forwarder: fwd{},
 		Config: render.BenchCfg{
@@ -20,9 +23,11 @@ func TestPortForwardRender(t *testing.T) {
 		},
 	}
 
+	var p render.PortForward
+	var r model1.Row
 	assert.Nil(t, p.Render(o, "fred", &r))
 	assert.Equal(t, "blee/fred", r.ID)
-	assert.Equal(t, render.Fields{
+	assert.Equal(t, model1.Fields{
 		"blee",
 		"fred",
 		"co",
@@ -31,8 +36,7 @@ func TestPortForwardRender(t *testing.T) {
 		"1",
 		"1",
 		"",
-		"2m",
-	}, r.Fields)
+	}, r.Fields[:8])
 }
 
 // Helpers...
@@ -59,6 +63,6 @@ func (f fwd) Active() bool {
 	return true
 }
 
-func (f fwd) Age() string {
-	return "2m"
+func (f fwd) Age() time.Time {
+	return testTime()
 }

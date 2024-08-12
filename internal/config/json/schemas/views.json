@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s views schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "views": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sortColumn": { "type": "string" },
+          "columns": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["columns"]
+      }
+    }
+  },
+  "required": ["views"]
+}

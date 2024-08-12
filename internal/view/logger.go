@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -14,7 +17,7 @@ import (
 type Logger struct {
 	*tview.TextView
 
-	actions        ui.KeyActions
+	actions        *ui.KeyActions
 	app            *App
 	title, subject string
 	cmdBuff        *model.FishBuff
@@ -25,7 +28,7 @@ func NewLogger(app *App) *Logger {
 	return &Logger{
 		TextView: tview.NewTextView(),
 		app:      app,
-		actions:  make(ui.KeyActions),
+		actions:  ui.NewKeyActions(),
 		cmdBuff:  model.NewFishBuff('/', model.FilterBuffer),
 	}
 }
@@ -66,7 +69,7 @@ func (l *Logger) BufferActive(state bool, k model.BufferKind) {
 }
 
 func (l *Logger) bindKeys() {
-	l.actions.Set(ui.KeyActions{
+	l.actions.Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.saveCmd, false),
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.TextView), true),
@@ -76,7 +79,7 @@ func (l *Logger) bindKeys() {
 }
 
 func (l *Logger) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	if a, ok := l.actions[ui.AsKey(evt)]; ok {
+	if a, ok := l.actions.Get(ui.AsKey(evt)); ok {
 		return a.Action(evt)
 	}
 
@@ -96,7 +99,7 @@ func (l *Logger) SetSubject(s string) {
 }
 
 // Actions returns menu actions.
-func (l *Logger) Actions() ui.KeyActions {
+func (l *Logger) Actions() *ui.KeyActions {
 	return l.actions
 }
 
@@ -151,7 +154,7 @@ func (l *Logger) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (l *Logger) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContextDir(), l.title, l.GetText(true)); err != nil {
+	if path, err := saveYAML(l.app.Config.K9s.ContextScreenDumpDir(), l.title, l.GetText(true)); err != nil {
 		l.app.Flash().Err(err)
 	} else {
 		l.app.Flash().Infof("Log %s saved successfully!", path)

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -40,6 +43,9 @@ func NewHelp(app *App) *Help {
 	}
 }
 
+func (h *Help) SetFilter(string)                 {}
+func (h *Help) SetLabelFilter(map[string]string) {}
+
 // Init initializes the component.
 func (h *Help) Init(ctx context.Context) error {
 	if err := h.Table.Init(ctx); err != nil {
@@ -71,7 +77,7 @@ func (h *Help) StylesChanged(s *config.Styles) {
 
 func (h *Help) bindKeys() {
 	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS, ui.KeySlash)
-	h.Actions().Set(ui.KeyActions{
+	h.Actions().Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, true),
 		ui.KeyHelp:      ui.NewKeyAction("Back", h.app.PrevCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Back", h.app.PrevCmd, false),
@@ -185,7 +191,7 @@ func (h *Help) showNav() model.MenuHints {
 
 func (h *Help) showHotKeys() (model.MenuHints, error) {
 	hh := config.NewHotKeys()
-	if err := hh.Load(); err != nil {
+	if err := hh.Load(h.App().Config.ContextHotkeysPath()); err != nil {
 		return nil, fmt.Errorf("no hotkey configuration found")
 	}
 	kk := make(sort.StringSlice, 0, len(hh.HotKey))

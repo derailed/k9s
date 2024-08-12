@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -22,7 +25,7 @@ type Service struct{}
 func (s *Service) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Unstructured, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 
 	var svc v1.Service

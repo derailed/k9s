@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -18,7 +21,7 @@ type DaemonSet struct{}
 func (d *DaemonSet) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Unstructured, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	var ds appsv1.DaemonSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ds)

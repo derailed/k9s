@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -18,7 +21,11 @@ type ReplicaSet struct {
 // NewReplicaSet returns a new viewer.
 func NewReplicaSet(gvr client.GVR) ResourceViewer {
 	r := ReplicaSet{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewOwnerExtender(
+			NewVulnerabilityExtender(
+				NewBrowser(gvr),
+			),
+		),
 	}
 	r.AddBindKeysFn(r.bindKeys)
 	r.GetTable().SetEnterFn(r.showPods)
@@ -26,8 +33,8 @@ func NewReplicaSet(gvr client.GVR) ResourceViewer {
 	return &r
 }
 
-func (r *ReplicaSet) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (r *ReplicaSet) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftD:   ui.NewKeyAction("Sort Desired", r.GetTable().SortColCmd("DESIRED", true), false),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort Current", r.GetTable().SortColCmd("CURRENT", true), false),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", r.GetTable().SortColCmd(readyCol, true), false),
@@ -35,7 +42,7 @@ func (r *ReplicaSet) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (r *ReplicaSet) showPods(app *App, model ui.Tabular, gvr, path string) {
+func (r *ReplicaSet) showPods(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	var drs dao.ReplicaSet
 	rs, err := drs.Load(app.factory, path)
 	if err != nil {

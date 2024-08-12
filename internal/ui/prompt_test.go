@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui_test
 
 import (
-	"github.com/derailed/tcell/v2"
 	"testing"
+
+	"github.com/derailed/tcell/v2"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -47,13 +51,29 @@ func TestCmdMode(t *testing.T) {
 	}
 }
 
+func TestPrompt_Deactivate(t *testing.T) {
+	model := model.NewFishBuff(':', model.CommandBuffer)
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(model)
+	model.AddListener(v)
+
+	model.SetActive(true)
+	if assert.True(t, v.InCmdMode()) {
+		v.Deactivate()
+		assert.False(t, v.InCmdMode())
+	}
+}
+
 // Tests that, when active, the prompt has the appropriate color
 func TestPromptColor(t *testing.T) {
 	styles := config.NewStyles()
 	app := ui.App{}
 
 	// Make sure to have different values to be sure that the prompt color actually changes depending on its type
-	assert.NotEqual(t, styles.Prompt().Border.DefaultColor.Color(), styles.Prompt().Border.CommandColor.Color())
+	assert.NotEqual(t,
+		styles.Prompt().Border.DefaultColor.Color(),
+		styles.Prompt().Border.CommandColor.Color(),
+	)
 
 	testCases := []struct {
 		kind          model.BufferKind

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -20,9 +23,12 @@ type Picker struct {
 func NewPicker() *Picker {
 	return &Picker{
 		List:    tview.NewList(),
-		actions: ui.KeyActions{},
+		actions: *ui.NewKeyActions(),
 	}
 }
+
+func (p *Picker) SetFilter(string)                 {}
+func (p *Picker) SetLabelFilter(map[string]string) {}
 
 // Init initializes the view.
 func (p *Picker) Init(ctx context.Context) error {
@@ -32,7 +38,7 @@ func (p *Picker) Init(ctx context.Context) error {
 	}
 
 	pickerView := app.Styles.Views().Picker
-	p.actions[tcell.KeyEscape] = ui.NewKeyAction("Back", app.PrevCmd, true)
+	p.actions.Add(tcell.KeyEscape, ui.NewKeyAction("Back", app.PrevCmd, true))
 
 	p.SetBorder(true)
 	p.SetMainTextColor(pickerView.MainColor.Color())
@@ -42,7 +48,7 @@ func (p *Picker) Init(ctx context.Context) error {
 	p.SetTitle(" [aqua::b]Containers Picker ")
 
 	p.SetInputCapture(func(evt *tcell.EventKey) *tcell.EventKey {
-		if a, ok := p.actions[evt.Key()]; ok {
+		if a, ok := p.actions.Get(evt.Key()); ok {
 			a.Action(evt)
 			evt = nil
 		}

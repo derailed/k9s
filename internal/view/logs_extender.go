@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -5,6 +8,8 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // LogsExtender adds log actions to a given viewer.
@@ -26,8 +31,8 @@ func NewLogsExtender(v ResourceViewer, f LogOptionsFunc) ResourceViewer {
 }
 
 // BindKeys injects new menu actions.
-func (l *LogsExtender) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (l *LogsExtender) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyL: ui.NewKeyAction("Logs", l.logsCmd(false), true),
 		ui.KeyP: ui.NewKeyAction("Logs Previous", l.logsCmd(true), true),
 	})
@@ -55,7 +60,7 @@ func isResourcePath(p string) bool {
 
 func (l *LogsExtender) showLogs(path string, prev bool) {
 	ns, _ := client.Namespaced(path)
-	_, err := l.App().factory.CanForResource(ns, "v1/pods", client.MonitorAccess)
+	_, err := l.App().factory.CanForResource(ns, "v1/pods", client.ListAccess)
 	if err != nil {
 		l.App().Flash().Err(err)
 		return
@@ -84,6 +89,30 @@ func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOpti
 		ShowJSON:      cfg.ShowJSON,
 	}
 	if opts.Container == "" {
+		opts.AllContainers = true
+	}
+
+	return &opts
+}
+
+func podLogOptions(app *App, fqn string, prev bool, m metav1.ObjectMeta, spec v1.PodSpec) *dao.LogOptions {
+	var (
+		cc   = fetchContainers(m, spec, true)
+		cfg  = app.Config.K9s.Logger
+		opts = dao.LogOptions{
+			Path:            fqn,
+			Lines:           int64(cfg.TailCount),
+			SinceSeconds:    cfg.SinceSeconds,
+			SingleContainer: len(cc) == 1,
+			ShowTimestamp:   cfg.ShowTime,
+			Previous:        prev,
+		}
+	)
+	if c, ok := dao.GetDefaultContainer(m, spec); ok {
+		opts.Container, opts.DefaultContainer = c, c
+	} else if len(cc) == 1 {
+		opts.Container = cc[0]
+	} else {
 		opts.AllContainers = true
 	}
 

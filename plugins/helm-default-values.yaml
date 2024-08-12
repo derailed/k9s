@@ -1,0 +1,25 @@
+plugins:
+  helm-default-values:
+    shortCut: Shift-V
+    confirm: false
+    description: Chart Default Values
+    scopes:
+      - helm
+    command: sh
+    background: false
+    args:
+      - -c
+      - >-
+        revision=$(helm history -n $NAMESPACE --kube-context $CONTEXT $COL-NAME | grep deployed | cut -d$'\t' -f1 | tr -d ' \t');
+        kubectl
+        get secrets
+        --context $CONTEXT
+        -n $NAMESPACE
+        sh.helm.release.v1.$COL-NAME.v$revision -o yaml
+        | yq e '.data.release' -
+        | base64 -d
+        | base64 -d
+        | gunzip
+        | jq -r '.chart.values'
+        | yq -P
+        | less -K

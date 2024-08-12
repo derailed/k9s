@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -25,17 +28,15 @@ func NewConfigMap(gvr client.GVR) ResourceViewer {
 	return &s
 }
 
-func (s *ConfigMap) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyU: ui.NewKeyAction("UsedBy", s.refCmd, true),
-	})
+func (s *ConfigMap) bindKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyU, ui.NewKeyAction("UsedBy", s.refCmd, true))
 }
 
 func (s *ConfigMap) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanRefs(evt, s.App(), s.GetTable(), "v1/configmaps")
+	return scanRefs(evt, s.App(), s.GetTable(), dao.CmGVR)
 }
 
-func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr string) *tcell.EventKey {
+func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr client.GVR) *tcell.EventKey {
 	path := t.GetSelectedItem()
 	if path == "" {
 		return evt
@@ -61,7 +62,7 @@ func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr string) *tcell.EventKey
 	return nil
 }
 
-func refContext(gvr, path string, wait bool) ContextFunc {
+func refContext(gvr client.GVR, path string, wait bool) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		ctx = context.WithValue(ctx, internal.KeyGVR, gvr)

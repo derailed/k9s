@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -53,8 +56,8 @@ func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
 		s.SetPermanent(fmt.Sprintf(
 			statusIndicatorFmt,
 			data.K9sVer,
+			data.Context,
 			data.Cluster,
-			data.User,
 			data.K8sVer,
 			render.PrintPerc(data.Cpu),
 			render.PrintPerc(data.Mem),
@@ -71,8 +74,8 @@ func (s *StatusIndicator) ClusterInfoChanged(prev, cur model.ClusterMeta) {
 		s.SetPermanent(fmt.Sprintf(
 			statusIndicatorFmt,
 			cur.K9sVer,
+			cur.Context,
 			cur.Cluster,
-			cur.User,
 			cur.K8sVer,
 			AsPercDelta(prev.Cpu, cur.Cpu),
 			AsPercDelta(prev.Cpu, cur.Mem),

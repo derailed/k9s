@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/ui"
 )
 
 func loadCustomViewers() MetaViewers {
@@ -12,7 +14,7 @@ func loadCustomViewers() MetaViewers {
 	appsViewers(m)
 	rbacViewers(m)
 	batchViewers(m)
-	extViewers(m)
+	crdViewers(m)
 	helmViewers(m)
 
 	return m
@@ -20,7 +22,7 @@ func loadCustomViewers() MetaViewers {
 
 func helmViewers(vv MetaViewers) {
 	vv[client.NewGVR("helm")] = MetaViewer{
-		viewerFn: NewHelm,
+		viewerFn: NewHelmChart,
 	}
 }
 
@@ -58,15 +60,17 @@ func coreViewers(vv MetaViewers) {
 }
 
 func miscViewers(vv MetaViewers) {
+	vv[client.NewGVR("workloads")] = MetaViewer{
+		viewerFn: NewWorkload,
+	}
 	vv[client.NewGVR("contexts")] = MetaViewer{
 		viewerFn: NewContext,
 	}
-	// BOZO!! revamp with latest...
-	// vv[client.NewGVR("openfaas")] = MetaViewer{
-	// 	viewerFn: NewOpenFaas,
-	// }
 	vv[client.NewGVR("containers")] = MetaViewer{
 		viewerFn: NewContainer,
+	}
+	vv[client.NewGVR("scans")] = MetaViewer{
+		viewerFn: NewImageScan,
 	}
 	vv[client.NewGVR("portforwards")] = MetaViewer{
 		viewerFn: NewPortForward,
@@ -86,9 +90,10 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("pulses")] = MetaViewer{
 		viewerFn: NewPulse,
 	}
-	vv[client.NewGVR("popeye")] = MetaViewer{
-		viewerFn: NewPopeye,
-	}
+	// !!BOZO!! Popeye
+	// vv[client.NewGVR("popeye")] = MetaViewer{
+	// 	viewerFn: NewPopeye,
+	// }
 	vv[client.NewGVR("sanitizer")] = MetaViewer{
 		viewerFn: NewSanitizer,
 	}
@@ -148,13 +153,8 @@ func batchViewers(vv MetaViewers) {
 	}
 }
 
-func extViewers(vv MetaViewers) {
+func crdViewers(vv MetaViewers) {
 	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
-		enterFn: showCRD,
+		viewerFn: NewCRD,
 	}
-}
-
-func showCRD(app *App, _ ui.Tabular, _, path string) {
-	_, crd := client.Namespaced(path)
-	app.gotoResource(crd, "", false)
 }

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -8,11 +11,11 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -36,52 +39,65 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *Container) portForwardIndicator(data *render.TableData) {
+func (c *Container) portForwardIndicator(data *model1.TableData) {
 	ff := c.App().factory.Forwarders()
-	col := data.IndexOfHeader("PF")
-	for _, re := range data.RowEvents {
+	col, ok := data.IndexOfHeader("PF")
+	if !ok {
+		return
+	}
+	data.RowsRange(func(_ int, re model1.RowEvent) bool {
 		if ff.IsContainerForwarded(c.GetTable().Path, re.Row.ID) {
 			re.Row.Fields[col] = "[orange::b]Ⓕ"
 		}
-	}
+		return true
+	})
 }
 
-func (c *Container) decorateRows(data *render.TableData) {
+func (c *Container) decorateRows(data *model1.TableData) {
 	decorateCpuMemHeaderRows(c.App(), data)
 }
 
 // Name returns the component name.
 func (c *Container) Name() string { return containerTitle }
 
-func (c *Container) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyS: ui.NewKeyAction("Shell", c.shellCmd, true),
-		ui.KeyA: ui.NewKeyAction("Attach", c.attachCmd, true),
+func (c *Container) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyS: ui.NewKeyActionWithOpts(
+			"Shell",
+			c.shellCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyA: ui.NewKeyActionWithOpts(
+			"Attach",
+			c.attachCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
 	})
 }
 
-func (c *Container) bindKeys(aa ui.KeyActions) {
+func (c *Container) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlSpace, ui.KeySpace)
 
 	if !c.App().Config.K9s.IsReadOnly() {
 		c.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
 	})
-	aa.Add(resourceSorters(c.GetTable()))
+	aa.Merge(resourceSorters(c.GetTable()))
 }
 
 func (c *Container) k9sEnv() Env {
 	path := c.GetTable().GetSelectedItem()
-	row, ok := c.GetTable().GetSelectedRow(path)
-	if !ok {
-		log.Error().Msgf("unable to locate selected row for %q", path)
-	}
-	env := defaultEnv(c.App().Conn().Config(), path, c.GetTable().GetModel().Peek().Header, row)
+	row := c.GetTable().GetSelectedRow(path)
+	env := defaultEnv(c.App().Conn().Config(), path, c.GetTable().GetModel().Peek().Header(), row)
 	env["NAMESPACE"], env["POD"] = client.Namespaced(c.GetTable().Path)
 
 	return env
@@ -108,7 +124,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (c *Container) viewLogs(app *App, model ui.Tabular, gvr, path string) {
+func (c *Container) viewLogs(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	c.ResourceViewer.(*LogsExtender).showLogs(c.GetTable().Path, false)
 }
 
@@ -134,7 +150,10 @@ func (c *Container) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (c *Container) portForwardContext(ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, internal.KeyBenchCfg, c.App().BenchFile)
+	if bc := c.App().BenchFile; bc != "" {
+		ctx = context.WithValue(ctx, internal.KeyBenchCfg, c.App().BenchFile)
+	}
+
 	return context.WithValue(ctx, internal.KeyPath, c.GetTable().Path)
 }
 

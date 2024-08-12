@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -80,6 +84,7 @@ type Prompt struct {
 	styles  *config.Styles
 	model   PromptModel
 	spacer  int
+	mx      sync.RWMutex
 }
 
 // NewPrompt returns a new command view.
@@ -119,6 +124,14 @@ func (p *Prompt) SendStrokes(s string) {
 	}
 }
 
+// Deactivate sets the prompt as inactive.
+func (p *Prompt) Deactivate() {
+	if p.model != nil {
+		p.model.ClearText(true)
+		p.model.SetActive(false)
+	}
+}
+
 // SetModel sets the prompt buffer model.
 func (p *Prompt) SetModel(m PromptModel) {
 	if p.model != nil {
@@ -138,24 +151,31 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	switch evt.Key() {
 	case tcell.KeyBackspace2, tcell.KeyBackspace, tcell.KeyDelete:
 		p.model.Delete()
+
 	case tcell.KeyRune:
 		p.model.Add(evt.Rune())
+
 	case tcell.KeyEscape:
 		p.model.ClearText(true)
 		p.model.SetActive(false)
+
 	case tcell.KeyEnter, tcell.KeyCtrlE:
 		p.model.SetText(p.model.GetText(), "")
 		p.model.SetActive(false)
+
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
 		p.model.ClearText(true)
+
 	case tcell.KeyUp:
 		if s, ok := m.NextSuggestion(); ok {
-			p.suggest(p.model.GetText(), s)
+			p.model.SetText(p.model.GetText(), s)
 		}
+
 	case tcell.KeyDown:
 		if s, ok := m.PrevSuggestion(); ok {
-			p.suggest(p.model.GetText(), s)
+			p.model.SetText(p.model.GetText(), s)
 		}
+
 	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if s, ok := m.CurrentSuggestion(); ok {
 			p.model.SetText(p.model.GetText()+s, "")
@@ -188,17 +208,29 @@ func (p *Prompt) activate() {
 	p.model.Notify(false)
 }
 
+func (p *Prompt) Clear() {
+	p.mx.Lock()
+	defer p.mx.Unlock()
+
+	p.TextView.Clear()
+}
+
+func (p *Prompt) Draw(sc tcell.Screen) {
+	p.mx.RLock()
+	defer p.mx.RUnlock()
+
+	p.TextView.Draw(sc)
+}
+
 func (p *Prompt) update(text, suggestion string) {
 	p.Clear()
 	p.write(text, suggestion)
 }
 
-func (p *Prompt) suggest(text, suggestion string) {
-	p.Clear()
-	p.write(text, suggestion)
-}
-
 func (p *Prompt) write(text, suggest string) {
+	p.mx.Lock()
+	defer p.mx.Unlock()
+
 	p.SetCursorIndex(p.spacer + len(text))
 	txt := text
 	if suggest != "" {
@@ -222,7 +254,7 @@ func (p *Prompt) BufferChanged(text, suggestion string) {
 
 // SuggestionChanged notifies the suggestion changed.
 func (p *Prompt) SuggestionChanged(text, suggestion string) {
-	p.suggest(text, suggestion)
+	p.update(text, suggestion)
 }
 
 // BufferActive indicates the buff activity changed.

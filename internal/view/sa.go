@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -26,8 +29,8 @@ func NewServiceAccount(gvr client.GVR) ResourceViewer {
 	return &s
 }
 
-func (s *ServiceAccount) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (s *ServiceAccount) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyU:        ui.NewKeyAction("UsedBy", s.refCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Rules", s.policyCmd, true),
 	})
@@ -38,7 +41,7 @@ func (s *ServiceAccount) subjectCtx(ctx context.Context) context.Context {
 }
 
 func (s *ServiceAccount) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanSARefs(evt, s.App(), s.GetTable(), "v1/serviceaccounts")
+	return scanSARefs(evt, s.App(), s.GetTable(), dao.SaGVR)
 }
 
 func (s *ServiceAccount) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -53,7 +56,7 @@ func (s *ServiceAccount) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr string) *tcell.EventKey {
+func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr client.GVR) *tcell.EventKey {
 	path := t.GetSelectedItem()
 	if path == "" {
 		return evt

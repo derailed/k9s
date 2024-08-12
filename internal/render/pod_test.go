@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
@@ -13,128 +17,128 @@ import (
 )
 
 func init() {
-	render.AddColor = tcell.ColorBlue
-	render.HighlightColor = tcell.ColorYellow
-	render.CompletedColor = tcell.ColorGray
-	render.StdColor = tcell.ColorWhite
-	render.ErrColor = tcell.ColorRed
-	render.KillColor = tcell.ColorGray
+	model1.AddColor = tcell.ColorBlue
+	model1.HighlightColor = tcell.ColorYellow
+	model1.CompletedColor = tcell.ColorGray
+	model1.StdColor = tcell.ColorWhite
+	model1.ErrColor = tcell.ColorRed
+	model1.KillColor = tcell.ColorGray
 }
 
 func TestPodColorer(t *testing.T) {
-	stdHeader := render.Header{
-		render.HeaderColumn{Name: "NAMESPACE"},
-		render.HeaderColumn{Name: "NAME"},
-		render.HeaderColumn{Name: "READY"},
-		render.HeaderColumn{Name: "RESTARTS"},
-		render.HeaderColumn{Name: "STATUS"},
-		render.HeaderColumn{Name: "VALID"},
+	stdHeader := model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "READY"},
+		model1.HeaderColumn{Name: "RESTARTS"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "VALID"},
 	}
 
 	uu := map[string]struct {
-		re render.RowEvent
-		h  render.Header
+		re model1.RowEvent
+		h  model1.Header
 		e  tcell.Color
 	}{
 		"valid": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.Running, ""},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Running, ""},
 				},
 			},
-			e: render.StdColor,
+			e: model1.StdColor,
 		},
 		"init": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.PodInitializing, ""},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.PodInitializing, ""},
 				},
 			},
-			e: render.AddColor,
+			e: model1.AddColor,
 		},
 		"init-err": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.PodInitializing, "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.PodInitializing, "blah"},
 				},
 			},
-			e: render.AddColor,
+			e: model1.AddColor,
 		},
 		"initialized": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.Initialized, "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Initialized, "blah"},
 				},
 			},
-			e: render.HighlightColor,
+			e: model1.HighlightColor,
 		},
 		"completed": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.Completed, "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Completed, "blah"},
 				},
 			},
-			e: render.CompletedColor,
+			e: model1.CompletedColor,
 		},
 		"terminating": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", render.Terminating, "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Terminating, "blah"},
 				},
 			},
-			e: render.KillColor,
+			e: model1.KillColor,
 		},
 		"invalid": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", "Running", "blah"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "Running", "blah"},
 				},
 			},
-			e: render.ErrColor,
+			e: model1.ErrColor,
 		},
 		"unknown-cool": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", "blee", ""},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "blee", ""},
 				},
 			},
-			e: render.AddColor,
+			e: model1.AddColor,
 		},
 		"unknown-err": {
 			h: stdHeader,
-			re: render.RowEvent{
-				Kind: render.EventAdd,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", "blee", "doh"},
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "blee", "doh"},
 				},
 			},
-			e: render.ErrColor,
+			e: model1.ErrColor,
 		},
 		"status": {
 			h: stdHeader[0:3],
-			re: render.RowEvent{
-				Kind: render.EventDelete,
-				Row: render.Row{
-					Fields: render.Fields{"blee", "fred", "1/1", "0", "blee", ""},
+			re: model1.RowEvent{
+				Kind: model1.EventDelete,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "blee", ""},
 				},
 			},
-			e: render.KillColor,
+			e: model1.KillColor,
 		},
 	}
 
@@ -142,7 +146,7 @@ func TestPodColorer(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, r.ColorerFunc()("", u.h, u.re))
+			assert.Equal(t, u.e, r.ColorerFunc()("", u.h, &u.re))
 		})
 	}
 }
@@ -154,13 +158,13 @@ func TestPodRender(t *testing.T) {
 	}
 
 	var po render.Pod
-	r := render.NewRow(14)
+	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "●", "1/1", "Running", "0", "172.17.0.6", "minikube", "<none>", "<none>", "100", "50", "100:0", "70:170", "100", "n/a", "71"}
-	assert.Equal(t, e, r.Fields[:17])
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "<none>", "<none>"}
+	assert.Equal(t, e, r.Fields[:19])
 }
 
 func BenchmarkPodRender(b *testing.B) {
@@ -169,7 +173,7 @@ func BenchmarkPodRender(b *testing.B) {
 		MX:  makePodMX("nginx", "10m", "10Mi"),
 	}
 	var po render.Pod
-	r := render.NewRow(12)
+	r := model1.NewRow(12)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -185,13 +189,13 @@ func TestPodInitRender(t *testing.T) {
 	}
 
 	var po render.Pod
-	r := render.NewRow(14)
+	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "●", "1/1", "Init:0/1", "0", "172.17.0.6", "minikube", "<none>", "<none>", "10", "10", "100:0", "70:170", "10", "n/a", "14"}
-	assert.Equal(t, e, r.Fields[:17])
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "<none>", "<none>"}
+	assert.Equal(t, e, r.Fields[:19])
 }
 
 func TestCheckPodStatus(t *testing.T) {
@@ -224,11 +228,31 @@ func TestCheckPodStatus(t *testing.T) {
 			},
 			e: render.PhaseRunning,
 		},
+		"gated": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Conditions: []v1.PodCondition{
+						{Type: v1.PodScheduled, Reason: v1.PodReasonSchedulingGated},
+					},
+					Phase:                 v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+				},
+			},
+			e: v1.PodReasonSchedulingGated,
+		},
+
 		"backoff": {
 			pod: v1.Pod{
 				Status: v1.PodStatus{
-					Phase:                 v1.PodRunning,
-					InitContainerStatuses: []v1.ContainerStatus{},
+					Phase: v1.PodRunning,
 					ContainerStatuses: []v1.ContainerStatus{
 						{
 							Name: "c1",
@@ -243,6 +267,256 @@ func TestCheckPodStatus(t *testing.T) {
 			},
 			e: render.PhaseImagePullBackOff,
 		},
+		"backoff-init": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "ic1",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: render.PhaseImagePullBackOff,
+								},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: render.PhaseImagePullBackOff,
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Init:ImagePullBackOff",
+		},
+
+		"init-terminated-cool": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "ic1",
+							State: v1.ContainerState{},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: render.PhaseImagePullBackOff,
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Init:0/0",
+		},
+
+		"init-terminated-reason": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "ic1",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 1,
+									Reason:   "blah",
+								},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: render.PhaseImagePullBackOff,
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Init:blah",
+		},
+		"init-terminated-sig": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "ic1",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 2,
+									Signal:   9,
+								},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: render.PhaseImagePullBackOff,
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Init:Signal:9",
+		},
+		"init-terminated-code": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "ic1",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 2,
+								},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: render.PhaseImagePullBackOff,
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Init:ExitCode:2",
+		},
+
+		"co-reason": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									Reason: "blah",
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "blah",
+		},
+		"co-reason-ready": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							Ready: true,
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+				},
+			},
+			e: "Running",
+		},
+		"co-reason-completed": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Conditions: []v1.PodCondition{
+						{Type: v1.PodReady, Status: v1.ConditionTrue},
+					},
+					Phase: render.PhaseCompleted,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							Ready: true,
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+				},
+			},
+			e: "Running",
+		},
+
+		"co-sig": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 2,
+									Signal:   9,
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Signal:9",
+		},
+		"co-code": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 2,
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "ExitCode:2",
+		},
+		"co-ready": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+				},
+			},
+			e: "Running",
+		},
 	}
 
 	for k := range uu {
@@ -251,7 +525,123 @@ func TestCheckPodStatus(t *testing.T) {
 			assert.Equal(t, u.e, render.PodStatus(&u.pod))
 		})
 	}
+}
 
+func TestCheckPhase(t *testing.T) {
+	always := v1.ContainerRestartPolicyAlways
+	uu := map[string]struct {
+		pod v1.Pod
+		e   string
+	}{
+		"unknown": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: render.PhaseUnknown,
+				},
+			},
+			e: render.PhaseUnknown,
+		},
+		"terminating": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Status: v1.PodStatus{
+					Phase:  render.PhaseUnknown,
+					Reason: "bla",
+				},
+			},
+			e: render.PhaseTerminating,
+		},
+		"terminating-toast-node": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Status: v1.PodStatus{
+					Phase:  render.PhaseUnknown,
+					Reason: render.NodeUnreachablePodReason,
+				},
+			},
+			e: render.PhaseUnknown,
+		},
+		"restartable": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Spec: v1.PodSpec{
+					InitContainers: []v1.Container{
+						{
+							Name:          "ic1",
+							RestartPolicy: &always,
+						},
+					},
+				},
+				Status: v1.PodStatus{
+					Phase:  render.PhaseUnknown,
+					Reason: "bla",
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "ic1",
+						},
+					},
+				},
+			},
+			e: "Init:0/1",
+		},
+		"waiting": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Spec: v1.PodSpec{
+					InitContainers: []v1.Container{
+						{
+							Name:          "ic1",
+							RestartPolicy: &always,
+						},
+					},
+					Containers: []v1.Container{
+						{
+							Name: "c1",
+						},
+					},
+				},
+				Status: v1.PodStatus{
+					Phase:  render.PhaseUnknown,
+					Reason: "bla",
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "ic1",
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: "bla",
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Init:0/1",
+		},
+	}
+
+	var p render.Pod
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, p.Phase(&u.pod))
+		})
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -278,123 +668,3 @@ func makeRes(c, m string) v1.ResourceList {
 		v1.ResourceMemory: mem,
 	}
 }
-
-// apiVersion: v1
-// kind: Pod
-// metadata:
-//   creationTimestamp: "2023-11-11T17:01:40Z"
-//   finalizers:
-//   - batch.kubernetes.io/job-tracking
-//   generateName: hello-28328646-
-//   labels:
-//     batch.kubernetes.io/controller-uid: 35cf5552-7180-48c1-b7b2-8b6e630a7860
-//     batch.kubernetes.io/job-name: hello-28328646
-//     controller-uid: 35cf5552-7180-48c1-b7b2-8b6e630a7860
-//     job-name: hello-28328646
-//   name: hello-28328646-h9fnh
-//   namespace: fred
-//   ownerReferences:
-//   - apiVersion: batch/v1
-//     blockOwnerDeletion: true
-//     controller: true
-//     kind: Job
-//     name: hello-28328646
-//     uid: 35cf5552-7180-48c1-b7b2-8b6e630a7860
-//   resourceVersion: "381637"
-//   uid: ea77c360-6375-459b-8b30-2ac0c59404cd
-// spec:
-//   containers:
-//   - args:
-//     - /bin/bash
-//     - -c
-//     - for i in {1..5}; do echo "hello";sleep 1; done
-//     image: blang/busybox-bash
-//     imagePullPolicy: Always
-//     name: c1
-//     resources: {}
-//     terminationMessagePath: /dev/termination-log
-//     terminationMessagePolicy: File
-//     volumeMounts:
-//     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-//       name: kube-api-access-7sztm
-//       readOnly: true
-//   dnsPolicy: ClusterFirst
-//   enableServiceLinks: true
-//   nodeName: kind-worker
-//   preemptionPolicy: PreemptLowerPriority
-//   priority: 0
-//   restartPolicy: OnFailure
-//   schedulerName: default-scheduler
-//   securityContext: {}
-//   serviceAccount: default
-//   serviceAccountName: default
-//   terminationGracePeriodSeconds: 30
-//   tolerations:
-//   - effect: NoExecute
-//     key: node.kubernetes.io/not-ready
-//     operator: Exists
-//     tolerationSeconds: 300
-//   - effect: NoExecute
-//     key: node.kubernetes.io/unreachable
-//     operator: Exists
-//     tolerationSeconds: 300
-//   volumes:
-//   - name: kube-api-access-7sztm
-//     projected:
-//       defaultMode: 420
-//       sources:
-//       - serviceAccountToken:
-//           expirationSeconds: 3607
-//           path: token
-//       - configMap:
-//           items:
-//           - key: ca.crt
-//             path: ca.crt
-//           name: kube-root-ca.crt
-//       - downwardAPI:
-//           items:
-//           - fieldRef:
-//               apiVersion: v1
-//               fieldPath: metadata.namespace
-//             path: namespace
-// status:
-//   conditions:
-//   - lastProbeTime: null
-//     lastTransitionTime: "2023-11-11T17:01:40Z"
-//     status: "True"
-//     type: Initialized
-//   - lastProbeTime: null
-//     lastTransitionTime: "2023-11-11T17:01:40Z"
-//     message: 'containers with unready status: [c1[]'
-//     reason: ContainersNotReady
-//     status: "False"
-//     type: Ready
-//   - lastProbeTime: null
-//     lastTransitionTime: "2023-11-11T17:01:40Z"
-//     message: 'containers with unready status: [c1[]'
-//     reason: ContainersNotReady
-//     status: "False"
-//     type: ContainersReady
-//   - lastProbeTime: null
-//     lastTransitionTime: "2023-11-11T17:01:40Z"
-//     status: "True"
-//     type: PodScheduled
-//   containerStatuses:
-//   - image: blang/busybox-bash
-//     imageID: ""
-//     lastState: {}
-//     name: c1
-//     ready: false
-//     restartCount: 0
-//     started: false
-//     state:
-//       waiting:
-//         message: Back-off pulling image "blang/busybox-bash"
-//         reason: ImagePullBackOff
-//   hostIP: 172.18.0.3
-//   phase: Pending
-//   podIP: 10.244.1.59
-//   podIPs:
-//   - ip: 10.244.1.59
-//   qosClass: BestEffort
-//   startTime: "2023-11-11T17:01:40Z"

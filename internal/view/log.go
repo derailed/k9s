@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -13,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -57,6 +61,9 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 
 	return &l
 }
+
+func (l *Log) SetFilter(string)                 {}
+func (l *Log) SetLabelFilter(map[string]string) {}
 
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
@@ -236,7 +243,7 @@ func (l *Log) Stop() {
 func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
-	l.logs.Actions().Set(ui.KeyActions{
+	l.logs.Actions().Bulk(ui.KeyMap{
 		ui.Key0:         ui.NewKeyAction("tail", l.sinceCmd(-1), true),
 		ui.Key1:         ui.NewKeyAction("head", l.sinceCmd(0), true),
 		ui.Key2:         ui.NewKeyAction("1m", l.sinceCmd(60), true),
@@ -257,9 +264,7 @@ func (l *Log) bindKeys() {
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
 	})
 	if l.model.HasDefaultContainer() {
-		l.logs.Actions().Set(ui.KeyActions{
-			ui.KeyA: ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true),
-		})
+		l.logs.Actions().Add(ui.KeyA, ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true))
 	}
 }
 
@@ -403,7 +408,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContextDir(), l.model.GetPath(), l.logs.GetText(true))
+	path, err := saveData(l.app.Config.K9s.ContextScreenDumpDir(), l.model.GetPath(), l.logs.GetText(true))
 	if err != nil {
 		l.app.Flash().Err(err)
 		return nil
@@ -417,20 +422,17 @@ func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(screenDumpDir, context, fqn, data string) (string, error) {
-	dir := filepath.Join(screenDumpDir, context)
+func saveData(dir, fqn, logs string) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", strings.Replace(fqn, "/", "-", 1), now)
-
-	path := filepath.Join(dir, fName)
+	f := fmt.Sprintf("%s-%d.log", fqn, time.Now().UnixNano())
+	path := filepath.Join(dir, data.SanitizeFileName(f))
 	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0600)
 	if err != nil {
-		log.Error().Err(err).Msgf("LogFile create %s", path)
+		log.Error().Err(err).Msgf("Log file save failed: %q", path)
 		return "", nil
 	}
 	defer func() {
@@ -438,7 +440,7 @@ func saveData(screenDumpDir, context, fqn, data string) (string, error) {
 			log.Error().Err(err).Msg("Closing Log file")
 		}
 	}()
-	if _, err := file.Write([]byte(data)); err != nil {
+	if _, err := file.WriteString(logs); err != nil {
 		return "", err
 	}
 
@@ -452,7 +454,7 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
 	_, _, w, _ := l.GetRect()
-	fmt.Fprintf(l.ansiWriter, "\n[white:-:b]%s[-:-:-]", strings.Repeat("─", w-4))
+	fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("─", w-4))
 	l.follow = true
 
 	return nil

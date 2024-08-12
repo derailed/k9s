@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -43,14 +46,14 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 // Protocol...
 
-func (s *Service) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlL: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
+func (s *Service) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyB:      ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
+		ui.KeyShiftT: ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
 	})
 }
 
-func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
+func (s *Service) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
 	var res dao.Service
 	res.Init(a.factory, s.GVR())
 
@@ -63,8 +66,12 @@ func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
 		a.Flash().Warnf("No matching pods. Service %s is an external service.", path)
 		return
 	}
+	if svc.Spec.Selector == nil {
+		a.Flash().Warnf("No matching pods. Service %s does not provide any selectors", path)
+		return
+	}
 
-	showPodsWithLabels(a, path, svc.Spec.Selector)
+	showPods(a, path, toLabelsStr(svc.Spec.Selector), "")
 }
 
 func (s *Service) checkSvc(svc *v1.Service) error {
@@ -146,14 +153,30 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	}
 
 	var err error
-	base := "http://" + cfg.HTTP.Host + ":" + port + cfg.HTTP.Path
+	base := cfg.HTTP.Host
+	if !strings.Contains(base, ":") {
+		base += ":" + port + cfg.HTTP.Path
+	} else {
+		base += cfg.HTTP.Path
+	}
+	if strings.Index(base, "http") != 0 {
+		base = "http://" + base
+	}
+
 	if s.bench, err = perf.NewBenchmark(base, s.App().version, cfg); err != nil {
 		return err
 	}
 
 	s.App().Status(model.FlashWarn, "Benchmark in progress...")
-	log.Debug().Msg("Bench starting...")
-	go s.bench.Run(s.App().Config.K9s.CurrentCluster, s.benchDone)
+	log.Debug().Msg("Benchmark starting...")
+
+	ct, err := s.App().Config.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	name := s.App().Config.K9s.ActiveContextName()
+
+	go s.bench.Run(ct.ClusterName, name, s.benchDone)
 
 	return nil
 }

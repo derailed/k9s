@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -30,27 +33,17 @@ var (
 	_ Loggable        = (*Pod)(nil)
 	_ Controller      = (*Pod)(nil)
 	_ ContainsPodSpec = (*Pod)(nil)
+	_ ImageLister     = (*Pod)(nil)
 )
 
 const (
-	logRetryCount              = 20
-	logRetryWait               = 1 * time.Second
-	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
+	logRetryCount = 20
+	logRetryWait  = 1 * time.Second
 )
 
 // Pod represents a pod resource.
 type Pod struct {
 	Resource
-}
-
-// IsHappy check for happy deployments.
-func (p *Pod) IsHappy(po v1.Pod) bool {
-	for _, c := range po.Status.Conditions {
-		if c.Status == v1.ConditionFalse {
-			return false
-		}
-	}
-	return true
 }
 
 // Get returns a resource instance if found, else an error.
@@ -66,11 +59,21 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	var pmx *mv1beta1.PodMetrics
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		pmx, _ = client.DialMetrics(p.Client()).FetchPodMetrics(ctx, path)
 	}
 
 	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil
+}
+
+// ListImages lists container images.
+func (p *Pod) ListImages(ctx context.Context, path string) ([]string, error) {
+	pod, err := p.GetInstance(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&pod.Spec), nil
 }
 
 // List returns a collection of nodes.
@@ -81,7 +84,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 
 	var pmx client.PodsMetricsMap
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetricsMap(ctx, ns)
 	}
 	sel, _ := ctx.Value(internal.KeyFields).(string)
@@ -117,8 +120,8 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
-	ns, _ := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods:log", []string{client.GetVerb})
+	ns, n := client.Namespaced(path)
+	auth, err := p.Client().CanI(ns, "v1/pods:log", n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +129,6 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 		return nil, fmt.Errorf("user is not authorized to view pod logs")
 	}
 
-	ns, n := client.Namespaced(path)
 	dial, err := p.Client().DialLogs()
 	if err != nil {
 		return nil, err
@@ -163,7 +165,7 @@ func (p *Pod) Pod(fqn string) (string, error) {
 
 // GetInstance returns a pod instance.
 func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
-	o, err := p.GetFactory().Get(p.gvr.String(), fqn, true, labels.Everything())
+	o, err := p.getFactory().Get(p.gvrStr(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +185,7 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 	if !ok {
 		return nil, errors.New("no factory in context")
 	}
-	o, err := fac.Get(p.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := fac.Get(p.gvrStr(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -205,19 +207,19 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 		return append(outs, tailLogs(ctx, p, opts)), nil
 	}
 	for _, co := range po.Spec.InitContainers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 	for _, co := range po.Spec.Containers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 	for _, co := range po.Spec.EphemeralContainers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 
 	return outs, nil
@@ -226,7 +228,7 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 // ScanSA scans for ServiceAccount refs.
 func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := p.GetFactory().List(p.GVR(), ns, wait, labels.Everything())
+	oo, err := p.getFactory().List(p.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -254,9 +256,9 @@ func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 }
 
 // Scan scans for cluster resource refs.
-func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (p *Pod) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := p.GetFactory().List(p.GVR(), ns, wait, labels.Everything())
+	oo, err := p.getFactory().List(p.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +275,7 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 			continue
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case CmGVR:
 			if !hasConfigMap(&pod.Spec, n) {
 				continue
 			}
@@ -281,7 +283,7 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: p.GVR(),
 				FQN: client.FQN(pod.Namespace, pod.Name),
 			})
-		case "v1/secrets":
+		case SecGVR:
 			found, err := hasSecret(p.Factory, &pod.Spec, pod.Namespace, n, wait)
 			if err != nil {
 				log.Warn().Err(err).Msgf("locate secret %q", fqn)
@@ -294,7 +296,7 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: p.GVR(),
 				FQN: client.FQN(pod.Namespace, pod.Name),
 			})
-		case "v1/persistentvolumeclaims":
+		case PvcGVR:
 			if !hasPVC(&pod.Spec, n) {
 				continue
 			}
@@ -302,7 +304,7 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: p.GVR(),
 				FQN: client.FQN(pod.Namespace, pod.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case PcGVR:
 			if !hasPC(&pod.Spec, n) {
 				continue
 			}
@@ -411,24 +413,6 @@ func MetaFQN(m metav1.ObjectMeta) string {
 	return FQN(m.Namespace, m.Name)
 }
 
-// FQN returns a fully qualified resource name.
-func FQN(ns, n string) string {
-	if ns == "" {
-		return n
-	}
-	return ns + "/" + n
-}
-
-func extractFQN(o runtime.Object) string {
-	u, ok := o.(*unstructured.Unstructured)
-	if !ok {
-		log.Error().Err(fmt.Errorf("expecting unstructured but got %T", o))
-		return client.NA
-	}
-
-	return FQN(u.GetNamespace(), u.GetName())
-}
-
 // GetPodSpec returns a pod spec given a resource.
 func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 	pod, err := p.GetInstance(path)
@@ -442,7 +426,7 @@ func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (p *Pod) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pod", []string{client.PatchVerb})
+	auth, err := p.Client().CanI(ns, "v1/pod", n, client.PatchAccess)
 	if err != nil {
 		return err
 	}
@@ -486,21 +470,6 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 	return "", false, nil
 }
 
-// GetDefaultContainer returns a container name if specified in an annotation.
-func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
-	defaultContainer, ok := m.Annotations[defaultContainerAnnotation]
-	if ok {
-		for _, container := range spec.Containers {
-			if container.Name == defaultContainer {
-				return defaultContainer, true
-			}
-		}
-		log.Warn().Msg(defaultContainer + " container  not found. " + defaultContainerAnnotation + " annotation will be ignored")
-	}
-
-	return "", false
-}
-
 func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 	oo, err := p.Resource.List(ctx, ns)
 	if err != nil {
@@ -520,12 +489,27 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 		}
 		log.Debug().Msgf("Pod status: %q", render.PodStatus(&pod))
 		switch render.PodStatus(&pod) {
-		case render.PhaseCompleted, render.PhaseCrashLoop, render.PhaseError, render.PhaseImagePullBackOff, render.PhaseOOMKilled:
+		case render.PhaseCompleted:
+			fallthrough
+		case render.PhasePending:
+			fallthrough
+		case render.PhaseCrashLoop:
+			fallthrough
+		case render.PhaseError:
+			fallthrough
+		case render.PhaseImagePullBackOff:
+			fallthrough
+		case render.PhaseContainerStatusUnknown:
+			fallthrough
+		case render.PhaseEvicted:
+			fallthrough
+		case render.PhaseOOMKilled:
+			// !!BOZO!! Might need to bump timeout otherwise rev limit if too many??
 			log.Debug().Msgf("Sanitizing %s:%s", pod.Namespace, pod.Name)
 			fqn := client.FQN(pod.Namespace, pod.Name)
-			if err := p.Resource.Delete(ctx, fqn, nil, NowGrace); err != nil {
-				log.Warn().Err(err).Msgf("Pod %s deletion failed", fqn)
-				continue
+			if err := p.Delete(ctx, fqn, nil, 0); err != nil {
+				log.Debug().Msgf("Aborted! Sanitizer deleted %d pods", count)
+				return count, err
 			}
 			count++
 		}

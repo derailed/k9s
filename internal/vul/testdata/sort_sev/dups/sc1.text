@@ -1,0 +1,9 @@
+busybox                             1.34.1     n/a       binary     CVE-2022-48174       Critical
+busybox                             1.34.1     n/a       binary     CVE-2022-28391       High
+golang.org/x/net                    v0.4.0     0.17.0    go-module  GHSA-4374-p667-p6c8  High
+golang.org/x/net                    v0.4.0     0.7.0     go-module  GHSA-vvpx-j8f3-3w6h  High
+golang.org/x/net                    v0.4.0     0.7.0     go-module  GHSA-vvpx-j8f3-3w6h  High
+golang.org/x/net                    v0.4.0     0.17.0    go-module  GHSA-qppj-fm5r-hxr3  Medium
+golang.org/x/net                    v0.4.0     0.13.0    go-module  GHSA-2wrh-6pvc-2jm9  Medium
+golang.org/x/net                    v0.4.0     0.13.0    go-module  GHSA-2wrh-6pvc-2jm9  Medium
+golang.org/x/net                    v0.4.0     0.17.0    go-module  GHSA-qppj-fm5r-hxr3  Medium

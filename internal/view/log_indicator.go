@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -6,7 +9,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const spacer = "     "
@@ -33,7 +35,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		TextView:                   tview.NewTextView(),
 		indicator:                  make([]byte, 0, 100),
 		scrollStatus:               1,
-		fullScreen:                 cfg.K9s.Logger.FullScreenLogs,
+		fullScreen:                 cfg.K9s.UI.DefaultsToFullScreen,
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
 		showJson:                   cfg.K9s.Logger.ShowJSON,
@@ -170,8 +172,6 @@ func (l *LogIndicator) Refresh() {
 	} else {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Wrap", "")...)
 	}
-
-	log.Debug().Msgf("INDICATOR: %q", l.indicator)
 
 	_, _ = l.Write(l.indicator)
 }

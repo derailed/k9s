@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
@@ -109,6 +112,7 @@ func (s *Stack) Pop() (Component, bool) {
 	s.mx.Lock()
 	{
 		c = s.components[len(s.components)-1]
+		c.Stop()
 		s.components = s.components[:len(s.components)-1]
 	}
 	s.mx.Unlock()
@@ -163,6 +167,8 @@ func (s *Stack) Top() Component {
 		return nil
 	}
 
+	s.mx.RLock()
+	defer s.mx.RUnlock()
 	return s.components[len(s.components)-1]
 }
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -7,9 +10,9 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -21,25 +24,26 @@ type Job struct {
 }
 
 // Header returns a header row.
-func (Job) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "COMPLETIONS"},
-		HeaderColumn{Name: "DURATION"},
-		HeaderColumn{Name: "SELECTOR", Wide: true},
-		HeaderColumn{Name: "CONTAINERS", Wide: true},
-		HeaderColumn{Name: "IMAGES", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (Job) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "COMPLETIONS"},
+		model1.HeaderColumn{Name: "DURATION"},
+		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
+		model1.HeaderColumn{Name: "CONTAINERS", Wide: true},
+		model1.HeaderColumn{Name: "IMAGES", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (j Job) Render(o interface{}, ns string, r *Row) error {
+func (j Job) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Job, but got %T", o)
+		return fmt.Errorf("expected Job, but got %T", o)
 	}
 	var job batchv1.Job
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &job)
@@ -51,28 +55,26 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 	cc, ii := toContainers(job.Spec.Template.Spec)
 
 	r.ID = client.MetaFQN(job.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		job.Namespace,
 		job.Name,
+		computeVulScore(job.ObjectMeta, &job.Spec.Template.Spec),
 		ready,
 		toDuration(job.Status),
 		jobSelector(job.Spec),
 		cc,
 		ii,
-		asStatus(j.diagnose(ready, job.Status.CompletionTime)),
-		toAge(job.GetCreationTimestamp()),
+		AsStatus(j.diagnose(ready, job.Status)),
+		ToAge(job.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (Job) diagnose(ready string, completed *metav1.Time) error {
-	if completed == nil {
-		return nil
-	}
+func (Job) diagnose(ready string, status batchv1.JobStatus) error {
 	tokens := strings.Split(ready, "/")
-	if tokens[0] != tokens[1] {
-		return fmt.Errorf("expecting %s completion got %s", tokens[1], tokens[0])
+	if tokens[0] != tokens[1] && status.Failed > 0 {
+		return fmt.Errorf("%d pods failed", status.Failed)
 	}
 	return nil
 }

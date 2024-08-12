@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
@@ -5,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -23,10 +27,10 @@ func TestContainer(t *testing.T) {
 		IsInit:    false,
 		Age:       makeAge(),
 	}
-	var r render.Row
+	var r model1.Row
 	assert.Nil(t, c.Render(cres, "blee", &r))
 	assert.Equal(t, "fred", r.ID)
-	assert.Equal(t, render.Fields{
+	assert.Equal(t, model1.Fields{
 		"fred",
 		"●",
 		"img",
@@ -60,7 +64,7 @@ func BenchmarkContainerRender(b *testing.B) {
 		IsInit:    false,
 		Age:       makeAge(),
 	}
-	var r render.Row
+	var r model1.Row
 
 	b.ReportAllocs()
 	b.ResetTimer()

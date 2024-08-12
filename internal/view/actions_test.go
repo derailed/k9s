@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -50,15 +53,16 @@ func TestIncludes(t *testing.T) {
 
 func TestInScope(t *testing.T) {
 	uu := map[string]struct {
-		ss, aa []string
-		e      bool
+		ss []string
+		aa map[string]struct{}
+		e  bool
 	}{
 		"empty":         {},
-		"yes":           {e: true, ss: []string{"blee", "duh", "fred"}, aa: []string{"blee", "fred", "duh"}},
-		"no":            {ss: []string{"blee", "duh", "fred"}, aa: []string{"blee1", "fred1"}},
-		"empty scopes":  {aa: []string{"blee1", "fred1"}},
+		"yes":           {e: true, ss: []string{"blee", "duh", "fred"}, aa: map[string]struct{}{"blee": {}, "fred": {}, "duh": {}}},
+		"no":            {ss: []string{"blee", "duh", "fred"}, aa: map[string]struct{}{"blee1": {}, "fred1": {}}},
+		"empty scopes":  {aa: map[string]struct{}{"blee1": {}, "fred1": {}}},
 		"empty aliases": {ss: []string{"blee1", "fred1"}},
-		"all":           {e: true, ss: []string{AllScopes}, aa: []string{"blee1", "fred1"}},
+		"all":           {e: true, ss: []string{AllScopes}, aa: map[string]struct{}{"blee1": {}, "fred1": {}}},
 	}
 
 	for k := range uu {

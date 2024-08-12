@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -23,7 +26,7 @@ func Describe(c client.Connection, gvr client.GVR, path string) (string, error) 
 
 	ns, n := client.Namespaced(path)
 	if client.IsClusterScoped(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 	mapping, err := mapper.ResourceFor(gvr.AsResourceName(), gvk.Kind)
 	if err != nil {

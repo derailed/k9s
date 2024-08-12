@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -32,16 +35,16 @@ type CronJob struct {
 
 // NewCronJob returns a new viewer.
 func NewCronJob(gvr client.GVR) ResourceViewer {
-	c := CronJob{ResourceViewer: NewBrowser(gvr)}
+	c := CronJob{ResourceViewer: NewVulnerabilityExtender(NewBrowser(gvr))}
 	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetEnterFn(c.showJobs)
 
 	return &c
 }
 
-func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr, path string) {
+func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	log.Debug().Msgf("Showing Jobs %q:%q -- %q", model.GetNamespace(), gvr, path)
-	o, err := app.factory.Get(gvr, path, true, labels.Everything())
+	o, err := app.factory.Get(gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -68,8 +71,8 @@ func jobCtx(path, uid string) ContextFunc {
 	}
 }
 
-func (c *CronJob) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (c *CronJob) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyT:      ui.NewKeyAction("Trigger", c.triggerCmd, true),
 		ui.KeyS:      ui.NewKeyAction("Suspend/Resume", c.toggleSuspendCmd, true),
 		ui.KeyShiftL: ui.NewKeyAction("Sort LastScheduled", c.GetTable().SortColCmd(lastScheduledCol, true), false),

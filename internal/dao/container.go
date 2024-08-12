@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -35,7 +38,7 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 		cmx client.ContainersMetrics
 		err error
 	)
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		cmx, _ = client.DialMetrics(c.Client()).FetchContainersMetrics(ctx, fqn)
 	}
 
@@ -91,7 +94,7 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 }
 
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
-	o, err := c.GetFactory().Get("v1/pods", fqn, true, labels.Everything())
+	o, err := c.getFactory().Get("v1/pods", fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

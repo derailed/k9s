@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -53,7 +56,7 @@ func (n *Node) ToggleCordon(path string, cordon bool) error {
 		}
 		return fmt.Errorf("node is already uncordoned")
 	}
-	dial, err := n.GetFactory().Client().Dial()
+	dial, err := n.getFactory().Client().Dial()
 	if err != nil {
 		return err
 	}
@@ -95,7 +98,7 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 		}
 	}
 
-	dial, err := n.GetFactory().Client().Dial()
+	dial, err := n.getFactory().Client().Dial()
 	if err != nil {
 		return err
 	}
@@ -103,7 +106,7 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 	dd, errs := h.GetPodsForDeletion(path)
 	if len(errs) != 0 {
 		for _, e := range errs {
-			if _, err := h.ErrOut.Write([]byte(e.Error() + "\n")); err != nil {
+			if _, err := h.ErrOut.Write([]byte(fmt.Sprintf("[%s] %s\n", path, e.Error()))); err != nil {
 				return err
 			}
 		}
@@ -136,7 +139,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	var nmx *mv1beta1.NodeMetrics
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
@@ -186,7 +189,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // CountPods counts the pods scheduled on a given node.
 func (n *Node) CountPods(nodeName string) (int, error) {
 	var count int
-	oo, err := n.GetFactory().List("v1/pods", client.AllNamespaces, false, labels.Everything())
+	oo, err := n.getFactory().List("v1/pods", client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return 0, err
 	}
@@ -210,7 +213,7 @@ func (n *Node) CountPods(nodeName string) (int, error) {
 
 // GetPods returns all pods running on given node.
 func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
-	oo, err := n.GetFactory().List("v1/pods", client.AllNamespaces, false, labels.Everything())
+	oo, err := n.getFactory().List("v1/pods", client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +247,8 @@ func (n *Node) ensureCordoned(path string) (bool, error) {
 
 // FetchNode retrieves a node.
 func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
-	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", []string{"get"})
+	_, n := client.Namespaced(path)
+	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +272,7 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 
 // FetchNodes retrieves all nodes.
 func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList, error) {
-	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", []string{client.ListVerb})
+	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", "", client.ListAccess)
 	if err != nil {
 		return nil, err
 	}

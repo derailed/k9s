@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package watch
 
 import (
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/port"
 	"github.com/rs/zerolog/log"
@@ -35,7 +39,7 @@ type Forwarder interface {
 	SetActive(bool)
 
 	// Age returns forwarder age.
-	Age() string
+	Age() time.Time
 
 	// HasPortMapping returns true if port mapping exists.
 	HasPortMapping(string) bool

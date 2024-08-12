@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
@@ -6,7 +9,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sync"
 	"time"
+
+	"github.com/derailed/k9s/internal/config"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -69,24 +75,25 @@ func (c ClusterMeta) Deltas(n ClusterMeta) bool {
 
 // ClusterInfo models cluster metadata.
 type ClusterInfo struct {
-	cluster            *Cluster
-	factory            dao.Factory
-	data               ClusterMeta
-	version            string
-	skipLatestRevCheck bool
-	listeners          []ClusterInfoListener
-	cache              *cache.LRUExpireCache
+	cluster   *Cluster
+	factory   dao.Factory
+	data      ClusterMeta
+	version   string
+	cfg       *config.K9s
+	listeners []ClusterInfoListener
+	cache     *cache.LRUExpireCache
+	mx        sync.RWMutex
 }
 
 // NewClusterInfo returns a new instance.
-func NewClusterInfo(f dao.Factory, v string, skipLatestRevCheck bool) *ClusterInfo {
+func NewClusterInfo(f dao.Factory, v string, cfg *config.K9s) *ClusterInfo {
 	c := ClusterInfo{
-		factory:            f,
-		cluster:            NewCluster(f),
-		data:               NewClusterMeta(),
-		version:            v,
-		skipLatestRevCheck: skipLatestRevCheck,
-		cache:              cache.NewLRUExpireCache(cacheSize),
+		factory: f,
+		cluster: NewCluster(f),
+		data:    NewClusterMeta(),
+		version: v,
+		cfg:     cfg,
+		cache:   cache.NewLRUExpireCache(cacheSize),
 	}
 
 	return &c
@@ -110,7 +117,16 @@ func (c *ClusterInfo) fetchK9sLatestRev() string {
 
 // Reset resets context and reload.
 func (c *ClusterInfo) Reset(f dao.Factory) {
-	c.cluster, c.data = NewCluster(f), NewClusterMeta()
+	if f == nil {
+		return
+	}
+
+	c.mx.Lock()
+	{
+		c.cluster, c.data = NewCluster(f), NewClusterMeta()
+	}
+	c.mx.Unlock()
+
 	c.Refresh()
 }
 
@@ -127,15 +143,13 @@ func (c *ClusterInfo) Refresh() {
 		var mx client.ClusterMetrics
 		if err := c.cluster.Metrics(ctx, &mx); err == nil {
 			data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
-		} else {
-			log.Warn().Err(err).Msgf("Cluster metrics failed")
 		}
 	}
 	data.K9sVer = c.version
 	v1 := NewSemVer(data.K9sVer)
 
 	var latestRev string
-	if !c.skipLatestRevCheck {
+	if !c.cfg.SkipLatestRevCheck {
 		latestRev = c.fetchK9sLatestRev()
 	}
 	v2 := NewSemVer(latestRev)
@@ -150,7 +164,11 @@ func (c *ClusterInfo) Refresh() {
 	} else {
 		c.fireNoMetaChanged(data)
 	}
-	c.data = data
+	c.mx.Lock()
+	{
+		c.data = data
+	}
+	c.mx.Unlock()
 }
 
 // AddListener adds a new model listener.

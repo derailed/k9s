@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -5,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -17,27 +21,27 @@ type NetworkPolicy struct {
 }
 
 // Header returns a header row.
-func (NetworkPolicy) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "ING-SELECTOR", Wide: true},
-		HeaderColumn{Name: "ING-PORTS"},
-		HeaderColumn{Name: "ING-BLOCK"},
-		HeaderColumn{Name: "EGR-SELECTOR", Wide: true},
-		HeaderColumn{Name: "EGR-PORTS"},
-		HeaderColumn{Name: "EGR-BLOCK"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (NetworkPolicy) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "ING-SELECTOR", Wide: true},
+		model1.HeaderColumn{Name: "ING-PORTS"},
+		model1.HeaderColumn{Name: "ING-BLOCK"},
+		model1.HeaderColumn{Name: "EGR-SELECTOR", Wide: true},
+		model1.HeaderColumn{Name: "EGR-PORTS"},
+		model1.HeaderColumn{Name: "EGR-BLOCK"},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
+func (n NetworkPolicy) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected NetworkPolicy, but got %T", o)
+		return fmt.Errorf("expected NetworkPolicy, but got %T", o)
 	}
 	var np netv1.NetworkPolicy
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &np)
@@ -49,7 +53,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 	ep, es, eb := egress(np.Spec.Egress)
 
 	r.ID = client.MetaFQN(np.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		np.Namespace,
 		np.Name,
 		is,
@@ -60,7 +64,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 		eb,
 		mapToStr(np.Labels),
 		"",
-		toAge(np.GetCreationTimestamp()),
+		ToAge(np.GetCreationTimestamp()),
 	}
 
 	return nil

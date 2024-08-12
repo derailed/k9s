@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -9,7 +12,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
@@ -57,22 +60,32 @@ func (d *Dir) dirContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyPath, d.path)
 }
 
-func (d *Dir) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyA: ui.NewKeyAction("Apply", d.applyCmd, true),
-		ui.KeyD: ui.NewKeyAction("Delete", d.delCmd, true),
-		ui.KeyE: ui.NewKeyAction("Edit", d.editCmd, true),
+func (d *Dir) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyA: ui.NewKeyActionWithOpts("Apply", d.applyCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
+		ui.KeyD: ui.NewKeyActionWithOpts("Delete", d.delCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
+		ui.KeyE: ui.NewKeyActionWithOpts("Edit", d.editCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
 	})
 }
 
-func (d *Dir) bindKeys(aa ui.KeyActions) {
+func (d *Dir) bindKeys(aa *ui.KeyActions) {
+	// !!BOZO!! Lame!
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD, tcell.KeyCtrlZ)
 	if !d.App().Config.K9s.IsReadOnly() {
 		d.bindDangerousKeys(aa)
 	}
-	aa.Add(ui.KeyActions{
-		ui.KeyY:        ui.NewKeyAction("YAML", d.viewCmd, true),
+	aa.Bulk(ui.KeyMap{
+		ui.KeyY:        ui.NewKeyAction(yamlAction, d.viewCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", d.gotoCmd, true),
 	})
 }
@@ -93,7 +106,7 @@ func (d *Dir) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(d.App(), "YAML", sel, true).Update(string(yaml))
+	details := NewDetails(d.App(), yamlAction, sel, contentYAML, true).Update(string(yaml))
 	if err := d.App().inject(details, false); err != nil {
 		d.App().Flash().Err(err)
 	}
@@ -160,7 +173,7 @@ func isKustomized(sel string) bool {
 	}
 	kk := []string{kustomizeNoExt, kustomizeYAML, kustomizeYML}
 	for _, f := range ff {
-		if config.InList(kk, f.Name()) {
+		if data.InList(kk, f.Name()) {
 			return true
 		}
 	}
@@ -213,7 +226,7 @@ func (d *Dir) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 			res = "message:\n" + fmtResults(res)
 		}
 
-		details := NewDetails(d.App(), "Applied Manifest", sel, true).Update(res)
+		details := NewDetails(d.App(), "Applied Manifest", sel, contentYAML, true).Update(res)
 		if err := d.App().inject(details, false); err != nil {
 			d.App().Flash().Err(err)
 		}
@@ -252,7 +265,7 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 		} else {
 			res = "message:\n" + fmtResults(res)
 		}
-		details := NewDetails(d.App(), "Deleted Manifest", sel, true).Update(res)
+		details := NewDetails(d.App(), "Deleted Manifest", sel, contentYAML, true).Update(res)
 		if err := d.App().inject(details, false); err != nil {
 			d.App().Flash().Err(err)
 		}
