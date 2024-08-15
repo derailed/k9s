@@ -1,0 +1,16 @@
+plugins:
+  # provides a way to continue working on the currently selected object in a new shell without doing lengthy copy/paste of current context.
+  # It simply formats the `kubectl get` command, taking care to omit -n when the namespace is not defined (typically for cluster-wide resources)
+  kubectl-get-cmd:
+    shortCut: Shift-B
+    confirm: false
+    description: get into shell
+    scopes:
+      - all
+    command: bash
+    background: false
+    args:
+      - -c
+      - (printf "copy/paste in a shell:\n\n"; if [ "$NAMESPACE" != "" -a  "$NAMESPACE" != "-"  ]; then printf "kubectl get  --context $CONTEXT -n $NAMESPACE $RESOURCE_NAME $NAME \n" ; else printf "kubectl get  --context $CONTEXT $RESOURCE_NAME $NAME \n"; fi ) |& less
+
+
