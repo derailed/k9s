@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"regexp"
 	"sync"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
+	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,8 +35,6 @@ var (
 	_ Controller      = (*Pod)(nil)
 	_ ContainsPodSpec = (*Pod)(nil)
 	_ ImageLister     = (*Pod)(nil)
-
-	nonEscapePattern = regexp.MustCompile(`(\[[a-zA-Z0-9_,;: \-\."#]+\[*)\]`)
 )
 
 const (
@@ -383,8 +381,8 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 	r := bufio.NewReader(stream)
 	for {
 		var item *LogItem
-		if line, err := r.ReadBytes('\n'); err == nil {
-			item = opts.ToLogItem(Escape(line))
+		if bytes, err := r.ReadBytes('\n'); err == nil {
+			item = opts.ToLogItem(tview.EscapeBytes(bytes))
 		} else {
 			if errors.Is(err, io.EOF) {
 				e := fmt.Errorf("Stream closed %w for %s", err, opts.Info())
@@ -520,10 +518,4 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 	log.Debug().Msgf("Sanitizer deleted %d pods", count)
 
 	return count, nil
-}
-
-// Escape escapes the given bytes such that color and/or region tags are not
-// recognized and substituted by the print functions of tview package.
-func Escape(text []byte) []byte {
-	return nonEscapePattern.ReplaceAll(text, []byte("$1[]"))
 }

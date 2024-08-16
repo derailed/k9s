@@ -11,13 +11,13 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/derailed/popeye v0.11.3
 	github.com/derailed/tcell/v2 v2.3.1-rc.3
-	github.com/derailed/tview v0.8.3
+	github.com/derailed/tview v0.8.4
 	github.com/fatih/color v1.16.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fvbommel/sortorder v1.1.0
 	github.com/go-errors/errors v1.4.2
 	github.com/mattn/go-colorable v0.1.13
-	github.com/mattn/go-runewidth v0.0.15
+	github.com/mattn/go-runewidth v0.0.16
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
@@ -26,7 +26,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/text v0.16.0
+	golang.org/x/text v0.17.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.4
@@ -122,7 +122,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/gdamore/encoding v1.0.0 // indirect
+	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/github/go-spdx/v2 v2.2.0 // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
 	github.com/glebarez/sqlite v1.11.0 // indirect
@@ -298,9 +298,9 @@ require (
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/term v0.21.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sys v0.24.0 // indirect
+	golang.org/x/term v0.23.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
