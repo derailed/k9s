@@ -21,7 +21,9 @@ type ConfigMap struct {
 // NewConfigMap returns a new viewer.
 func NewConfigMap(gvr client.GVR) ResourceViewer {
 	s := ConfigMap{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewOwnerExtender(
+			NewBrowser(gvr),
+		),
 	}
 	s.AddBindKeysFn(s.bindKeys)
 
