@@ -395,6 +395,8 @@ github.com/derailed/tcell/v2 v2.3.1-rc.3 h1:9s1fmyRcSPRlwr/C9tcpJKCujbrtmPpST6dc
 github.com/derailed/tcell/v2 v2.3.1-rc.3/go.mod h1:nf68BEL8fjmXQHJT3xZjoZFs2uXOzyJcNAQqGUEMrFY=
 github.com/derailed/tview v0.8.4 h1:V/ifCGCYRnYWTrYqFhqZZ/UTD0GASlSs+MD9mpYc/9A=
 github.com/derailed/tview v0.8.4/go.mod h1:q+odnnhO6QDPpBT+0dqaWj+X+uoJ6MJehXj9shgP+Cw=
+github.com/derailed/tview v0.8.5 h1:pogM/OnWlgDo6j4zyzdiIXh7E7+eT7D4CPfBnyaETug=
+github.com/derailed/tview v0.8.5/go.mod h1:q+odnnhO6QDPpBT+0dqaWj+X+uoJ6MJehXj9shgP+Cw=
 github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1/go.mod h1:+hnT3ywWDTAFrW5aE+u2Sa/wT555ZqwoCS+pk3p6ry4=
 github.com/distribution/distribution/v3 v3.0.0-20221208165359-362910506bc2 h1:aBfCb7iqHmDEIp6fBvC/hQUddQfg+3qdYjwzaiP9Hnc=
 github.com/distribution/distribution/v3 v3.0.0-20221208165359-362910506bc2/go.mod h1:WHNsWjnIn2V1LYOrME7e8KxSeKunYHsxEm4am0BUtcI=
