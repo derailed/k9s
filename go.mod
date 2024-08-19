@@ -3,7 +3,7 @@ module github.com/derailed/k9s
 go 1.22.0
 
 require (
-	github.com/adrg/xdg v0.4.0
+	github.com/adrg/xdg v0.5.0
 	github.com/anchore/clio v0.0.0-20240209204744-cb94e40a4f65
 	github.com/anchore/grype v0.77.0
 	github.com/anchore/syft v1.2.0
