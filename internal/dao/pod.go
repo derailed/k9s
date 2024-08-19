@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
+	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -381,7 +382,7 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 	for {
 		var item *LogItem
 		if bytes, err := r.ReadBytes('\n'); err == nil {
-			item = opts.ToLogItem(bytes)
+			item = opts.ToLogItem(tview.EscapeBytes(bytes))
 		} else {
 			if errors.Is(err, io.EOF) {
 				e := fmt.Errorf("Stream closed %w for %s", err, opts.Info())

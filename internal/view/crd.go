@@ -16,7 +16,7 @@ type CRD struct {
 // NewCRD returns a new viewer.
 func NewCRD(gvr client.GVR) ResourceViewer {
 	s := CRD{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
 	s.AddBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showCRD)

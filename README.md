@@ -647,7 +647,7 @@ K9s allows you to extend your command line and tooling by defining your very own
 
 A plugin is defined as follows:
 
-* Shortcut option represents the key combination a user would type to activate the plugin
+* Shortcut option represents the key combination a user would type to activate the plugin. Valid values are [a-z], Shift-[A-Z], Ctrl-[A-Z].
 * Override option make that the default action related to the shortcut will be overrided by the plugin
 * Confirm option (when enabled) lets you see the command that is going to be executed and gives you an option to confirm or prevent execution
 * Description will be printed next to the shortcut in the k9s menu
@@ -655,7 +655,8 @@ A plugin is defined as follows:
 * Command represents ad-hoc commands the plugin runs upon activation
 * Background specifies whether or not the command runs in the background
 * Args specifies the various arguments that should apply to the command above
-* OverwriteOutput options allows plugin developers to provide custom messages on plugin execution
+* OverwriteOutput boolean option allows plugin developers to provide custom messages on plugin stdout execution. See example in [#2644](https://github.com/derailed/k9s/pull/2644)
+* Dangerous boolean option enables disabling the plugin when read-only mode is set. See [#2604](https://github.com/derailed/k9s/issues/2604) 
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
@@ -687,7 +688,9 @@ plugins:
   fred:
     shortCut: Ctrl-L
     override: false
+    overwriteOutput: false 
     confirm: false
+    dangerous: false 
     description: Pod logs
     scopes:
     - pods
