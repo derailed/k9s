@@ -20,6 +20,7 @@ import (
 type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
 	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
+	Shell               string     `json:"shell" yaml:"shell"`
 	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
 	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
@@ -96,6 +97,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.LiveViewAutoRefresh = k1.LiveViewAutoRefresh
 	k.ScreenDumpDir = k1.ScreenDumpDir
 	k.RefreshRate = k1.RefreshRate
+	k.Shell = k1.Shell
 	k.MaxConnRetry = k1.MaxConnRetry
 	k.ReadOnly = k1.ReadOnly
 	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
