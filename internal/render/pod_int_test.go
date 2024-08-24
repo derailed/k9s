@@ -295,6 +295,66 @@ func Test_restartableInitCO(t *testing.T) {
 	}
 }
 
+func Test_filterRestartableInitCO(t *testing.T) {
+	always := v1.ContainerRestartPolicyAlways
+
+	uu := map[string]struct {
+		cc  []v1.Container
+		ecc []v1.Container
+	}{
+		"empty": {
+			cc:  []v1.Container{},
+			ecc: []v1.Container{},
+		},
+		"restartable": {
+			cc: []v1.Container{
+				{
+					Name: "ric",
+					RestartPolicy: &always,
+				},
+			},
+			ecc: []v1.Container{
+				{
+					Name: "ric",
+					RestartPolicy: &always,
+				},
+			},
+		},
+		"not-restartable": {
+			cc: []v1.Container{
+				{
+					Name: "ic",
+				},
+			},
+			ecc: []v1.Container{},
+		},
+		"mixed": {
+			cc: []v1.Container{
+				{
+					Name: "ic",
+				},
+				{
+					Name: "ric",
+					RestartPolicy: &always,
+				},
+			},
+			ecc: []v1.Container{
+				{
+					Name: "ric",
+					RestartPolicy: &always,
+				},
+			},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.ecc, filterRestartableInitCO(u.cc))
+		})
+	}
+}
+
 func Test_gatherPodMx(t *testing.T) {
 	uu := map[string]struct {
 		cc   []v1.Container

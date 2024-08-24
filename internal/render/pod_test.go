@@ -198,6 +198,22 @@ func TestPodInitRender(t *testing.T) {
 	assert.Equal(t, e, r.Fields[:19])
 }
 
+func TestPodSidecarRender(t *testing.T) {
+	pom := render.PodWithMetrics{
+		Raw: load(t, "po_sidecar"),
+		MX:  makePodMX("sleep", "100m", "40Mi"),
+	}
+
+	var po render.Pod
+	r := model1.NewRow(14)
+	err := po.Render(&pom, "", &r)
+	assert.Nil(t, err)
+
+	assert.Equal(t, "default/sleep", r.ID)
+	e := model1.Fields{"default", "sleep", "0", "●", "1/1", "Running", "0", "100", "40", "50:250", "50:80", "200", "40", "80", "50", "10.244.0.8", "kind-control-plane", "<none>", "<none>"}
+	assert.Equal(t, e, r.Fields[:19])
+}
+
 func TestCheckPodStatus(t *testing.T) {
 	uu := map[string]struct {
 		pod v1.Pod

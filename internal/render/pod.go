@@ -132,7 +132,10 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	if pwm.MX != nil {
 		ccmx = pwm.MX.Containers
 	}
-	c, r := gatherCoMX(po.Spec.Containers, ccmx)
+	cc := make([]v1.Container, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
+	cc = append(cc, filterRestartableInitCO(po.Spec.InitContainers)...)
+	cc = append(cc, po.Spec.Containers...)	
+	c, r := gatherCoMX(cc, ccmx)
 	phase := p.Phase(&po)
 	row.ID = client.MetaFQN(po.ObjectMeta)
 
@@ -489,4 +492,14 @@ func hasPodReadyCondition(conditions []v1.PodCondition) bool {
 
 func restartableInitCO(p *v1.ContainerRestartPolicy) bool {
 	return p != nil && *p == v1.ContainerRestartPolicyAlways
+}
+
+func filterRestartableInitCO(cc []v1.Container) []v1.Container {
+	rcc := make([]v1.Container, 0, len(cc))
+	for _, c := range cc {
+		if restartableInitCO(c.RestartPolicy) {
+			rcc = append(rcc, c)
+		}
+	}
+	return rcc
 }
