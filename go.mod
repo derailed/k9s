@@ -15,7 +15,7 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fvbommel/sortorder v1.1.0
-	github.com/go-errors/errors v1.4.2
+	github.com/go-errors/errors v1.5.1
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/olekukonko/tablewriter v0.0.5
