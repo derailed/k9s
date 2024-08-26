@@ -5,13 +5,14 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 )
 
 const (
-	favNSIndicator     = "+"
+	favNSIndicator     = " ❤️ "
 	defaultNSIndicator = "(*)"
 )
 
@@ -36,6 +37,7 @@ func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyU:      ui.NewKeyAction("Use", n.useNsCmd, true),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", n.GetTable().SortColCmd(statusCol, true), false),
+		ui.KeyF:      ui.NewKeyAction("Toggle Favorite", n.toggleFavorite, true),
 	})
 }
 
@@ -102,4 +104,26 @@ func (n *Namespace) decorate(td *model1.TableData) {
 		td.SetRow(i, re)
 		return true
 	})
+}
+
+func (n *Namespace) toggleFavorite(evt *tcell.EventKey) *tcell.EventKey {
+	_, ns := client.Namespaced(n.GetTable().GetSelectedItem())
+
+	if ns == "" {
+		return nil
+	}
+
+	ctx, err := n.App().Config.K9s.ActiveContext()
+
+	if err != nil {
+		return evt
+	}
+
+	if data.InList(n.App().Config.FavNamespaces(), ns) {
+		ctx.Namespace.RmFavNS(ns)
+	} else {
+		ctx.Namespace.AddFavNS(ns)
+	}
+
+	return nil
 }
