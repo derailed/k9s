@@ -1899,8 +1899,8 @@ k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 h1:BZqlfIlq5YbRMFko6/PM7F
 k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340/go.mod h1:yD4MZYeKMBwQKVht279WycxKyM84kkAx2DPrTXaeb98=
 k8s.io/kubectl v0.30.1 h1:sHFIRI3oP0FFZmBAVEE8ErjnTyXDPkBcvO88mH9RjuY=
 k8s.io/kubectl v0.30.1/go.mod h1:7j+L0Cc38RYEcx+WH3y44jRBe1Q1jxdGPKkX0h4iDq0=
-k8s.io/metrics v0.30.1 h1:PeA9cP0kxVtaC8Wkzp4sTkr7YSkd9R0UYP6cCHOOY1M=
-k8s.io/metrics v0.30.1/go.mod h1:gVAhTTgfNKsn9D1kB7Nmb1T31relBuXzzGUE7klyOkM=
+k8s.io/metrics v0.31.0 h1:s7Vu7W0oEZPTN8jgcoiWIXIZBmVxt7YP9MRVyIgMdOc=
+k8s.io/metrics v0.31.0/go.mod h1:UNsz6swyX8FWkDoKN9ixPF75TBREMbHZIKjD7fydaOY=
 k8s.io/utils v0.0.0-20240711033017-18e509b52bc8 h1:pUdcCO1Lk/tbT5ztQWOBi5HBgbBP1J8+AsQnQCKsi8A=
 k8s.io/utils v0.0.0-20240711033017-18e509b52bc8/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 modernc.org/libc v1.41.0 h1:g9YAc6BkKlgORsUWj+JwqoB1wU3o4DE3bM3yvA3k+Gk=
