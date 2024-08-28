@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 )
 
@@ -16,13 +17,17 @@ type HorizontalPodAutoscaler struct {
 }
 
 // ColorerFunc colors a resource row.
-func (hpa HorizontalPodAutoscaler) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, h, re)
+func (hpa HorizontalPodAutoscaler) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
 
-		maxPodsIndex := h.IndexOf("MAXPODS", true)
-		replicasIndex := h.IndexOf("REPLICAS", true)
-		if (maxPodsIndex < 0 || maxPodsIndex >= len(re.Row.Fields)) || (replicasIndex < 0 || replicasIndex >= len(re.Row.Fields)) {
+		maxPodsIndex, ok := h.IndexOf("MAXPODS", true)
+		if !ok || maxPodsIndex >= len(re.Row.Fields) {
+			return c
+		}
+
+		replicasIndex, ok := h.IndexOf("REPLICAS", true)
+		if !ok || replicasIndex >= len(re.Row.Fields) {
 			return c
 		}
 
@@ -38,7 +43,7 @@ func (hpa HorizontalPodAutoscaler) ColorerFunc() ColorerFunc {
 			return c
 		}
 		if currentReplicas >= maxPods {
-			c = ErrColor
+			c = model1.ErrColor
 		}
 		return c
 	}
