@@ -202,4 +202,14 @@ var Registry = map[string]ResourceMeta{
 	"rbac.authorization.k8s.io/v1/rolebindings": {
 		Renderer: &render.RoleBinding{},
 	},
+
+	// Autoscaling...
+	"autoscaling/v1/horizontalpodautoscalers": {
+		Renderer: &render.HorizontalPodAutoscaler{},
+		DAO:      &dao.Table{},
+	},
+	"autoscaling/v2/horizontalpodautoscalers": {
+		Renderer: &render.HorizontalPodAutoscaler{},
+		DAO:      &dao.Table{},
+	},
 }
