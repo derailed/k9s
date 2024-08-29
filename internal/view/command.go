@@ -34,6 +34,7 @@ type Command struct {
 
 type newInterpreterFunc func(string) *cmd.Interpreter
 type resetInterpreterFunc func(*cmd.Interpreter, string) *cmd.Interpreter
+type lineWrapper func(string) string
 
 // NewCommand returns a new command.
 func NewCommand(app *App) *Command {
@@ -355,29 +356,29 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 }
 
 func (c *Command) interpreterFuncs() (newInterpreterFunc, resetInterpreterFunc) {
+	wrapper := c.lineWrapperFunc()
+	return func(s string) *cmd.Interpreter {
+			return cmd.NewInterpreter(wrapper(s))
+		},
+		func(c *cmd.Interpreter, s string) *cmd.Interpreter {
+			return c.Reset(wrapper(s))
+		}
+}
+
+func (c *Command) lineWrapperFunc() lineWrapper {
 	filter := c.app.Config.ActiveFilter()
 	if filter == "" {
-		return func(s string) *cmd.Interpreter {
-				return cmd.NewInterpreter(s)
-			},
-			func(c *cmd.Interpreter, s string) *cmd.Interpreter {
-				return c.Reset(s)
-			}
+		return func(s string) string {
+			return s
+		}
 	}
 	c.app.filterHistory.Push(filter)
 	if internal.IsLabelSelector(filter) {
-		return func(s string) *cmd.Interpreter {
-				return cmd.NewInterpreter(s + " " + ui.TrimLabelSelector(filter))
-			},
-			func(c *cmd.Interpreter, s string) *cmd.Interpreter {
-				return c.Reset(s + " " + ui.TrimLabelSelector(filter))
-			}
-	}
-
-	return func(s string) *cmd.Interpreter {
-			return cmd.NewInterpreter(s + " /" + filter)
-		},
-		func(c *cmd.Interpreter, s string) *cmd.Interpreter {
-			return c.Reset(s + " /" + filter)
+		return func(s string) string {
+			return s + " " + ui.TrimLabelSelector(filter)
 		}
+	}
+	return func(s string) string {
+		return s + " /" + filter
+	}
 }
