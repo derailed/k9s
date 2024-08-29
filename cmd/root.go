@@ -160,10 +160,6 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 
-	if k9sCfg.K9s.InitialView != "" {
-		log.Info().Msgf("initialView: %s", k9sCfg.K9s.InitialView)
-	}
-
 	return k9sCfg, errs
 }
 
