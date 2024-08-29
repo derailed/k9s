@@ -357,7 +357,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 
 func (c *Command) interpreterFuncs() (newInterpreterFunc, resetInterpreterFunc) {
 	filter := c.app.Config.ActiveFilter()
-	if filter == "" {
+	if filter != "" {
 		c.app.filterHistory.Push(filter)
 	}
 	wrapper := lineWrapperFunc(filter)
