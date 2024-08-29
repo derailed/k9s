@@ -109,6 +109,10 @@ func run(cmd *cobra.Command, args []string) error {
 		log.Error().Err(err).Msgf("Fail to load global/context configuration")
 	}
 	app := view.NewApp(cfg)
+	if app.Config.K9s.InitialView != "" {
+		app.Config.SetActiveView(app.Config.K9s.InitialView)
+	}
+
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
 		return err
 	}
@@ -154,6 +158,10 @@ func loadConfiguration() (*config.Config, error) {
 	if err := k9sCfg.Save(false); err != nil {
 		log.Error().Err(err).Msg("Config save")
 		errs = errors.Join(errs, err)
+	}
+
+	if k9sCfg.K9s.InitialView != "" {
+		log.Info().Msgf("initialView: %s", k9sCfg.K9s.InitialView)
 	}
 
 	return k9sCfg, errs
