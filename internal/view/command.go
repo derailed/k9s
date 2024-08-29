@@ -215,11 +215,7 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	filter := c.app.Config.ActiveFilter()
-	newInterpreter, resetInterpreter := interpreterFuncs(filter)
-	if filter != "" {
-		c.app.filterHistory.Push(filter)
-	}
+	newInterpreter, resetInterpreter := c.interpreterFuncs()
 
 	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
 		return c.run(newInterpreter("context"), "", true)
@@ -358,7 +354,8 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	return
 }
 
-func interpreterFuncs(filter string) (newInterpreterFunc, resetInterpreterFunc) {
+func (c *Command) interpreterFuncs() (newInterpreterFunc, resetInterpreterFunc) {
+	filter := c.app.Config.ActiveFilter()
 	if filter == "" {
 		return func(s string) *cmd.Interpreter {
 				return cmd.NewInterpreter(s)
@@ -367,6 +364,7 @@ func interpreterFuncs(filter string) (newInterpreterFunc, resetInterpreterFunc) 
 				return c.Reset(s)
 			}
 	}
+	c.app.filterHistory.Push(filter)
 	if internal.IsLabelSelector(filter) {
 		return func(s string) *cmd.Interpreter {
 				return cmd.NewInterpreter(s + " " + ui.TrimLabelSelector(filter))
