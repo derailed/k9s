@@ -356,7 +356,11 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 }
 
 func (c *Command) interpreterFuncs() (newInterpreterFunc, resetInterpreterFunc) {
-	wrapper := c.lineWrapperFunc()
+	filter := c.app.Config.ActiveFilter()
+	if filter == "" {
+		c.app.filterHistory.Push(filter)
+	}
+	wrapper := lineWrapperFunc(filter)
 	return func(s string) *cmd.Interpreter {
 			return cmd.NewInterpreter(wrapper(s))
 		},
@@ -365,14 +369,12 @@ func (c *Command) interpreterFuncs() (newInterpreterFunc, resetInterpreterFunc) 
 		}
 }
 
-func (c *Command) lineWrapperFunc() lineWrapper {
-	filter := c.app.Config.ActiveFilter()
+func lineWrapperFunc(filter string) lineWrapper {
 	if filter == "" {
 		return func(s string) string {
 			return s
 		}
 	}
-	c.app.filterHistory.Push(filter)
 	if internal.IsLabelSelector(filter) {
 		return func(s string) string {
 			return s + " " + ui.TrimLabelSelector(filter)
