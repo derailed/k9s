@@ -15,6 +15,7 @@
         "noExitOnCtrlC": { "type": "boolean" },
         "skipLatestRevCheck": { "type": "boolean" },
         "disablePodCounting": { "type": "boolean" },
+        "initialView": { "type": "string" },
         "ui": {
           "type": "object",
           "additionalProperties": false,
