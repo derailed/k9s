@@ -214,11 +214,7 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	filter := c.app.Config.ActiveFilter()
-	if filter != "" {
-		c.app.filterHistory.Push(filter)
-	}
-	makeLine := buildMakeArgs(filter)
+	makeLine := c.buildMakeArgs()
 
 	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
 		return c.run(cmd.NewInterpreter(makeLine("context")), "", true)
@@ -357,12 +353,14 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	return
 }
 
-func buildMakeArgs(filter string) makeLineFunc {
+func (c *Command) buildMakeArgs() makeLineFunc {
+	filter := c.app.Config.ActiveFilter()
 	if filter == "" {
 		return func(s string) string {
 			return s
 		}
 	}
+	c.app.filterHistory.Push(filter)
 	if internal.IsLabelSelector(filter) {
 		return func(s string) string {
 			return s + " " + ui.TrimLabelSelector(filter)
