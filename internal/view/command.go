@@ -32,6 +32,8 @@ type Command struct {
 	mx    sync.Mutex
 }
 
+type makeLineFunc func(string) string
+
 // NewCommand returns a new command.
 func NewCommand(app *App) *Command {
 	return &Command{
@@ -212,22 +214,11 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	makeLine := func(s string) string {
-		return s
-	}
 	filter := c.app.Config.ActiveFilter()
 	if filter != "" {
 		c.app.filterHistory.Push(filter)
-		if internal.IsLabelSelector(filter) {
-			makeLine = func(s string) string {
-				return s + " " + ui.TrimLabelSelector(filter)
-			}
-		} else {
-			makeLine = func(s string) string {
-				return s + " /" + filter
-			}
-		}
 	}
+	makeLine := buildMakeArgs(filter)
 
 	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
 		return c.run(cmd.NewInterpreter(makeLine("context")), "", true)
@@ -364,4 +355,20 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	c.app.cmdHistory.Push(p.GetLine())
 
 	return
+}
+
+func buildMakeArgs(filter string) makeLineFunc {
+	if filter == "" {
+		return func(s string) string {
+			return s
+		}
+	}
+	if internal.IsLabelSelector(filter) {
+		return func(s string) string {
+			return s + " " + ui.TrimLabelSelector(filter)
+		}
+	}
+	return func(s string) string {
+		return s + " /" + filter
+	}
 }
