@@ -32,7 +32,8 @@ type Command struct {
 	mx    sync.Mutex
 }
 
-type makeLineFunc func(string) string
+type newInterpreterFunc func(string) *cmd.Interpreter
+type resetInterpreterFunc func(*cmd.Interpreter, string) *cmd.Interpreter
 
 // NewCommand returns a new command.
 func NewCommand(app *App) *Command {
@@ -214,20 +215,24 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	makeLine := c.buildMakeArgs()
-
-	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
-		return c.run(cmd.NewInterpreter(makeLine("context")), "", true)
+	filter := c.app.Config.ActiveFilter()
+	newInterpreter, resetInterpreter := interpreterFuncs(filter)
+	if filter != "" {
+		c.app.filterHistory.Push(filter)
 	}
 
-	p := cmd.NewInterpreter(makeLine(c.app.Config.ActiveView()))
+	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
+		return c.run(newInterpreter("context"), "", true)
+	}
+
+	p := newInterpreter(c.app.Config.ActiveView())
 	if p.IsBlank() {
-		return c.run(p.Reset(makeLine("pod")), "", true)
+		return c.run(resetInterpreter(p, "pod"), "", true)
 	}
 
 	if err := c.run(p, "", true); err != nil {
 		log.Error().Err(err).Msgf("Default run command failed %q", p.GetLine())
-		return c.run(p.Reset(makeLine("pod")), "", true)
+		return c.run(resetInterpreter(p, "pod"), "", true)
 	}
 
 	return nil
@@ -353,20 +358,28 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	return
 }
 
-func (c *Command) buildMakeArgs() makeLineFunc {
-	filter := c.app.Config.ActiveFilter()
+func interpreterFuncs(filter string) (newInterpreterFunc, resetInterpreterFunc) {
 	if filter == "" {
-		return func(s string) string {
-			return s
-		}
+		return func(s string) *cmd.Interpreter {
+				return cmd.NewInterpreter(s)
+			},
+			func(c *cmd.Interpreter, s string) *cmd.Interpreter {
+				return c.Reset(s)
+			}
 	}
-	c.app.filterHistory.Push(filter)
 	if internal.IsLabelSelector(filter) {
-		return func(s string) string {
-			return s + " " + ui.TrimLabelSelector(filter)
+		return func(s string) *cmd.Interpreter {
+				return cmd.NewInterpreter(s + " " + ui.TrimLabelSelector(filter))
+			},
+			func(c *cmd.Interpreter, s string) *cmd.Interpreter {
+				return c.Reset(s + " " + ui.TrimLabelSelector(filter))
+			}
+	}
+
+	return func(s string) *cmd.Interpreter {
+			return cmd.NewInterpreter(s + " /" + filter)
+		},
+		func(c *cmd.Interpreter, s string) *cmd.Interpreter {
+			return c.Reset(s + " /" + filter)
 		}
-	}
-	return func(s string) string {
-		return s + " /" + filter
-	}
 }
