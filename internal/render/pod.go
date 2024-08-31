@@ -401,7 +401,7 @@ func checkInitContainerStatus(cs v1.ContainerStatus, count, initCount int, resta
 	return "Init:" + strconv.Itoa(count) + "/" + strconv.Itoa(initCount)
 }
 
-// PosStatus computes pod status.
+// PodStatus computes pod status.
 func PodStatus(pod *v1.Pod) string {
 	reason := string(pod.Status.Phase)
 	if pod.Status.Reason != "" {
