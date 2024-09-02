@@ -103,6 +103,7 @@
             "buffer": {"type": "integer"},
             "sinceSeconds": {"type": "integer"},
             "textWrap": {"type": "boolean"},
+            "disableAutoscroll": {"type": "boolean"},
             "showTime": {"type": "boolean"}
           }
         },

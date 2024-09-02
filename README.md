@@ -425,6 +425,8 @@ You can now override the context portForward default address configuration by se
       sinceSeconds: 300 # => tail the last 5 mins.
       # Toggles log line wrap. Default false
       textWrap: false
+      # Autoscroll in logs will be disabled. Default is false.
+      disableAutoscroll: false
       # Toggles log line timestamp info. Default false
       showTime: false
     # Provide shell pod customization when nodeShell feature gate is enabled!
@@ -952,6 +954,7 @@ k9s:
     buffer: 5000
     sinceSeconds: -1
     textWrap: false
+    scrollStatus: true
     showTime: false
   thresholds:
     cpu:
