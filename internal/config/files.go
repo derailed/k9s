@@ -80,6 +80,9 @@ var (
 
 	// AppHotKeysFile tracks hotkeys config file.
 	AppHotKeysFile string
+
+	// AppFilterFile tracks filter config file.
+	AppFilterFile string
 )
 
 // InitLogLoc initializes K9s logs location.
@@ -146,7 +149,7 @@ func initK9sEnvLocs() error {
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
-
+	AppFilterFile = filepath.Join(AppConfigDir, "filters.yaml")
 	return nil
 }
 
@@ -167,6 +170,7 @@ func initXDGLocs() error {
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
+	AppFilterFile = filepath.Join(AppConfigDir, "filters.yaml")
 
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
 	if err := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); err != nil {
