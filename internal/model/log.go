@@ -222,17 +222,16 @@ func (l *Log) GetFilter() string {
 // Filter filters the model using either fuzzy, regexp, or predefined filters.
 func (l *Log) Filter(q string) {
 	l.mx.Lock()
-	{
-		if strings.HasPrefix(q, "@") {
-			if customFilter, ok := l.filterConfig.Filters[q[1:]]; ok {
-				log.Debug().Msgf("Using custom filter: %s", customFilter)
-				l.filter = customFilter
-			} else {
-				log.Debug().Msgf("Failed to find custom filter for: %s", q)
-				l.filter = q
-			}
-		} else {
+	if !strings.HasPrefix(q, "@") {
+		l.filter = q
+	} else {
+		customFilter, ok := l.filterConfig.Filters[q[1:]]
+		if !ok {
+			log.Debug().Msgf("Failed to find custom filter for: %s", q)
 			l.filter = q
+		} else {
+			log.Debug().Msgf("Using custom filter: %s", customFilter)
+			l.filter = customFilter
 		}
 	}
 	l.mx.Unlock()
@@ -462,8 +461,6 @@ func (l *Log) loadFilterConfig() {
 		log.Error().Err(err).Msg("Failed to read filter config")
 		return
 	}
-
-	log.Info().Msgf("Filter config: %s", string(data))
 
 	if err := yaml.Unmarshal(data, &l.filterConfig); err != nil {
 		log.Error().Err(err).Msg("Failed to parse filter config")
