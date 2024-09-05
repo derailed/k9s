@@ -321,9 +321,9 @@ func (l *Log) updateTitle() {
 		title += ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), l.app.Styles.Frame())
 	}
 
-	buff := l.logs.cmdBuff.GetText()
-	if buff != "" {
-		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), l.app.Styles.Frame())
+	filter := l.model.GetFilter()
+	if filter != "" {
+		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, filter), l.app.Styles.Frame())
 	}
 	l.SetTitle(title)
 }

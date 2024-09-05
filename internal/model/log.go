@@ -214,6 +214,11 @@ func (l *Log) ClearFilter() {
 	l.fireLogChanged(ll)
 }
 
+// GetFilter returns the current filter.
+func (l *Log) GetFilter() string {
+	return l.filter
+}
+
 // Filter filters the model using either fuzzy, regexp, or predefined filters.
 func (l *Log) Filter(q string) {
 	l.mx.Lock()
