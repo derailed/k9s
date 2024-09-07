@@ -27,15 +27,17 @@ type Plugins struct {
 
 // Plugin describes a K9s plugin.
 type Plugin struct {
-	Scopes      []string `yaml:"scopes"`
-	Args        []string `yaml:"args"`
-	ShortCut    string   `yaml:"shortCut"`
-	Override    bool     `yaml:"override"`
-	Pipes       []string `yaml:"pipes"`
-	Description string   `yaml:"description"`
-	Command     string   `yaml:"command"`
-	Confirm     bool     `yaml:"confirm"`
-	Background  bool     `yaml:"background"`
+	Scopes          []string `yaml:"scopes"`
+	Args            []string `yaml:"args"`
+	ShortCut        string   `yaml:"shortCut"`
+	Override        bool     `yaml:"override"`
+	Pipes           []string `yaml:"pipes"`
+	Description     string   `yaml:"description"`
+	Command         string   `yaml:"command"`
+	Confirm         bool     `yaml:"confirm"`
+	Background      bool     `yaml:"background"`
+	Dangerous       bool     `yaml:"dangerous"`
+	OverwriteOutput bool     `yaml:"overwriteOutput"`
 }
 
 func (p Plugin) String() string {
@@ -80,13 +82,21 @@ func (p Plugins) loadPluginDir(dir string) error {
 		if file.IsDir() || !isYamlFile(file.Name()) {
 			continue
 		}
-		bb, err := os.ReadFile(filepath.Join(dir, file.Name()))
+		fileName := filepath.Join(dir, file.Name())
+		fileContent, err := os.ReadFile(fileName)
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
 		var plugin Plugin
-		if err = yaml.Unmarshal(bb, &plugin); err != nil {
-			return err
+		if err = yaml.Unmarshal(fileContent, &plugin); err != nil {
+			var plugins Plugins
+			if err = yaml.Unmarshal(fileContent, &plugins); err != nil {
+				return fmt.Errorf("cannot parse %s into either a single plugin nor plugins: %w", fileName, err)
+			}
+			for name, plugin := range plugins.Plugins {
+				p.Plugins[name] = plugin
+			}
+			continue
 		}
 		p.Plugins[strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))] = plugin
 	}

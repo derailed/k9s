@@ -144,7 +144,6 @@ func (a *App) bindKeys() {
 		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
 		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
 		tcell.KeyCtrlP: NewKeyAction("Persist", a.saveCmd, false),
-		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	})
@@ -156,6 +155,10 @@ func (a *App) bindKeys() {
 
 // BailOut exits the application.
 func (a *App) BailOut() {
+	if err := a.Config.Save(true); err != nil {
+		log.Error().Err(err).Msg("config save failed!")
+	}
+
 	a.Stop()
 	os.Exit(0)
 }
@@ -200,19 +203,6 @@ func (a *App) CmdBuff() *model.FishBuff {
 // HasCmd check if cmd buffer is active and has a command.
 func (a *App) HasCmd() bool {
 	return a.cmdBuff.IsActive() && !a.cmdBuff.Empty()
-}
-
-func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.InCmdMode() {
-		return evt
-	}
-
-	if !a.Config.K9s.NoExitOnCtrlC {
-		a.BailOut()
-	}
-
-	// overwrite the default ctrl-c behavior of tview
-	return nil
 }
 
 func (a *App) suspendCmd(evt *tcell.EventKey) *tcell.EventKey {

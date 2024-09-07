@@ -63,7 +63,7 @@ func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 		return err
 	}
 
-	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", ds.Name, []string{client.PatchVerb})
+	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", ds.Name, client.PatchAccess)
 	if err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func (d *DaemonSet) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (d *DaemonSet) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/daemonset", n, []string{client.PatchVerb})
+	auth, err := d.Client().CanI(ns, "apps/v1/daemonset", n, client.PatchAccess)
 	if err != nil {
 		return err
 	}

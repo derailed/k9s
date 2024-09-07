@@ -3,6 +3,7 @@ plugins:
   rm-ns:
     shortCut: n
     confirm: true
+    dangerous: true
     description: Remove NS Finalizers
     scopes:
     - namespace

@@ -1,16 +1,16 @@
 {
-  "apiVersion": "policy/v1beta1",
+  "apiVersion": "policy/v1",
   "kind": "PodDisruptionBudget",
   "metadata": {
     "annotations": {
-      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"policy/v1beta1\",\"kind\":\"PodDisruptionBudget\",\"metadata\":{\"annotations\":{},\"name\":\"fred\",\"namespace\":\"default\"},\"spec\":{\"minAvailable\":2,\"selector\":{\"matchLabels\":{\"app\":\"nginx\"}}}}\n"
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"policy/v1\",\"kind\":\"PodDisruptionBudget\",\"metadata\":{\"annotations\":{},\"name\":\"fred\",\"namespace\":\"default\"},\"spec\":{\"minAvailable\":2,\"selector\":{\"matchLabels\":{\"app\":\"nginx\"}}}}\n"
     },
     "creationTimestamp": "2019-08-31T03:48:10Z",
     "generation": 1,
     "name": "fred",
     "namespace": "default",
     "resourceVersion": "49885429",
-    "selfLink": "/apis/policy/v1beta1/namespaces/default/poddisruptionbudgets/fred",
+    "selfLink": "/apis/policy/v1/namespaces/default/poddisruptionbudgets/fred",
     "uid": "26b6cf70-cba2-11e9-990f-42010a800218"
   },
   "spec": {

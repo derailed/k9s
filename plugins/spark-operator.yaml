@@ -1,0 +1,23 @@
+# See https://github.com/kubeflow/spark-operator
+plugins:
+  toggleScheduledSparkApp:
+    shortCut: s
+    confirm: true
+    dangerous: true
+    scopes:
+      - scheduledsparkapp
+    description: Toggle suspend
+    command: kubectl
+    background: true
+    args:
+      - patch
+      - scheduledsparkapp
+      - $NAME
+      - -n
+      - $NAMESPACE
+      - --context
+      - $CONTEXT
+      - -p
+      - '{"spec": {"suspend": $!COL-SUSPEND}}'
+      - --type
+      - merge

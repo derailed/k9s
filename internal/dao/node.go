@@ -248,7 +248,7 @@ func (n *Node) ensureCordoned(path string) (bool, error) {
 // FetchNode retrieves a node.
 func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 	_, n := client.Namespaced(path)
-	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", n, []string{"get"})
+	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +272,7 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 
 // FetchNodes retrieves all nodes.
 func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList, error) {
-	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", "", []string{client.ListVerb})
+	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", "", client.ListAccess)
 	if err != nil {
 		return nil, err
 	}

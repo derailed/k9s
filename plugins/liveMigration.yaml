@@ -8,7 +8,7 @@ plugins:
   # Require `virtctl` cli in your PATH,
   #   can be downloaded from Openshift `Command Line Tools` page
   #   or from kubevirt site https://kubevirt.io/user-guide/operations/virtctl_client_tool/
-  # 
+  #
   #
   liveMigration:
     # Can be triggered from the VMI (VirtualMachineInstance) view, with shortcut `m`
@@ -17,6 +17,7 @@ plugins:
     description: Live Migrate moves VM to another compute node
     # Enable confirmation dialog
     confirm: true
+    dangerous: true
     # Collections of views that support this shortcut. (You can use `all`)
     scopes:
     - virtualmachineinstance

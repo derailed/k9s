@@ -34,8 +34,9 @@ import (
 )
 
 const (
-	shellCheck = `command -v bash >/dev/null && exec bash || exec sh`
-	bannerFmt  = "<<K9s-Shell>> Pod: %s | Container: %s \n"
+	shellCheck   = `command -v bash >/dev/null && exec bash || exec sh`
+	bannerFmt    = "<<K9s-Shell>> Pod: %s | Container: %s \n"
+	outputPrefix = "[output]"
 )
 
 var editorEnvVars = []string{"KUBE_EDITOR", "K9S_EDITOR", "EDITOR"}
@@ -79,9 +80,12 @@ func runK(a *App, opts shellOpts) error {
 	}
 	opts.binary = bin
 
-	suspended, errChan, _ := run(a, opts)
+	suspended, errChan, stChan := run(a, opts)
 	if !suspended {
 		return fmt.Errorf("unable to run command")
+	}
+	for v := range stChan {
+		log.Debug().Msgf("  - %s", v)
 	}
 	var errs error
 	for e := range errChan {
@@ -474,7 +478,7 @@ func asResource(r config.Limits) v1.ResourceRequirements {
 	}
 }
 
-func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e io.Writer, cmds ...*exec.Cmd) error {
+func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e *bytes.Buffer, cmds ...*exec.Cmd) error {
 	if len(cmds) == 0 {
 		return nil
 	}
@@ -487,6 +491,11 @@ func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e io.W
 				if err := cmd.Run(); err != nil {
 					log.Error().Err(err).Msgf("Command failed: %s", err)
 				} else {
+					for _, l := range strings.Split(w.String(), "\n") {
+						if l != "" {
+							statusChan <- fmt.Sprintf("%s %s", outputPrefix, l)
+						}
+					}
 					statusChan <- fmt.Sprintf("Command completed successfully: %q", render.Truncate(cmd.String(), 20))
 					log.Info().Msgf("Command completed successfully: %q", cmd.String())
 				}

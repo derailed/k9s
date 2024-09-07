@@ -110,7 +110,7 @@ nfpms:
     section: utils
     contents:
       - src: ./LICENSE
-        dst: /usr/share/doc/nfpm/copyright
+        dst: /usr/share/doc/k9s/copyright
         file_info:
           mode: 0644
 

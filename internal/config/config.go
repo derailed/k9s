@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -87,6 +88,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	switch {
 	case k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces):
 		ns = client.NamespaceAll
+		c.ResetActiveView()
 	case isStringSet(flags.Namespace):
 		ns = *flags.Namespace
 	default:
@@ -178,6 +180,20 @@ func (c *Config) ActiveView() string {
 	}
 
 	return cmd
+}
+
+func (c *Config) ResetActiveView() {
+	if isStringSet(c.K9s.manualCommand) {
+		return
+	}
+	v := c.ActiveView()
+	if v == "" {
+		return
+	}
+	p := cmd.NewInterpreter(v)
+	if p.HasNS() {
+		c.SetActiveView(p.Cmd())
+	}
 }
 
 // SetActiveView sets current context active view.

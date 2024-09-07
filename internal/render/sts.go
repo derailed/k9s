@@ -59,16 +59,20 @@ func (s StatefulSet) Render(o interface{}, ns string, r *model1.Row) error {
 		podContainerNames(sts.Spec.Template.Spec, true),
 		podImageNames(sts.Spec.Template.Spec, true),
 		mapToStr(sts.Labels),
-		AsStatus(s.diagnose(sts.Status.Replicas, sts.Status.ReadyReplicas)),
+		AsStatus(s.diagnose(sts.Spec.Replicas, sts.Status.Replicas, sts.Status.ReadyReplicas)),
 		ToAge(sts.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (StatefulSet) diagnose(d, r int32) error {
+func (StatefulSet) diagnose(w *int32, d, r int32) error {
 	if d != r {
-		return fmt.Errorf("desiring %d replicas got %d available", d, r)
+		return fmt.Errorf("desired %d replicas got %d available", d, r)
 	}
+	if w != nil && *w != r {
+		return fmt.Errorf("want %d replicas got %d available", *w, r)
+	}
+
 	return nil
 }

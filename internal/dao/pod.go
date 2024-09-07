@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
+	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -121,7 +122,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods:log", n, []string{client.GetVerb})
+	auth, err := p.Client().CanI(ns, "v1/pods:log", n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -207,19 +208,19 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 		return append(outs, tailLogs(ctx, p, opts)), nil
 	}
 	for _, co := range po.Spec.InitContainers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 	for _, co := range po.Spec.Containers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 	for _, co := range po.Spec.EphemeralContainers {
-		o := opts.Clone()
-		o.Container = co.Name
-		outs = append(outs, tailLogs(ctx, p, o))
+		cfg := opts.Clone()
+		cfg.Container = co.Name
+		outs = append(outs, tailLogs(ctx, p, cfg))
 	}
 
 	return outs, nil
@@ -381,7 +382,7 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 	for {
 		var item *LogItem
 		if bytes, err := r.ReadBytes('\n'); err == nil {
-			item = opts.ToLogItem(bytes)
+			item = opts.ToLogItem(tview.EscapeBytes(bytes))
 		} else {
 			if errors.Is(err, io.EOF) {
 				e := fmt.Errorf("Stream closed %w for %s", err, opts.Info())
@@ -426,7 +427,7 @@ func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (p *Pod) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pod", n, []string{client.PatchVerb})
+	auth, err := p.Client().CanI(ns, "v1/pod", n, client.PatchAccess)
 	if err != nil {
 		return err
 	}

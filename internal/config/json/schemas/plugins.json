@@ -14,12 +14,14 @@
           "override": { "type": "boolean" },
           "description": { "type": "string" },
           "confirm": { "type": "boolean" },
+          "dangerous": { "type": "boolean" },
           "scopes": {
             "type": "array",
             "items": { "type": "string" }
           },
           "command": { "type": "string" },
           "background": { "type": "boolean" },
+          "overwriteOutput": { "type": "boolean" },
           "args": {
             "type": "array",
             "items": { "type": ["string", "number"] }

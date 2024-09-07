@@ -11,6 +11,12 @@ import (
 	"regexp"
 )
 
+const (
+	envPFAddress          = "K9S_DEFAULT_PF_ADDRESS"
+	envFGNodeShell        = "K9S_FEATURE_GATE_NODE_SHELL"
+	defaultPortFwdAddress = "localhost"
+)
+
 var invalidPathCharsRX = regexp.MustCompile(`[:/]+`)
 
 // SanitizeContextSubpath ensure cluster/context produces a valid path.
@@ -21,6 +27,22 @@ func SanitizeContextSubpath(cluster, context string) string {
 // SanitizeFileName ensure file spec is valid.
 func SanitizeFileName(name string) string {
 	return invalidPathCharsRX.ReplaceAllString(name, "-")
+}
+
+func defaultPFAddress() string {
+	if a := os.Getenv(envPFAddress); a != "" {
+		return a
+	}
+
+	return defaultPortFwdAddress
+}
+
+func defaultFGNodeShell() bool {
+	if a := os.Getenv(envFGNodeShell); a != "" {
+		return a == "true"
+	}
+
+	return false
 }
 
 // InList check if string is in a collection of strings.

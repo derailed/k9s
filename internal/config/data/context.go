@@ -4,14 +4,12 @@
 package data
 
 import (
+	"os"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
-
-// DefaultPFAddress specifies the default PortForward host address.
-const DefaultPFAddress = "localhost"
 
 // Context tracks K9s context configuration.
 type Context struct {
@@ -30,20 +28,18 @@ func NewContext() *Context {
 	return &Context{
 		Namespace:          NewNamespace(),
 		View:               NewView(),
-		PortForwardAddress: DefaultPFAddress,
+		PortForwardAddress: defaultPFAddress(),
 		FeatureGates:       NewFeatureGates(),
 	}
 }
 
 // NewContextFromConfig returns a config based on a kubecontext.
 func NewContextFromConfig(cfg *api.Context) *Context {
-	return &Context{
-		Namespace:          NewActiveNamespace(cfg.Namespace),
-		ClusterName:        cfg.Cluster,
-		View:               NewView(),
-		PortForwardAddress: DefaultPFAddress,
-		FeatureGates:       NewFeatureGates(),
-	}
+	ct := NewContext()
+	ct.Namespace, ct.ClusterName = NewActiveNamespace(cfg.Namespace), cfg.Cluster
+
+	return ct
+
 }
 
 // NewContextFromKubeConfig returns a new instance based on kubesettings or an error.
@@ -57,12 +53,15 @@ func NewContextFromKubeConfig(ks KubeSettings) (*Context, error) {
 }
 
 func (c *Context) merge(old *Context) {
-	if old == nil {
+	if old == nil || old.Namespace == nil {
 		return
 	}
+	if c.Namespace == nil {
+		c.Namespace = NewNamespace()
+	}
 	c.Namespace.merge(old.Namespace)
-
 }
+
 func (c *Context) GetClusterName() string {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
@@ -75,11 +74,17 @@ func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
+	if a := os.Getenv(envPFAddress); a != "" {
+		c.PortForwardAddress = a
+	}
 	if c.PortForwardAddress == "" {
-		c.PortForwardAddress = DefaultPFAddress
+		c.PortForwardAddress = defaultPFAddress()
 	}
 	if cl, err := ks.CurrentClusterName(); err == nil {
 		c.ClusterName = cl
+	}
+	if b := os.Getenv(envFGNodeShell); b != "" {
+		c.FeatureGates.NodeShell = defaultFGNodeShell()
 	}
 
 	if c.Namespace == nil {

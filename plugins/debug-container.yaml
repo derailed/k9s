@@ -4,6 +4,7 @@ plugins:
   debug:
     shortCut: Shift-D
     description: Add debug container
+    dangerous: true
     scopes:
       - containers
     command: bash

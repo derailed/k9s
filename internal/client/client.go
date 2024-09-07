@@ -169,7 +169,12 @@ func (a *APIClient) CanI(ns, gvr, name string, verbs []string) (auth bool, err e
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := client.Create(ctx, sar, metav1.CreateOptions{})
-		log.Trace().Msgf("[CAN] %s(%s) %v <<%v>>", gvr, verbs, resp, err)
+		log.Trace().Msgf("[CAN] %s(%q/%q) <%v>", gvr, ns, name, verbs)
+		if resp != nil {
+			log.Trace().Msgf("  Spec: %#v", resp.Spec)
+			log.Trace().Msgf("  Auth: %t [%q]", resp.Status.Allowed, resp.Status.Reason)
+		}
+		log.Trace().Msgf("  <<%v>>", err)
 		if err != nil {
 			log.Warn().Err(err).Msgf("  Dial Failed!")
 			a.cache.Add(key, false, cacheExpiry)
@@ -212,10 +217,10 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 	return info, nil
 }
 
-func (a *APIClient) IsValidNamespace(n string) bool {
-	ok, err := a.isValidNamespace(n)
+func (a *APIClient) IsValidNamespace(ns string) bool {
+	ok, err := a.isValidNamespace(ns)
 	if err != nil {
-		log.Warn().Err(err).Msgf("namespace validation failed for: %q", n)
+		log.Warn().Err(err).Msgf("namespace validation failed for: %q", ns)
 	}
 
 	return ok
@@ -246,7 +251,7 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 		}
 	}
 
-	ok, err := a.CanI(ClusterScope, "v1/namespaces", "", []string{ListVerb})
+	ok, err := a.CanI(ClusterScope, "v1/namespaces", "", ListAccess)
 	if !ok || err != nil {
 		return nil, fmt.Errorf("user not authorized to list all namespaces")
 	}
@@ -524,10 +529,23 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 	return a.getMxsClient(), err
 }
 
+func (a *APIClient) invalidateCache() error {
+	dial, err := a.CachedDiscovery()
+	if err != nil {
+		return err
+	}
+	dial.Invalidate()
+
+	return nil
+}
+
 // SwitchContext handles kubeconfig context switches.
 func (a *APIClient) SwitchContext(name string) error {
 	log.Debug().Msgf("Switching context %q", name)
 	if err := a.config.SwitchContext(name); err != nil {
+		return err
+	}
+	if err := a.invalidateCache(); err != nil {
 		return err
 	}
 	a.reset()

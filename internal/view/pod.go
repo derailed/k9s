@@ -30,13 +30,15 @@ import (
 )
 
 const (
-	windowsOS      = "windows"
-	powerShell     = "powershell"
-	osSelector     = "kubernetes.io/os"
-	osBetaSelector = "beta." + osSelector
-	trUpload       = "Upload"
-	trDownload     = "Download"
-	pfIndicator    = "[orange::b]Ⓕ"
+	windowsOS        = "windows"
+	powerShell       = "powershell"
+	osSelector       = "kubernetes.io/os"
+	osBetaSelector   = "beta." + osSelector
+	trUpload         = "Upload"
+	trDownload       = "Download"
+	pfIndicator      = "[orange::b]Ⓕ"
+	defaultTxRetries = 999
+	magicPrompt      = "Yes Please!"
 )
 
 // Pod represents a pod viewer.
@@ -48,9 +50,11 @@ type Pod struct {
 func NewPod(gvr client.GVR) ResourceViewer {
 	var p Pod
 	p.ResourceViewer = NewPortForwardExtender(
-		NewVulnerabilityExtender(
-			NewImageExtender(
-				NewLogsExtender(NewBrowser(gvr), p.logOptions),
+		NewOwnerExtender(
+			NewVulnerabilityExtender(
+				NewImageExtender(
+					NewLogsExtender(NewBrowser(gvr), p.logOptions),
+				),
 			),
 		),
 	)
@@ -145,24 +149,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	cc, cfg := fetchContainers(pod.ObjectMeta, pod.Spec, true), p.App().Config.K9s.Logger
-	opts := dao.LogOptions{
-		Path:            path,
-		Lines:           int64(cfg.TailCount),
-		SinceSeconds:    cfg.SinceSeconds,
-		SingleContainer: len(cc) == 1,
-		ShowTimestamp:   cfg.ShowTime,
-		Previous:        prev,
-	}
-	if c, ok := dao.GetDefaultContainer(pod.ObjectMeta, pod.Spec); ok {
-		opts.Container, opts.DefaultContainer = c, c
-	} else if len(cc) == 1 {
-		opts.Container = cc[0]
-	} else {
-		opts.AllContainers = true
-	}
-
-	return &opts, nil
+	return podLogOptions(p.App(), path, prev, pod.ObjectMeta, pod.Spec), nil
 }
 
 func (p *Pod) showContainers(app *App, _ ui.Tabular, _ client.GVR, _ string) {
@@ -286,9 +273,8 @@ func (p *Pod) sanitizeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	ack := "sanitize me pods!"
-	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", ack)
-	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, ack, true, "Sanitize", msg, func() {
+	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", magicPrompt)
+	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*p.App().Conn().Config().CallTimeout())
 		defer cancel()
 		total, err := s.Sanitize(ctx, p.GetTable().GetModel().GetNamespace())
@@ -310,36 +296,38 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	ns, n := client.Namespaced(path)
-	ack := func(from, to, co string, download, no_preserve bool) bool {
-		local := to
-		if !download {
-			local = from
+	ack := func(args dialog.TransferArgs) bool {
+		local := args.To
+		if !args.Download {
+			local = args.From
 		}
-		if _, err := os.Stat(local); !download && errors.Is(err, fs.ErrNotExist) {
+		if _, err := os.Stat(local); !args.Download && errors.Is(err, fs.ErrNotExist) {
 			p.App().Flash().Err(err)
 			return false
 		}
 
-		args := make([]string, 0, 10)
-		args = append(args, "cp")
-		args = append(args, strings.TrimSpace(from))
-		args = append(args, strings.TrimSpace(to))
-		args = append(args, fmt.Sprintf("--no-preserve=%t", no_preserve))
-		if co != "" {
-			args = append(args, "-c="+co)
+		opts := make([]string, 0, 10)
+		opts = append(opts, "cp")
+		opts = append(opts, strings.TrimSpace(args.From))
+		opts = append(opts, strings.TrimSpace(args.To))
+		opts = append(opts, fmt.Sprintf("--no-preserve=%t", args.NoPreserve))
+		opts = append(opts, fmt.Sprintf("--retries=%d", args.Retries))
+		if args.CO != "" {
+			opts = append(opts, "-c="+args.CO)
 		}
+		opts = append(opts, fmt.Sprintf("--retries=%d", args.Retries))
 
-		opts := shellOpts{
+		cliOpts := shellOpts{
 			background: true,
-			args:       args,
+			args:       opts,
 		}
 		op := trUpload
-		if download {
+		if args.Download {
 			op = trDownload
 		}
 
-		fqn := path + ":" + co
-		if err := runK(p.App(), opts); err != nil {
+		fqn := path + ":" + args.CO
+		if err := runK(p.App(), cliOpts); err != nil {
 			p.App().cowCmd(err.Error())
 		} else {
 			p.App().Flash().Infof("%s successful on %s!", op, fqn)
@@ -359,6 +347,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		Message:    "Download Files",
 		Pod:        fmt.Sprintf("%s/%s:", ns, n),
 		Ack:        ack,
+		Retries:    defaultTxRetries,
 		Cancel:     func() {},
 	}
 	dialog.ShowUploads(p.App().Styles.Dialog(), p.App().Content.Pages, opts)

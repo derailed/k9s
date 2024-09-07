@@ -101,6 +101,19 @@ func (c *Command) contextCmd(p *cmd.Interpreter) error {
 	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true)
 }
 
+func (c *Command) namespaceCmd(p *cmd.Interpreter) bool {
+	ns, ok := p.NSArg()
+	if !ok {
+		return false
+	}
+
+	if ns != "" {
+		_ = p.Reset("pod " + ns)
+	}
+
+	return false
+}
+
 func (c *Command) aliasCmd(p *cmd.Interpreter) error {
 	filter, _ := p.FilterArg()
 
@@ -147,14 +160,6 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 		return err
 	}
 
-	ns := c.app.Config.ActiveNamespace()
-	if cns, ok := p.NSArg(); ok {
-		ns = cns
-	}
-	if err := c.app.switchNS(ns); err != nil {
-		return err
-	}
-
 	if context, ok := p.HasContext(); ok {
 		if context != c.app.Config.ActiveContextName() {
 			if err := c.app.Config.Save(true); err != nil {
@@ -178,6 +183,14 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 		if err := c.app.switchContext(p, false); err != nil {
 			return err
 		}
+	}
+
+	ns := c.app.Config.ActiveNamespace()
+	if cns, ok := p.NSArg(); ok {
+		ns = cns
+	}
+	if err := c.app.switchNS(ns); err != nil {
+		return err
 	}
 
 	co := c.componentFor(gvr, fqn, v)
@@ -244,6 +257,8 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 		if err := c.contextCmd(p); err != nil {
 			c.app.Flash().Err(err)
 		}
+	case p.IsNamespaceCmd():
+		return c.namespaceCmd(p)
 	case p.IsDirCmd():
 		if a, ok := p.DirArg(); !ok {
 			c.app.Flash().Errf("Invalid command. Use `dir xxx`")
@@ -271,7 +286,11 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (client.GVR, *MetaViewer, erro
 		p.Amend(ap)
 	}
 
-	v := MetaViewer{viewerFn: NewBrowser}
+	v := MetaViewer{
+		viewerFn: func(gvr client.GVR) ResourceViewer {
+			return NewOwnerExtender(NewBrowser(gvr))
+		},
+	}
 	if mv, ok := customViewers[gvr]; ok {
 		v = mv
 	}

@@ -38,7 +38,6 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 		log.Error().Err(err).Msgf("No active context detected")
 		return
 	}
-	address := ct.PortForwardAddress
 
 	pf, err := aa.PreferredPorts(ports)
 	if err != nil {
@@ -62,6 +61,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	if loField.GetText() == "" {
 		loField.SetPlaceholder("Enter a local port")
 	}
+	address := ct.PortForwardAddress
 	f.AddInputField("Address:", address, fieldLen, nil, func(h string) {
 		address = h
 	})

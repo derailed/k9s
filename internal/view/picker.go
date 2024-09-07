@@ -23,7 +23,7 @@ type Picker struct {
 func NewPicker() *Picker {
 	return &Picker{
 		List:    tview.NewList(),
-		actions: ui.KeyActions{},
+		actions: *ui.NewKeyActions(),
 	}
 }
 

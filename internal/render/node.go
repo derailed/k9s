@@ -22,7 +22,7 @@ import (
 
 const (
 	labelNodeRolePrefix = "node-role.kubernetes.io/"
-	nodeLabelRole       = "kubernetes.io/role"
+	labelNodeRoleSuffix = "kubernetes.io/role"
 )
 
 // Node renders a K8s Node to screen.
@@ -181,7 +181,7 @@ func nodeRoles(node *v1.Node, res []string) {
 				res[index] = role
 				index++
 			}
-		case k == nodeLabelRole && v != "":
+		case strings.HasSuffix(k, labelNodeRoleSuffix) && v != "":
 			res[index] = v
 			index++
 		}

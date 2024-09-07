@@ -23,6 +23,11 @@ var (
 		"context":  {},
 		"contexts": {},
 	}
+	namespaceCmd = map[string]struct{}{
+		"ns":         {},
+		"namespace":  {},
+		"namespaces": {},
+	}
 	dirCmd = map[string]struct{}{
 		"dir": {},
 		"d":   {},

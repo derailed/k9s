@@ -4,10 +4,12 @@
 package config
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config/data"
@@ -46,6 +48,16 @@ func (v *ViewSetting) SortCol() (string, bool, error) {
 	}
 
 	return tt[0], tt[1] == "desc", nil
+}
+
+func (v *ViewSetting) Equals(vs *ViewSetting) bool {
+	if v == nil || vs == nil {
+		return v == nil && vs == nil
+	}
+	if c := slices.Compare(v.Columns, vs.Columns); c != 0 {
+		return false
+	}
+	return cmp.Compare(v.SortColumn, vs.SortColumn) == 0
 }
 
 // CustomView represents a collection of view customization.

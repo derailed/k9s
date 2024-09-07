@@ -79,7 +79,7 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 * Via [Homebrew](https://brew.sh/) for macOS or Linux
 
    ```shell
-   brew install k9s
+   brew install derailed/k9s/k9s
    ```
 
 * Via [MacPorts](https://www.macports.org)
@@ -165,7 +165,7 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 
 ## Building From Source
 
- K9s is currently using GO v1.21.X or above.
+ K9s is currently using GO v1.22.X or above.
  In order to build K9s from source you must:
 
  1. Clone the repo
@@ -340,7 +340,8 @@ K9s uses aliases to navigate most K8s resources.
 |---------------------------------------------------------------------------------|-------------------------------|------------------------------------------------------------------------|
 | Show active keyboard mnemonics and help                                         | `?`                           |                                                                        |
 | Show all available resource alias                                               | `ctrl-a`                      |                                                                        |
-| To bail out of K9s                                                              | `:q`, `ctrl-c`                |                                                                        |
+| To bail out of K9s                                                              | `:quit`, `:q`, `ctrl-c`       |                                                                        |
+| To go up/back to the previous view                                              | `esc`                         | If you have crumbs on, this will go to the previous one                |
 | View a Kubernetes resource using singular/plural or short-name                  | `:`pod⏎                       | accepts singular, plural, short-name or alias ie pod or pods           |
 | View a Kubernetes resource in a given namespace                                 | `:`pod ns-x⏎                  |                                                                        |
 | View filtered pods (New v0.30.0!)                                               | `:`pod /fred⏎                 | View all pods filtered by fred                                         |
@@ -373,6 +374,8 @@ K9s uses aliases to navigate most K8s resources.
   | `~/.config/k9s` | `~/Library/Application Support/k9s` | `%LOCALAPPDATA%\k9s`  |
 
   > NOTE: This is still in flux and will change while in pre-release stage!
+
+You can now override the context portForward default address configuration by setting an env variable that can override all clusters portForward local address using `K9S_DEFAULT_PF_ADDRESS=a.b.c.d`
 
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yaml
@@ -451,6 +454,8 @@ K9s has integration with [Popeye](https://popeyecli.io/), which is a Kubernetes 
 ## Node Shell
 
 By enabling the nodeShell feature gate on a given cluster, K9s allows you to shell into your cluster nodes. Once enabled, you will have a new `s` for `shell` menu option while in node view. K9s will launch a pod on the selected node using a special k9s_shell pod. Furthermore, you can refine your shell pod by using a custom docker image preloaded with the shell tools you love. By default k9s uses a BusyBox image, but you can configure it as follows:
+
+Alternatively, you can now override the context configuration by setting an env variable that can override all clusters node shell gate using `K9S_FEATURE_GATE_NODE_SHELL=true|false`
 
 ```yaml
 # $XDG_CONFIG_HOME/k9s/config.yaml
@@ -644,7 +649,7 @@ K9s allows you to extend your command line and tooling by defining your very own
 
 A plugin is defined as follows:
 
-* Shortcut option represents the key combination a user would type to activate the plugin
+* Shortcut option represents the key combination a user would type to activate the plugin. Valid values are [a-z], Shift-[A-Z], Ctrl-[A-Z].
 * Override option make that the default action related to the shortcut will be overrided by the plugin
 * Confirm option (when enabled) lets you see the command that is going to be executed and gives you an option to confirm or prevent execution
 * Description will be printed next to the shortcut in the k9s menu
@@ -652,6 +657,8 @@ A plugin is defined as follows:
 * Command represents ad-hoc commands the plugin runs upon activation
 * Background specifies whether or not the command runs in the background
 * Args specifies the various arguments that should apply to the command above
+* OverwriteOutput boolean option allows plugin developers to provide custom messages on plugin stdout execution. See example in [#2644](https://github.com/derailed/k9s/pull/2644)
+* Dangerous boolean option enables disabling the plugin when read-only mode is set. See [#2604](https://github.com/derailed/k9s/issues/2604) 
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
@@ -683,7 +690,9 @@ plugins:
   fred:
     shortCut: Ctrl-L
     override: false
+    overwriteOutput: false 
     confirm: false
+    dangerous: false 
     description: Pod logs
     scopes:
     - pods
