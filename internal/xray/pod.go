@@ -44,7 +44,7 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	if err := p.containerRefs(ctx, node, po.Namespace, po.Spec); err != nil {
+	if err := p.containerRefs(ctx, node, po.Namespace, &po); err != nil {
 		return err
 	}
 	p.podVolumeRefs(f, node, po.Namespace, po.Spec.Volumes)
@@ -82,16 +82,16 @@ func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	return nil
 }
 
-func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, spec v1.PodSpec) error {
+func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, po *v1.Pod) error {
 	ctx = context.WithValue(ctx, KeyParent, parent)
 	var cre Container
-	for i := 0; i < len(spec.InitContainers); i++ {
-		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.InitContainers[i]}); err != nil {
+	for i := 0; i < len(po.Spec.InitContainers); i++ {
+		if err := cre.Render(ctx, ns, render.MakeContainerRes(po, true, i, nil)); err != nil {
 			return err
 		}
 	}
-	for i := 0; i < len(spec.Containers); i++ {
-		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.Containers[i]}); err != nil {
+	for i := 0; i < len(po.Spec.Containers); i++ {
+		if err := cre.Render(ctx, ns, render.MakeContainerRes(po, false, i, nil)); err != nil {
 			return err
 		}
 	}

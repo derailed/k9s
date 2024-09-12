@@ -101,22 +101,22 @@ func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 		return fmt.Errorf("expected ContainerRes, but got %T", o)
 	}
 
-	cur, res := gatherMetrics(co.Container, co.MX)
+	cur, res := gatherMetrics(co.Container(), co.MX)
 	ready, state, restarts := "false", MissingValue, "0"
-	if co.Status != nil {
-		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
+	if co.Status() != nil {
+		ready, state, restarts = boolToStr(co.Status().Ready), ToContainerState(co.Status().State), strconv.Itoa(int(co.Status().RestartCount))
 	}
 
 	r.ID = co.IndexLabel()
 	r.Fields = model1.Fields{
 		co.IndexLabel(),
-		co.Container.Name,
+		co.Container().Name,
 		"●",
-		co.Container.Image,
+		co.Container().Image,
 		ready,
 		state,
 		restarts,
-		probe(co.Container.LivenessProbe) + ":" + probe(co.Container.ReadinessProbe),
+		probe(co.Container().LivenessProbe) + ":" + probe(co.Container().ReadinessProbe),
 		toMc(cur.cpu),
 		toMi(cur.mem),
 		toMc(res.cpu) + ":" + toMc(res.lcpu),
@@ -125,7 +125,7 @@ func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 		client.ToPercentageStr(cur.cpu, res.lcpu),
 		client.ToPercentageStr(cur.mem, res.mem),
 		client.ToPercentageStr(cur.mem, res.lmem),
-		ToContainerPorts(co.Container.Ports),
+		ToContainerPorts(co.Container().Ports),
 		AsStatus(c.diagnose(state, ready)),
 		ToAge(co.Age),
 	}
@@ -236,14 +236,23 @@ func probe(p *v1.Probe) string {
 	return on
 }
 
+func MakeContainerRes(po *v1.Pod, isInit bool, index int, cmx *mv1beta1.ContainerMetrics) ContainerRes {
+	return ContainerRes{
+		pod:    po,
+		IsInit: isInit,
+		Index:  index,
+		MX:     cmx,
+		Age:    po.GetCreationTimestamp(),
+	}
+}
+
 // ContainerRes represents a container and its metrics.
 type ContainerRes struct {
-	Container *v1.Container
-	Status    *v1.ContainerStatus
-	MX        *mv1beta1.ContainerMetrics
-	IsInit    bool
+	pod    *v1.Pod
+	IsInit bool
 	// Index is the container's index in either the Containers or InitContainers.
 	Index int
+	MX    *mv1beta1.ContainerMetrics
 	Age   metav1.Time
 }
 
@@ -255,6 +264,34 @@ func (c ContainerRes) GetObjectKind() schema.ObjectKind {
 // DeepCopyObject returns a container copy.
 func (c ContainerRes) DeepCopyObject() runtime.Object {
 	return c
+}
+
+// Container returns the underlying container or init container
+func (c ContainerRes) Container() *v1.Container {
+	if c.IsInit {
+		if c.Index >= 0 && c.Index < len(c.pod.Spec.InitContainers) {
+			return &c.pod.Spec.InitContainers[c.Index]
+		}
+		return nil
+	}
+	if c.Index >= 0 && c.Index < len(c.pod.Spec.Containers) {
+		return &c.pod.Spec.Containers[c.Index]
+	}
+	return nil
+}
+
+// Status returns the underlying container or init container status
+func (c ContainerRes) Status() *v1.ContainerStatus {
+	if c.IsInit {
+		if c.Index >= 0 && c.Index < len(c.pod.Status.InitContainerStatuses) {
+			return &c.pod.Status.InitContainerStatuses[c.Index]
+		}
+		return nil
+	}
+	if c.Index >= 0 && c.Index < len(c.pod.Status.ContainerStatuses) {
+		return &c.pod.Status.ContainerStatuses[c.Index]
+	}
+	return nil
 }
 
 // IndexLabel returns a label for the index with a prefix for the container type.
