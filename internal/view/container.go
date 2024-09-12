@@ -35,6 +35,7 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	c.GetTable().SetDecorateFn(c.decorateRows)
 	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetDecorateFn(c.portForwardIndicator)
+	c.GetTable().SetSortCol("IDX", true)
 
 	return &c
 }
