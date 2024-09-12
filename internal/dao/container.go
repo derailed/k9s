@@ -71,7 +71,7 @@ func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, 
 func makeContainerRes(co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics, isInit bool, index int) render.ContainerRes {
 	return render.ContainerRes{
 		Container: &co,
-		Status:    getContainerStatus(co.Name, po.Status),
+		Status:    getContainerStatus(po.Status, isInit, index),
 		MX:        cmx,
 		IsInit:    isInit,
 		Index:     index,
@@ -79,19 +79,11 @@ func makeContainerRes(co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetric
 	}
 }
 
-func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
-	for _, c := range status.ContainerStatuses {
-		if c.Name == co {
-			return &c
-		}
+func getContainerStatus(status v1.PodStatus, isInit bool, index int) *v1.ContainerStatus {
+	if isInit {
+		return &status.InitContainerStatuses[index]
 	}
-	for _, c := range status.InitContainerStatuses {
-		if c.Name == co {
-			return &c
-		}
-	}
-
-	return nil
+	return &status.ContainerStatuses[index]
 }
 
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
