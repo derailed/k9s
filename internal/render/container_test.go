@@ -29,14 +29,53 @@ func TestContainer(t *testing.T) {
 	}
 	var r model1.Row
 	assert.Nil(t, c.Render(cres, "blee", &r))
-	assert.Equal(t, "fred", r.ID)
+	assert.Equal(t, "⠀ 0", r.ID)
 	assert.Equal(t, model1.Fields{
+		"⠀ 0",
 		"fred",
 		"●",
 		"img",
 		"false",
 		"Running",
 		"false",
+		"0",
+		"off:off",
+		"10",
+		"20",
+		"20:20",
+		"100:100",
+		"50",
+		"50",
+		"20",
+		"20",
+		"",
+		"container is not ready",
+	},
+		r.Fields[:len(r.Fields)-1],
+	)
+}
+
+func TestInitContainer(t *testing.T) {
+	var c render.Container
+
+	cres := render.ContainerRes{
+		Container: makeContainer(),
+		Status:    makeContainerStatus(),
+		MX:        makeContainerMetrics(),
+		IsInit:    true,
+		Age:       makeAge(),
+	}
+	var r model1.Row
+	assert.Nil(t, c.Render(cres, "blee", &r))
+	assert.Equal(t, "ⓘ 0", r.ID)
+	assert.Equal(t, model1.Fields{
+		"ⓘ 0",
+		"fred",
+		"●",
+		"img",
+		"false",
+		"Running",
+		"true",
 		"0",
 		"off:off",
 		"10",

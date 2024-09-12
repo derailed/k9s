@@ -72,6 +72,7 @@ func (c Container) ColorerFunc() model1.ColorerFunc {
 // Header returns a header row.
 func (Container) Header(ns string) model1.Header {
 	return model1.Header{
+		model1.HeaderColumn{Name: "IDX", Align: tview.AlignRight},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "PF"},
 		model1.HeaderColumn{Name: "IMAGE"},
@@ -107,8 +108,9 @@ func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
 	}
 
-	r.ID = co.Container.Name
+	r.ID = containerIndexLabel(co.IsInit, co.Index)
 	r.Fields = model1.Fields{
+		containerIndexLabel(co.IsInit, co.Index),
 		co.Container.Name,
 		"●",
 		co.Container.Image,
@@ -236,13 +238,25 @@ func probe(p *v1.Probe) string {
 	return on
 }
 
+func containerIndexLabel(isInit bool, index int) string {
+	var containerType string
+	if isInit {
+		containerType = "\u24D8" // encircled i (sorts first)
+	} else {
+		containerType = "\u2800" // blank (sorts last)
+	}
+	return fmt.Sprintf("%s %d", containerType, index)
+}
+
 // ContainerRes represents a container and its metrics.
 type ContainerRes struct {
 	Container *v1.Container
 	Status    *v1.ContainerStatus
 	MX        *mv1beta1.ContainerMetrics
 	IsInit    bool
-	Age       metav1.Time
+	// Index is the container's index in either the Containers or InitContainers.
+	Index int
+	Age   metav1.Time
 }
 
 // GetObjectKind returns a schema object.
