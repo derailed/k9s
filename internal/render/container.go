@@ -107,9 +107,9 @@ func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
 	}
 
-	r.ID = containerIndexLabel(co.IsInit, co.Index)
+	r.ID = co.IndexLabel()
 	r.Fields = model1.Fields{
-		containerIndexLabel(co.IsInit, co.Index),
+		co.IndexLabel(),
 		co.Container.Name,
 		"●",
 		co.Container.Image,
@@ -236,16 +236,6 @@ func probe(p *v1.Probe) string {
 	return on
 }
 
-func containerIndexLabel(isInit bool, index int) string {
-	var containerType string
-	if isInit {
-		containerType = "\u24D8" // encircled i (sorts first)
-	} else {
-		containerType = "\u2800" // blank (sorts last)
-	}
-	return fmt.Sprintf("%s %d", containerType, index)
-}
-
 // ContainerRes represents a container and its metrics.
 type ContainerRes struct {
 	Container *v1.Container
@@ -265,4 +255,16 @@ func (c ContainerRes) GetObjectKind() schema.ObjectKind {
 // DeepCopyObject returns a container copy.
 func (c ContainerRes) DeepCopyObject() runtime.Object {
 	return c
+}
+
+// IndexLabel returns a label for the index with a prefix for the container type.
+// Sorts so init containers are first.
+func (c ContainerRes) IndexLabel() string {
+	var containerType string
+	if c.IsInit {
+		containerType = "\u24D8" // encircled i (sorts first)
+	} else {
+		containerType = "\u2800" // blank (sorts last)
+	}
+	return fmt.Sprintf("%s %d", containerType, c.Index)
 }

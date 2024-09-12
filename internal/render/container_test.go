@@ -5,6 +5,8 @@ package render_test
 
 import (
 	"fmt"
+	"github.com/fvbommel/sortorder"
+	"sort"
 	"testing"
 	"time"
 
@@ -16,6 +18,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
+
+func TestContainerRes_IndexLabel(t *testing.T) {
+	cresInit0 := render.ContainerRes{
+		Index:  0,
+		IsInit: true,
+	}
+	cresInit1 := render.ContainerRes{
+		Index:  1,
+		IsInit: true,
+	}
+	cresReg0 := render.ContainerRes{
+		Index:  0,
+		IsInit: false,
+	}
+	cresReg1 := render.ContainerRes{
+		Index:  1,
+		IsInit: false,
+	}
+
+	assert.Equal(t, cresInit0.IndexLabel(), "ⓘ 0")
+	assert.Equal(t, cresInit1.IndexLabel(), "ⓘ 1")
+	assert.Equal(t, cresReg0.IndexLabel(), "⠀ 0")
+	assert.Equal(t, cresReg1.IndexLabel(), "⠀ 1")
+
+	assert.True(t, sort.IsSorted(sortorder.Natural{
+		cresInit0.IndexLabel(),
+		cresInit1.IndexLabel(),
+		cresReg0.IndexLabel(),
+		cresReg1.IndexLabel(),
+	}))
+}
 
 func TestContainer(t *testing.T) {
 	var c render.Container
