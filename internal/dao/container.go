@@ -47,10 +47,14 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 	}
 	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
 	for i, co := range po.Spec.InitContainers {
-		res = append(res, render.MakeContainerRes(po, true, i, cmx[co.Name]))
+		cr := render.MakeContainerRes(po, true, i)
+		cr.MX = cmx[co.Name]
+		res = append(res, cr)
 	}
 	for i, co := range po.Spec.Containers {
-		res = append(res, render.MakeContainerRes(po, false, i, cmx[co.Name]))
+		cr := render.MakeContainerRes(po, false, i)
+		cr.MX = cmx[co.Name]
+		res = append(res, cr)
 	}
 
 	return res, nil

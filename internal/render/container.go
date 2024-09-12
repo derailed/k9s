@@ -236,12 +236,11 @@ func probe(p *v1.Probe) string {
 	return on
 }
 
-func MakeContainerRes(po *v1.Pod, isInit bool, index int, cmx *mv1beta1.ContainerMetrics) ContainerRes {
+func MakeContainerRes(po *v1.Pod, isInit bool, index int) ContainerRes {
 	return ContainerRes{
 		pod:    po,
 		IsInit: isInit,
 		Index:  index,
-		MX:     cmx,
 		Age:    po.GetCreationTimestamp(),
 	}
 }

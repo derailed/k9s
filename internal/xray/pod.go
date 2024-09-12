@@ -86,12 +86,12 @@ func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, po *
 	ctx = context.WithValue(ctx, KeyParent, parent)
 	var cre Container
 	for i := 0; i < len(po.Spec.InitContainers); i++ {
-		if err := cre.Render(ctx, ns, render.MakeContainerRes(po, true, i, nil)); err != nil {
+		if err := cre.Render(ctx, ns, render.MakeContainerRes(po, true, i)); err != nil {
 			return err
 		}
 	}
 	for i := 0; i < len(po.Spec.Containers); i++ {
-		if err := cre.Render(ctx, ns, render.MakeContainerRes(po, false, i, nil)); err != nil {
+		if err := cre.Render(ctx, ns, render.MakeContainerRes(po, false, i)); err != nil {
 			return err
 		}
 	}

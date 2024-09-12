@@ -161,12 +161,13 @@ func makeContainerRes(container *v1.Container, status *v1.ContainerStatus, cmx *
 		po.Status.ContainerStatuses = []v1.ContainerStatus{*status}
 	}
 
-	return render.MakeContainerRes(
+	cr := render.MakeContainerRes(
 		po,
 		isInit,
 		0,
-		cmx,
 	)
+	cr.MX = cmx
+	return cr
 }
 
 func toQty(s string) resource.Quantity {

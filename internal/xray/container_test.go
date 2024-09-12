@@ -261,5 +261,5 @@ func makeContainerRes(container *v1.Container) render.ContainerRes {
 		},
 	}
 
-	return render.MakeContainerRes(po, false, 0, nil)
+	return render.MakeContainerRes(po, false, 0)
 }
