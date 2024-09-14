@@ -12,7 +12,7 @@ import (
 
 const (
 	// MaxFavoritesNS number # favorite namespaces to keep in the configuration.
-	MaxFavoritesNS = 9
+	MaxFavoritesNS = 10
 )
 
 // Namespace tracks active and favorites namespaces.
@@ -66,6 +66,13 @@ func (n *Namespace) Validate(c client.Connection) {
 		if !c.IsValidNamespace(ns) {
 			log.Debug().Msgf("[Namespace] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
 			n.rmFavNS(ns)
+		}
+	}
+
+	if len(n.Favorites) > MaxFavoritesNS {
+		log.Debug().Msgf("[Namespace] Number of favorite exceeds hard limit of %v. Trimming.", MaxFavoritesNS)
+		for _, ns := range n.Favorites[MaxFavoritesNS:] {
+            n.rmFavNS(ns)
 		}
 	}
 }

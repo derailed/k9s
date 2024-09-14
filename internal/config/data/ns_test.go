@@ -35,6 +35,17 @@ func TestNSValidateNoNS(t *testing.T) {
 	assert.Equal(t, []string{"default"}, ns.Favorites)
 }
 
+func TestNsValidateMaxNS(t *testing.T) {
+	allNS := []string{"ns9","ns8","ns7","ns6","ns5","ns4", "ns3", "ns2", "ns1", "all", "default"}
+    ns := data.NewNamespace()
+
+    ns.Favorites = allNS
+
+    ns.Validate(mock.NewMockConnection())
+
+    assert.Equal(t, data.MaxFavoritesNS, len(ns.Favorites))
+}
+
 func TestNSSetActive(t *testing.T) {
 	allNS := []string{"ns4", "ns3", "ns2", "ns1", "all", "default"}
 	uu := []struct {
