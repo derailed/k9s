@@ -76,4 +76,3 @@ func TestNSValidateRmFavs(t *testing.T) {
 
 	assert.Equal(t, []string{"default", "fred"}, ns.Favorites)
 }
-

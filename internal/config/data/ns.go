@@ -135,4 +135,3 @@ func (n *Namespace) rmFavNS(ns string) {
 
 	n.Favorites = append(n.Favorites[:victim], n.Favorites[victim+1:]...)
 }
-
