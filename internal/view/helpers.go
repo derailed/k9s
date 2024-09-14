@@ -153,7 +153,7 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	}
 }
 
-func podCtx(app *App, path, fieldSel string) ContextFunc {
+func podCtx(_ *App, path, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)

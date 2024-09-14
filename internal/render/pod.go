@@ -194,7 +194,7 @@ func asReadinessGate(pod v1.Pod) string {
 		return MissingValue
 	}
 
-	trueConditions := 0
+	var trueConditions int
 	for _, readinessGate := range pod.Spec.ReadinessGates {
 		conditionType := readinessGate.ConditionType
 		for _, condition := range pod.Status.Conditions {

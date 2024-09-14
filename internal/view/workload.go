@@ -79,7 +79,7 @@ func parsePath(path string) (client.GVR, string, bool) {
 func (w *Workload) showRes(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
-		app.Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
+		app.Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return
 	}
 	app.gotoResource(gvr.R(), fqn, false)
@@ -130,7 +130,7 @@ func (w *Workload) resourceDelete(selections []string, msg string) {
 		for _, sel := range selections {
 			gvr, fqn, ok := parsePath(sel)
 			if !ok {
-				w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", sel))
+				w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", sel))
 				return
 			}
 
@@ -157,7 +157,7 @@ func (w *Workload) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
-		w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
+		w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return evt
 	}
 
@@ -173,7 +173,7 @@ func (w *Workload) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
-		w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
+		w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return evt
 	}
 
@@ -193,7 +193,7 @@ func (w *Workload) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
-		w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
+		w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return evt
 	}
 

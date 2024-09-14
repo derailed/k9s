@@ -85,7 +85,7 @@ func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 	}
 
 	if job.Spec.Selector == nil || len(job.Spec.Selector.MatchLabels) == 0 {
-		return nil, fmt.Errorf("No valid selector found on Job %s", opts.Path)
+		return nil, fmt.Errorf("no valid selector found for job: %s", opts.Path)
 	}
 
 	return podLogs(ctx, job.Spec.Selector.MatchLabels, opts)
