@@ -12,7 +12,7 @@ RUN apk --no-cache add --update make libx11-dev git gcc libc-dev curl && make bu
 # -----------------------------------------------------------------------------
 # Build the final Docker image
 
-FROM alpine:3.20.2
+FROM alpine:3.20.3
 ARG KUBECTL_VERSION="v1.29.0"
 
 COPY --from=build /k9s/execs/k9s /bin/k9s
