@@ -107,9 +107,9 @@ func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
 	}
 
-	r.ID = co.IndexLabel()
+	r.ID = co.Index
 	r.Fields = model1.Fields{
-		co.IndexLabel(),
+		co.Index,
 		co.Container.Name,
 		"●",
 		co.Container.Image,
@@ -238,13 +238,11 @@ func probe(p *v1.Probe) string {
 
 // ContainerRes represents a container and its metrics.
 type ContainerRes struct {
+	Index     string
 	Container *v1.Container
 	Status    *v1.ContainerStatus
 	MX        *mv1beta1.ContainerMetrics
-	IsInit    bool
-	// Index is the container's index in either the Containers or InitContainers.
-	Index int
-	Age   metav1.Time
+	Age       metav1.Time
 }
 
 // GetObjectKind returns a schema object.
@@ -255,16 +253,4 @@ func (c ContainerRes) GetObjectKind() schema.ObjectKind {
 // DeepCopyObject returns a container copy.
 func (c ContainerRes) DeepCopyObject() runtime.Object {
 	return c
-}
-
-// IndexLabel returns a label for the index with a prefix for the container type.
-// Sorts so init containers are first.
-func (c ContainerRes) IndexLabel() string {
-	var containerType string
-	if c.IsInit {
-		containerType = "\u24D8" // encircled i (sorts first)
-	} else {
-		containerType = "\u2800" // blank (sorts last)
-	}
-	return fmt.Sprintf("%s %d", containerType, c.Index)
 }

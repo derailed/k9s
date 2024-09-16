@@ -5,7 +5,6 @@ package render_test
 
 import (
 	"fmt"
-	"github.com/fvbommel/sortorder"
 	"sort"
 	"testing"
 	"time"
@@ -19,89 +18,33 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-func TestContainerRes_IndexLabel(t *testing.T) {
-	cresInit0 := render.ContainerRes{
-		Index:  0,
-		IsInit: true,
-	}
-	cresInit1 := render.ContainerRes{
-		Index:  1,
-		IsInit: true,
-	}
-	cresReg0 := render.ContainerRes{
-		Index:  0,
-		IsInit: false,
-	}
-	cresReg1 := render.ContainerRes{
-		Index:  1,
-		IsInit: false,
-	}
+func TestContainerRes_IndexSorting(t *testing.T) {
+	ephm1 := model1.Row{Fields: []string{"E1"}}
+	ephm10 := model1.Row{Fields: []string{"E10"}}
+	init1 := model1.Row{Fields: []string{"I1"}}
+	init2 := model1.Row{Fields: []string{"I2"}}
+	main1 := model1.Row{Fields: []string{"M1"}}
 
-	assert.Equal(t, cresInit0.IndexLabel(), "ⓘ 0")
-	assert.Equal(t, cresInit1.IndexLabel(), "ⓘ 1")
-	assert.Equal(t, cresReg0.IndexLabel(), "⠀ 0")
-	assert.Equal(t, cresReg1.IndexLabel(), "⠀ 1")
-
-	assert.True(t, sort.IsSorted(sortorder.Natural{
-		cresInit0.IndexLabel(),
-		cresInit1.IndexLabel(),
-		cresReg0.IndexLabel(),
-		cresReg1.IndexLabel(),
-	}))
+	rows := model1.Rows{ephm1, ephm10, init1, init2, main1}
+	sorter := model1.RowSorter{Rows: rows, Index: 0, Asc: true}
+	assert.True(t, sort.IsSorted(sorter))
 }
 
 func TestContainer(t *testing.T) {
 	var c render.Container
 
 	cres := render.ContainerRes{
+		Index:     "M1",
 		Container: makeContainer(),
 		Status:    makeContainerStatus(),
 		MX:        makeContainerMetrics(),
-		IsInit:    false,
 		Age:       makeAge(),
 	}
 	var r model1.Row
 	assert.Nil(t, c.Render(cres, "blee", &r))
-	assert.Equal(t, "⠀ 0", r.ID)
+	assert.Equal(t, "M1", r.ID)
 	assert.Equal(t, model1.Fields{
-		"⠀ 0",
-		"fred",
-		"●",
-		"img",
-		"false",
-		"Running",
-		"0",
-		"off:off",
-		"10",
-		"20",
-		"20:20",
-		"100:100",
-		"50",
-		"50",
-		"20",
-		"20",
-		"",
-		"container is not ready",
-	},
-		r.Fields[:len(r.Fields)-1],
-	)
-}
-
-func TestInitContainer(t *testing.T) {
-	var c render.Container
-
-	cres := render.ContainerRes{
-		Container: makeContainer(),
-		Status:    makeContainerStatus(),
-		MX:        makeContainerMetrics(),
-		IsInit:    true,
-		Age:       makeAge(),
-	}
-	var r model1.Row
-	assert.Nil(t, c.Render(cres, "blee", &r))
-	assert.Equal(t, "ⓘ 0", r.ID)
-	assert.Equal(t, model1.Fields{
-		"ⓘ 0",
+		"M1",
 		"fred",
 		"●",
 		"img",
@@ -128,10 +71,10 @@ func BenchmarkContainerRender(b *testing.B) {
 	var c render.Container
 
 	cres := render.ContainerRes{
+		Index:     "M1",
 		Container: makeContainer(),
 		Status:    makeContainerStatus(),
 		MX:        makeContainerMetrics(),
-		IsInit:    false,
 		Age:       makeAge(),
 	}
 	var r model1.Row
