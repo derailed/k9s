@@ -5,6 +5,7 @@ package dao_test
 
 import (
 	"context"
+	"github.com/derailed/k9s/internal/render"
 	"testing"
 
 	"github.com/derailed/k9s/internal"
@@ -34,6 +35,12 @@ func TestContainerList(t *testing.T) {
 	oo, err := c.List(ctx, "")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(oo))
+	assert.IsType(t, render.ContainerRes{}, oo[0])
+	cres := oo[0].(render.ContainerRes)
+	assert.Equal(t, "M1", cres.Index)
+	assert.Equal(t, "fred", cres.Container.Name)
+	assert.Equal(t, "fred", cres.Status.Name)
+	assert.NotEmpty(t, cres.Age)
 }
 
 // ----------------------------------------------------------------------------
