@@ -36,7 +36,7 @@ func TestCOConfigMapRefs(t *testing.T) {
 	ctx := context.WithValue(context.Background(), xray.KeyParent, root)
 	ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
 
-	assert.Nil(t, re.Render(ctx, "", makeContainerRes(makeCMContainer("c1", false))))
+	assert.Nil(t, re.Render(ctx, "", render.ContainerRes{Container: makeCMContainer("c1", false)}))
 	assert.Equal(t, xray.MissingRefStatus, root.Children[0].Children[0].Extras[xray.StatusKey])
 }
 
@@ -47,37 +47,37 @@ func TestCORefs(t *testing.T) {
 		e              string
 	}{
 		"cm_required": {
-			co:     makeContainerRes(makeCMContainer("c1", false)),
+			co:     render.ContainerRes{Container: makeCMContainer("c1", false)},
 			level1: 1,
 			level2: 1,
 			e:      xray.MissingRefStatus,
 		},
 		"cm_optional": {
-			co:     makeContainerRes(makeCMContainer("c1", true)),
+			co:     render.ContainerRes{Container: makeCMContainer("c1", true)},
 			level1: 1,
 			level2: 1,
 			e:      xray.OkStatus,
 		},
 		"cm_doubleRef": {
-			co:     makeContainerRes(makeDoubleCMKeysContainer("c1", false)),
+			co:     render.ContainerRes{Container: makeDoubleCMKeysContainer("c1", false)},
 			level1: 1,
 			level2: 1,
 			e:      xray.MissingRefStatus,
 		},
 		"sec_required": {
-			co:     makeContainerRes(makeSecContainer("c1", false)),
+			co:     render.ContainerRes{Container: makeSecContainer("c1", false)},
 			level1: 1,
 			level2: 1,
 			e:      xray.MissingRefStatus,
 		},
 		"sec_optional": {
-			co:     makeContainerRes(makeSecContainer("c1", true)),
+			co:     render.ContainerRes{Container: makeSecContainer("c1", true)},
 			level1: 1,
 			level2: 1,
 			e:      xray.OkStatus,
 		},
 		"envFrom_optional": {
-			co:     makeContainerRes(makeCMEnvFromContainer("c1", false)),
+			co:     render.ContainerRes{Container: makeCMEnvFromContainer("c1", false)},
 			level1: 1,
 			level2: 2,
 			e:      xray.MissingRefStatus,
@@ -249,17 +249,4 @@ func load(t *testing.T, n string) *unstructured.Unstructured {
 	assert.Nil(t, err)
 
 	return &o
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func makeContainerRes(container *v1.Container) render.ContainerRes {
-	po := &v1.Pod{
-		Spec: v1.PodSpec{
-			Containers: []v1.Container{*container},
-		},
-	}
-
-	return render.MakeContainerRes(po, false, 0, nil)
 }

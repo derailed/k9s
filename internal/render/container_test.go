@@ -53,13 +53,13 @@ func TestContainerRes_IndexLabel(t *testing.T) {
 func TestContainer(t *testing.T) {
 	var c render.Container
 
-	cres := makeContainerRes(
-		makeContainer(),
-		makeContainerStatus(),
-		makeContainerMetrics(),
-		false,
-		makeAge(),
-	)
+	cres := render.ContainerRes{
+		Container: makeContainer(),
+		Status:    makeContainerStatus(),
+		MX:        makeContainerMetrics(),
+		IsInit:    false,
+		Age:       makeAge(),
+	}
 	var r model1.Row
 	assert.Nil(t, c.Render(cres, "blee", &r))
 	assert.Equal(t, "⠀ 0", r.ID)
@@ -90,13 +90,13 @@ func TestContainer(t *testing.T) {
 func TestInitContainer(t *testing.T) {
 	var c render.Container
 
-	cres := makeContainerRes(
-		makeContainer(),
-		makeContainerStatus(),
-		makeContainerMetrics(),
-		true,
-		makeAge(),
-	)
+	cres := render.ContainerRes{
+		Container: makeContainer(),
+		Status:    makeContainerStatus(),
+		MX:        makeContainerMetrics(),
+		IsInit:    true,
+		Age:       makeAge(),
+	}
 	var r model1.Row
 	assert.Nil(t, c.Render(cres, "blee", &r))
 	assert.Equal(t, "ⓘ 0", r.ID)
@@ -127,13 +127,13 @@ func TestInitContainer(t *testing.T) {
 func BenchmarkContainerRender(b *testing.B) {
 	var c render.Container
 
-	cres := makeContainerRes(
-		makeContainer(),
-		makeContainerStatus(),
-		makeContainerMetrics(),
-		false,
-		makeAge(),
-	)
+	cres := render.ContainerRes{
+		Container: makeContainer(),
+		Status:    makeContainerStatus(),
+		MX:        makeContainerMetrics(),
+		IsInit:    false,
+		Age:       makeAge(),
+	}
 	var r model1.Row
 
 	b.ReportAllocs()
@@ -145,29 +145,6 @@ func BenchmarkContainerRender(b *testing.B) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-func makeContainerRes(container *v1.Container, status *v1.ContainerStatus, cmx *mv1beta1.ContainerMetrics, isInit bool, age metav1.Time) render.ContainerRes {
-	po := &v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			CreationTimestamp: age,
-		},
-	}
-
-	if isInit {
-		po.Spec.InitContainers = []v1.Container{*container}
-		po.Status.InitContainerStatuses = []v1.ContainerStatus{*status}
-	} else {
-		po.Spec.Containers = []v1.Container{*container}
-		po.Status.ContainerStatuses = []v1.ContainerStatus{*status}
-	}
-
-	return render.MakeContainerRes(
-		po,
-		isInit,
-		0,
-		cmx,
-	)
-}
 
 func toQty(s string) resource.Quantity {
 	q, _ := resource.ParseQuantity(s)

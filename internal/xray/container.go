@@ -31,13 +31,13 @@ func (c *Container) Render(ctx context.Context, ns string, o interface{}) error 
 		return fmt.Errorf("no factory found in context")
 	}
 
-	root := NewTreeNode("containers", client.FQN(ns, co.Container().Name))
+	root := NewTreeNode("containers", client.FQN(ns, co.Container.Name))
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 	pns, _ := client.Namespaced(parent.ID)
-	c.envRefs(f, root, pns, co.Container())
+	c.envRefs(f, root, pns, co.Container)
 	parent.Add(root)
 
 	return nil

@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 var (
@@ -47,10 +48,10 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 	}
 	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
 	for i, co := range po.Spec.InitContainers {
-		res = append(res, render.MakeContainerRes(po, true, i, cmx[co.Name]))
+		res = append(res, makeContainerRes(co, po, cmx[co.Name], true, i))
 	}
 	for i, co := range po.Spec.Containers {
-		res = append(res, render.MakeContainerRes(po, false, i, cmx[co.Name]))
+		res = append(res, makeContainerRes(co, po, cmx[co.Name], false, i))
 	}
 
 	return res, nil
@@ -66,6 +67,24 @@ func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, 
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func makeContainerRes(co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics, isInit bool, index int) render.ContainerRes {
+	return render.ContainerRes{
+		Container: &co,
+		Status:    getContainerStatus(po.Status, isInit, index),
+		MX:        cmx,
+		IsInit:    isInit,
+		Index:     index,
+		Age:       po.GetCreationTimestamp(),
+	}
+}
+
+func getContainerStatus(status v1.PodStatus, isInit bool, index int) *v1.ContainerStatus {
+	if isInit {
+		return &status.InitContainerStatuses[index]
+	}
+	return &status.ContainerStatuses[index]
+}
 
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
 	o, err := c.getFactory().Get("v1/pods", fqn, true, labels.Everything())
