@@ -42,7 +42,7 @@ func TestContainer(t *testing.T) {
 	}
 	var r model1.Row
 	assert.Nil(t, c.Render(cres, "blee", &r))
-	assert.Equal(t, "M1", r.ID)
+	assert.Equal(t, "fred", r.ID)
 	assert.Equal(t, model1.Fields{
 		"M1",
 		"fred",

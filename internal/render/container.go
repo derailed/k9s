@@ -107,7 +107,7 @@ func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
 	}
 
-	r.ID = co.Index
+	r.ID = co.Container.Name
 	r.Fields = model1.Fields{
 		co.Index,
 		co.Container.Name,
