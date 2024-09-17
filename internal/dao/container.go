@@ -72,12 +72,17 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 
 	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.EphemeralContainers)+len(po.Spec.Containers))
 	for _, group := range containerGroups {
-		for i := range group.containers {
+		for i, co := range group.containers {
+			var status *v1.ContainerStatus
+			if len(group.statuses) > i {
+				status = &group.statuses[i]
+			}
+
 			res = append(res, makeContainerRes(
 				fmt.Sprintf("%s%d", group.indexPrefix, i+1),
-				group.containers[i],
-				group.statuses[i],
-				cmx[group.containers[i].Name],
+				&co,
+				status,
+				cmx[co.Name],
 				po.GetCreationTimestamp(),
 			))
 		}
@@ -96,11 +101,11 @@ func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeContainerRes(index string, co v1.Container, status v1.ContainerStatus, cmx *mv1beta1.ContainerMetrics, age metav1.Time) render.ContainerRes {
+func makeContainerRes(index string, co *v1.Container, status *v1.ContainerStatus, cmx *mv1beta1.ContainerMetrics, age metav1.Time) render.ContainerRes {
 	return render.ContainerRes{
 		Index:     index,
-		Container: &co,
-		Status:    &status,
+		Container: co,
+		Status:    status,
 		MX:        cmx,
 		Age:       age,
 	}
