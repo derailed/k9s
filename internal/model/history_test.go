@@ -22,6 +22,18 @@ func TestHistory(t *testing.T) {
 	assert.True(t, h.Empty())
 }
 
+func TestHistoryCase(t *testing.T) {
+	h := model.NewHistory(3)
+	for i := 1; i < 5; i++ {
+		h.Push(fmt.Sprintf("ABC%d", i))
+	}
+
+	assert.Equal(t, []string{"ABC4", "ABC3", "ABC2"}, h.List())
+	assert.NotEqual(t, []string{"abc4", "abc3", "abc2"}, h.List())
+	h.Clear()
+	assert.True(t, h.Empty())
+}
+
 func TestHistoryDups(t *testing.T) {
 	h := model.NewHistory(3)
 	for i := 1; i < 4; i++ {
