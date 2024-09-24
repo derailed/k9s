@@ -476,7 +476,7 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(strings.Split(spec.Path(), "/")) == 1 {
 		return nil
 	}
-	x.app.gotoResource(client.NewGVR(spec.GVR()).R(), spec.Path(), false)
+	x.app.gotoResource(client.NewGVR(spec.GVR()).R(), spec.Path(), false, true)
 
 	return nil
 }
