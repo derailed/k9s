@@ -41,7 +41,7 @@ func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 
 func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	n.useNamespace(path)
-	app.gotoResource("pods", "", false)
+	app.gotoResource("pods", "", false, true)
 }
 
 func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
