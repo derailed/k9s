@@ -5,12 +5,21 @@ package dao
 
 import (
 	"bytes"
+	"regexp"
+
+	"github.com/rs/zerolog/log"
 )
 
 // LogChan represents a channel for logs.
 type LogChan chan *LogItem
 
 var ItemEOF = new(LogItem)
+
+var springRegexp = regexp.MustCompile(`(?P<Date>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?P<LogLevel>[A-Z]+) (?P<LoggingClass>[a-zA-Z.-]*) (?P<Thread>\[[^\]]*\]) (?P<LogMessage>.*)`)
+var gigaspaceRegexp = regexp.MustCompile(`(?P<Date>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?P<Repository>[a-zA-Z.-]*) (?P<LogLevel>[A-Z]+) (?P<LoggingClass>\[[^\]]*\]) (?P<LogMessage>.*)`)
+var correlationIdRegexp = regexp.MustCompile(`\[correlationId=\S*] `)
+var sessionIdRegexp = regexp.MustCompile(`\[sessionId=\S*] `)
+var customerIdRegexp = regexp.MustCompile(`\[customerId=\S*] `)
 
 // LogItem represents a container log line.
 type LogItem struct {
@@ -67,9 +76,10 @@ func (l *LogItem) Size() int {
 }
 
 // Render returns a log line as string.
-func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+func (l *LogItem) Render(paint string, logOptions *LogOptions, bb *bytes.Buffer) {
+	// TODO
 	index := bytes.Index(l.Bytes, []byte{' '})
-	if showTime && index > 0 {
+	if logOptions.ShowTimestamp && index > 0 {
 		bb.WriteString("[gray::b]")
 		bb.Write(l.Bytes[:index])
 		bb.WriteString(" ")
@@ -93,8 +103,59 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 	}
 
 	if index > 0 {
-		bb.Write(l.Bytes[index+1:])
+		if logOptions.CleanLogs == "" || logOptions.CleanLogs == "Off" {
+			bb.Write(l.Bytes[index+1:])
+			return
+		}
+		// TODO if no matches use gigaspace regexp
+		regexp := springRegexp
+		matches := regexp.FindSubmatch(l.Bytes[index+1:])
+		if matches == nil {
+			regexp = gigaspaceRegexp
+			matches = regexp.FindSubmatch(l.Bytes[index+1:])
+			if matches == nil {
+				log.Info().Msgf("[Render] no matches for %q", l.Bytes[index+1:])
+				bb.Write(l.Bytes[index+1:])
+				return
+			}
+		}
+
+		date := matches[springRegexp.SubexpIndex("Date")]
+		logLevel := matches[springRegexp.SubexpIndex("LogLevel")]
+		loggingClass := matches[springRegexp.SubexpIndex("LoggingClass")]
+		logMessage := matches[springRegexp.SubexpIndex("LogMessage")]
+		logMessage = correlationIdRegexp.ReplaceAll(logMessage, []byte(""))
+		logMessage = sessionIdRegexp.ReplaceAll(logMessage, []byte(""))
+		logMessage = customerIdRegexp.ReplaceAll(logMessage, []byte(""))
+
+		log.Info().Msgf("[Render]  %q", logOptions.CleanLogs)
+		// log.Info().Msgf("[Render] %q", logMessage)
+		bb.Write([]byte("[gray::b]"))
+		bb.Write(date)
+		bb.Write([]byte("[-::-]"))
+		bb.Write([]byte(GetLogLevelColor(string(logLevel))))
+		bb.Write(logLevel)
+		bb.Write([]byte("[-::-] "))
+		if logOptions.CleanLogs == "On (+)" {
+			bb.Write([]byte("[yellow::b]"))
+			bb.Write(loggingClass)
+			bb.Write([]byte("[-::-] "))
+		}
+		bb.Write(logMessage)
+		bb.Write([]byte("\n"))
 	} else {
 		bb.Write(l.Bytes)
+	}
+}
+
+func GetLogLevelColor(logLevel string) string {
+	if logLevel == "INFO" {
+		return "[white::b] "
+	} else if logLevel == "WARN" {
+		return "[orange::b] "
+	} else if logLevel == "ERROR" || logLevel == "SEVERE" || logLevel == "ERR" {
+		return "[red::b] "
+	} else {
+		return "[white::b] "
 	}
 }

@@ -25,6 +25,7 @@ type LogIndicator struct {
 	showTime                   bool
 	allContainers              bool
 	shouldDisplayAllContainers bool
+	cleanLogs                  string
 }
 
 // NewLogIndicator returns a new indicator.
@@ -38,6 +39,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
 		shouldDisplayAllContainers: allContainers,
+		cleanLogs:                  "Off",
 	}
 	l.StylesChanged(styles)
 	styles.AddListener(&l)
@@ -74,6 +76,10 @@ func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
 }
 
+func (l *LogIndicator) CleanLogs() string {
+	return l.cleanLogs
+}
+
 // ToggleTimestamp toggles the current timestamp mode.
 func (l *LogIndicator) ToggleTimestamp() {
 	l.showTime = !l.showTime
@@ -98,6 +104,17 @@ func (l *LogIndicator) ToggleAutoScroll() {
 		val = 0
 	}
 	atomic.StoreInt32(&l.scrollStatus, val)
+	l.Refresh()
+}
+
+func (l *LogIndicator) ToggleCleanLogs() {
+	if l.cleanLogs == "Off" {
+		l.cleanLogs = "On"
+	} else if l.cleanLogs == "On" {
+		l.cleanLogs = "On (+)"
+	} else {
+		l.cleanLogs = "Off"
+	}
 	l.Refresh()
 }
 
@@ -152,6 +169,14 @@ func (l *LogIndicator) Refresh() {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Wrap", "")...)
 	} else {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Wrap", "")...)
+	}
+
+	if l.CleanLogs() == "Off" {
+		cleanLogsFmt := toggleFmt + string(l.styles.K9s.Views.Log.Indicator.ToggleOffColor) + "::b]" + l.CleanLogs() + "[-::] %s"
+		l.indicator = append(l.indicator, fmt.Sprintf(cleanLogsFmt, "CleanLogs", spacer)...)
+	} else {
+		cleanLogsFmt := toggleFmt + string(l.styles.K9s.Views.Log.Indicator.ToggleOnColor) + "::b]" + l.CleanLogs() + "[-::] %s"
+		l.indicator = append(l.indicator, fmt.Sprintf(cleanLogsFmt, "CleanLogs", spacer)...)
 	}
 
 	_, _ = l.Write(l.indicator)

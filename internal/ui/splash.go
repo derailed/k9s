@@ -13,7 +13,7 @@ import (
 
 // LogoSmall K9s small log.
 var LogoSmall = []string{
-	` ____  __.________       `,
+	`Albin TESTAR             `,
 	`|    |/ _/   __   \______`,
 	`|      < \____    /  ___/`,
 	`|    |  \   /    /\___ \ `,

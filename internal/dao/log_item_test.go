@@ -89,6 +89,16 @@ func TestLogItemRender(t *testing.T) {
 			log: fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", `{"foo":["bar"]} Server listening on: [::]:5000`),
 			e:   `[yellow::]fred[-::] {"foo":["bar"[]} Server listening on: [::[]:5000` + "\n",
 		},
+		"cleanLogs": {
+			opts: dao.LogOptions{
+				Path:            "blee/fred",
+				Container:       "blee",
+				SingleContainer: true,
+				ShowTimestamp:   true,
+			},
+			log: fmt.Sprintf("%s %s\n", "2024-09-23 09:24:53,222", "corporate-actions-service-repository INFO [com.gigaspaces.core.config] - Override the cluster config using the xpath expression </cluster-config/mirror-serviceOld value: <100>      new value: <10>"),
+			e:   "[gray::b]2018-12-14T10:36:43.326972-07:00 [-::-][yellow::]fred [yellow::b]blee[-::-] 2024-09-24 06:01:07,101 INFO se.levler.customer.gateway.LossThresholdService [pool-11-thread-1[] [correlationId=] [sessionId=] [customerId=] Done creating loss threshold tasks. Created tasks for 6 customers\n",
+		},
 	}
 
 	for k := range uu {

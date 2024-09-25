@@ -92,6 +92,11 @@ func (l *Log) ToggleShowTimestamp(b bool) {
 	l.Refresh()
 }
 
+func (l *Log) SetCleanLogs(setting string) {
+	l.logOptions.CleanLogs = setting
+	l.Refresh()
+}
+
 func (l *Log) Head(ctx context.Context) {
 	l.mx.Lock()
 	{
@@ -149,7 +154,7 @@ func (l *Log) Clear() {
 func (l *Log) Refresh() {
 	l.fireLogCleared()
 	ll := make([][]byte, l.lines.Len())
-	l.lines.Render(0, l.logOptions.ShowTimestamp, ll)
+	l.lines.Render(0, l.logOptions, ll)
 	l.fireLogChanged(ll)
 }
 
@@ -184,7 +189,7 @@ func (l *Log) Set(lines *dao.LogItems) {
 
 	l.fireLogCleared()
 	ll := make([][]byte, l.lines.Len())
-	l.lines.Render(0, l.logOptions.ShowTimestamp, ll)
+	l.lines.Render(0, l.logOptions, ll)
 	l.fireLogChanged(ll)
 }
 
@@ -198,7 +203,7 @@ func (l *Log) ClearFilter() {
 
 	l.fireLogCleared()
 	ll := make([][]byte, l.lines.Len())
-	l.lines.Render(0, l.logOptions.ShowTimestamp, ll)
+	l.lines.Render(0, l.logOptions, ll)
 	l.fireLogChanged(ll)
 }
 
@@ -350,7 +355,7 @@ func (l *Log) applyFilter(index int, q string) ([][]byte, error) {
 	if q == "" {
 		return nil, nil
 	}
-	matches, indices, err := l.lines.Filter(index, q, l.logOptions.ShowTimestamp)
+	matches, indices, err := l.lines.Filter(index, q, l.logOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +363,7 @@ func (l *Log) applyFilter(index int, q string) ([][]byte, error) {
 	// No filter!
 	if matches == nil {
 		ll := make([][]byte, l.lines.Len())
-		l.lines.Render(index, l.logOptions.ShowTimestamp, ll)
+		l.lines.Render(index, l.logOptions, ll)
 		return ll, nil
 	}
 	// Blank filter
@@ -367,7 +372,7 @@ func (l *Log) applyFilter(index int, q string) ([][]byte, error) {
 	}
 	filtered := make([][]byte, 0, len(matches))
 	ll := make([][]byte, l.lines.Len())
-	l.lines.Lines(index, l.logOptions.ShowTimestamp, ll)
+	l.lines.Lines(index, l.logOptions, ll)
 	for i, idx := range matches {
 		filtered = append(filtered, color.Highlight(ll[idx], indices[i], 209))
 	}
@@ -378,7 +383,7 @@ func (l *Log) applyFilter(index int, q string) ([][]byte, error) {
 func (l *Log) fireLogBuffChanged(index int) {
 	ll := make([][]byte, l.lines.Len()-index)
 	if l.filter == "" {
-		l.lines.Render(index, l.logOptions.ShowTimestamp, ll)
+		l.lines.Render(index, l.logOptions, ll)
 	} else {
 		ff, err := l.applyFilter(index, l.filter)
 		if err != nil {

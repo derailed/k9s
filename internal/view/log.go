@@ -258,6 +258,7 @@ func (l *Log) bindKeys() {
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
+		ui.KeyX:         ui.NewKeyAction("Toggle CleanLogs", l.toggleCleanLogsCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
 	})
@@ -513,6 +514,14 @@ func (l *Log) toggleFullScreen() {
 	} else {
 		l.logs.SetBorderPadding(0, 0, 1, 1)
 	}
+}
+
+func (l *Log) toggleCleanLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	l.indicator.ToggleCleanLogs()
+	l.model.SetCleanLogs(l.indicator.cleanLogs)
+	l.indicator.Refresh()
+
+	return nil
 }
 
 func (l *Log) isContainerLogView() bool {
