@@ -5,7 +5,7 @@ package config
 
 const (
 	// DefaultLoggerTailCount tracks default log tail size.
-	DefaultLoggerTailCount = 100
+	DefaultLoggerTailCount = 5000
 
 	// MaxLogThreshold sets the max value for log size.
 	MaxLogThreshold = 5000
@@ -16,11 +16,12 @@ const (
 
 // Logger tracks logger options.
 type Logger struct {
-	TailCount    int64 `json:"tail" yaml:"tail"`
-	BufferSize   int   `json:"buffer" yaml:"buffer"`
-	SinceSeconds int64 `json:"sinceSeconds" yaml:"sinceSeconds"`
-	TextWrap     bool  `json:"textWrap" yaml:"textWrap"`
-	ShowTime     bool  `json:"showTime" yaml:"showTime"`
+	TailCount    int64  `json:"tail" yaml:"tail"`
+	BufferSize   int    `json:"buffer" yaml:"buffer"`
+	SinceSeconds int64  `json:"sinceSeconds" yaml:"sinceSeconds"`
+	TextWrap     bool   `json:"textWrap" yaml:"textWrap"`
+	ShowTime     bool   `json:"showTime" yaml:"showTime"`
+	CleanLogs    string `json:"cleanLogs" yaml:"cleanLogs"`
 }
 
 // NewLogger returns a new instance.
@@ -29,6 +30,7 @@ func NewLogger() Logger {
 		TailCount:    DefaultLoggerTailCount,
 		BufferSize:   MaxLogThreshold,
 		SinceSeconds: DefaultSinceSeconds,
+		CleanLogs:    "On",
 	}
 }
 

@@ -102,6 +102,8 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.updateTitle()
 
 	l.model.ToggleShowTimestamp(l.app.Config.K9s.Logger.ShowTime)
+	l.toggleCleanLogsCmd(nil)
+	// l.model.SetCleanLogs(l.app.Config.K9s.Logger.CleanLogs)
 
 	return nil
 }

@@ -166,17 +166,17 @@ func (l *LogIndicator) Refresh() {
 	}
 
 	if l.TextWrap() {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Wrap", "")...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Wrap", spacer)...)
 	} else {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Wrap", "")...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Wrap", spacer)...)
 	}
 
 	if l.CleanLogs() == "Off" {
 		cleanLogsFmt := toggleFmt + string(l.styles.K9s.Views.Log.Indicator.ToggleOffColor) + "::b]" + l.CleanLogs() + "[-::] %s"
-		l.indicator = append(l.indicator, fmt.Sprintf(cleanLogsFmt, "CleanLogs", spacer)...)
+		l.indicator = append(l.indicator, fmt.Sprintf(cleanLogsFmt, "CleanLogs", "")...)
 	} else {
 		cleanLogsFmt := toggleFmt + string(l.styles.K9s.Views.Log.Indicator.ToggleOnColor) + "::b]" + l.CleanLogs() + "[-::] %s"
-		l.indicator = append(l.indicator, fmt.Sprintf(cleanLogsFmt, "CleanLogs", spacer)...)
+		l.indicator = append(l.indicator, fmt.Sprintf(cleanLogsFmt, "CleanLogs", "")...)
 	}
 
 	_, _ = l.Write(l.indicator)

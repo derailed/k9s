@@ -77,7 +77,6 @@ func (l *LogItem) Size() int {
 
 // Render returns a log line as string.
 func (l *LogItem) Render(paint string, logOptions *LogOptions, bb *bytes.Buffer) {
-	// TODO
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if logOptions.ShowTimestamp && index > 0 {
 		bb.WriteString("[gray::b]")
@@ -94,10 +93,10 @@ func (l *LogItem) Render(paint string, logOptions *LogOptions, bb *bytes.Buffer)
 	}
 
 	if !l.SingleContainer && l.Container != "" {
-		if len(l.Pod) > 0 {
-			bb.WriteString(" ")
-		}
-		bb.WriteString("[" + paint + "::b]" + l.Container + "[-::-] ")
+		// if len(l.Pod) > 0 {
+		// 	bb.WriteString(" ")
+		// }
+		// bb.WriteString("[" + paint + "::b]" + l.Container + "[-::-] ")
 	} else if len(l.Pod) > 0 {
 		bb.WriteString("[-::] ")
 	}
@@ -107,7 +106,7 @@ func (l *LogItem) Render(paint string, logOptions *LogOptions, bb *bytes.Buffer)
 			bb.Write(l.Bytes[index+1:])
 			return
 		}
-		// TODO if no matches use gigaspace regexp
+		// TODO
 		regexp := springRegexp
 		matches := regexp.FindSubmatch(l.Bytes[index+1:])
 		if matches == nil {
