@@ -74,7 +74,7 @@ func TestLogItemsFilter(t *testing.T) {
 			for _, i := range ii.Items() {
 				i.Pod, i.Container = n, u.opts.Container
 			}
-			res, _, err := ii.Filter(0, u.q, false)
+			res, _, err := ii.Filter(0, u.q, &dao.LogOptions{ShowTimestamp: false})
 			assert.Equal(t, u.err, err)
 			if err == nil {
 				assert.Equal(t, u.e, res)
@@ -124,7 +124,7 @@ func TestLogItemsRender(t *testing.T) {
 		ii.Items()[0].Pod, ii.Items()[0].Container = n, u.opts.Container
 		t.Run(k, func(t *testing.T) {
 			res := make([][]byte, 1)
-			ii.Render(0, u.opts.ShowTimestamp, res)
+			ii.Render(0, &u.opts, res)
 			assert.Equal(t, u.e, string(res[0]))
 		})
 	}

@@ -15,8 +15,10 @@ type LogChan chan *LogItem
 
 var ItemEOF = new(LogItem)
 
-var springRegexp = regexp.MustCompile(`(?P<Date>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?P<LogLevel>[A-Z]+) (?P<LoggingClass>[a-zA-Z.-]*) (?P<Thread>\[[^\]]*\]) (?P<LogMessage>.*)`)
-var gigaspaceRegexp = regexp.MustCompile(`(?P<Date>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?P<Repository>[a-zA-Z.-]*) (?P<LogLevel>[A-Z]+) (?P<LoggingClass>\[[^\]]*\]) (?P<LogMessage>.*)`)
+var springRegexp = regexp.MustCompile(`(?P<Date>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?P<LogLevel>INFO|INF|WARN|WARNING|ERROR|SEVERE|ERR) (?P<LoggingClass>[a-zA-Z.-]*) (?P<Thread>\[[^\]]*\]) (?P<LogMessage>.*)`)
+
+// var gigaspaceRegexp = regexp.MustCompile(`(.*)`)
+var gigaspaceRegexp = regexp.MustCompile(`(?P<Date>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?P<Repository>[a-zA-Z.-]*) (?P<LogLevel>INFO|INF|WARN|WARNING|ERROR|SEVERE|ERR) (?P<LoggingClass>\[[^\]]*]) (?P<LogMessage>.*)`)
 var correlationIdRegexp = regexp.MustCompile(`\[correlationId=\S*] `)
 var sessionIdRegexp = regexp.MustCompile(`\[sessionId=\S*] `)
 var customerIdRegexp = regexp.MustCompile(`\[customerId=\S*] `)
@@ -111,23 +113,24 @@ func (l *LogItem) Render(paint string, logOptions *LogOptions, bb *bytes.Buffer)
 		matches := regexp.FindSubmatch(l.Bytes[index+1:])
 		if matches == nil {
 			regexp = gigaspaceRegexp
-			matches = regexp.FindSubmatch(l.Bytes[index+1:])
+			matches = gigaspaceRegexp.FindSubmatch(l.Bytes[index+1:])
 			if matches == nil {
-				log.Info().Msgf("[Render] no matches for %q", l.Bytes[index+1:])
+				log.Debug().Msgf("[Render] no matches for %q", l.Bytes[index+1:])
 				bb.Write(l.Bytes[index+1:])
 				return
 			}
+			log.Debug().Msgf("[Render] Found gigaspaceMatches for %q", l.Bytes[index+1:])
+			log.Debug().Msgf("[Render] %q", matches[0])
 		}
 
-		date := matches[springRegexp.SubexpIndex("Date")]
-		logLevel := matches[springRegexp.SubexpIndex("LogLevel")]
-		loggingClass := matches[springRegexp.SubexpIndex("LoggingClass")]
-		logMessage := matches[springRegexp.SubexpIndex("LogMessage")]
+		date := matches[regexp.SubexpIndex("Date")]
+		logLevel := matches[regexp.SubexpIndex("LogLevel")]
+		loggingClass := matches[regexp.SubexpIndex("LoggingClass")]
+		logMessage := matches[regexp.SubexpIndex("LogMessage")]
 		logMessage = correlationIdRegexp.ReplaceAll(logMessage, []byte(""))
 		logMessage = sessionIdRegexp.ReplaceAll(logMessage, []byte(""))
 		logMessage = customerIdRegexp.ReplaceAll(logMessage, []byte(""))
 
-		log.Info().Msgf("[Render]  %q", logOptions.CleanLogs)
 		// log.Info().Msgf("[Render] %q", logMessage)
 		bb.Write([]byte("[gray::b]"))
 		bb.Write(date)
