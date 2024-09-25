@@ -119,8 +119,6 @@ func (l *LogItem) Render(paint string, logOptions *LogOptions, bb *bytes.Buffer)
 				bb.Write(l.Bytes[index+1:])
 				return
 			}
-			log.Debug().Msgf("[Render] Found gigaspaceMatches for %q", l.Bytes[index+1:])
-			log.Debug().Msgf("[Render] %q", matches[0])
 		}
 
 		date := matches[regexp.SubexpIndex("Date")]
