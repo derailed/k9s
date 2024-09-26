@@ -129,7 +129,6 @@ func (l *LogItem) Render(paint string, logOptions *LogOptions, bb *bytes.Buffer)
 		logMessage = sessionIdRegexp.ReplaceAll(logMessage, []byte(""))
 		logMessage = customerIdRegexp.ReplaceAll(logMessage, []byte(""))
 
-		// log.Info().Msgf("[Render] %q", logMessage)
 		bb.Write([]byte("[gray::b]"))
 		bb.Write(date)
 		bb.Write([]byte("[-::-]"))
