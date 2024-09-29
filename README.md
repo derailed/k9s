@@ -112,6 +112,12 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   pkg install k9s
   ```
 
+* On Ubuntu
+
+  ```shell
+  wget https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_linux_amd64.deb && apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
+  ```
+
 * Via [Winget](https://github.com/microsoft/winget-cli) for Windows
 
   ```shell
