@@ -17,6 +17,8 @@ Following is an example of some of plugin files in this directory. Other files a
 | log_full.yml                   | get full logs from pod/container                                             | pods/containers                     | Ctrl-l    |                                                                                       |
 | ai-incident-investigation.yaml | Run AI investigation on application issues to find the root cause in seconds | all                                 | Shift-h/o | [HolmesGPT](https://github.com/robusta-dev/holmesgpt)                                 |
 | toggle-keda                    | Enable/disable [keda](3) ScaledObject autoscaler                                  | scaledobjects                       | Ctrl-N    |                                                                                       |
+
+
 [1]: https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container
 [2]: https://github.com/nicolaka/netshoot
 [3]: https://keda.sh/
