@@ -1,0 +1,15 @@
+plugins:
+  argocd:
+    shortCut: "s"
+    description: Sync ArgoCD Application
+    scopes:
+      - application
+    command: argocd
+    args: 
+    - app
+    - sync
+    - $NAME
+    - --app-namespace
+    - $NAMESPACE
+    background: true
+    confirm: true
