@@ -231,7 +231,7 @@ func (s *Sanitizer) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(strings.Split(path, "/")) == 1 && spec.GVR() != "node" {
 		path = "-/" + path
 	}
-	s.app.gotoResource(client.NewGVR(spec.GVR()).R(), path, false)
+	s.app.gotoResource(client.NewGVR(spec.GVR()).R(), path, false, true)
 
 	return nil
 }
