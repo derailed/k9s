@@ -102,6 +102,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.updateTitle()
 
 	l.model.ToggleShowTimestamp(l.app.Config.K9s.Logger.ShowTime)
+	l.model.ToggleShowJSON((l.app.Config.K9s.Logger.ShowJSON))
 
 	return nil
 }
@@ -256,6 +257,7 @@ func (l *Log) bindKeys() {
 		ui.KeyM:         ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
+		tcell.KeyCtrlJ:  ui.NewKeyAction("Toggle JSON", l.toggleJSONCmd, true),
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
@@ -354,6 +356,7 @@ func (l *Log) Flush(lines [][]byte) {
 		if l.cancelUpdates {
 			break
 		}
+
 		_, _ = l.ansiWriter.Write(lines[i])
 	}
 	if l.follow {
@@ -513,6 +516,17 @@ func (l *Log) toggleFullScreen() {
 	} else {
 		l.logs.SetBorderPadding(0, 0, 1, 1)
 	}
+}
+
+func (l *Log) toggleJSONCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	l.indicator.ToggleJSON()
+	l.model.ToggleShowJSON(l.indicator.showJson)
+	l.indicator.Refresh()
+
+	return nil
 }
 
 func (l *Log) isContainerLogView() bool {

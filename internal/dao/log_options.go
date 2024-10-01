@@ -26,6 +26,7 @@ type LogOptions struct {
 	SingleContainer  bool
 	MultiPods        bool
 	ShowTimestamp    bool
+	ShowJSON         bool
 	AllContainers    bool
 }
 
