@@ -20,8 +20,7 @@ import (
 )
 
 const (
-	defaultResync   = 10 * time.Minute
-	defaultWaitTime = 250 * time.Millisecond
+	defaultResync = 10 * time.Minute
 )
 
 // Factory tracks various resource informers.
@@ -47,7 +46,7 @@ func (f *Factory) Start(ns string) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
 
-	log.Debug().Msgf("Factory START with ns `%q", ns)
+	log.Debug().Msgf("Factory START with ns %q", ns)
 	f.stopChan = make(chan struct{})
 	for ns, fac := range f.factories {
 		log.Debug().Msgf("Starting factory in ns %q", ns)
@@ -143,13 +142,8 @@ func (f *Factory) waitForCacheSync(ns string) {
 		return
 	}
 
-	// Hang for a sec for the cache to refresh if still not done bail out!
-	c := make(chan struct{})
-	go func(c chan struct{}) {
-		<-time.After(defaultWaitTime)
-		close(c)
-	}(c)
-	_ = fac.WaitForCacheSync(c)
+	// we must block until all started informers' caches were synced
+	_ = fac.WaitForCacheSync(f.stopChan)
 }
 
 // WaitForCacheSync waits for all factories to update their cache.
