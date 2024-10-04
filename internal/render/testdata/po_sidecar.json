@@ -1,0 +1,293 @@
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "creationTimestamp": "2024-08-24T01:54:32Z",
+        "name": "sleep",
+        "namespace": "default",
+        "resourceVersion": "17852",
+        "uid": "35079257-0ffb-4b09-b2c1-3c0d416f2523"
+    },
+    "spec": {
+        "containers": [
+            {
+                "command": [
+                    "/bin/sleep",
+                    "60"
+                ],
+                "image": "istio/base",
+                "imagePullPolicy": "Always",
+                "name": "sleep",
+                "resources": {
+                    "limits": {
+                        "cpu": "230m",
+                        "memory": "40Mi"
+                    },
+                    "requests": {
+                        "cpu": "30m",
+                        "memory": "10Mi"
+                    }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "kube-api-access-mphcq",
+                        "readOnly": true
+                    }
+                ]
+            }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "initContainers": [
+            {
+                "command": [
+                    "/bin/sleep",
+                    "1"
+                ],
+                "image": "istio/base",
+                "imagePullPolicy": "Always",
+                "name": "init",
+                "resources": {
+                    "limits": {
+                        "cpu": "333m",
+                        "memory": "333Mi"
+                    },
+                    "requests": {
+                        "cpu": "333m",
+                        "memory": "333Mi"
+                    }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "kube-api-access-mphcq",
+                        "readOnly": true
+                    }
+                ]
+            },
+            {
+                "command": [
+                    "/bin/sleep",
+                    "60"
+                ],
+                "image": "istio/base",
+                "imagePullPolicy": "Always",
+                "name": "sidecar",
+                "resources": {
+                    "limits": {
+                        "cpu": "20m",
+                        "memory": "40Mi"
+                    },
+                    "requests": {
+                        "cpu": "20m",
+                        "memory": "40Mi"
+                    }
+                },
+                "restartPolicy": "Always",
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "kube-api-access-mphcq",
+                        "readOnly": true
+                    }
+                ]
+            }
+        ],
+        "nodeName": "kind-control-plane",
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Never",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/not-ready",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/unreachable",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            }
+        ],
+        "volumes": [
+            {
+                "name": "kube-api-access-mphcq",
+                "projected": {
+                    "defaultMode": 420,
+                    "sources": [
+                        {
+                            "serviceAccountToken": {
+                                "expirationSeconds": 3607,
+                                "path": "token"
+                            }
+                        },
+                        {
+                            "configMap": {
+                                "items": [
+                                    {
+                                        "key": "ca.crt",
+                                        "path": "ca.crt"
+                                    }
+                                ],
+                                "name": "kube-root-ca.crt"
+                            }
+                        },
+                        {
+                            "downwardAPI": {
+                                "items": [
+                                    {
+                                        "fieldRef": {
+                                            "apiVersion": "v1",
+                                            "fieldPath": "metadata.namespace"
+                                        },
+                                        "path": "namespace"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2024-08-24T01:54:36Z",
+                "status": "True",
+                "type": "PodReadyToStartContainers"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2024-08-24T01:54:38Z",
+                "status": "True",
+                "type": "Initialized"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2024-08-24T01:54:39Z",
+                "status": "True",
+                "type": "Ready"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2024-08-24T01:54:39Z",
+                "status": "True",
+                "type": "ContainersReady"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2024-08-24T01:54:32Z",
+                "status": "True",
+                "type": "PodScheduled"
+            }
+        ],
+        "containerStatuses": [
+            {
+                "containerID": "containerd://a1848056a183e40afe3189fc4920bd565930180ebdf2f9e2daf778ea8105f93e",
+                "image": "docker.io/istio/base:latest",
+                "imageID": "docker.io/istio/base@sha256:61673929bc39a86dca7d978b27fc632d3e590bc59cd8b2f386408751d007c91e",
+                "lastState": {},
+                "name": "sleep",
+                "ready": true,
+                "restartCount": 0,
+                "started": true,
+                "state": {
+                    "running": {
+                        "startedAt": "2024-08-24T01:54:38Z"
+                    }
+                },
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "kube-api-access-mphcq",
+                        "readOnly": true,
+                        "recursiveReadOnly": "Disabled"
+                    }
+                ]
+            }
+        ],
+        "hostIP": "172.18.0.2",
+        "hostIPs": [
+            {
+                "ip": "172.18.0.2"
+            }
+        ],
+        "initContainerStatuses": [
+            {
+                "containerID": "containerd://75295261e5d751382c9a6ffa4477b84af2934686c360dcba2d8a6b9bc0f8cada",
+                "image": "docker.io/istio/base:latest",
+                "imageID": "docker.io/istio/base@sha256:61673929bc39a86dca7d978b27fc632d3e590bc59cd8b2f386408751d007c91e",
+                "lastState": {},
+                "name": "init",
+                "ready": true,
+                "restartCount": 0,
+                "started": false,
+                "state": {
+                    "terminated": {
+                        "containerID": "containerd://75295261e5d751382c9a6ffa4477b84af2934686c360dcba2d8a6b9bc0f8cada",
+                        "exitCode": 0,
+                        "finishedAt": "2024-08-24T01:54:37Z",
+                        "reason": "Completed",
+                        "startedAt": "2024-08-24T01:54:35Z"
+                    }
+                },
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "kube-api-access-mphcq",
+                        "readOnly": true,
+                        "recursiveReadOnly": "Disabled"
+                    }
+                ]
+            },
+            {
+                "containerID": "containerd://7a0d216a09630040c5b165c42cc9d2a95d541d95b6ac0a5ca604bf767d1b2cf0",
+                "image": "docker.io/istio/base:latest",
+                "imageID": "docker.io/istio/base@sha256:61673929bc39a86dca7d978b27fc632d3e590bc59cd8b2f386408751d007c91e",
+                "lastState": {},
+                "name": "sidecar",
+                "ready": true,
+                "restartCount": 0,
+                "started": true,
+                "state": {
+                    "running": {
+                        "startedAt": "2024-08-24T01:54:38Z"
+                    }
+                },
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "kube-api-access-mphcq",
+                        "readOnly": true,
+                        "recursiveReadOnly": "Disabled"
+                    }
+                ]
+            }
+        ],
+        "phase": "Running",
+        "podIP": "10.244.0.8",
+        "podIPs": [
+            {
+                "ip": "10.244.0.8"
+            }
+        ],
+        "qosClass": "Burstable",
+        "startTime": "2024-08-24T01:54:32Z"
+    }
+}
