@@ -132,7 +132,7 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	if pwm.MX != nil {
 		ccmx = pwm.MX.Containers
 	}
-	c, r := gatherCoMX(po.Spec.Containers, ccmx)
+	c, r := gatherCoMX(&po.Spec, ccmx)
 	phase := p.Phase(&po)
 	row.ID = client.MetaFQN(po.ObjectMeta)
 
@@ -223,7 +223,11 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 	return p
 }
 
-func gatherCoMX(cc []v1.Container, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
+func gatherCoMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
+	cc := make([]v1.Container, 0, len(spec.InitContainers)+len(spec.Containers))
+	cc = append(cc, filterRestartableInitCO(spec.InitContainers)...)
+	cc = append(cc, spec.Containers...)
+
 	rcpu, rmem := cosRequests(cc)
 	r.cpu, r.mem = rcpu.MilliValue(), rmem.Value()
 
@@ -489,4 +493,14 @@ func hasPodReadyCondition(conditions []v1.PodCondition) bool {
 
 func restartableInitCO(p *v1.ContainerRestartPolicy) bool {
 	return p != nil && *p == v1.ContainerRestartPolicyAlways
+}
+
+func filterRestartableInitCO(cc []v1.Container) []v1.Container {
+	rcc := make([]v1.Container, 0, len(cc))
+	for _, c := range cc {
+		if c.RestartPolicy != nil && *c.RestartPolicy == v1.ContainerRestartPolicyAlways {
+			rcc = append(rcc, c)
+		}
+	}
+	return rcc
 }
