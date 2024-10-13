@@ -5,6 +5,8 @@ package view
 
 import (
 	"context"
+	"github.com/derailed/k9s/internal/config"
+	"github.com/rs/zerolog/log"
 	"path/filepath"
 	"strings"
 	"time"
@@ -15,7 +17,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // Table represents a table viewer.
@@ -46,16 +47,16 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	if t.app.Conn() != nil {
 		ctx = context.WithValue(ctx, internal.KeyHasMetrics, t.app.Conn().HasMetrics())
 	}
+	t.app.CustomView = config.NewCustomView()
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
+	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
+	t.Table.Init(ctx)
 	if !t.app.Config.K9s.UI.Reactive {
 		if err := t.app.RefreshCustomViews(); err != nil {
 			log.Warn().Err(err).Msg("CustomViews load failed")
 			t.app.Logo().Warn("Views load failed!")
 		}
 	}
-
-	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
-	t.Table.Init(ctx)
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)

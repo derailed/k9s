@@ -47,7 +47,7 @@ func (v *ViewSetting) SortCol() (string, bool, error) {
 		return "", false, fmt.Errorf("invalid sort column spec: %q. must be col-name:asc|desc", v.SortColumn)
 	}
 
-	return tt[0], tt[1] == "desc", nil
+	return tt[0], tt[1] == "asc", nil
 }
 
 func (v *ViewSetting) Equals(vs *ViewSetting) bool {
@@ -116,8 +116,8 @@ func (v *CustomView) RemoveListener(gvr string) {
 
 func (v *CustomView) fireConfigChanged() {
 	for gvr, list := range v.listeners {
-		if v, ok := v.Views[gvr]; ok {
-			list.ViewSettingsChanged(v)
+		if view, ok := v.Views[gvr]; ok {
+			list.ViewSettingsChanged(view)
 		} else {
 			list.ViewSettingsChanged(ViewSetting{})
 		}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -413,11 +414,32 @@ func loadCRDs(f Factory, m ResourceMetas) {
 	}
 
 	for _, o := range oo {
-		meta, errs := extractMeta(o)
-		if len(errs) > 0 {
-			log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
+		var crd apiext.CustomResourceDefinition
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crd)
+		if err != nil {
+			log.Err(err).Msg("boom")
 			continue
 		}
+
+		var meta metav1.APIResource
+		meta.Kind = crd.Spec.Names.Kind
+		meta.Group = crd.Spec.Group
+		meta.Name = crd.Name
+		meta.SingularName = crd.Spec.Names.Singular
+		meta.ShortNames = crd.Spec.Names.ShortNames
+		meta.Namespaced = crd.Spec.Scope == apiext.NamespaceScoped
+		for _, v := range crd.Spec.Versions {
+			if v.Served && !v.Deprecated {
+				meta.Version = v.Name
+				break
+			}
+		}
+
+		// meta, errs := extractMeta(o)
+		// if len(errs) > 0 {
+		// 	log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
+		// 	continue
+		// }
 		meta.Categories = append(meta.Categories, crdCat)
 		gvr := client.NewGVRFromMeta(meta)
 		m[gvr] = meta
