@@ -6,6 +6,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -46,12 +47,15 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 	if err != nil {
 		return nil, err
 	}
-	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
-	for _, co := range po.Spec.InitContainers {
-		res = append(res, makeContainerRes(co, po, cmx[co.Name], true))
+	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers)+len(po.Spec.EphemeralContainers))
+	for i, co := range po.Spec.InitContainers {
+		res = append(res, makeContainerRes("I"+strconv.Itoa(i+1), co, po, cmx[co.Name]))
 	}
-	for _, co := range po.Spec.Containers {
-		res = append(res, makeContainerRes(co, po, cmx[co.Name], false))
+	for i, co := range po.Spec.Containers {
+		res = append(res, makeContainerRes("M"+strconv.Itoa(i+1), co, po, cmx[co.Name]))
+	}
+	for i, co := range po.Spec.EphemeralContainers {
+		res = append(res, makeContainerRes("E"+strconv.Itoa(i+1), v1.Container(co.EphemeralContainerCommon), po, cmx[co.Name]))
 	}
 
 	return res, nil
@@ -68,12 +72,12 @@ func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeContainerRes(co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics, isInit bool) render.ContainerRes {
+func makeContainerRes(idx string, co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics) render.ContainerRes {
 	return render.ContainerRes{
 		Container: &co,
 		Status:    getContainerStatus(co.Name, po.Status),
 		MX:        cmx,
-		IsInit:    isInit,
+		Idx:       idx,
 		Age:       po.GetCreationTimestamp(),
 	}
 }
@@ -85,6 +89,11 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 		}
 	}
 	for _, c := range status.InitContainerStatuses {
+		if c.Name == co {
+			return &c
+		}
+	}
+	for _, c := range status.EphemeralContainerStatuses {
 		if c.Name == co {
 			return &c
 		}

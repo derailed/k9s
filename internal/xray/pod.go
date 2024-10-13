@@ -41,7 +41,7 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 	node := NewTreeNode("v1/pods", client.FQN(po.Namespace, po.Name))
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
 	if err := p.containerRefs(ctx, node, po.Namespace, po.Spec); err != nil {
@@ -91,6 +91,11 @@ func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, spec
 		}
 	}
 	for i := 0; i < len(spec.Containers); i++ {
+		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.Containers[i]}); err != nil {
+			return err
+		}
+	}
+	for i := 0; i < len(spec.EphemeralContainers); i++ {
 		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.Containers[i]}); err != nil {
 			return err
 		}
