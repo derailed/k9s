@@ -29,6 +29,9 @@ type Forwarder interface {
 	// Port returns the port mapping.
 	Port() string
 
+	// Address returns the host address.
+	Address() string
+
 	// FQN returns the full port-forward name.
 	FQN() string
 
