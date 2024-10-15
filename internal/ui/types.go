@@ -14,6 +14,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type (
+	// SortChange changes the column on which to sort
+	SortChange bool
+)
+
+const (
+	SortNextCol SortChange = true
+	SortPrevCol SortChange = false
+)
+
 // Namespaceable represents a namespaceable model.
 type Namespaceable interface {
 	// ClusterWide returns true if the model represents resource in all namespaces.
