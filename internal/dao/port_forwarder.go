@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 )
 
 const defaultTimeout = 30 * time.Second
@@ -177,15 +178,17 @@ func (p *PortForwarder) forwardPorts(method string, url *url.URL, addr, portMap 
 	}
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport, Timeout: defaultTimeout}, method, url)
 
-	tunnelingDialer, err := portforward.NewSPDYOverWebsocketDialer(url, cfg)
-	if err != nil {
-		return nil, err
-	}
+	if !cmdutil.PortForwardWebsockets.IsDisabled() {
+		tunnelingDialer, err := portforward.NewSPDYOverWebsocketDialer(url, cfg)
+		if err != nil {
+			return nil, err
+		}
 
-	// First attempt tunneling (websocket) dialer, then fallback to spdy dialer.
-	dialer = portforward.NewFallbackDialer(tunnelingDialer, dialer, func(err error) bool {
-		return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
-	})
+		// First attempt tunneling (websocket) dialer, then fallback to spdy dialer.
+		dialer = portforward.NewFallbackDialer(tunnelingDialer, dialer, func(err error) bool {
+			return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
+		})
+	}
 
 	return portforward.NewOnAddresses(dialer, []string{addr}, []string{portMap}, p.stopChan, p.readyChan, p.Out, p.ErrOut)
 }
