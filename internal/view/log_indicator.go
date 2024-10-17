@@ -39,6 +39,10 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		showTime:                   cfg.K9s.Logger.ShowTime,
 		shouldDisplayAllContainers: allContainers,
 	}
+
+	if cfg.K9s.Logger.DisableAutoscroll {
+		l.scrollStatus = 0
+	}
 	l.StylesChanged(styles)
 	styles.AddListener(&l)
 	l.SetTextAlign(tview.AlignCenter)
