@@ -193,7 +193,7 @@ func (t *Table) bindKeys() {
 		tcell.KeyCtrlBackslash: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
 		tcell.KeyCtrlS:         ui.NewSharedKeyAction("Save", t.saveCmd, false),
 		ui.KeySlash:            ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
-		tcell.KeyCtrlZ:         ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
+		tcell.KeyCtrlT:         ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
 		tcell.KeyCtrlW:         ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
 		ui.KeyShiftN:           ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
 		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),

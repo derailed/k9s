@@ -29,6 +29,7 @@ func Test_k9sOverrides(t *testing.T) {
 				MaxConnRetry:        0,
 				ReadOnly:            false,
 				NoExitOnCtrlC:       false,
+				AllowSuspend:        false,
 				UI:                  UI{},
 				SkipLatestRevCheck:  false,
 				DisablePodCounting:  false,
@@ -43,6 +44,7 @@ func Test_k9sOverrides(t *testing.T) {
 				MaxConnRetry:        0,
 				ReadOnly:            true,
 				NoExitOnCtrlC:       false,
+				AllowSuspend:        false,
 				UI: UI{
 					Headless:   true,
 					Logoless:   true,
@@ -65,6 +67,7 @@ func Test_k9sOverrides(t *testing.T) {
 				MaxConnRetry:        0,
 				ReadOnly:            false,
 				NoExitOnCtrlC:       false,
+				AllowSuspend:        false,
 				UI: UI{
 					Headless:   false,
 					Logoless:   false,
