@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -96,6 +97,8 @@ func k8sEnv(c *client.Config) Env {
 	kcfg := c.Flags().KubeConfig
 	if kcfg != nil && *kcfg != "" {
 		cfg = *kcfg
+	} else {
+		cfg = os.Getenv("KUBECONFIG")
 	}
 
 	return Env{
