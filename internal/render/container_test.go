@@ -38,7 +38,7 @@ func TestContainer(t *testing.T) {
 		"Running",
 		"false",
 		"0",
-		"off:off",
+		"off:off:off",
 		"10",
 		"20",
 		"20:20",
