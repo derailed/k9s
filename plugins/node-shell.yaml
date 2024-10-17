@@ -1,0 +1,27 @@
+# $XDG_CONFIG_HOME/k9s/plugins.yaml
+plugins:
+  ## NOTE:
+  ## The kubectl plugin "node-shell" must be installed beforehand.
+  ## See: https://github.com/kvaps/kubectl-node-shell
+
+  # Defines a plugin to provide a shortcut for accessing the node shell.
+  node-shell:
+    # Define a mnemonic to invoke the plugin
+    # Shortcut key to execute the plugin (e.g., 's' key)
+    shortCut: s  
+    # Whether or not to prompt for user confirmation before executing the plugin
+    confirm: false
+    # What will be shown on the K9s menu
+    description: "Node shell"  # Description of the plugin (displayed in the UI)
+    # Collections of views that support this shortcut. (You can use `all`)
+    # `node` indicates that the plugin operates on `node` kubernetes resources
+    scopes:
+      - node
+    # The command to run upon invocation. Can use Krew plugins here too!
+    command: sh
+    # Whether or not to run the command in background mode
+    background: false
+    # Defines the command arguments
+    args:
+      - -c
+      - "kubectl node-shell $NAME --context $CONTEXT"
