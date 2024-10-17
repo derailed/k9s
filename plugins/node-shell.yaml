@@ -11,8 +11,8 @@ plugins:
     shortCut: s  
     # Whether or not to prompt for user confirmation before executing the plugin
     confirm: false
-    # What will be shown on the K9s menu
-    description: "Node shell"  # Description of the plugin (displayed in the UI)
+    # Description of the plugin (displayed in the k9s UI)
+    description: "Node shell"
     # Collections of views that support this shortcut. (You can use `all`)
     # `node` indicates that the plugin operates on `node` kubernetes resources
     scopes:
