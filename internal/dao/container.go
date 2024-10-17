@@ -6,11 +6,11 @@ package dao
 import (
 	"context"
 	"fmt"
-
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,14 +46,47 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 	if err != nil {
 		return nil, err
 	}
-	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
-	for _, co := range po.Spec.InitContainers {
-		res = append(res, makeContainerRes(co, po, cmx[co.Name], true))
+
+	type containerGroup struct {
+		indexPrefix string
+		containers  []v1.Container
+		statuses    []v1.ContainerStatus
 	}
-	for _, co := range po.Spec.Containers {
-		res = append(res, makeContainerRes(co, po, cmx[co.Name], false))
+	containerGroups := []containerGroup{
+		{
+			indexPrefix: "E",
+			containers:  convertEphemeralContainersToContainers(po.Spec.EphemeralContainers),
+			statuses:    po.Status.EphemeralContainerStatuses,
+		},
+		{
+			indexPrefix: "I",
+			containers:  po.Spec.InitContainers,
+			statuses:    po.Status.InitContainerStatuses,
+		},
+		{
+			indexPrefix: "M",
+			containers:  po.Spec.Containers,
+			statuses:    po.Status.ContainerStatuses,
+		},
 	}
 
+	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.EphemeralContainers)+len(po.Spec.Containers))
+	for _, group := range containerGroups {
+		for i, co := range group.containers {
+			var status *v1.ContainerStatus
+			if len(group.statuses) > i {
+				status = &group.statuses[i]
+			}
+
+			res = append(res, makeContainerRes(
+				fmt.Sprintf("%s%d", group.indexPrefix, i+1),
+				&co,
+				status,
+				cmx[co.Name],
+				po.GetCreationTimestamp(),
+			))
+		}
+	}
 	return res, nil
 }
 
@@ -68,29 +101,14 @@ func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeContainerRes(co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics, isInit bool) render.ContainerRes {
+func makeContainerRes(index string, co *v1.Container, status *v1.ContainerStatus, cmx *mv1beta1.ContainerMetrics, age metav1.Time) render.ContainerRes {
 	return render.ContainerRes{
-		Container: &co,
-		Status:    getContainerStatus(co.Name, po.Status),
+		Index:     index,
+		Container: co,
+		Status:    status,
 		MX:        cmx,
-		IsInit:    isInit,
-		Age:       po.GetCreationTimestamp(),
+		Age:       age,
 	}
-}
-
-func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
-	for _, c := range status.ContainerStatuses {
-		if c.Name == co {
-			return &c
-		}
-	}
-	for _, c := range status.InitContainerStatuses {
-		if c.Name == co {
-			return &c
-		}
-	}
-
-	return nil
 }
 
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
@@ -101,4 +119,13 @@ func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
 	var po v1.Pod
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po)
 	return &po, err
+}
+
+// convertEphemeralContainersToContainers reduces EphemeralContainers to common fields with Containers
+func convertEphemeralContainersToContainers(ecos []v1.EphemeralContainer) []v1.Container {
+	cos := make([]v1.Container, len(ecos))
+	for i, eco := range ecos {
+		cos[i] = v1.Container(eco.EphemeralContainerCommon)
+	}
+	return cos
 }
