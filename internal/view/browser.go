@@ -4,8 +4,10 @@
 package view
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,6 +25,7 @@ import (
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubectl/pkg/cmd/util/editor"
 )
 
 // Browser represents a generic resource browser.
@@ -416,6 +419,52 @@ func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (b *Browser) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
+	b.Stop()
+	defer b.Start()
+	{
+		a := b.app
+		a.Halt()
+		defer a.Resume()
+
+		var data []byte
+		var path string
+		var err error
+
+		if !a.Suspend(func() {
+			edit := editor.NewDefaultEditor([]string{})
+			buf := &bytes.Buffer{}
+			data, path, err = edit.LaunchTempFile("kubectl-apply-", ".yaml", buf)
+		}) {
+			time.AfterFunc(200*time.Millisecond, func() {
+				a.Flash().Errf("Failed to suspend the application")
+			})
+			return nil
+		}
+
+		defer os.Remove(path)
+		if err != nil {
+			time.AfterFunc(200*time.Millisecond, func() {
+				a.Flash().Errf("Failed to edit a temporary file: %s", err)
+			})
+		} else if len(data) > 0 {
+			args := make([]string, 0, 10)
+			args = append(args, "apply", "-f", path)
+			if err := runK(a, shellOpts{clear: true, args: args}); err != nil {
+				time.AfterFunc(200*time.Millisecond, func() {
+					a.Flash().Errf("Failed to apply resource: %s", err)
+				})
+			} else {
+				time.AfterFunc(200*time.Millisecond, func() {
+					a.Flash().Info("Resource applied successfully!")
+				})
+			}
+		}
+	}
+
+	return evt
+}
+
 func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
@@ -539,6 +588,11 @@ func (b *Browser) refreshActions() {
 		if !b.app.Config.K9s.IsReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
 				aa.Add(ui.KeyE, ui.NewKeyActionWithOpts("Edit", b.editCmd,
+					ui.ActionOpts{
+						Visible:   true,
+						Dangerous: true,
+					}))
+				aa.Add(ui.KeyPlus, ui.NewKeyActionWithOpts("Apply", b.applyCmd,
 					ui.ActionOpts{
 						Visible:   true,
 						Dangerous: true,
