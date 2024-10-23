@@ -589,9 +589,11 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 		if ns == client.NamespaceAll {
 			continue
 		}
-		aa.Add(ui.NumKeys[index], ui.NewKeyAction(ns, b.switchNamespaceCmd, true))
-		b.namespaces[index] = ns
-		index++
+		if numKey, ok := ui.NumKeys[index]; ok {
+			aa.Add(numKey, ui.NewKeyAction(ns, b.switchNamespaceCmd, true))
+			b.namespaces[index] = ns
+			index++
+		}
 	}
 }
 
