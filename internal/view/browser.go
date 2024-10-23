@@ -589,11 +589,12 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 		if ns == client.NamespaceAll {
 			continue
 		}
+		// no assumption is made about the structure of NumKeys or the length of FavNamespaces
 		if numKey, ok := ui.NumKeys[index]; ok {
 			aa.Add(numKey, ui.NewKeyAction(ns, b.switchNamespaceCmd, true))
 			b.namespaces[index] = ns
-			index++
 		}
+		index++
 	}
 }
 
