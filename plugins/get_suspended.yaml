@@ -1,4 +1,5 @@
 # credits: https://github.com/fluxcd/flux2/discussions/2494
+plugins:
   get-suspended-helmreleases:
     shortCut: Shift-S
     confirm: false
