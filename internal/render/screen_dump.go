@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -6,9 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 // ScreenDump renders a screendumps to screen.
@@ -17,31 +22,31 @@ type ScreenDump struct {
 }
 
 // ColorerFunc colors a resource row.
-func (ScreenDump) ColorerFunc() ColorerFunc {
-	return func(ns string, _ Header, re RowEvent) tcell.Color {
+func (ScreenDump) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, _ model1.Header, re *model1.RowEvent) tcell.Color {
 		return tcell.ColorNavajoWhite
 	}
 }
 
 // Header returns a header row.
-func (ScreenDump) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "DIR"},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (ScreenDump) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "DIR"},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (b ScreenDump) Render(o interface{}, ns string, r *Row) error {
+func (b ScreenDump) Render(o interface{}, ns string, r *model1.Row) error {
 	f, ok := o.(FileRes)
 	if !ok {
 		return fmt.Errorf("expecting screendumper, but got %T", o)
 	}
 
 	r.ID = filepath.Join(f.Dir, f.File.Name())
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		f.File.Name(),
 		f.Dir,
 		"",
@@ -55,7 +60,7 @@ func (b ScreenDump) Render(o interface{}, ns string, r *Row) error {
 // Helpers...
 
 func timeToAge(timestamp time.Time) string {
-	return time.Since(timestamp).String()
+	return duration.HumanDuration(time.Since(timestamp))
 }
 
 // FileRes represents a file resource.

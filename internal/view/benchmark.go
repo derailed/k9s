@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -9,9 +12,10 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/perf"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // Benchmark represents a service benchmark results view.
@@ -37,15 +41,15 @@ func (b *Benchmark) benchContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyDir, benchDir(b.App().Config))
 }
 
-func (b *Benchmark) viewBench(app *App, model ui.Tabular, gvr, path string) {
+func (b *Benchmark) viewBench(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	data, err := readBenchFile(app.Config, b.benchFile())
 	if err != nil {
 		app.Flash().Errf("Unable to load bench file %s", err)
 		return
 	}
 
-	details := NewDetails(b.App(), "Results", fileToSubject(path), false).Update(data)
-	if err := app.inject(details); err != nil {
+	details := NewDetails(b.App(), "Results", fileToSubject(path), contentYAML, false).Update(data)
+	if err := app.inject(details, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
@@ -65,7 +69,15 @@ func fileToSubject(path string) string {
 }
 
 func benchDir(cfg *config.Config) string {
-	return filepath.Join(perf.K9sBenchDir, cfg.K9s.CurrentCluster)
+	ct, err := cfg.K9s.ActiveContext()
+	if err != nil {
+		log.Error().Err(err).Msgf("no active context located")
+	}
+	return filepath.Join(
+		config.AppBenchmarksDir,
+		data.SanitizeFileName(ct.ClusterName),
+		data.SanitizeFileName(cfg.K9s.ActiveContextName()),
+	)
 }
 
 func readBenchFile(cfg *config.Config, n string) (string, error) {

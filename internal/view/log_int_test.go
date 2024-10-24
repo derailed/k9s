@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -17,7 +20,7 @@ func TestLogAutoScroll(t *testing.T) {
 		SingleContainer: true,
 	}
 	v := NewLog(client.NewGVR("v1/pods"), &opts)
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 	ii := dao.NewLogItems()
 	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
 	v.GetModel().Set(ii)
@@ -35,7 +38,7 @@ func TestLogViewNav(t *testing.T) {
 		Container: "blee",
 	}
 	v := NewLog(client.NewGVR("v1/pods"), &opts)
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 
 	buff := dao.NewLogItems()
 	for i := 0; i < 100; i++ {
@@ -54,7 +57,7 @@ func TestLogViewClear(t *testing.T) {
 		Container: "blee",
 	}
 	v := NewLog(client.NewGVR("v1/pods"), &opts)
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 
 	v.toggleAutoScrollCmd(nil)
 	v.Logs().SetText("blee\nblah")
@@ -69,7 +72,7 @@ func TestLogTimestamp(t *testing.T) {
 		Container: "c1",
 	}
 	l := NewLog(client.NewGVR("test"), &opts)
-	l.Init(makeContext())
+	assert.NoError(t, l.Init(makeContext()))
 	ii := dao.NewLogItems()
 	ii.Add(
 		&dao.LogItem{
@@ -99,7 +102,7 @@ func TestLogFilter(t *testing.T) {
 		Container: "c1",
 	}
 	l := NewLog(client.NewGVR("test"), &opts)
-	l.Init(makeContext())
+	assert.NoError(t, l.Init(makeContext()))
 	buff := dao.NewLogItems()
 	buff.Add(
 		dao.NewLogItemFromString("duh"),

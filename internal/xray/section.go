@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -18,7 +21,7 @@ type Section struct {
 func (s *Section) Render(ctx context.Context, ns string, o interface{}) error {
 	section, ok := o.(render.Section)
 	if !ok {
-		return fmt.Errorf("Expected Section, but got %T", o)
+		return fmt.Errorf("expected Section, but got %T", o)
 	}
 	root := NewTreeNode(section.GVR, section.Title)
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)

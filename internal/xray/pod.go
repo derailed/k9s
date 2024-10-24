@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -21,7 +24,7 @@ type Pod struct{}
 func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 	pwm, ok := o.(*render.PodWithMetrics)
 	if !ok {
-		return fmt.Errorf("Expected PodWithMetrics, but got %T", o)
+		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
 	}
 
 	var po v1.Pod
@@ -62,7 +65,6 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 
 func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	var re render.Pod
-
 	phase := re.Phase(&po)
 	ss := po.Status.ContainerStatuses
 	cr, _, _ := re.Statuses(ss)

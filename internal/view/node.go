@@ -1,17 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,60 +30,86 @@ func NewNode(gvr client.GVR) ResourceViewer {
 	}
 	n.AddBindKeysFn(n.bindKeys)
 	n.GetTable().SetEnterFn(n.showPods)
+	n.SetContextFn(n.nodeContext)
 
 	return &n
 }
 
-func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyC: ui.NewKeyAction("Cordon", n.toggleCordonCmd(true), true),
-		ui.KeyU: ui.NewKeyAction("Uncordon", n.toggleCordonCmd(false), true),
-		ui.KeyR: ui.NewKeyAction("Drain", n.drainCmd, true),
+func (n *Node) nodeContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, internal.KeyPodCounting, !n.App().Config.K9s.DisablePodCounting)
+}
+
+func (n *Node) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyC: ui.NewKeyActionWithOpts(
+			"Cordon",
+			n.toggleCordonCmd(true),
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
+		ui.KeyU: ui.NewKeyActionWithOpts(
+			"Uncordon",
+			n.toggleCordonCmd(false),
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
+		ui.KeyR: ui.NewKeyActionWithOpts(
+			"Drain",
+			n.drainCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
 	})
-	cl := n.App().Config.K9s.CurrentCluster
-	if n.App().Config.K9s.Clusters[cl].FeatureGates.NodeShell {
-		aa.Add(ui.KeyActions{
-			ui.KeyS: ui.NewKeyAction("Shell", n.sshCmd, true),
-		})
+	ct, err := n.App().Config.K9s.ActiveContext()
+	if err != nil {
+		log.Error().Err(err).Msgf("No active context located")
+		return
+	}
+	if ct.FeatureGates.NodeShell {
+		aa.Add(ui.KeyS, ui.NewKeyAction("Shell", n.sshCmd, true))
 	}
 }
 
-func (n *Node) bindKeys(aa ui.KeyActions) {
-	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace)
-
+func (n *Node) bindKeys(aa *ui.KeyActions) {
 	if !n.App().Config.K9s.IsReadOnly() {
 		n.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
-		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
+	aa.Bulk(ui.KeyMap{
+		ui.KeyY:      ui.NewKeyAction(yamlAction, n.yamlCmd, true),
+		ui.KeyShiftR: ui.NewKeyAction("Sort ROLE", n.GetTable().SortColCmd("ROLE", true), false),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
+		ui.KeyShiftO: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
 	})
 }
 
-func (n *Node) showPods(a *App, _ ui.Tabular, _, path string) {
-	showPods(a, n.GetTable().GetSelectedItem(), client.AllNamespaces, "spec.nodeName="+path)
+func (n *Node) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
+	showPods(a, n.GetTable().GetSelectedItem(), client.BlankNamespace, "spec.nodeName="+path)
 }
 
 func (n *Node) drainCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := n.GetTable().GetSelectedItem()
-	if path == "" {
+	sels := n.GetTable().GetSelectedItems()
+	if len(sels) == 0 {
 		return evt
 	}
 
-	defaults := dao.DrainOptions{
-		GracePeriodSeconds:  -1,
-		Timeout:             5 * time.Second,
-		DeleteEmptyDirData:  false,
-		IgnoreAllDaemonSets: false,
+	opts := dao.DrainOptions{
+		GracePeriodSeconds: -1,
+		Timeout:            5 * time.Second,
 	}
-	ShowDrain(n, path, defaults, drainNode)
+	ShowDrain(n, sels, opts, drainNode)
 
 	return nil
 }
 
-func drainNode(v ResourceViewer, path string, opts dao.DrainOptions) {
+func drainNode(v ResourceViewer, sels []string, opts dao.DrainOptions) {
 	res, err := dao.AccessorFor(v.App().factory, v.GVR())
 	if err != nil {
 		v.App().Flash().Err(err)
@@ -93,24 +121,26 @@ func drainNode(v ResourceViewer, path string, opts dao.DrainOptions) {
 		return
 	}
 
-	buff := bytes.NewBufferString("")
-	if err := m.Drain(path, opts, buff); err != nil {
-		v.App().Flash().Err(err)
-		return
-	}
-	lines := strings.Split(buff.String(), "\n")
-	for _, l := range lines {
-		if len(l) > 0 {
-			v.App().Flash().Info(l)
+	v.Stop()
+	defer v.Start()
+	{
+		d := NewDetails(v.App(), "Drain Progress", "nodes", contentYAML, true)
+		if err := v.App().inject(d, false); err != nil {
+			v.App().Flash().Err(err)
 		}
+		for _, sel := range sels {
+			if err := m.Drain(sel, opts, d.GetWriter()); err != nil {
+				v.App().Flash().Err(err)
+			}
+		}
+		v.Refresh()
 	}
-	v.Refresh()
 }
 
 func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		path := n.GetTable().GetSelectedItem()
-		if path == "" {
+		sels := n.GetTable().GetSelectedItems()
+		if len(sels) == 0 {
 			return evt
 		}
 
@@ -120,7 +150,11 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 		} else {
 			title, msg = title+"Uncordon", "Uncordon "
 		}
-		msg += path + "?"
+		if len(sels) == 1 {
+			msg += sels[0] + "?"
+		} else {
+			msg += fmt.Sprintf("(%d) marked %s?", len(sels), n.GVR().R())
+		}
 		dialog.ShowConfirm(n.App().Styles.Dialog(), n.App().Content.Pages, title, msg, func() {
 			res, err := dao.AccessorFor(n.App().factory, n.GVR())
 			if err != nil {
@@ -132,8 +166,10 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 				n.App().Flash().Err(fmt.Errorf("expecting a maintainer for %q", n.GVR()))
 				return
 			}
-			if err := m.ToggleCordon(path, cordon); err != nil {
-				n.App().Flash().Err(err)
+			for _, s := range sels {
+				if err := m.ToggleCordon(s, cordon); err != nil {
+					n.App().Flash().Err(err)
+				}
 			}
 			n.Refresh()
 		}, func() {})
@@ -151,9 +187,7 @@ func (n *Node) sshCmd(evt *tcell.EventKey) *tcell.EventKey {
 	n.Stop()
 	defer n.Start()
 	_, node := client.Namespaced(path)
-	if err := ssh(n.App(), node); err != nil {
-		log.Error().Err(err).Msgf("SSH Failed")
-	}
+	launchNodeShell(n, n.App(), node)
 
 	return nil
 }
@@ -188,8 +222,8 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(n.App(), "YAML", sel, true).Update(raw)
-	if err := n.App().inject(details); err != nil {
+	details := NewDetails(n.App(), yamlAction, sel, contentYAML, true).Update(raw)
+	if err := n.App().inject(details, false); err != nil {
 		n.App().Flash().Err(err)
 	}
 

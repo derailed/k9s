@@ -1,29 +1,35 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
+	"sync"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/vul"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
+const maxTruncate = 50
+
 type (
 	// ColorerFunc represents a row colorer.
-	ColorerFunc func(ns string, evt render.RowEvent) tcell.Color
+	ColorerFunc func(ns string, evt model1.RowEvent) tcell.Color
 
 	// DecorateFunc represents a row decorator.
-	DecorateFunc func(*render.TableData)
+	DecorateFunc func(*model1.TableData)
 
 	// SelectedRowFunc a table selection callback.
 	SelectedRowFunc func(r int)
@@ -31,21 +37,23 @@ type (
 
 // Table represents tabular data.
 type Table struct {
-	gvr     client.GVR
-	sortCol SortColumn
-	header  render.Header
-	Path    string
-	Extras  string
+	gvr        client.GVR
+	sortCol    model1.SortColumn
+	manualSort bool
+	Path       string
+	Extras     string
 	*SelectTable
-	actions     KeyActions
+	actions     *KeyActions
 	cmdBuff     *model.FishBuff
 	styles      *config.Styles
 	viewSetting *config.ViewSetting
-	colorerFn   render.ColorerFunc
+	colorerFn   model1.ColorerFunc
 	decorateFn  DecorateFunc
 	wide        bool
 	toast       bool
 	hasMetrics  bool
+	ctx         context.Context
+	mx          sync.RWMutex
 }
 
 // NewTable returns a new table view.
@@ -57,10 +65,72 @@ func NewTable(gvr client.GVR) *Table {
 			marks: make(map[string]struct{}),
 		},
 		gvr:     gvr,
-		actions: make(KeyActions),
+		actions: NewKeyActions(),
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
-		sortCol: SortColumn{asc: true},
+		sortCol: model1.SortColumn{ASC: true},
 	}
+}
+
+func (t *Table) setSortCol(sc model1.SortColumn) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.sortCol = sc
+}
+
+func (t *Table) toggleSortCol() {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.sortCol.ASC = !t.sortCol.ASC
+}
+
+func (t *Table) getSortCol() model1.SortColumn {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.sortCol
+}
+
+func (t *Table) setMSort(b bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.manualSort = b
+}
+
+func (t *Table) getMSort() bool {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.manualSort
+}
+
+func (t *Table) setVs(vs *config.ViewSetting) bool {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	if !t.viewSetting.Equals(vs) {
+		t.viewSetting = vs
+		return true
+	}
+
+	return false
+}
+
+func (t *Table) getVs() *config.ViewSetting {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.viewSetting
+}
+
+func (t *Table) GetContext() context.Context {
+	return t.ctx
+}
+
+func (t *Table) SetContext(ctx context.Context) {
+	t.ctx = ctx
 }
 
 // Init initializes the component.
@@ -84,9 +154,11 @@ func (t *Table) Init(ctx context.Context) {
 func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
-func (t *Table) ViewSettingsChanged(settings config.ViewSetting) {
-	t.viewSetting = &settings
-	t.Refresh()
+func (t *Table) ViewSettingsChanged(vs config.ViewSetting) {
+	if t.setVs(&vs) {
+		t.setMSort(false)
+		t.Refresh()
+	}
 }
 
 // StylesChanged notifies the skin changed.
@@ -94,8 +166,11 @@ func (t *Table) StylesChanged(s *config.Styles) {
 	t.SetBackgroundColor(s.Table().BgColor.Color())
 	t.SetBorderColor(s.Frame().Border.FgColor.Color())
 	t.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
-	t.SetSelectedStyle(tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
-	t.fgColor = s.Table().CursorFgColor.Color()
+	t.SetSelectedStyle(
+		tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).
+			Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
+	t.selFgColor = s.Table().CursorFgColor.Color()
+	t.selBgColor = s.Table().CursorBgColor.Color()
 	t.Refresh()
 }
 
@@ -118,7 +193,7 @@ func (t *Table) ToggleWide() {
 }
 
 // Actions returns active menu bindings.
-func (t *Table) Actions() KeyActions {
+func (t *Table) Actions() *KeyActions {
 	return t.actions
 }
 
@@ -160,7 +235,7 @@ func (t *Table) ExtraHints() map[string]string {
 }
 
 // GetFilteredData fetch filtered tabular data.
-func (t *Table) GetFilteredData() *render.TableData {
+func (t *Table) GetFilteredData() *model1.TableData {
 	return t.filtered(t.GetModel().Peek())
 }
 
@@ -170,106 +245,101 @@ func (t *Table) SetDecorateFn(f DecorateFunc) {
 }
 
 // SetColorerFn specifies the default colorer.
-func (t *Table) SetColorerFn(f render.ColorerFunc) {
+func (t *Table) SetColorerFn(f model1.ColorerFunc) {
 	t.colorerFn = f
 }
 
 // SetSortCol sets in sort column index and order.
 func (t *Table) SetSortCol(name string, asc bool) {
-	t.sortCol.name, t.sortCol.asc = name, asc
+	t.setSortCol(model1.SortColumn{Name: name, ASC: asc})
 }
 
 // Update table content.
-func (t *Table) Update(data *render.TableData, hasMetrics bool) {
-	t.header = data.Header
+func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableData {
 	if t.decorateFn != nil {
 		t.decorateFn(data)
 	}
 	t.hasMetrics = hasMetrics
-	t.doUpdate(t.filtered(data))
-	t.UpdateTitle()
+
+	return t.doUpdate(t.filtered(data))
 }
 
-func (t *Table) doUpdate(data *render.TableData) {
-	if client.IsAllNamespaces(data.Namespace) {
-		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false)
+func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
+	if client.IsAllNamespaces(data.GetNamespace()) {
+		t.actions.Add(
+			KeyShiftP,
+			NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false),
+		)
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	cols := t.header.Columns(t.wide)
-	if t.viewSetting != nil && len(t.viewSetting.Columns) > 0 {
-		cols = t.viewSetting.Columns
-	}
-	custData := data.Customize(cols, t.wide)
-	if t.viewSetting != nil && t.viewSetting.SortColumn != "" {
-		tokens := strings.Split(t.viewSetting.SortColumn, ":")
-		if custData.Header.IndexOf(tokens[0], false) >= 0 {
-			t.sortCol.name, t.sortCol.asc = tokens[0], true
-			if len(tokens) == 2 && tokens[1] == "desc" {
-				t.sortCol.asc = false
-			}
-		}
-	}
+	cdata, sortCol := data.Customize(t.getVs(), t.getSortCol(), t.getMSort(), true)
+	t.setSortCol(sortCol)
 
-	if t.sortCol.name == "" && client.IsAllNamespaces(data.Namespace) {
-		t.sortCol.name = "NAMESPACE"
-	}
-	if t.sortCol.name == "" || (t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace)) && len(custData.Header) > 0 {
-		if idx := custData.Header.IndexOf("NAME", false); idx >= 0 {
-			t.sortCol.name = custData.Header[idx].Name
-		} else {
-			t.sortCol.name = custData.Header[0].Name
-		}
-	}
+	return cdata
+}
 
+func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.Clear()
 	fg := t.styles.Table().Header.FgColor.Color()
 	bg := t.styles.Table().Header.BgColor.Color()
 
 	var col int
-	for _, h := range custData.Header {
+	for _, h := range cdata.Header() {
+		if !t.wide && h.Wide {
+			continue
+		}
 		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
 		if h.MX && !t.hasMetrics {
 			continue
 		}
+		if h.VS && vul.ImgScanner == nil {
+			continue
+		}
+
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
 		c.SetTextColor(fg)
 		col++
 	}
-	colIndex := custData.Header.IndexOf(t.sortCol.name, false)
-	custData.RowEvents.Sort(
-		custData.Namespace,
-		colIndex,
-		custData.Header.IsTimeCol(colIndex),
-		custData.Header.IsMetricsCol(colIndex),
-		t.sortCol.asc,
-	)
+	cdata.Sort(t.getSortCol())
 
-	pads := make(MaxyPad, len(custData.Header))
-	ComputeMaxColumns(pads, t.sortCol.name, custData.Header, custData.RowEvents)
-	for row, re := range custData.RowEvents {
-		idx, _ := data.RowEvents.FindIndex(re.Row.ID)
-		t.buildRow(row+1, re, data.RowEvents[idx], custData.Header, pads)
-	}
+	pads := make(MaxyPad, cdata.HeaderCount())
+	ComputeMaxColumns(pads, t.getSortCol().Name, cdata)
+	cdata.RowsRange(func(row int, re model1.RowEvent) bool {
+		ore, ok := data.FindRow(re.Row.ID)
+		if !ok {
+			log.Error().Msgf("unable to find original re: %q", re.Row.ID)
+			return true
+		}
+		t.buildRow(row+1, re, ore, cdata.Header(), pads)
+
+		return true
+	})
+
 	t.updateSelection(true)
+	t.UpdateTitle()
 }
 
-func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads MaxyPad) {
-	color := render.DefaultColorer
+func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad) {
+	color := model1.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn
 	}
 
 	marked := t.IsMarked(re.Row.ID)
 	var col int
+	ns := t.GetModel().GetNamespace()
 	for c, field := range re.Row.Fields {
 		if c >= len(h) {
 			log.Error().Msgf("field/header overflow detected for %q -- %d::%d. Check your mappings!", t.GVR(), c, len(h))
+			continue
+		}
+		if !t.wide && h[c].Wide {
 			continue
 		}
 
@@ -277,6 +347,9 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 			continue
 		}
 		if h[c].MX && !t.hasMetrics {
+			continue
+		}
+		if h[c].VS && vul.ImgScanner == nil {
 			continue
 		}
 
@@ -294,7 +367,7 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 		cell := tview.NewTableCell(field)
 		cell.SetExpansion(1)
 		cell.SetAlign(h[c].Align)
-		fgColor := color(t.GetModel().GetNamespace(), t.header, ore)
+		fgColor := color(ns, h, &re)
 		cell.SetTextColor(fgColor)
 		if marked {
 			cell.SetTextColor(t.styles.Table().MarkColor.Color())
@@ -310,11 +383,14 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 // SortColCmd designates a sorted column.
 func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t.sortCol.asc = !t.sortCol.asc
-		if t.sortCol.name != name {
-			t.sortCol.asc = asc
+		sc := t.getSortCol()
+		sc.ASC = !sc.ASC
+		if sc.Name != name {
+			sc.ASC = asc
 		}
-		t.sortCol.name = name
+		sc.Name = name
+		t.setSortCol(sc)
+		t.setMSort(true)
 		t.Refresh()
 		return nil
 	}
@@ -322,7 +398,7 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 
 // SortInvertCmd reverses sorting order.
 func (t *Table) SortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
-	t.sortCol.asc = !t.sortCol.asc
+	t.toggleSortCol()
 	t.Refresh()
 
 	return nil
@@ -337,21 +413,23 @@ func (t *Table) ClearMarks() {
 // Refresh update the table data.
 func (t *Table) Refresh() {
 	data := t.model.Peek()
-	if len(data.Header) == 0 {
+	if data.HeaderCount() == 0 {
 		return
 	}
 	// BOZO!! Really want to tell model reload now. Refactor!
-	t.Update(data, t.hasMetrics)
+	cdata := t.Update(data, t.hasMetrics)
+	t.UpdateUI(cdata, data)
 }
 
-// GetSelectedRow returns the entire selected row.
-func (t *Table) GetSelectedRow(path string) (render.Row, bool) {
+// GetSelectedRow returns the entire selected row or nil if nothing selected.
+func (t *Table) GetSelectedRow(path string) *model1.Row {
 	data := t.model.Peek()
-	i, ok := data.RowEvents.FindIndex(path)
+	re, ok := data.FindRow(path)
 	if !ok {
-		return render.Row{}, ok
+		return nil
 	}
-	return data.RowEvents[i].Row, true
+
+	return &re.Row
 }
 
 // NameColIndex returns the index of the resource name column.
@@ -363,39 +441,25 @@ func (t *Table) NameColIndex() int {
 	if t.GetModel().ClusterWide() {
 		col++
 	}
+
 	return col
 }
 
 // AddHeaderCell configures a table cell header.
-func (t *Table) AddHeaderCell(col int, h render.HeaderColumn) {
-	sortCol := h.Name == t.sortCol.name
-	c := tview.NewTableCell(sortIndicator(sortCol, t.sortCol.asc, t.styles.Table(), h.Name))
+func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
+	sc := t.getSortCol()
+	sortCol := h.Name == sc.Name
+	c := tview.NewTableCell(sortIndicator(sortCol, sc.ASC, t.styles.Table(), h.Name))
 	c.SetExpansion(1)
 	c.SetAlign(h.Align)
 	t.SetCell(0, col, c)
 }
 
-func (t *Table) filtered(data *render.TableData) *render.TableData {
-	filtered := data
-	if t.toast {
-		filtered = filterToast(data)
-	}
-	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.GetText()) {
-		return filtered
-	}
-
-	q := t.cmdBuff.GetText()
-	if IsFuzzySelector(q) {
-		return fuzzyFilter(q[2:], filtered)
-	}
-
-	filtered, err := rxFilter(q, IsInverseSelector(q), filtered)
-	if err != nil {
-		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		// t.cmdBuff.ClearText(true)
-	}
-
-	return filtered
+func (t *Table) filtered(data *model1.TableData) *model1.TableData {
+	return data.Filter(model1.FilterOpts{
+		Toast:  t.toast,
+		Filter: t.cmdBuff.GetText(),
+	})
 }
 
 // CmdBuff returns the associated command buffer.
@@ -418,7 +482,7 @@ func (t *Table) UpdateTitle() {
 }
 
 func (t *Table) styleTitle() string {
-	rc := t.GetRowCount()
+	rc := int64(t.GetRowCount())
 	if rc > 0 {
 		rc--
 	}
@@ -442,17 +506,20 @@ func (t *Table) styleTitle() string {
 	}
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, base, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, render.AsThousands(rc)), t.styles.Frame())
 	}
 
 	buff := t.cmdBuff.GetText()
+	if internal.IsLabelSelector(buff) {
+		buff = render.Truncate(TrimLabelSelector(buff), maxTruncate)
+	} else if l := t.GetModel().GetLabelFilter(); l != "" {
+		buff = render.Truncate(l, maxTruncate)
+	}
+
 	if buff == "" {
 		return title
-	}
-	if IsLabelSelector(buff) {
-		buff = TrimLabelSelector(buff)
 	}
 
 	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao_test
 
 import (
@@ -7,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,7 +67,7 @@ func TestLogItemRender(t *testing.T) {
 				ShowTimestamp:   true,
 			},
 			log: fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."),
-			e:   "[gray::b]2018-12-14T10:36:43.326972-07:00 [yellow::]fred [yellow::b]blee[-::-] Testing 1,2,3...\n",
+			e:   "[gray::b]2018-12-14T10:36:43.326972-07:00 [-::-][yellow::]fred [yellow::b]blee[-::-] Testing 1,2,3...\n",
 		},
 		"log-level": {
 			opts: dao.LogOptions{
@@ -73,14 +77,24 @@ func TestLogItemRender(t *testing.T) {
 				ShowTimestamp:   false,
 			},
 			log: fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "2021-10-28T13:06:37Z [INFO] [blah-blah] Testing 1,2,3..."),
-			e:   "[yellow::]fred[-::] 2021-10-28T13:06:37Z [INFO] [blah-blah] Testing 1,2,3...\n",
+			e:   "[yellow::]fred[-::] 2021-10-28T13:06:37Z [INFO[] [blah-blah[] Testing 1,2,3...\n",
+		},
+		"escape": {
+			opts: dao.LogOptions{
+				Path:            "blee/fred",
+				Container:       "",
+				SingleContainer: false,
+				ShowTimestamp:   false,
+			},
+			log: fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", `{"foo":["bar"]} Server listening on: [::]:5000`),
+			e:   `[yellow::]fred[-::] {"foo":["bar"[]} Server listening on: [::[]:5000` + "\n",
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			i := dao.NewLogItem([]byte(u.log))
+			i := dao.NewLogItem([]byte(tview.Escape(u.log)))
 			_, n := client.Namespaced(u.opts.Path)
 			i.Pod, i.Container = n, u.opts.Container
 
@@ -91,7 +105,7 @@ func TestLogItemRender(t *testing.T) {
 	}
 }
 
-func BenchmarkLogItemRender(b *testing.B) {
+func BenchmarkLogItemRenderTS(b *testing.B) {
 	s := []byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))
 	i := dao.NewLogItem(s)
 	i.Pod, i.Container = "fred", "blee"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao_test
 
 import (
@@ -8,7 +11,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,6 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
+	"sigs.k8s.io/yaml"
 )
 
 func TestContainerList(t *testing.T) {
@@ -59,16 +62,18 @@ func (c *conn) ValidNamespaces() ([]v1.Namespace, error)              { return n
 func (c *conn) SupportsRes(grp string, versions []string) (string, bool, error) {
 	return "", false, nil
 }
-func (c *conn) ServerVersion() (*version.Info, error)             { return nil, nil }
-func (c *conn) CurrentNamespaceName() (string, error)             { return "", nil }
-func (c *conn) CanI(ns, gvr string, verbs []string) (bool, error) { return true, nil }
-func (c *conn) ActiveCluster() string                             { return "" }
-func (c *conn) ActiveNamespace() string                           { return "" }
-func (c *conn) IsActiveNamespace(string) bool                     { return false }
+func (c *conn) ServerVersion() (*version.Info, error)                { return nil, nil }
+func (c *conn) CurrentNamespaceName() (string, error)                { return "", nil }
+func (c *conn) CanI(ns, gvr, n string, verbs []string) (bool, error) { return true, nil }
+func (c *conn) ActiveContext() string                                { return "" }
+func (c *conn) ActiveNamespace() string                              { return "" }
+func (c *conn) IsValidNamespace(string) bool                         { return true }
+func (c *conn) ValidNamespaceNames() (client.NamespaceNames, error)  { return nil, nil }
+func (c *conn) IsActiveNamespace(string) bool                        { return false }
 
 type podFactory struct{}
 
-var _ dao.Factory = testFactory{}
+var _ dao.Factory = &testFactory{}
 
 func (f podFactory) Client() client.Connection {
 	return makeConn()

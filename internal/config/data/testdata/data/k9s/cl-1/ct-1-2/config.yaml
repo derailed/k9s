@@ -1,0 +1,14 @@
+k9s:
+  cluster: cl-1
+  skin: in_the_navy
+  readOnly: true
+  namespace:
+    active: default
+    lockFavorites: false
+    favorites:
+    - default
+  view:
+    active: po
+  featureGates:
+    nodeShell: false
+  portForwardAddress: localhost

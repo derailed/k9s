@@ -1,0 +1,90 @@
+# -----------------------------------------------------------------------------
+# Stock skin
+# -----------------------------------------------------------------------------
+
+# Skin...
+k9s:
+  body:
+    fgColor: dodgerblue
+    bgColor: black
+    logoColor: orange
+  prompt:
+    fgColor: cadetblue
+    bgColor: black
+    suggestColor: dodgerblue
+  info:
+    fgColor: orange
+    sectionColor: white
+  dialog:
+    fgColor: dodgerblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: dodgerblue
+    buttonFocusFgColor: white
+    buttonFocusBgColor: fuchsia
+    labelFgColor: fuchsia
+    fieldFgColor: dodgerblue
+  frame:
+    border:
+      fgColor: dodgerblue
+      focusColor: aqua
+    menu:
+      fgColor: white
+      keyColor: dodgerblue
+      numKeyColor: fuchsia
+    crumbs:
+      fgColor: black
+      bgColor: steelblue
+      activeColor: orange
+    status:
+      newColor: lightskyblue
+      modifyColor: greenyellow
+      addColor: white
+      errorColor: orangered
+      pendingColor: darkorange
+      highlightColor: aqua
+      killColor: mediumpurple
+      completedColor: gray
+    title:
+      fgColor: aqua
+      highlightColor: fuchsia
+      counterColor: papayawhip
+      filterColor: steelblue
+  views:
+    # Charts skins...
+    charts:
+      bgColor: black
+      defaultDialColors:
+        - linegreen
+        - orangered
+      defaultChartColors:
+        - linegreen
+        - orangered
+    table:
+      fgColor: blue
+      bgColor: black
+      cursorFgColor: black
+      cursorBgColor: aqua
+      markColor: darkgoldenrod
+      header:
+        fgColor: white
+        bgColor: black
+        sorterColor: orange
+    xray:
+      fgColor: blue
+      bgColor: black
+      cursorColor: aqua
+      graphicColor: darkgoldenrod
+      showIcons: false
+    yaml:
+      keyColor: steelblue
+      colonColor: white
+      valueColor: papayawhip
+    logs:
+      fgColor: white
+      bgColor: black
+      indicator:
+        fgColor: dodgerblue
+        bgColor: black
+        toggleOnColor: papayawhip
+        toggleOffColor: steelblue

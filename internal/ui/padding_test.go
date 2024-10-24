@@ -1,72 +1,79 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMaxColumn(t *testing.T) {
 	uu := map[string]struct {
-		t *render.TableData
+		t *model1.TableData
 		s string
 		e MaxyPad
 	}{
 		"ascii col 0": {
-			&render.TableData{
-				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
-				RowEvents: render.RowEvents{
-					render.RowEvent{
-						Row: render.Row{
-							Fields: render.Fields{"hello", "world"},
+			model1.NewTableDataWithRows(
+				client.NewGVR("test"),
+				model1.Header{model1.HeaderColumn{Name: "A"}, model1.HeaderColumn{Name: "B"}},
+				model1.NewRowEventsWithEvts(
+					model1.RowEvent{
+						Row: model1.Row{
+							Fields: model1.Fields{"hello", "world"},
 						},
 					},
-					render.RowEvent{
-						Row: render.Row{
-							Fields: render.Fields{"yo", "mama"},
+					model1.RowEvent{
+						Row: model1.Row{
+							Fields: model1.Fields{"yo", "mama"},
 						},
 					},
-				},
-			},
+				),
+			),
 			"A",
 			MaxyPad{6, 6},
 		},
 		"ascii col 1": {
-			&render.TableData{
-				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
-				RowEvents: render.RowEvents{
-					render.RowEvent{
-						Row: render.Row{
-							Fields: render.Fields{"hello", "world"},
+			model1.NewTableDataWithRows(
+				client.NewGVR("test"),
+				model1.Header{model1.HeaderColumn{Name: "A"}, model1.HeaderColumn{Name: "B"}},
+				model1.NewRowEventsWithEvts(
+					model1.RowEvent{
+						Row: model1.Row{
+							Fields: model1.Fields{"hello", "world"},
 						},
 					},
-					render.RowEvent{
-						Row: render.Row{
-							Fields: render.Fields{"yo", "mama"},
+					model1.RowEvent{
+						Row: model1.Row{
+							Fields: model1.Fields{"yo", "mama"},
 						},
 					},
-				},
-			},
+				),
+			),
 			"B",
 			MaxyPad{6, 6},
 		},
 		"non_ascii": {
-			&render.TableData{
-				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
-				RowEvents: render.RowEvents{
-					render.RowEvent{
-						Row: render.Row{
-							Fields: render.Fields{"Hello World lord of ipsums 😅", "world"},
+			model1.NewTableDataWithRows(
+				client.NewGVR("test"),
+				model1.Header{model1.HeaderColumn{Name: "A"}, model1.HeaderColumn{Name: "B"}},
+				model1.NewRowEventsWithEvts(
+					model1.RowEvent{
+						Row: model1.Row{
+							Fields: model1.Fields{"Hello World lord of ipsums 😅", "world"},
 						},
 					},
-					render.RowEvent{
-						Row: render.Row{
-							Fields: render.Fields{"o", "mama"},
+					model1.RowEvent{
+						Row: model1.Row{
+							Fields: model1.Fields{"o", "mama"},
 						},
 					},
-				},
-			},
+				),
+			),
 			"A",
 			MaxyPad{32, 6},
 		},
@@ -75,8 +82,8 @@ func TestMaxColumn(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			pads := make(MaxyPad, len(u.t.Header))
-			ComputeMaxColumns(pads, u.s, u.t.Header, u.t.RowEvents)
+			pads := make(MaxyPad, u.t.HeaderCount())
+			ComputeMaxColumns(pads, u.s, u.t)
 			assert.Equal(t, u.e, pads)
 		})
 	}
@@ -116,27 +123,28 @@ func TestPad(t *testing.T) {
 }
 
 func BenchmarkMaxColumn(b *testing.B) {
-	table := render.TableData{
-		Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
-		RowEvents: render.RowEvents{
-			render.RowEvent{
-				Row: render.Row{
-					Fields: render.Fields{"hello", "world"},
+	table := model1.NewTableDataWithRows(
+		client.NewGVR("test"),
+		model1.Header{model1.HeaderColumn{Name: "A"}, model1.HeaderColumn{Name: "B"}},
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"hello", "world"},
 				},
 			},
-			render.RowEvent{
-				Row: render.Row{
-					Fields: render.Fields{"yo", "mama"},
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"yo", "mama"},
 				},
 			},
-		},
-	}
+		),
+	)
 
-	pads := make(MaxyPad, len(table.Header))
+	pads := make(MaxyPad, table.HeaderCount())
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		ComputeMaxColumns(pads, "A", table.Header, table.RowEvents)
+		ComputeMaxColumns(pads, "A", table)
 	}
 }

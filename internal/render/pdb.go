@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -5,8 +8,9 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
-	v1beta1 "k8s.io/api/policy/v1beta1"
+	v1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -18,36 +22,36 @@ type PodDisruptionBudget struct {
 }
 
 // Header returns a header row.
-func (PodDisruptionBudget) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "MIN AVAILABLE", Align: tview.AlignRight},
-		HeaderColumn{Name: "MAX_ UNAVAILABLE", Align: tview.AlignRight},
-		HeaderColumn{Name: "ALLOWED DISRUPTIONS", Align: tview.AlignRight},
-		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
-		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
-		HeaderColumn{Name: "EXPECTED", Align: tview.AlignRight},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (PodDisruptionBudget) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "MIN AVAILABLE", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "MAX UNAVAILABLE", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "ALLOWED DISRUPTIONS", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "EXPECTED", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
+func (p PodDisruptionBudget) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected PodDisruptionBudget, but got %T", o)
+		return fmt.Errorf("expected PodDisruptionBudget, but got %T", o)
 	}
-	var pdb v1beta1.PodDisruptionBudget
+	var pdb v1.PodDisruptionBudget
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pdb)
 	if err != nil {
 		return err
 	}
 
 	r.ID = client.MetaFQN(pdb.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		pdb.Namespace,
 		pdb.Name,
 		numbToStr(pdb.Spec.MinAvailable),
@@ -57,8 +61,8 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(pdb.Status.DesiredHealthy)),
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
 		mapToStr(pdb.Labels),
-		asStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
-		toAge(pdb.GetCreationTimestamp()),
+		AsStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
+		ToAge(pdb.GetCreationTimestamp()),
 	}
 
 	return nil

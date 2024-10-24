@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package client
 
 import (
@@ -17,6 +20,8 @@ import (
 const (
 	mxCacheSize   = 100
 	mxCacheExpiry = 1 * time.Minute
+	podMXGVR      = "metrics.k8s.io/v1beta1/pods"
+	nodeMXGVR     = "metrics.k8s.io/v1beta1/nodes"
 )
 
 // MetricsDial tracks global metric server handle.
@@ -85,10 +90,10 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 
 func (m *MetricsServer) checkAccess(ns, gvr, msg string) error {
 	if !m.HasMetrics() {
-		return errors.New("No metrics-server detected on cluster")
+		return errors.New("no metrics-server detected on cluster")
 	}
 
-	auth, err := m.CanI(ns, gvr, ListAccess)
+	auth, err := m.CanI(ns, gvr, "", ListAccess)
 	if err != nil {
 		return err
 	}
@@ -146,7 +151,7 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	const msg = "user is not authorized to list node metrics"
 
 	mx := new(mv1beta1.NodeMetricsList)
-	if err := m.checkAccess(ClusterScope, "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+	if err := m.checkAccess(ClusterScope, nodeMXGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -177,7 +182,7 @@ func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1bet
 	const msg = "user is not authorized to list node metrics"
 
 	mx := new(mv1beta1.NodeMetrics)
-	if err := m.checkAccess(ClusterScope, "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+	if err := m.checkAccess(ClusterScope, nodeMXGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -188,7 +193,7 @@ func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1bet
 
 	mx, ok := mmx[n]
 	if !ok {
-		return nil, fmt.Errorf("Unable to retrieve node metrics for %q", n)
+		return nil, fmt.Errorf("unable to retrieve node metrics for %q", n)
 	}
 	return mx, nil
 }
@@ -215,9 +220,9 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	const msg = "user is not authorized to list pods metrics"
 
 	if ns == NamespaceAll {
-		ns = AllNamespaces
+		ns = BlankNamespace
 	}
-	if err := m.checkAccess(ns, "metrics.k8s.io/v1beta1/pods", msg); err != nil {
+	if err := m.checkAccess(ns, podMXGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -225,7 +230,7 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	if entry, ok := m.cache.Get(key); ok {
 		mxList, ok := entry.(*mv1beta1.PodMetricsList)
 		if !ok {
-			return mx, fmt.Errorf("expected podmetricslist but got %T", entry)
+			return mx, fmt.Errorf("expected PodMetricsList but got %T", entry)
 		}
 		return mxList, nil
 	}
@@ -266,9 +271,9 @@ func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1be
 
 	ns, _ := Namespaced(fqn)
 	if ns == NamespaceAll {
-		ns = AllNamespaces
+		ns = BlankNamespace
 	}
-	if err := m.checkAccess(ns, "metrics.k8s.io/v1beta1/pods", msg); err != nil {
+	if err := m.checkAccess(ns, podMXGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -278,7 +283,7 @@ func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1be
 	}
 	pmx, ok := mmx[fqn]
 	if !ok {
-		return nil, fmt.Errorf("Unable to locate pod metrics for pod %q", fqn)
+		return nil, fmt.Errorf("unable to locate pod metrics for pod %q", fqn)
 	}
 
 	return pmx, nil

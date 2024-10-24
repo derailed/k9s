@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dialog
 
 import (
@@ -6,11 +9,11 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 )
 
-// ShowConfirm pops a confirmation dialog.
+// ShowError pops an error dialog.
 func ShowError(styles config.Dialog, pages *ui.Pages, msg string) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
@@ -20,7 +23,7 @@ func ShowError(styles config.Dialog, pages *ui.Pages, msg string) {
 		SetLabelColor(styles.LabelFgColor.Color()).
 		SetFieldTextColor(tcell.ColorIndianRed)
 	f.AddButton("Dismiss", func() {
-		dismissError(pages)
+		dismiss(pages)
 	})
 	if b := f.GetButton(0); b != nil {
 		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
@@ -31,18 +34,14 @@ func ShowError(styles config.Dialog, pages *ui.Pages, msg string) {
 	modal.SetText(cowTalk(msg))
 	modal.SetTextColor(tcell.ColorOrangeRed)
 	modal.SetDoneFunc(func(int, string) {
-		dismissError(pages)
+		dismiss(pages)
 	})
-	pages.AddPage(confirmKey, modal, false, false)
-	pages.ShowPage(confirmKey)
-}
-
-func dismissError(pages *ui.Pages) {
-	pages.RemovePage(confirmKey)
+	pages.AddPage(dialogKey, modal, false, false)
+	pages.ShowPage(dialogKey)
 }
 
 func cowTalk(says string) string {
-	msg := fmt.Sprintf("< Ruroh? %s >", says)
+	msg := fmt.Sprintf("< Ruroh? %s >", strings.TrimSuffix(says, "\n"))
 	buff := make([]string, 0, len(cow)+3)
 	buff = append(buff, msg)
 	buff = append(buff, cow...)

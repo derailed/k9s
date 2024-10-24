@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
@@ -14,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/rs/zerolog/log"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -210,7 +213,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	root := xray.NewTreeNode(res, res)
 	ctx = context.WithValue(ctx, xray.KeyParent, root)
 	if _, ok := meta.TreeRenderer.(*xray.Generic); ok {
-		table, ok := oo[0].(*metav1beta1.Table)
+		table, ok := oo[0].(*metav1.Table)
 		if !ok {
 			return fmt.Errorf("expecting a Table but got %T", oo[0])
 		}
@@ -223,7 +226,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 
 	root.Sort()
 	if t.query != "" {
-		t.root = root.Filter(t.query, rxFilter)
+		t.root = root.Filter(t.query, rxMatch)
 	}
 	if t.root == nil || t.root.Diff(root) {
 		t.root = root
@@ -274,7 +277,7 @@ func (t *Tree) getMeta(ctx context.Context, gvr string) (ResourceMeta, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func rxFilter(q, path string) bool {
+func rxMatch(q, path string) bool {
 	rx := regexp.MustCompile(`(?i)` + q)
 
 	tokens := strings.Split(path, "::")
@@ -299,13 +302,13 @@ func treeHydrate(ctx context.Context, ns string, oo []runtime.Object, re TreeRen
 	return nil
 }
 
-func genericTreeHydrate(ctx context.Context, ns string, table *metav1beta1.Table, re TreeRenderer) error {
+func genericTreeHydrate(ctx context.Context, ns string, table *metav1.Table, re TreeRenderer) error {
 	tre, ok := re.(*xray.Generic)
 	if !ok {
 		return fmt.Errorf("expecting xray.Generic renderer but got %T", re)
 	}
 
-	tre.SetTable(table)
+	tre.SetTable(ns, table)
 	// BOZO!! Need table row sorter!!
 	for _, row := range table.Rows {
 		if err := tre.Render(ctx, ns, row); err != nil {

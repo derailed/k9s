@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -30,7 +33,11 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 		SetFieldTextColor(styles.FieldFgColor.Color()).
 		SetFieldBackgroundColor(styles.BgColor.Color())
 
-	address := v.App().Config.CurrentCluster().PortForwardAddress
+	ct, err := v.App().Config.K9s.ActiveContext()
+	if err != nil {
+		log.Error().Err(err).Msgf("No active context detected")
+		return
+	}
 
 	pf, err := aa.PreferredPorts(ports)
 	if err != nil {
@@ -54,6 +61,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	if loField.GetText() == "" {
 		loField.SetPlaceholder("Enter a local port")
 	}
+	address := ct.PortForwardAddress
 	f.AddInputField("Address:", address, fieldLen, nil, func(h string) {
 		address = h
 	})

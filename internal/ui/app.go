@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -7,8 +10,8 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,7 +22,7 @@ type App struct {
 
 	Main    *Pages
 	flash   *model.Flash
-	actions KeyActions
+	actions *KeyActions
 	views   map[string]tview.Primitive
 	cmdBuff *model.FishBuff
 	running bool
@@ -30,18 +33,17 @@ type App struct {
 func NewApp(cfg *config.Config, context string) *App {
 	a := App{
 		Application:  tview.NewApplication(),
-		actions:      make(KeyActions),
-		Configurator: Configurator{Config: cfg},
+		actions:      NewKeyActions(),
+		Configurator: Configurator{Config: cfg, Styles: config.NewStyles()},
 		Main:         NewPages(),
 		flash:        model.NewFlash(model.DefaultFlashDelay),
 		cmdBuff:      model.NewFishBuff(':', model.CommandBuffer),
 	}
-	a.ReloadStyles(context)
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
 		"logo":   NewLogo(a.Styles),
-		"prompt": NewPrompt(&a, a.Config.K9s.NoIcons, a.Styles),
+		"prompt": NewPrompt(&a, a.Config.K9s.UI.NoIcons, a.Styles),
 		"crumbs": NewCrumbs(a.Styles),
 	}
 
@@ -55,7 +57,7 @@ func (a *App) Init() {
 	a.cmdBuff.AddListener(a)
 	a.Styles.AddListener(a)
 
-	a.SetRoot(a.Main, true).EnableMouse(a.Config.K9s.EnableMouse)
+	a.SetRoot(a.Main, true).EnableMouse(a.Config.K9s.UI.EnableMouse)
 }
 
 // QueueUpdate queues up a ui action.
@@ -131,34 +133,34 @@ func (a *App) StylesChanged(s *config.Styles) {
 	}
 }
 
-// ReloadStyles reloads skin file.
-func (a *App) ReloadStyles(context string) {
-	a.RefreshStyles(context)
-}
-
 // Conn returns an api server connection.
 func (a *App) Conn() client.Connection {
 	return a.Config.GetConnection()
 }
 
 func (a *App) bindKeys() {
-	a.actions = KeyActions{
+	a.actions = NewKeyActionsFromMap(KeyMap{
 		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
 		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
-		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
+		tcell.KeyCtrlP: NewKeyAction("Persist", a.saveCmd, false),
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
-	}
+	})
 }
 
-// BailOut exists the application.
+// BailOut exits the application.
 func (a *App) BailOut() {
+	if err := a.Config.Save(true); err != nil {
+		log.Error().Err(err).Msg("config save failed!")
+	}
+
 	a.Stop()
 	os.Exit(0)
 }
 
 // ResetPrompt reset the prompt model and marks buffer as active.
 func (a *App) ResetPrompt(m PromptModel) {
+	m.ClearText(false)
 	a.Prompt().SetModel(m)
 	a.SetFocus(a.Prompt())
 	m.SetActive(true)
@@ -167,6 +169,15 @@ func (a *App) ResetPrompt(m PromptModel) {
 // ResetCmd clear out user command.
 func (a *App) ResetCmd() {
 	a.cmdBuff.Reset()
+}
+
+func (a *App) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if err := a.Config.Save(true); err != nil {
+		a.Flash().Err(err)
+	}
+	a.Flash().Info("current context config saved")
+
+	return nil
 }
 
 // ActivateCmd toggle command mode.
@@ -189,19 +200,6 @@ func (a *App) HasCmd() bool {
 	return a.cmdBuff.IsActive() && !a.cmdBuff.Empty()
 }
 
-func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.InCmdMode() {
-		return evt
-	}
-
-	if !a.Config.K9s.NoExitOnCtrlC {
-		a.BailOut()
-	}
-
-	// overwrite the default ctrl-c behavior of tview
-	return nil
-}
-
 // InCmdMode check if command mode is active.
 func (a *App) InCmdMode() bool {
 	return a.Prompt().InCmdMode()
@@ -209,20 +207,17 @@ func (a *App) InCmdMode() bool {
 
 // HasAction checks if key matches a registered binding.
 func (a *App) HasAction(key tcell.Key) (KeyAction, bool) {
-	act, ok := a.actions[key]
-	return act, ok
+	return a.actions.Get(key)
 }
 
 // GetActions returns a collection of actions.
-func (a *App) GetActions() KeyActions {
+func (a *App) GetActions() *KeyActions {
 	return a.actions
 }
 
 // AddActions returns the application actions.
-func (a *App) AddActions(aa KeyActions) {
-	for k, v := range aa {
-		a.actions[k] = v
-	}
+func (a *App) AddActions(aa *KeyActions) {
+	a.actions.Merge(aa)
 }
 
 // Views return the application root views.

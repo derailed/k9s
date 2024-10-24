@@ -1,271 +1,296 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
-	"path/filepath"
 
-	"github.com/adrg/xdg"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// K9sConfig represents K9s configuration dir env var.
-const K9sConfig = "K9SCONFIG"
-
-var (
-	// K9sConfigFile represents K9s config file location.
-	K9sConfigFile = filepath.Join(K9sHome(), "config.yml")
-	// K9sDefaultScreenDumpDir represents a default directory where K9s screen dumps will be persisted.
-	K9sDefaultScreenDumpDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-screens-%s", MustK9sUser()))
-)
-
-type (
-	// KubeSettings exposes kubeconfig context information.
-	KubeSettings interface {
-		// CurrentContextName returns the name of the current context.
-		CurrentContextName() (string, error)
-
-		// CurrentClusterName returns the name of the current cluster.
-		CurrentClusterName() (string, error)
-
-		// CurrentNamespace returns the name of the current namespace.
-		CurrentNamespaceName() (string, error)
-
-		// ClusterNames() returns all available cluster names.
-		ClusterNames() (map[string]struct{}, error)
-	}
-
-	// Config tracks K9s configuration options.
-	Config struct {
-		K9s      *K9s `yaml:"k9s"`
-		client   client.Connection
-		settings KubeSettings
-	}
-)
-
-// K9sHome returns k9s configs home directory.
-func K9sHome() string {
-	if env := os.Getenv(K9sConfig); env != "" {
-		return env
-	}
-
-	xdgK9sHome, err := xdg.ConfigFile("k9s")
-	if err != nil {
-		log.Fatal().Err(err).Msg("Unable to create configuration directory for k9s")
-	}
-
-	return xdgK9sHome
+// Config tracks K9s configuration options.
+type Config struct {
+	K9s      *K9s `yaml:"k9s" json:"k9s"`
+	conn     client.Connection
+	settings data.KubeSettings
 }
 
 // NewConfig creates a new default config.
-func NewConfig(ks KubeSettings) *Config {
-	return &Config{K9s: NewK9s(), settings: ks}
+func NewConfig(ks data.KubeSettings) *Config {
+	return &Config{
+		settings: ks,
+		K9s:      NewK9s(nil, ks),
+	}
+}
+
+// ContextHotkeysPath returns a context specific hotkeys file spec.
+func (c *Config) ContextHotkeysPath() string {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+
+	return AppContextHotkeysFile(ct.ClusterName, c.K9s.activeContextName)
+}
+
+// ContextAliasesPath returns a context specific aliases file spec.
+func (c *Config) ContextAliasesPath() string {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+
+	return AppContextAliasesFile(ct.GetClusterName(), c.K9s.activeContextName)
+}
+
+// ContextPluginsPath returns a context specific plugins file spec.
+func (c *Config) ContextPluginsPath() (string, error) {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return "", err
+	}
+
+	return AppContextPluginsFile(ct.GetClusterName(), c.K9s.activeContextName), nil
 }
 
 // Refine the configuration based on cli args.
 func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, cfg *client.Config) error {
-	if isSet(flags.Context) {
-		c.K9s.CurrentContext = *flags.Context
+	if flags == nil {
+		return nil
+	}
+	if isStringSet(flags.Context) {
+		if _, err := c.K9s.ActivateContext(*flags.Context); err != nil {
+			return fmt.Errorf("k8sflags. unable to activate context %q: %w", *flags.Context, err)
+		}
 	} else {
-		context, err := cfg.CurrentContextName()
+		n, err := cfg.CurrentContextName()
+		if err != nil {
+			return fmt.Errorf("unable to retrieve kubeconfig current context %q: %w", n, err)
+		}
+		_, err = c.K9s.ActivateContext(n)
+		if err != nil {
+			return fmt.Errorf("unable to activate context %q: %w", n, err)
+		}
+	}
+	log.Debug().Msgf("Active Context %q", c.K9s.ActiveContextName())
+
+	var ns string
+	switch {
+	case k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces):
+		ns = client.NamespaceAll
+		c.ResetActiveView()
+	case isStringSet(flags.Namespace):
+		ns = *flags.Namespace
+	default:
+		nss, err := c.K9s.ActiveContextNamespace()
 		if err != nil {
 			return err
 		}
-		c.K9s.CurrentContext = context
+		ns = nss
 	}
-	log.Debug().Msgf("Active Context %q", c.K9s.CurrentContext)
-	if c.K9s.CurrentContext == "" {
-		return errors.New("Invalid kubeconfig context detected")
+	if ns == "" {
+		ns = client.DefaultNamespace
 	}
-	cc, err := cfg.Contexts()
-	if err != nil {
-		return err
-	}
-	context, ok := cc[c.K9s.CurrentContext]
-	if !ok {
-		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
-	}
-	c.K9s.CurrentCluster = context.Cluster
-	c.K9s.ActivateCluster(context.Namespace)
-
-	var ns = client.DefaultNamespace
-	if k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces) {
-		ns = client.NamespaceAll
-	} else if isSet(flags.Namespace) {
-		ns = *flags.Namespace
-	} else if isSet(flags.Context) {
-		ns = context.Namespace
-	} else {
-		ns = c.K9s.ActiveCluster().Namespace.Active
-	}
-
 	if err := c.SetActiveNamespace(ns); err != nil {
 		return err
 	}
-	flags.Namespace = &ns
 
-	if isSet(flags.ClusterName) {
-		c.K9s.CurrentCluster = *flags.ClusterName
-	}
-	EnsurePath(c.K9s.GetScreenDumpDir(), DefaultDirMod)
-
-	return nil
+	return data.EnsureDirPath(c.K9s.AppScreenDumpDir(), data.DefaultDirMod)
 }
 
-// Reset the context to the new current context/cluster.
-// if it does not exist.
+// Reset resets the context to the new current context/cluster.
 func (c *Config) Reset() {
-	c.K9s.CurrentContext, c.K9s.CurrentCluster = "", ""
+	c.K9s.Reset()
 }
 
-// CurrentCluster fetch the configuration activeCluster.
-func (c *Config) CurrentCluster() *Cluster {
-	if c, ok := c.K9s.Clusters[c.K9s.CurrentCluster]; ok {
-		return c
+func (c *Config) SetCurrentContext(n string) (*data.Context, error) {
+	ct, err := c.K9s.ActivateContext(n)
+	if err != nil {
+		return nil, fmt.Errorf("set current context failed. %w", err)
 	}
-	return nil
+
+	return ct, nil
 }
 
-// ActiveNamespace returns the active namespace in the current cluster.
+// CurrentContext fetch the configuration active context.
+func (c *Config) CurrentContext() (*data.Context, error) {
+	return c.K9s.ActiveContext()
+}
+
+// ActiveNamespace returns the active namespace in the current context.
+// If none found return the empty ns.
 func (c *Config) ActiveNamespace() string {
-	if c.K9s.Clusters == nil {
-		log.Warn().Msgf("No context detected returning default namespace")
-		return "default"
-	}
-	cl := c.CurrentCluster()
-	if cl != nil && cl.Namespace != nil {
-		return cl.Namespace.Active
-	}
-	if cl == nil {
-		cl = NewCluster()
-		c.K9s.Clusters[c.K9s.CurrentCluster] = cl
-	}
-	if ns, err := c.settings.CurrentNamespaceName(); err == nil && ns != "" {
-		if cl.Namespace == nil {
-			cl.Namespace = NewNamespace()
-		}
-		cl.Namespace.Active = ns
-		return ns
+	ns, err := c.K9s.ActiveContextNamespace()
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to assert active namespace. Using default")
+		ns = client.DefaultNamespace
 	}
 
-	return "default"
+	return ns
 }
 
-// ValidateFavorites ensure favorite ns are legit.
-func (c *Config) ValidateFavorites() {
-	cl := c.K9s.ActiveCluster()
-	cl.Validate(c.client, c.settings)
-	cl.Namespace.Validate(c.client, c.settings)
-}
-
-// FavNamespaces returns fav namespaces in the current cluster.
+// FavNamespaces returns fav namespaces in the current context.
 func (c *Config) FavNamespaces() []string {
-	cl := c.K9s.ActiveCluster()
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return nil
+	}
+	ct.Validate(c.conn, c.settings)
 
-	return cl.Namespace.Favorites
+	return ct.Namespace.Favorites
 }
 
-// SetActiveNamespace set the active namespace in the current cluster.
+// SetActiveNamespace set the active namespace in the current context.
 func (c *Config) SetActiveNamespace(ns string) error {
-	if cl := c.K9s.ActiveCluster(); cl != nil {
-		return cl.Namespace.SetActive(ns, c.settings)
+	if ns == client.NotNamespaced {
+		log.Debug().Msgf("[SetNS] No namespace given. skipping!")
+		return nil
 	}
-	err := errors.New("no active cluster. unable to set active namespace")
-	log.Error().Err(err).Msg("SetActiveNamespace")
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
 
-	return err
+	return ct.Namespace.SetActive(ns, c.settings)
 }
 
-// ActiveView returns the active view in the current cluster.
+// ActiveView returns the active view in the current context.
 func (c *Config) ActiveView() string {
-	cl := c.K9s.ActiveCluster()
-	if cl == nil {
-		return defaultView
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return data.DefaultView
 	}
-	cmd := cl.View.Active
+	cmd := ct.View.Active
 	if c.K9s.manualCommand != nil && *c.K9s.manualCommand != "" {
 		cmd = *c.K9s.manualCommand
+		// We reset the manualCommand property because
+		// the command-line switch should only be considered once,
+		// on startup.
+		*c.K9s.manualCommand = ""
 	}
 
 	return cmd
 }
 
-// SetActiveView set the currently cluster active view.
+func (c *Config) ResetActiveView() {
+	if isStringSet(c.K9s.manualCommand) {
+		return
+	}
+	v := c.ActiveView()
+	if v == "" {
+		return
+	}
+	p := cmd.NewInterpreter(v)
+	if p.HasNS() {
+		c.SetActiveView(p.Cmd())
+	}
+}
+
+// SetActiveView sets current context active view.
 func (c *Config) SetActiveView(view string) {
-	if cl := c.K9s.ActiveCluster(); cl != nil {
-		cl.View.Active = view
+	if ct, err := c.K9s.ActiveContext(); err == nil {
+		ct.View.Active = view
 	}
 }
 
 // GetConnection return an api server connection.
 func (c *Config) GetConnection() client.Connection {
-	return c.client
+	return c.conn
 }
 
 // SetConnection set an api server connection.
 func (c *Config) SetConnection(conn client.Connection) {
-	c.client = conn
+	c.conn = conn
+	if conn != nil {
+		c.K9s.resetConnection(conn)
+	}
 }
 
-// Load K9s configuration from file.
-func (c *Config) Load(path string) error {
-	f, err := os.ReadFile(path)
+func (c *Config) ActiveContextName() string {
+	return c.K9s.activeContextName
+}
+
+func (c *Config) Merge(c1 *Config) {
+	c.K9s.Merge(c1.K9s)
+}
+
+// Load loads K9s configuration from file.
+func (c *Config) Load(path string, force bool) error {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		if err := c.Save(force); err != nil {
+			return err
+		}
+	}
+	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	c.K9s = NewK9s()
+	var errs error
+	if err := data.JSONValidator.Validate(json.K9sSchema, bb); err != nil {
+		errs = errors.Join(errs, fmt.Errorf("k9s config file %q load failed:\n%w", path, err))
+	}
 
 	var cfg Config
-	if err := yaml.Unmarshal(f, &cfg); err != nil {
-		return err
+	if err := yaml.Unmarshal(bb, &cfg); err != nil {
+		errs = errors.Join(errs, fmt.Errorf("main config.yaml load failed: %w", err))
 	}
-	if cfg.K9s != nil {
-		c.K9s = cfg.K9s
-	}
-	if c.K9s.Logger == nil {
-		c.K9s.Logger = NewLogger()
-	}
-	return nil
+	c.Merge(&cfg)
+
+	return errs
 }
 
 // Save configuration to disk.
-func (c *Config) Save() error {
+func (c *Config) Save(force bool) error {
 	c.Validate()
+	if err := c.K9s.Save(force); err != nil {
+		return err
+	}
+	if _, err := os.Stat(AppConfigFile); errors.Is(err, fs.ErrNotExist) {
+		return c.SaveFile(AppConfigFile)
+	}
 
-	return c.SaveFile(K9sConfigFile)
+	return nil
 }
 
 // SaveFile K9s configuration to disk.
 func (c *Config) SaveFile(path string) error {
-	EnsurePath(path, DefaultDirMod)
+	if err := data.EnsureDirPath(path, data.DefaultDirMod); err != nil {
+		return err
+	}
 	cfg, err := yaml.Marshal(c)
 	if err != nil {
 		log.Error().Msgf("[Config] Unable to save K9s config file: %v", err)
 		return err
 	}
-	return os.WriteFile(path, cfg, 0644)
+
+	return os.WriteFile(path, cfg, data.DefaultFileMod)
 }
 
 // Validate the configuration.
 func (c *Config) Validate() {
-	c.K9s.Validate(c.client, c.settings)
-}
-
-// Dump debug...
-func (c *Config) Dump(msg string) {
-	log.Debug().Msgf("Current Cluster: %s\n", c.K9s.CurrentCluster)
-	for k, cl := range c.K9s.Clusters {
-		log.Debug().Msgf("K9s cluster: %s -- %+v\n", k, cl.Namespace)
+	if c.K9s == nil {
+		c.K9s = NewK9s(c.conn, c.settings)
 	}
+	c.K9s.Validate(c.conn, c.settings)
 }
 
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func isSet(s *string) bool {
-	return s != nil && len(*s) > 0
+// Dump for debug...
+func (c *Config) Dump(msg string) {
+	ct, err := c.K9s.ActiveContext()
+	if err == nil {
+		bb, _ := yaml.Marshal(ct)
+		fmt.Printf("Dump: %q\n%s\n", msg, string(bb))
+	} else {
+		fmt.Println("BOOM!", err)
+	}
 }

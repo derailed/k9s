@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package tchart
 
 import (
@@ -5,8 +8,8 @@ import (
 	"image"
 	"math"
 
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 )
 
 var sparks = []rune{'▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}

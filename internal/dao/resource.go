@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -30,12 +33,12 @@ func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error
 		}
 	}
 
-	return r.GetFactory().List(r.gvr.String(), ns, false, lsel)
+	return r.getFactory().List(r.gvrStr(), ns, false, lsel)
 }
 
 // Get returns a resource instance if found, else an error.
 func (r *Resource) Get(_ context.Context, path string) (runtime.Object, error) {
-	return r.GetFactory().Get(r.gvr.String(), path, true, labels.Everything())
+	return r.getFactory().Get(r.gvrStr(), path, true, labels.Everything())
 }
 
 // ToYAML returns a resource yaml.

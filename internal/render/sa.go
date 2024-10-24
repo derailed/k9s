@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -5,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,22 +20,22 @@ type ServiceAccount struct {
 }
 
 // Header returns a header row.
-func (ServiceAccount) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "SECRET"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (ServiceAccount) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "SECRET"},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
+func (s ServiceAccount) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected ServiceAccount, but got %T", o)
+		return fmt.Errorf("expected ServiceAccount, but got %T", o)
 	}
 	var sa v1.ServiceAccount
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sa)
@@ -40,13 +44,13 @@ func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(sa.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		sa.Namespace,
 		sa.Name,
 		strconv.Itoa(len(sa.Secrets)),
 		mapToStr(sa.Labels),
 		"",
-		toAge(sa.GetCreationTimestamp()),
+		ToAge(sa.GetCreationTimestamp()),
 	}
 
 	return nil

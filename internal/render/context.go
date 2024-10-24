@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -17,11 +21,11 @@ type Context struct {
 }
 
 // ColorerFunc colors a resource row.
-func (Context) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, h, r)
+func (Context) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, r *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, r)
 		if strings.Contains(strings.TrimSpace(r.Row.Fields[0]), "*") {
-			return HighlightColor
+			return model1.HighlightColor
 		}
 
 		return c
@@ -29,17 +33,17 @@ func (Context) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Context) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "CLUSTER"},
-		HeaderColumn{Name: "AUTHINFO"},
-		HeaderColumn{Name: "NAMESPACE"},
+func (Context) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "CLUSTER"},
+		model1.HeaderColumn{Name: "AUTHINFO"},
+		model1.HeaderColumn{Name: "NAMESPACE"},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (c Context) Render(o interface{}, _ string, r *Row) error {
+func (c Context) Render(o interface{}, _ string, r *model1.Row) error {
 	ctx, ok := o.(*NamedContext)
 	if !ok {
 		return fmt.Errorf("expected *NamedContext, but got %T", o)
@@ -51,7 +55,7 @@ func (c Context) Render(o interface{}, _ string, r *Row) error {
 	}
 
 	r.ID = ctx.Name
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		name,
 		ctx.Context.Cluster,
 		ctx.Context.AuthInfo,

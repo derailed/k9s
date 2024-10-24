@@ -1,17 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"gopkg.in/yaml.v2"
 )
-
-// K9sStylesFile represents K9s skins file location.
-var K9sStylesFile = filepath.Join(K9sHome(), "skin.yml")
 
 // StyleListener represents a skin's listener.
 type StyleListener interface {
@@ -20,236 +21,200 @@ type StyleListener interface {
 }
 
 type (
-	// Color represents a color.
-	Color string
-
-	// Colors tracks multiple colors.
-	Colors []Color
-
 	// Styles tracks K9s styling options.
 	Styles struct {
-		K9s       Style `yaml:"k9s"`
+		K9s       Style `json:"k9s" yaml:"k9s"`
 		listeners []StyleListener
 	}
 
 	// Style tracks K9s styles.
 	Style struct {
-		Body   Body   `yaml:"body"`
-		Prompt Prompt `yaml:"prompt"`
-		Help   Help   `yaml:"help"`
-		Frame  Frame  `yaml:"frame"`
-		Info   Info   `yaml:"info"`
-		Views  Views  `yaml:"views"`
-		Dialog Dialog `yaml:"dialog"`
+		Body   Body   `json:"body" yaml:"body"`
+		Prompt Prompt `json:"prompt" yaml:"prompt"`
+		Help   Help   `json:"help" yaml:"help"`
+		Frame  Frame  `json:"frame" yaml:"frame"`
+		Info   Info   `json:"info" yaml:"info"`
+		Views  Views  `json:"views" yaml:"views"`
+		Dialog Dialog `json:"dialog" yaml:"dialog"`
 	}
 
 	// Prompt tracks command styles
 	Prompt struct {
-		FgColor      Color `yaml:"fgColor"`
-		BgColor      Color `yaml:"bgColor"`
-		SuggestColor Color `yaml:"suggestColor"`
+		FgColor      Color        `json:"fgColor" yaml:"fgColor"`
+		BgColor      Color        `json:"bgColor" yaml:"bgColor"`
+		SuggestColor Color        `json:"" yaml:"suggestColor"`
+		Border       PromptBorder `json:"" yaml:"border"`
+	}
+
+	// PromptBorder tracks the color of the prompt depending on its kind (e.g., command or filter)
+	PromptBorder struct {
+		CommandColor Color `json:"command" yaml:"command"`
+		DefaultColor Color `json:"default" yaml:"default"`
 	}
 
 	// Help tracks help styles.
 	Help struct {
-		FgColor      Color `yaml:"fgColor"`
-		BgColor      Color `yaml:"bgColor"`
-		SectionColor Color `yaml:"sectionColor"`
-		KeyColor     Color `yaml:"keyColor"`
-		NumKeyColor  Color `yaml:"numKeyColor"`
+		FgColor      Color `json:"fgColor" yaml:"fgColor"`
+		BgColor      Color `json:"bgColor" yaml:"bgColor"`
+		SectionColor Color `json:"sectionColor" yaml:"sectionColor"`
+		KeyColor     Color `json:"keyColor" yaml:"keyColor"`
+		NumKeyColor  Color `json:"numKeyColor" yaml:"numKeyColor"`
 	}
 
 	// Body tracks body styles.
 	Body struct {
-		FgColor   Color `yaml:"fgColor"`
-		BgColor   Color `yaml:"bgColor"`
-		LogoColor Color `yaml:"logoColor"`
+		FgColor        Color `json:"fgColor" yaml:"fgColor"`
+		BgColor        Color `json:"bgColor" yaml:"bgColor"`
+		LogoColor      Color `json:"logoColor" yaml:"logoColor"`
+		LogoColorMsg   Color `json:"logoColorMsg" yaml:"logoColorMsg"`
+		LogoColorInfo  Color `json:"logoColorInfo" yaml:"logoColorInfo"`
+		LogoColorWarn  Color `json:"logoColorWarn" yaml:"logoColorWarn"`
+		LogoColorError Color `json:"logoColorError" yaml:"logoColorError"`
 	}
 
 	// Dialog tracks dialog styles.
 	Dialog struct {
-		FgColor            Color `yaml:"fgColor"`
-		BgColor            Color `yaml:"bgColor"`
-		ButtonFgColor      Color `yaml:"buttonFgColor"`
-		ButtonBgColor      Color `yaml:"buttonBgColor"`
-		ButtonFocusFgColor Color `yaml:"buttonFocusFgColor"`
-		ButtonFocusBgColor Color `yaml:"buttonFocusBgColor"`
-		LabelFgColor       Color `yaml:"labelFgColor"`
-		FieldFgColor       Color `yaml:"fieldFgColor"`
+		FgColor            Color `json:"fgColor" yaml:"fgColor"`
+		BgColor            Color `json:"bgColor" yaml:"bgColor"`
+		ButtonFgColor      Color `json:"buttonFgColor" yaml:"buttonFgColor"`
+		ButtonBgColor      Color `json:"buttonBgColor" yaml:"buttonBgColor"`
+		ButtonFocusFgColor Color `json:"buttonFocusFgColor" yaml:"buttonFocusFgColor"`
+		ButtonFocusBgColor Color `json:"buttonFocusBgColor" yaml:"buttonFocusBgColor"`
+		LabelFgColor       Color `json:"labelFgColor" yaml:"labelFgColor"`
+		FieldFgColor       Color `json:"fieldFgColor" yaml:"fieldFgColor"`
 	}
 
 	// Frame tracks frame styles.
 	Frame struct {
-		Title  Title  `yaml:"title"`
-		Border Border `yaml:"border"`
-		Menu   Menu   `yaml:"menu"`
-		Crumb  Crumb  `yaml:"crumbs"`
-		Status Status `yaml:"status"`
+		Title  Title  `json:"title" yaml:"title"`
+		Border Border `json:"border" yaml:"border"`
+		Menu   Menu   `json:"menu" yaml:"menu"`
+		Crumb  Crumb  `json:"crumbs" yaml:"crumbs"`
+		Status Status `json:"status" yaml:"status"`
 	}
 
 	// Views tracks individual view styles.
 	Views struct {
-		Table  Table  `yaml:"table"`
-		Xray   Xray   `yaml:"xray"`
-		Charts Charts `yaml:"charts"`
-		Yaml   Yaml   `yaml:"yaml"`
-		Log    Log    `yaml:"logs"`
+		Table  Table  `json:"table" yaml:"table"`
+		Xray   Xray   `json:"xray" yaml:"xray"`
+		Charts Charts `json:"charts" yaml:"charts"`
+		Yaml   Yaml   `json:"yaml" yaml:"yaml"`
+		Picker Picker `json:"picker" yaml:"picker"`
+		Log    Log    `json:"logs" yaml:"logs"`
 	}
 
 	// Status tracks resource status styles.
 	Status struct {
-		NewColor       Color `yaml:"newColor"`
-		ModifyColor    Color `yaml:"modifyColor"`
-		AddColor       Color `yaml:"addColor"`
-		PendingColor   Color `yaml:"pendingColor"`
-		ErrorColor     Color `yaml:"errorColor"`
-		HighlightColor Color `yaml:"highlightColor"`
-		KillColor      Color `yaml:"killColor"`
-		CompletedColor Color `yaml:"completedColor"`
+		NewColor       Color `json:"newColor" yaml:"newColor"`
+		ModifyColor    Color `json:"modifyColor" yaml:"modifyColor"`
+		AddColor       Color `json:"addColor" yaml:"addColor"`
+		PendingColor   Color `json:"pendingColor" yaml:"pendingColor"`
+		ErrorColor     Color `json:"errorColor" yaml:"errorColor"`
+		HighlightColor Color `json:"highlightColor" yaml:"highlightColor"`
+		KillColor      Color `json:"killColor" yaml:"killColor"`
+		CompletedColor Color `json:"completedColor" yaml:"completedColor"`
 	}
 
 	// Log tracks Log styles.
 	Log struct {
-		FgColor   Color        `yaml:"fgColor"`
-		BgColor   Color        `yaml:"bgColor"`
-		Indicator LogIndicator `yaml:"indicator"`
+		FgColor   Color        `json:"fgColor" yaml:"fgColor"`
+		BgColor   Color        `json:"bgColor" yaml:"bgColor"`
+		Indicator LogIndicator `json:"indicator" yaml:"indicator"`
+	}
+
+	// Picker tracks color when selecting containers
+	Picker struct {
+		MainColor     Color `json:"mainColor" yaml:"mainColor"`
+		FocusColor    Color `json:"focusColor" yaml:"focusColor"`
+		ShortcutColor Color `json:"shortcutColor" yaml:"shortcutColor"`
 	}
 
 	// LogIndicator tracks log view indicator.
 	LogIndicator struct {
-		FgColor Color `yaml:"fgColor"`
-		BgColor Color `yaml:"bgColor"`
+		FgColor        Color `json:"fgColor" yaml:"fgColor"`
+		BgColor        Color `json:"bgColor" yaml:"bgColor"`
+		ToggleOnColor  Color `json:"toggleOnColor" yaml:"toggleOnColor"`
+		ToggleOffColor Color `json:"toggleOffColor" yaml:"toggleOffColor"`
 	}
 
 	// Yaml tracks yaml styles.
 	Yaml struct {
-		KeyColor   Color `yaml:"keyColor"`
-		ValueColor Color `yaml:"valueColor"`
-		ColonColor Color `yaml:"colonColor"`
+		KeyColor   Color `json:"keyColor" yaml:"keyColor"`
+		ValueColor Color `json:"valueColor" yaml:"valueColor"`
+		ColonColor Color `json:"colonColor" yaml:"colonColor"`
 	}
 
 	// Title tracks title styles.
 	Title struct {
-		FgColor        Color `yaml:"fgColor"`
-		BgColor        Color `yaml:"bgColor"`
-		HighlightColor Color `yaml:"highlightColor"`
-		CounterColor   Color `yaml:"counterColor"`
-		FilterColor    Color `yaml:"filterColor"`
+		FgColor        Color `json:"fgColor" yaml:"fgColor"`
+		BgColor        Color `json:"bgColor" yaml:"bgColor"`
+		HighlightColor Color `json:"highlightColor" yaml:"highlightColor"`
+		CounterColor   Color `json:"counterColor" yaml:"counterColor"`
+		FilterColor    Color `json:"filterColor" yaml:"filterColor"`
 	}
 
 	// Info tracks info styles.
 	Info struct {
-		SectionColor Color `yaml:"sectionColor"`
-		FgColor      Color `yaml:"fgColor"`
+		SectionColor Color `json:"sectionColor" yaml:"sectionColor"`
+		FgColor      Color `json:"fgColor" yaml:"fgColor"`
 	}
 
 	// Border tracks border styles.
 	Border struct {
-		FgColor    Color `yaml:"fgColor"`
-		FocusColor Color `yaml:"focusColor"`
+		FgColor    Color `json:"fgColor" yaml:"fgColor"`
+		FocusColor Color `json:"focusColor" yaml:"focusColor"`
 	}
 
 	// Crumb tracks crumbs styles.
 	Crumb struct {
-		FgColor     Color `yaml:"fgColor"`
-		BgColor     Color `yaml:"bgColor"`
-		ActiveColor Color `yaml:"activeColor"`
+		FgColor     Color `json:"fgColor" yaml:"fgColor"`
+		BgColor     Color `json:"bgColor" yaml:"bgColor"`
+		ActiveColor Color `json:"activeColor" yaml:"activeColor"`
 	}
 
 	// Table tracks table styles.
 	Table struct {
-		FgColor       Color       `yaml:"fgColor"`
-		BgColor       Color       `yaml:"bgColor"`
-		CursorFgColor Color       `yaml:"cursorFgColor"`
-		CursorBgColor Color       `yaml:"cursorBgColor"`
-		MarkColor     Color       `yaml:"markColor"`
-		Header        TableHeader `yaml:"header"`
+		FgColor       Color       `json:"fgColor" yaml:"fgColor"`
+		BgColor       Color       `json:"bgColor" yaml:"bgColor"`
+		CursorFgColor Color       `json:"cursorFgColor" yaml:"cursorFgColor"`
+		CursorBgColor Color       `json:"cursorBgColor" yaml:"cursorBgColor"`
+		MarkColor     Color       `json:"markColor" yaml:"markColor"`
+		Header        TableHeader `json:"header" yaml:"header"`
 	}
 
 	// TableHeader tracks table header styles.
 	TableHeader struct {
-		FgColor     Color `yaml:"fgColor"`
-		BgColor     Color `yaml:"bgColor"`
-		SorterColor Color `yaml:"sorterColor"`
+		FgColor     Color `json:"fgColor" yaml:"fgColor"`
+		BgColor     Color `json:"bgColor" yaml:"bgColor"`
+		SorterColor Color `json:"sorterColor" yaml:"sorterColor"`
 	}
 
 	// Xray tracks xray styles.
 	Xray struct {
-		FgColor         Color `yaml:"fgColor"`
-		BgColor         Color `yaml:"bgColor"`
-		CursorColor     Color `yaml:"cursorColor"`
-		CursorTextColor Color `yaml:"cursorTextColor"`
-		GraphicColor    Color `yaml:"graphicColor"`
+		FgColor         Color `json:"fgColor" yaml:"fgColor"`
+		BgColor         Color `json:"bgColor" yaml:"bgColor"`
+		CursorColor     Color `json:"cursorColor" yaml:"cursorColor"`
+		CursorTextColor Color `json:"cursorTextColor" yaml:"cursorTextColor"`
+		GraphicColor    Color `json:"graphicColor" yaml:"graphicColor"`
 	}
 
 	// Menu tracks menu styles.
 	Menu struct {
-		FgColor     Color `yaml:"fgColor"`
-		KeyColor    Color `yaml:"keyColor"`
-		NumKeyColor Color `yaml:"numKeyColor"`
+		FgColor     Color `json:"fgColor" yaml:"fgColor"`
+		KeyColor    Color `json:"keyColor" yaml:"keyColor"`
+		NumKeyColor Color `json:"numKeyColor" yaml:"numKeyColor"`
 	}
 
 	// Charts tracks charts styles.
 	Charts struct {
-		BgColor            Color             `yaml:"bgColor"`
-		DialBgColor        Color             `yaml:"dialBgColor"`
-		ChartBgColor       Color             `yaml:"chartBgColor"`
-		DefaultDialColors  Colors            `yaml:"defaultDialColors"`
-		DefaultChartColors Colors            `yaml:"defaultChartColors"`
-		ResourceColors     map[string]Colors `yaml:"resourceColors"`
+		BgColor            Color             `json:"bgColor" yaml:"bgColor"`
+		DialBgColor        Color             `json:"dialBgColor" yaml:"dialBgColor"`
+		ChartBgColor       Color             `json:"chartBgColor" yaml:"chartBgColor"`
+		DefaultDialColors  Colors            `json:"defaultDialColors" yaml:"defaultDialColors"`
+		DefaultChartColors Colors            `json:"defaultChartColors" yaml:"defaultChartColors"`
+		ResourceColors     map[string]Colors `json:"resourceColors" yaml:"resourceColors"`
 	}
 )
-
-const (
-	// DefaultColor represents  a default color.
-	DefaultColor Color = "default"
-
-	// TransparentColor represents the terminal bg color.
-	TransparentColor Color = "-"
-)
-
-// NewColor returns a new color.
-func NewColor(c string) Color {
-	return Color(c)
-}
-
-// String returns color as string.
-func (c Color) String() string {
-	if c.isHex() {
-		return string(c)
-	}
-	if c == DefaultColor {
-		return "-"
-	}
-	col := c.Color().TrueColor().Hex()
-	if col < 0 {
-		return "-"
-	}
-
-	return fmt.Sprintf("#%06x", col)
-}
-
-func (c Color) isHex() bool {
-	return len(c) == 7 && c[0] == '#'
-}
-
-// Color returns a view color.
-func (c Color) Color() tcell.Color {
-	if c == DefaultColor {
-		return tcell.ColorDefault
-	}
-
-	return tcell.GetColor(string(c)).TrueColor()
-}
-
-// Colors converts series string colors to colors.
-func (c Colors) Colors() []tcell.Color {
-	cc := make([]tcell.Color, 0, len(c))
-	for _, color := range c {
-		cc = append(cc, color.Color())
-	}
-	return cc
-}
 
 func newStyle() Style {
 	return Style{
@@ -281,6 +246,10 @@ func newPrompt() Prompt {
 		FgColor:      "cadetblue",
 		BgColor:      "black",
 		SuggestColor: "dodgerblue",
+		Border: PromptBorder{
+			DefaultColor: "seagreen",
+			CommandColor: "aqua",
+		},
 	}
 }
 
@@ -304,6 +273,7 @@ func newViews() Views {
 		Xray:   newXray(),
 		Charts: newCharts(),
 		Yaml:   newYaml(),
+		Picker: newPicker(),
 		Log:    newLog(),
 	}
 }
@@ -330,9 +300,13 @@ func newHelp() Help {
 
 func newBody() Body {
 	return Body{
-		FgColor:   "cadetblue",
-		BgColor:   "black",
-		LogoColor: "orange",
+		FgColor:        "cadetblue",
+		BgColor:        "black",
+		LogoColor:      "orange",
+		LogoColorMsg:   "white",
+		LogoColorInfo:  "green",
+		LogoColorWarn:  "mediumvioletred",
+		LogoColorError: "red",
 	}
 }
 
@@ -349,6 +323,14 @@ func newStatus() Status {
 	}
 }
 
+func newPicker() Picker {
+	return Picker{
+		MainColor:     "white",
+		FocusColor:    "aqua",
+		ShortcutColor: "aqua",
+	}
+}
+
 func newLog() Log {
 	return Log{
 		FgColor:   "lightskyblue",
@@ -359,8 +341,10 @@ func newLog() Log {
 
 func newLogIndicator() LogIndicator {
 	return LogIndicator{
-		FgColor: "dodgerblue",
-		BgColor: "black",
+		FgColor:        "dodgerblue",
+		BgColor:        "black",
+		ToggleOnColor:  "limegreen",
+		ToggleOffColor: "gray",
 	}
 }
 
@@ -443,6 +427,11 @@ func newMenu() Menu {
 
 // NewStyles creates a new default config.
 func NewStyles() *Styles {
+	var s Styles
+	if err := yaml.Unmarshal(stockSkinTpl, &s); err == nil {
+		return &s
+	}
+
 	return &Styles{
 		K9s: newStyle(),
 	}
@@ -450,12 +439,9 @@ func NewStyles() *Styles {
 
 // Reset resets styles.
 func (s *Styles) Reset() {
-	s.K9s = newStyle()
-}
-
-// DefaultSkin loads the default skin.
-func (s *Styles) DefaultSkin() {
-	s.K9s = newStyle()
+	if err := yaml.Unmarshal(stockSkinTpl, s); err != nil {
+		s.K9s = newStyle()
+	}
 }
 
 // FgColor returns the foreground color.
@@ -497,6 +483,11 @@ func (s *Styles) fireStylesChanged() {
 // Body returns body styles.
 func (s *Styles) Body() Body {
 	return s.K9s.Body
+}
+
+// Prompt returns prompt styles.
+func (s *Styles) Prompt() Prompt {
+	return s.K9s.Prompt
 }
 
 // Frame returns frame styles.
@@ -541,15 +532,16 @@ func (s *Styles) Views() Views {
 
 // Load K9s configuration from file.
 func (s *Styles) Load(path string) error {
-	f, err := os.ReadFile(path)
+	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-
-	if err := yaml.Unmarshal(f, s); err != nil {
+	if err := data.JSONValidator.Validate(json.SkinSchema, bb); err != nil {
 		return err
 	}
-	// s.fireStylesChanged()
+	if err := yaml.Unmarshal(bb, s); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -570,4 +562,10 @@ func (s *Styles) Update() {
 	tview.Styles.ContrastSecondaryTextColor = s.FgColor()
 
 	s.fireStylesChanged()
+}
+
+// Dump for debug.
+func (s *Styles) Dump() {
+	bb, _ := yaml.Marshal(s)
+	fmt.Println(string(bb))
 }

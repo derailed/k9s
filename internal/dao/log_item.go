@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -70,9 +73,10 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 		bb.WriteString("[gray::b]")
 		bb.Write(l.Bytes[:index])
 		bb.WriteString(" ")
-		for i := len(l.Bytes[:index]); i < 30; i++ {
-			bb.WriteByte(' ')
+		if l := 30 - len(l.Bytes[:index]); l > 0 {
+			bb.Write(bytes.Repeat([]byte{' '}, l))
 		}
+		bb.WriteString("[-::-]")
 	}
 
 	if l.Pod != "" {

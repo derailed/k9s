@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 )
 
 // SelectTable represents a table with selections.
@@ -12,7 +15,8 @@ type SelectTable struct {
 	model      Tabular
 	selectedFn func(string) string
 	marks      map[string]struct{}
-	fgColor    tcell.Color
+	selFgColor tcell.Color
+	selBgColor tcell.Color
 }
 
 // SetModel sets the table model.
@@ -55,7 +59,7 @@ func (s *SelectTable) GetSelectedItems() []string {
 	return items
 }
 
-// GetRowID returns the row id at at given location.
+// GetRowID returns the row id at given location.
 func (s *SelectTable) GetRowID(index int) (string, bool) {
 	cell := s.GetCell(index, 0)
 	if cell == nil {
@@ -99,21 +103,21 @@ func (s *SelectTable) GetSelectedRowIndex() int {
 }
 
 // SelectRow select a given row by index.
-func (s *SelectTable) SelectRow(r int, broadcast bool) {
+func (s *SelectTable) SelectRow(r, c int, broadcast bool) {
 	if !broadcast {
 		s.SetSelectionChangedFunc(nil)
 	}
-	if c := s.model.Count(); c > 0 && r-1 > c {
+	if c := s.model.RowCount(); c > 0 && r-1 > c {
 		r = c + 1
 	}
 	defer s.SetSelectionChangedFunc(s.selectionChanged)
-	s.Select(r, 0)
+	s.Select(r, c)
 }
 
 // UpdateSelection refresh selected row.
 func (s *SelectTable) updateSelection(broadcast bool) {
-	r, _ := s.GetSelection()
-	s.SelectRow(r, broadcast)
+	r, c := s.GetSelection()
+	s.SelectRow(r, c, broadcast)
 }
 
 func (s *SelectTable) selectionChanged(r, c int) {
@@ -121,7 +125,9 @@ func (s *SelectTable) selectionChanged(r, c int) {
 		return
 	}
 	if cell := s.GetCell(r, c); cell != nil {
-		s.SetSelectedStyle(tcell.StyleDefault.Foreground(s.fgColor).Background(cell.Color).Attributes(tcell.AttrBold))
+		s.SetSelectedStyle(
+			tcell.StyleDefault.Foreground(s.selFgColor).
+				Background(cell.Color).Attributes(tcell.AttrBold))
 	}
 }
 
@@ -212,7 +218,7 @@ func (s *SelectTable) markRange(prev, curr int) {
 }
 
 // IsMarked returns true if this item was marked.
-func (s *Table) IsMarked(item string) bool {
+func (s *SelectTable) IsMarked(item string) bool {
 	_, ok := s.marks[item]
 	return ok
 }

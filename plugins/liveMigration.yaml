@@ -1,0 +1,35 @@
+# $XDG_CONFIG_HOME/k9s/plugins.yaml
+plugins:
+  # liveMigration plugin config by rabin-io
+  #
+  # Trigger virtual machine live migration, for VM's running on k8s cluster using kubevirt
+  #  or Openshift with CNV (OpenShift Virtualization) installed.
+  #
+  # Require `virtctl` cli in your PATH,
+  #   can be downloaded from Openshift `Command Line Tools` page
+  #   or from kubevirt site https://kubevirt.io/user-guide/operations/virtctl_client_tool/
+  #
+  #
+  liveMigration:
+    # Can be triggered from the VMI (VirtualMachineInstance) view, with shortcut `m`
+    shortCut: m
+    # Description to show in K9s menu
+    description: Live Migrate moves VM to another compute node
+    # Enable confirmation dialog
+    confirm: true
+    dangerous: true
+    # Collections of views that support this shortcut. (You can use `all`)
+    scopes:
+    - virtualmachineinstance
+    # Whether or not to run the command in background mode
+    background: false
+    # The command to run upon invocation.
+    command: virtctl
+    # Defines the command arguments
+    args:
+    - migrate
+    - $NAME
+    - -n
+    - $NAMESPACE
+    - --context
+    - $CONTEXT

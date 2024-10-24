@@ -1,26 +1,30 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func rbacVerbHeader() Header {
-	return Header{
-		HeaderColumn{Name: "GET   "},
-		HeaderColumn{Name: "LIST  "},
-		HeaderColumn{Name: "WATCH "},
-		HeaderColumn{Name: "CREATE"},
-		HeaderColumn{Name: "PATCH "},
-		HeaderColumn{Name: "UPDATE"},
-		HeaderColumn{Name: "DELETE"},
-		HeaderColumn{Name: "DEL-LIST "},
-		HeaderColumn{Name: "EXTRAS", Wide: true},
+func rbacVerbHeader() model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "GET   "},
+		model1.HeaderColumn{Name: "LIST  "},
+		model1.HeaderColumn{Name: "WATCH "},
+		model1.HeaderColumn{Name: "CREATE"},
+		model1.HeaderColumn{Name: "PATCH "},
+		model1.HeaderColumn{Name: "UPDATE"},
+		model1.HeaderColumn{Name: "DELETE"},
+		model1.HeaderColumn{Name: "DEL-LIST "},
+		model1.HeaderColumn{Name: "EXTRAS", Wide: true},
 	}
 }
 
@@ -30,28 +34,28 @@ type Policy struct {
 }
 
 // ColorerFunc colors a resource row.
-func (Policy) ColorerFunc() ColorerFunc {
-	return func(ns string, _ Header, re RowEvent) tcell.Color {
+func (Policy) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, _ model1.Header, re *model1.RowEvent) tcell.Color {
 		return tcell.ColorMediumSpringGreen
 	}
 }
 
 // Header returns a header row.
-func (Policy) Header(ns string) Header {
-	h := Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "API GROUP"},
-		HeaderColumn{Name: "BINDING"},
+func (Policy) Header(ns string) model1.Header {
+	h := model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "API-GROUP"},
+		model1.HeaderColumn{Name: "BINDING"},
 	}
 	h = append(h, rbacVerbHeader()...)
-	h = append(h, HeaderColumn{Name: "VALID", Wide: true})
+	h = append(h, model1.HeaderColumn{Name: "VALID", Wide: true})
 
 	return h
 }
 
 // Render renders a K8s resource to screen.
-func (Policy) Render(o interface{}, gvr string, r *Row) error {
+func (Policy) Render(o interface{}, gvr string, r *model1.Row) error {
 	p, ok := o.(PolicyRes)
 	if !ok {
 		return fmt.Errorf("expecting PolicyRes but got %T", o)
@@ -74,6 +78,9 @@ func (Policy) Render(o interface{}, gvr string, r *Row) error {
 // Helpers...
 
 func cleanseResource(r string) string {
+	if r == "" {
+		return r
+	}
 	if r[0] == '/' {
 		return r
 	}

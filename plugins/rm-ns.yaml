@@ -1,0 +1,14 @@
+plugins:
+  # remove finalizers from a stuck namespace
+  rm-ns:
+    shortCut: n
+    confirm: true
+    dangerous: true
+    description: Remove NS Finalizers
+    scopes:
+    - namespace
+    command: sh
+    background: false
+    args:
+    - -c
+    - "kubectl get namespace $NAME -o json | jq '.spec.finalizers=[]' | kubectl replace --raw /api/v1/namespaces/$NAME/finalize -f - > /dev/null"

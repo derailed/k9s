@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui_test
 
 import (
@@ -7,8 +10,8 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,11 +49,13 @@ func (c c) InputHandler() func(*tcell.EventKey, func(tview.Primitive)) { return 
 func (c c) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
 	return nil
 }
-func (c c) SetRect(int, int, int, int)    {}
-func (c c) GetRect() (int, int, int, int) { return 0, 0, 0, 0 }
-func (c c) GetFocusable() tview.Focusable { return c }
-func (c c) Focus(func(tview.Primitive))   {}
-func (c c) Blur()                         {}
-func (c c) Start()                        {}
-func (c c) Stop()                         {}
-func (c c) Init(context.Context) error    { return nil }
+func (c c) SetRect(int, int, int, int)       {}
+func (c c) GetRect() (int, int, int, int)    { return 0, 0, 0, 0 }
+func (c c) GetFocusable() tview.Focusable    { return c }
+func (c c) Focus(func(tview.Primitive))      {}
+func (c c) Blur()                            {}
+func (c c) Start()                           {}
+func (c c) Stop()                            {}
+func (c c) Init(context.Context) error       { return nil }
+func (c c) SetFilter(string)                 {}
+func (c c) SetLabelFilter(map[string]string) {}

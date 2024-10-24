@@ -1,0 +1,61 @@
+plugins:
+# Author: Pavan Gudiwada
+# Investigate incidents in your cluster to quickly find the root cause using HolmesGPT 
+# Requires HolmesGPT to be installed and configured (https://github.com/robusta-dev/holmesgpt) on your system
+# Open any K9s view, then:
+# Shift+H to run an investigation with default ask command
+# Shift+O to customize the question before running an investigation.
+  holmesgpt:
+    shortCut: Shift-H 
+    description: Ask HolmesGPT 
+    scopes:
+      - all 
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        holmes ask "why is $NAME of $RESOURCE_NAME in -n $NAMESPACE not working as expected"
+        
+        echo "Press 'q' to exit"
+        while : ; do
+        read -n 1 k <&1
+        if [[ $k = q ]] ; then
+        break
+        fi
+        done
+  custom-holmesgpt:
+    shortCut: Shift-Q
+    description: Custom HolmesGPT Ask
+    scopes:
+      - all 
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        INSTRUCTIONS="# Edit the line below. Lines starting with '#' will be ignored."
+        DEFAULT_ASK_COMMAND="why is $NAME of $RESOURCE_NAME in -n $NAMESPACE not working as expected"
+
+        QUESTION_FILE=$(mktemp)
+
+        echo "$INSTRUCTIONS" > "$QUESTION_FILE"
+        echo "$DEFAULT_ASK_COMMAND" >> "$QUESTION_FILE"
+
+        # Open the line in the default text editor
+        ${EDITOR:-nano} "$QUESTION_FILE"
+
+        # Read the modified line, ignoring lines starting with '#'
+        user_input=$(grep -v '^#' "$QUESTION_FILE")
+
+        echo running: holmes ask "\"$user_input\""
+        holmes ask "$user_input"
+        echo "Press 'q' to exit"
+        while : ; do
+        read -n 1 k <&1
+        if [[ $k = q ]] ; then
+        break
+        fi
+        done

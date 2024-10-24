@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
@@ -15,65 +19,65 @@ func TestGenericRender(t *testing.T) {
 		ns      string
 		table   *metav1beta1.Table
 		eID     string
-		eFields render.Fields
-		eHeader render.Header
+		eFields model1.Fields
+		eHeader model1.Header
 	}{
 		"withNS": {
 			ns:      "ns1",
 			table:   makeNSGeneric(),
 			eID:     "ns1/fred",
-			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
-			eHeader: render.Header{
-				render.HeaderColumn{Name: "NAMESPACE"},
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B"},
-				render.HeaderColumn{Name: "C"},
+			eFields: model1.Fields{"ns1", "c1", "c2", "c3"},
+			eHeader: model1.Header{
+				model1.HeaderColumn{Name: "NAMESPACE"},
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B"},
+				model1.HeaderColumn{Name: "C"},
 			},
 		},
 		"all": {
 			ns:      client.NamespaceAll,
 			table:   makeNSGeneric(),
 			eID:     "ns1/fred",
-			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
-			eHeader: render.Header{
-				render.HeaderColumn{Name: "NAMESPACE"},
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B"},
-				render.HeaderColumn{Name: "C"},
+			eFields: model1.Fields{"ns1", "c1", "c2", "c3"},
+			eHeader: model1.Header{
+				model1.HeaderColumn{Name: "NAMESPACE"},
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B"},
+				model1.HeaderColumn{Name: "C"},
 			},
 		},
 		"allNS": {
-			ns:      client.AllNamespaces,
+			ns:      client.NamespaceAll,
 			table:   makeNSGeneric(),
 			eID:     "ns1/fred",
-			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
-			eHeader: render.Header{
-				render.HeaderColumn{Name: "NAMESPACE"},
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B"},
-				render.HeaderColumn{Name: "C"},
+			eFields: model1.Fields{"ns1", "c1", "c2", "c3"},
+			eHeader: model1.Header{
+				model1.HeaderColumn{Name: "NAMESPACE"},
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B"},
+				model1.HeaderColumn{Name: "C"},
 			},
 		},
 		"clusterWide": {
 			ns:      client.ClusterScope,
 			table:   makeNoNSGeneric(),
 			eID:     "-/fred",
-			eFields: render.Fields{"c1", "c2", "c3"},
-			eHeader: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B"},
-				render.HeaderColumn{Name: "C"},
+			eFields: model1.Fields{"c1", "c2", "c3"},
+			eHeader: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B"},
+				model1.HeaderColumn{Name: "C"},
 			},
 		},
 		"age": {
 			ns:      client.ClusterScope,
 			table:   makeAgeGeneric(),
 			eID:     "-/fred",
-			eFields: render.Fields{"c1", "c2", "2d"},
-			eHeader: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "C"},
-				render.HeaderColumn{Name: "AGE", Time: true},
+			eFields: model1.Fields{"c1", "c2", "2d"},
+			eHeader: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "C"},
+				model1.HeaderColumn{Name: "AGE", Time: true},
 			},
 		},
 	}
@@ -82,8 +86,8 @@ func TestGenericRender(t *testing.T) {
 		var re render.Generic
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			var r render.Row
-			re.SetTable(u.table)
+			var r model1.Row
+			re.SetTable(u.ns, u.table)
 
 			assert.Equal(t, u.eHeader, re.Header(u.ns))
 			assert.Nil(t, re.Render(u.table.Rows[0], u.ns, &r))

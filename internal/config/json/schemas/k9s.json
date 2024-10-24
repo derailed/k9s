@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s config schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "k9s": {
+      "additionalProperties": false,
+      "properties": {
+        "liveViewAutoRefresh": { "type": "boolean" },
+        "screenDumpDir": {"type": "string"},
+        "refreshRate": { "type": "integer" },
+        "maxConnRetry": { "type": "integer" },
+        "readOnly": { "type": "boolean" },
+        "noExitOnCtrlC": { "type": "boolean" },
+        "skipLatestRevCheck": { "type": "boolean" },
+        "disablePodCounting": { "type": "boolean" },
+        "ui": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enableMouse": {"type": "boolean"},
+            "headless": {"type": "boolean"},
+            "logoless": {"type": "boolean"},
+            "crumbsless": {"type": "boolean"},
+            "noIcons": {"type": "boolean"},
+            "reactive": {"type": "boolean"},
+            "skin": {"type": "string"},
+            "defaultsToFullScreen": {"type": "boolean"}
+          }
+        },
+        "shellPod": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "image": { "type": "string" },
+            "command": {
+              "type": "array",
+              "items": { "type": "string"}
+            },
+            "args": {
+              "type": "array",
+              "items": { "type": "string"}
+            },
+            "namespace": { "type": "string" },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              },
+              "required": ["cpu", "memory"]
+            },
+            "labels": {
+              "type": "object",
+              "additionalProperties": { "type": "string" },
+              "required": []
+            },
+            "tty": { "type": "boolean" },
+            "imagePullPolicy": { "type": "string" },
+            "imagePullSecrets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" }
+                }
+              }
+            }
+          },
+          "required": ["image", "namespace", "limits"]
+        },
+        "imageScans": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enable": { "type": "boolean" },
+            "namespace": { "type": "string" },
+            "exclusions": {
+              "type": "object",
+              "properties": {
+                "namespaces": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "labels": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "required": ["enable"]
+        },
+        "logger": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tail": {"type": "integer"},
+            "buffer": {"type": "integer"},
+            "sinceSeconds": {"type": "integer"},
+            "textWrap": {"type": "boolean"},
+            "showTime": {"type": "boolean"}
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cpu": {
+              "type": "object",
+              "properties": {
+                "critical": {"type": "integer"},
+                "warn": {"type": "integer"}
+              }
+            },
+            "memory": {
+              "type": "object",
+              "properties": {
+                "critical": {"type": "integer"},
+                "warn": {"type": "integer"}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": ["k9s"]
+}

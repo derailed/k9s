@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package watch
 
 import (
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/port"
 	"github.com/rs/zerolog/log"
@@ -22,7 +26,7 @@ type Forwarder interface {
 	// Container returns a container name.
 	Container() string
 
-	// Ports returns the port mapping.
+	// Port returns the port mapping.
 	Port() string
 
 	// FQN returns the full port-forward name.
@@ -35,7 +39,7 @@ type Forwarder interface {
 	SetActive(bool)
 
 	// Age returns forwarder age.
-	Age() string
+	Age() time.Time
 
 	// HasPortMapping returns true if port mapping exists.
 	HasPortMapping(string) bool
@@ -49,9 +53,9 @@ func NewForwarders() Forwarders {
 	return make(map[string]Forwarder)
 }
 
-// BOZO!! Review!!!
 // IsPodForwarded checks if pod has a forward.
 func (ff Forwarders) IsPodForwarded(fqn string) bool {
+	fqn += "|"
 	for k := range ff {
 		if strings.HasPrefix(k, fqn) {
 			return true
@@ -63,9 +67,9 @@ func (ff Forwarders) IsPodForwarded(fqn string) bool {
 
 // IsContainerForwarded checks if pod has a forward.
 func (ff Forwarders) IsContainerForwarded(fqn, co string) bool {
-	prefix := fqn+"|"+co
+	fqn += "|" + co
 	for k := range ff {
-		if strings.HasPrefix(k, prefix) {
+		if strings.HasPrefix(k, fqn) {
 			return true
 		}
 	}
@@ -85,13 +89,18 @@ func (ff Forwarders) DeleteAll() {
 // Kill stops and delete a port-forwards associated with pod.
 func (ff Forwarders) Kill(path string) int {
 	var stats int
+
+	// The way port forwards are stored is `pod_fqn|container|local_port:container_port`
+	// The '|' is added to make sure we do not delete port forwards from other pods that have the same prefix
+	// Without the `|` port forwards for pods, default/web-0 and default/web-0-bla would be both deleted
+	// even if we want only port forwards for default/web-0 to be deleted
+	prefix := path + "|"
 	for k, f := range ff {
-		victim := k
-		if victim == path {
+		if k == path || strings.HasPrefix(k, prefix) {
 			stats++
-			log.Debug().Msgf("Stop + Delete port-forward %s", victim)
+			log.Debug().Msgf("Stop + Delete port-forward %s", k)
 			f.Stop()
-			delete(ff, victim)
+			delete(ff, k)
 		}
 	}
 
@@ -102,6 +111,6 @@ func (ff Forwarders) Kill(path string) int {
 func (ff Forwarders) Dump() {
 	log.Debug().Msgf("----------- PORT-FORWARDS --------------")
 	for k, f := range ff {
-		log.Debug().Msgf("  %s -- %#v", k, f)
+		log.Debug().Msgf("  %s -- %s", k, f)
 	}
 }

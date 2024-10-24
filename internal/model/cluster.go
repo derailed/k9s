@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
@@ -55,7 +58,7 @@ func NewCluster(f dao.Factory) *Cluster {
 // Version returns the current K8s cluster version.
 func (c *Cluster) Version() string {
 	info, err := c.factory.Client().ServerVersion()
-	if err != nil {
+	if err != nil || info == nil {
 		return client.NA
 	}
 
@@ -71,7 +74,7 @@ func (c *Cluster) ContextName() string {
 	return n
 }
 
-// ClusterName returns the cluster name.
+// ClusterName returns the context name.
 func (c *Cluster) ClusterName() string {
 	n, err := c.factory.Client().Config().CurrentClusterName()
 	if err != nil {
@@ -105,7 +108,7 @@ func (c *Cluster) Metrics(ctx context.Context, mx *client.ClusterMetrics) error 
 		}
 	}
 	if nn == nil {
-		return errors.New("Unable to fetch nodes list")
+		return errors.New("unable to fetch nodes list")
 	}
 	if len(nn.Items) > 0 {
 		c.cache.Add(clusterNodesKey, nn, clusterCacheExpiry)

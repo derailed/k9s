@@ -20,5 +20,6 @@
   },
   "provisioner": "kubernetes.io/gce-pd",
   "reclaimPolicy": "Delete",
-  "volumeBindingMode": "Immediate"
+  "volumeBindingMode": "Immediate",
+  "allowVolumeExpansion": true
 }

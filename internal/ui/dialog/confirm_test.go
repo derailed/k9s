@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dialog
 
 import (
@@ -22,9 +25,9 @@ func TestConfirmDialog(t *testing.T) {
 	}
 	ShowConfirm(config.Dialog{}, p, "Blee", "Yo", ackFunc, caFunc)
 
-	d := p.GetPrimitive(confirmKey).(*tview.ModalForm)
+	d := p.GetPrimitive(dialogKey).(*tview.ModalForm)
 	assert.NotNil(t, d)
 
-	dismissConfirm(p)
-	assert.Nil(t, p.GetPrimitive(confirmKey))
+	dismiss(p)
+	assert.Nil(t, p.GetPrimitive(dialogKey))
 }

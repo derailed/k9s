@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -17,7 +20,7 @@ type Namespace struct{}
 func (n *Namespace) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected NamespaceWithMetrics, but got %T", o)
+		return fmt.Errorf("expected NamespaceWithMetrics, but got %T", o)
 	}
 
 	var nss v1.Namespace

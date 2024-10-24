@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -26,8 +29,8 @@ type PortForward struct {
 }
 
 // Delete deletes a portforward.
-func (p *PortForward) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, force bool) error {
-	p.GetFactory().DeleteForwarder(path)
+func (p *PortForward) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
+	p.getFactory().DeleteForwarder(path)
 
 	return nil
 }
@@ -35,17 +38,17 @@ func (p *PortForward) Delete(_ context.Context, path string, _ *metav1.DeletionP
 // List returns a collection of port forwards.
 func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	benchFile, ok := ctx.Value(internal.KeyBenchCfg).(string)
-	if !ok {
-		return nil, fmt.Errorf("no bench file found in context")
+	if !ok || benchFile == "" {
+		return nil, fmt.Errorf("no benchmark config file found in context")
 	}
 	path, _ := ctx.Value(internal.KeyPath).(string)
 
 	config, err := config.NewBench(benchFile)
 	if err != nil {
-		log.Warn().Msgf("No custom benchmark config file found")
+		log.Debug().Msgf("No custom benchmark config file found: %q", benchFile)
 	}
 
-	ff, cc := p.GetFactory().Forwarders(), config.Benchmarks.Containers
+	ff, cc := p.getFactory().Forwarders(), config.Benchmarks.Containers
 	oo := make([]runtime.Object, 0, len(ff))
 	for k, f := range ff {
 		if !strings.HasPrefix(k, path) {
@@ -75,7 +78,7 @@ var podNameRX = regexp.MustCompile(`\A(.+)\-(\w{10})\-(\w{5})\z`)
 
 // PodToKey converts a pod path to a generic bench config key.
 func PodToKey(path string) string {
-	tokens := strings.Split(path, ":")
+	tokens := strings.Split(path, "|")
 	ns, po := client.Namespaced(tokens[0])
 	sections := podNameRX.FindStringSubmatch(po)
 	if len(sections) >= 1 {
@@ -89,7 +92,7 @@ func BenchConfigFor(benchFile, path string) config.BenchConfig {
 	def := config.DefaultBenchSpec()
 	cust, err := config.NewBench(benchFile)
 	if err != nil {
-		log.Debug().Msgf("No custom benchmark config file found")
+		log.Debug().Msgf("No custom benchmark config file found. Using default: %q", benchFile)
 		return def
 	}
 	if b, ok := cust.Benchmarks.Containers[PodToKey(path)]; ok {

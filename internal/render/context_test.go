@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -17,7 +21,7 @@ func TestContextHeader(t *testing.T) {
 func TestContextRender(t *testing.T) {
 	uu := map[string]struct {
 		ctx *render.NamedContext
-		e   render.Row
+		e   model1.Row
 	}{
 		"active": {
 			ctx: &render.NamedContext{
@@ -30,9 +34,9 @@ func TestContextRender(t *testing.T) {
 				},
 				Config: &config{},
 			},
-			e: render.Row{
+			e: model1.Row{
 				ID:     "c1",
-				Fields: render.Fields{"c1", "c1", "u1", "ns1"},
+				Fields: model1.Fields{"c1", "c1", "u1", "ns1"},
 			},
 		},
 	}
@@ -41,7 +45,7 @@ func TestContextRender(t *testing.T) {
 	for k := range uu {
 		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			row := render.NewRow(4)
+			row := model1.NewRow(4)
 			err := r.Render(uc.ctx, "", &row)
 
 			assert.Nil(t, err)

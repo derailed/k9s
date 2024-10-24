@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -5,22 +8,22 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Generic renders a generic resource to screen.
 type Generic struct {
-	table *metav1beta1.Table
+	table *metav1.Table
 }
 
 // SetTable sets the tabular resource.
-func (g *Generic) SetTable(t *metav1beta1.Table) {
+func (g *Generic) SetTable(_ string, t *metav1.Table) {
 	g.table = t
 }
 
 // Render renders a K8s resource to screen.
 func (g *Generic) Render(ctx context.Context, ns string, o interface{}) error {
-	row, ok := o.(metav1beta1.TableRow)
+	row, ok := o.(metav1.TableRow)
 	if !ok {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}

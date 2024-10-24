@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -6,18 +9,20 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
 
-const liveViewTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
+const (
+	liveViewTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
+	yamlAction       = "YAML"
+)
 
 // LiveView represents a live text viewer.
 type LiveView struct {
@@ -26,7 +31,7 @@ type LiveView struct {
 	title                     string
 	model                     model.ResourceViewer
 	text                      *tview.TextView
-	actions                   ui.KeyActions
+	actions                   *ui.KeyActions
 	app                       *App
 	cmdBuff                   *model.FishBuff
 	currentRegion, maxRegions int
@@ -43,16 +48,20 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 		text:          tview.NewTextView(),
 		app:           app,
 		title:         title,
-		actions:       make(ui.KeyActions),
+		actions:       ui.NewKeyActions(),
 		currentRegion: 0,
 		maxRegions:    0,
 		cmdBuff:       model.NewFishBuff('/', model.FilterBuffer),
 		model:         m,
+		autoRefresh:   app.Config.K9s.LiveViewAutoRefresh,
 	}
 	v.AddItem(v.text, 0, 1, true)
 
 	return &v
 }
+
+func (v *LiveView) SetFilter(string)                 {}
+func (v *LiveView) SetLabelFilter(map[string]string) {}
 
 // Init initializes the viewer.
 func (v *LiveView) Init(_ context.Context) error {
@@ -69,13 +78,16 @@ func (v *LiveView) Init(_ context.Context) error {
 
 	v.app.Styles.AddListener(v)
 	v.StylesChanged(v.app.Styles)
+	v.setFullScreen(v.app.Config.K9s.UI.DefaultsToFullScreen)
 
 	v.app.Prompt().SetModel(v.cmdBuff)
 	v.cmdBuff.AddListener(v)
 
 	v.bindKeys()
 	v.SetInputCapture(v.keyboard)
-	v.model.AddListener(v)
+	if v.model != nil {
+		v.model.AddListener(v)
+	}
 
 	return nil
 }
@@ -96,19 +108,14 @@ func (v *LiveView) ResourceFailed(err error) {
 func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 	v.app.QueueUpdateDraw(func() {
 		v.text.SetTextAlign(tview.AlignLeft)
-		v.maxRegions = len(matches)
-		ll := make([]string, len(lines))
-		copy(ll, lines)
-		for i, m := range matches {
-			loc, line := m.MatchedIndexes, ll[m.Index]
-			ll[m.Index] = line[:loc[0]] + `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>` + line[loc[1]:]
-		}
+		v.currentRegion, v.maxRegions = 0, len(matches)
 
 		if v.text.GetText(true) == "" {
 			v.text.ScrollToBeginning()
 		}
 
-		v.text.SetText(colorizeYAML(v.app.Styles.Views().Yaml, strings.Join(ll, "\n")))
+		lines = linesWithRegions(lines, matches)
+		v.text.SetText(colorizeYAML(v.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
 		v.text.Highlight()
 		if v.currentRegion < v.maxRegions {
 			v.text.Highlight("search_" + strconv.Itoa(v.currentRegion))
@@ -132,11 +139,11 @@ func (v *LiveView) BufferActive(state bool, k model.BufferKind) {
 }
 
 func (v *LiveView) bindKeys() {
-	v.actions.Set(ui.KeyActions{
+	v.actions.Bulk(ui.KeyMap{
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", v.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", v.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, false),
-		ui.KeyC:         ui.NewKeyAction("Copy", v.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(v.app.Flash(), v.text), true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", v.toggleFullScreenCmd, true),
 		ui.KeyR:         ui.NewKeyAction("Toggle Auto-Refresh", v.toggleRefreshCmd, true),
 		ui.KeyN:         ui.NewKeyAction("Next Match", v.nextCmd, true),
@@ -145,11 +152,41 @@ func (v *LiveView) bindKeys() {
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", v.eraseCmd, false),
 	})
 
-	if v.title == "YAML" {
-		v.actions.Add(ui.KeyActions{
-			ui.KeyM: ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true),
-		})
+	if !v.app.Config.K9s.IsReadOnly() {
+		v.actions.Add(ui.KeyE, ui.NewKeyAction("Edit", v.editCmd, true))
 	}
+	if v.title == yamlAction {
+		v.actions.Add(ui.KeyM, ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true))
+	}
+	if v.model != nil && v.model.GVR().IsDecodable() {
+		v.actions.Add(ui.KeyX, ui.NewKeyAction("Toggle Decode", v.toggleEncodedDecodedCmd, true))
+	}
+}
+
+func (v *LiveView) toggleEncodedDecodedCmd(evt *tcell.EventKey) *tcell.EventKey {
+	m, ok := v.model.(model.EncDecResourceViewer)
+
+	if !ok {
+		return evt
+	}
+
+	m.Toggle()
+	v.Start()
+	return nil
+}
+
+func (v *LiveView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := v.model.GetPath()
+	if path == "" {
+		return evt
+	}
+	v.Stop()
+	defer v.Start()
+	if err := editRes(v.app, v.model.GVR(), path); err != nil {
+		v.app.Flash().Err(err)
+	}
+
+	return nil
 }
 
 // ToggleRefreshCmd is used for pausing the refreshing of data on config map and secrets.
@@ -167,7 +204,7 @@ func (v *LiveView) toggleRefreshCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *LiveView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	if a, ok := v.actions[ui.AsKey(evt)]; ok {
+	if a, ok := v.actions.Get(ui.AsKey(evt)); ok {
 		return a.Action(evt)
 	}
 
@@ -179,11 +216,10 @@ func (v *LiveView) StylesChanged(s *config.Styles) {
 	v.SetBackgroundColor(v.app.Styles.BgColor())
 	v.text.SetTextColor(v.app.Styles.FgColor())
 	v.SetBorderFocusColor(v.app.Styles.Frame().Border.FocusColor.Color())
-	v.ResourceChanged(v.model.Peek(), nil)
 }
 
 // Actions returns menu actions.
-func (v *LiveView) Actions() ui.KeyActions {
+func (v *LiveView) Actions() *ui.KeyActions {
 	return v.actions
 }
 
@@ -245,16 +281,20 @@ func (v *LiveView) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v.fullScreen = !v.fullScreen
-	v.SetFullScreen(v.fullScreen)
-	v.Box.SetBorder(!v.fullScreen)
-	if v.fullScreen {
+	v.setFullScreen(!v.fullScreen)
+
+	return nil
+}
+
+func (v *LiveView) setFullScreen(isFullScreen bool) {
+	v.fullScreen = isFullScreen
+	v.SetFullScreen(isFullScreen)
+	v.Box.SetBorder(!isFullScreen)
+	if isFullScreen {
 		v.Box.SetBorderPadding(0, 0, 0, 0)
 	} else {
 		v.Box.SetBorderPadding(0, 0, 1, 1)
 	}
-
-	return nil
 }
 
 func (v *LiveView) nextCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -332,19 +372,11 @@ func (v *LiveView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentCluster, v.title, v.text.GetText(true)); err != nil {
+	name := fmt.Sprintf("%s--%s", strings.Replace(v.model.GetPath(), "/", "-", 1), strings.ToLower(v.title))
+	if _, err := saveYAML(v.app.Config.K9s.ContextScreenDumpDir(), name, sanitizeEsc(v.text.GetText(true))); err != nil {
 		v.app.Flash().Err(err)
 	} else {
-		v.app.Flash().Infof("Log %s saved successfully!", path)
-	}
-
-	return nil
-}
-
-func (v *LiveView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(v.text.GetText(true)); err != nil {
-		v.app.Flash().Err(err)
+		v.app.Flash().Infof("File %q saved successfully!", name)
 	}
 
 	return nil
@@ -354,7 +386,10 @@ func (v *LiveView) updateTitle() {
 	if v.title == "" {
 		return
 	}
-	fmat := fmt.Sprintf(liveViewTitleFmt, v.title, v.model.GetPath())
+	var fmat string
+	if v.model != nil {
+		fmat = fmt.Sprintf(liveViewTitleFmt, v.title, v.model.GetPath())
+	}
 
 	buff := v.cmdBuff.GetText()
 	if buff == "" {

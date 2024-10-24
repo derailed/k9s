@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -10,8 +13,8 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,7 +22,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const suspendDialogKey = "suspend"
+const (
+	suspendDialogKey     = "suspend"
+	lastScheduledCol     = "LAST_SCHEDULE"
+	defaultSuspendStatus = "true"
+)
 
 // CronJob represents a cronjob viewer.
 type CronJob struct {
@@ -28,16 +35,18 @@ type CronJob struct {
 
 // NewCronJob returns a new viewer.
 func NewCronJob(gvr client.GVR) ResourceViewer {
-	c := CronJob{ResourceViewer: NewBrowser(gvr)}
+	c := CronJob{ResourceViewer: NewVulnerabilityExtender(
+		NewOwnerExtender(NewBrowser(gvr)),
+	)}
 	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetEnterFn(c.showJobs)
 
 	return &c
 }
 
-func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr, path string) {
+func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	log.Debug().Msgf("Showing Jobs %q:%q -- %q", model.GetNamespace(), gvr, path)
-	o, err := app.factory.Get(gvr, path, true, labels.Everything())
+	o, err := app.factory.Get(gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -52,7 +61,7 @@ func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr, path string) {
 
 	v := NewJob(client.NewGVR("batch/v1/jobs"))
 	v.SetContextFn(jobCtx(path, string(cj.UID)))
-	if err := app.inject(v); err != nil {
+	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
@@ -64,10 +73,11 @@ func jobCtx(path, uid string) ContextFunc {
 	}
 }
 
-func (c *CronJob) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyT: ui.NewKeyAction("Trigger", c.triggerCmd, true),
-		ui.KeyS: ui.NewKeyAction("Suspend/Resume", c.toggleSuspendCmd, true),
+func (c *CronJob) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyT:      ui.NewKeyAction("Trigger", c.triggerCmd, true),
+		ui.KeyS:      ui.NewKeyAction("Suspend/Resume", c.toggleSuspendCmd, true),
+		ui.KeyShiftL: ui.NewKeyAction("Sort LastScheduled", c.GetTable().SortColCmd(lastScheduledCol, true), false),
 	})
 }
 
@@ -119,7 +129,7 @@ func (c *CronJob) showSuspendDialog(sel string) {
 		c.App().Flash().Errf("Unable to assert current status")
 		return
 	}
-	suspended := strings.TrimSpace(cell.Text) == "True"
+	suspended := strings.TrimSpace(cell.Text) == defaultSuspendStatus
 	title := "Suspend"
 	if suspended {
 		title = "Resume"
@@ -136,9 +146,9 @@ func (c *CronJob) showSuspendDialog(sel string) {
 
 func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
 	f := c.makeStyledForm()
-	action := "suspend"
+	action := "suspended"
 	if !suspend {
-		action = "resume"
+		action = "resumed"
 	}
 
 	f.AddButton("Cancel", func() {
@@ -150,10 +160,10 @@ func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
 		ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
 		defer cancel()
 		if err := c.toggleSuspend(ctx, sel); err != nil {
-			log.Error().Err(err).Msgf("CronJOb %s %s failed", sel, action)
+			log.Error().Err(err).Msgf("CronJob %s %s failed", sel, action)
 			c.App().Flash().Err(err)
 		} else {
-			c.App().Flash().Infof("CronJOb %s %s successfully", sel, action)
+			c.App().Flash().Infof("CronJob %s %s successfully!", sel, action)
 		}
 	})
 

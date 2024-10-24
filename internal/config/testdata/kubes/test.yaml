@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Config
+clusters:
+  - cluster:
+      certificate-authority: /Users/test/ca.crt
+      server: https://1.2.3.4:8443
+    name: cl-1
+  - cluster:
+      certificate-authority: /Users/test/ca.crt
+      server: https://5.6.7.8:8443
+    name: cl-2
+contexts:
+  - context:
+      cluster: cl-1
+      user: user1
+      namespace: ns-1
+    name: ct-1-1
+  - context:
+      cluster: cl-1
+      user: user2
+      namespace: ns-2
+    name: ct-1-2
+  - context:
+      cluster: cl-2
+      user: user2
+      namespace: ns-2
+    name: ct-2-1
+current-context: ct-1-1
+preferences: {}
+users:
+  - name: user1
+    user:
+      client-certificate: /Users/test/client.crt
+      client-key: /Users/test/client.key
+  - name: user2
+    user:
+      client-certificate: /Users/test/client.crt
+      client-key: /Users/test/client.key

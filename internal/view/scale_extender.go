@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -6,10 +9,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/config"
+
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -26,13 +31,16 @@ func NewScaleExtender(r ResourceViewer) ResourceViewer {
 	return &s
 }
 
-func (s *ScaleExtender) bindKeys(aa ui.KeyActions) {
+func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
 	if s.App().Config.K9s.IsReadOnly() {
 		return
 	}
-	aa.Add(ui.KeyActions{
-		ui.KeyS: ui.NewKeyAction("Scale", s.scaleCmd, true),
-	})
+	aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
+		ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		},
+	))
 }
 
 func (s *ScaleExtender) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -76,7 +84,8 @@ func (s *ScaleExtender) valueOf(col string) (string, error) {
 }
 
 func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
-	f := s.makeStyledForm()
+	styles := s.App().Styles.Dialog()
+	f := s.makeStyledForm(styles)
 
 	factor := "0"
 	if len(sels) == 1 {
@@ -119,10 +128,15 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), sels[0])
 		}
 	})
-
 	f.AddButton("Cancel", func() {
 		s.dismissDialog()
 	})
+	for i := 0; i < 2; i++ {
+		if b := f.GetButton(i); b != nil {
+			b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+			b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+		}
+	}
 
 	return f, nil
 }
@@ -131,14 +145,14 @@ func (s *ScaleExtender) dismissDialog() {
 	s.App().Content.RemovePage(scaleDialogKey)
 }
 
-func (s *ScaleExtender) makeStyledForm() *tview.Form {
+func (s *ScaleExtender) makeStyledForm(styles config.Dialog) *tview.Form {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonBgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
 
 	return f
 }

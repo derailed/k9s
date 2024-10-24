@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -6,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // Rbac presents an RBAC policy viewer.
@@ -20,33 +23,31 @@ func NewRbac(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewBrowser(gvr),
 	}
 	r.AddBindKeysFn(r.bindKeys)
-	r.GetTable().SetSortCol("APIGROUP", true)
+	r.GetTable().SetSortCol("API-GROUP", true)
 	r.GetTable().SetEnterFn(blankEnterFn)
 
 	return &r
 }
 
-func (r *Rbac) bindKeys(aa ui.KeyActions) {
+func (r *Rbac) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
-	aa.Add(ui.KeyActions{
-		ui.KeyShiftO: ui.NewKeyAction("Sort APIGroup", r.GetTable().SortColCmd("APIGROUP", true), false),
-	})
+	aa.Add(ui.KeyShiftA, ui.NewKeyAction("Sort API-Group", r.GetTable().SortColCmd("API-GROUP", true), false))
 }
 
-func showRules(app *App, _ ui.Tabular, gvr, path string) {
+func showRules(app *App, _ ui.Tabular, gvr client.GVR, path string) {
 	v := NewRbac(client.NewGVR("rbac"))
 	v.SetContextFn(rbacCtx(gvr, path))
 
-	if err := app.inject(v); err != nil {
+	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func rbacCtx(gvr, path string) ContextFunc {
+func rbacCtx(gvr client.GVR, path string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		return context.WithValue(ctx, internal.KeyGVR, gvr)
 	}
 }
 
-func blankEnterFn(_ *App, _ ui.Tabular, _, _ string) {}
+func blankEnterFn(_ *App, _ ui.Tabular, _ client.GVR, _ string) {}

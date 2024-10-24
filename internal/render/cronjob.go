@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -6,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,28 +22,29 @@ type CronJob struct {
 }
 
 // Header returns a header row.
-func (CronJob) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "SCHEDULE"},
-		HeaderColumn{Name: "SUSPEND"},
-		HeaderColumn{Name: "ACTIVE"},
-		HeaderColumn{Name: "LAST_SCHEDULE"},
-		HeaderColumn{Name: "SELECTOR", Wide: true},
-		HeaderColumn{Name: "CONTAINERS", Wide: true},
-		HeaderColumn{Name: "IMAGES", Wide: true},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (CronJob) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "SCHEDULE"},
+		model1.HeaderColumn{Name: "SUSPEND"},
+		model1.HeaderColumn{Name: "ACTIVE"},
+		model1.HeaderColumn{Name: "LAST_SCHEDULE", Time: true},
+		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
+		model1.HeaderColumn{Name: "CONTAINERS", Wide: true},
+		model1.HeaderColumn{Name: "IMAGES", Wide: true},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (c CronJob) Render(o interface{}, ns string, r *Row) error {
+func (c CronJob) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected CronJob, but got %T", o)
+		return fmt.Errorf("expected CronJob, but got %T", o)
 	}
 	var cj batchv1.CronJob
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cj)
@@ -49,13 +54,14 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 
 	lastScheduled := "<none>"
 	if cj.Status.LastScheduleTime != nil {
-		lastScheduled = toAgeHuman(toAge(*cj.Status.LastScheduleTime))
+		lastScheduled = ToAge(*cj.Status.LastScheduleTime)
 	}
 
 	r.ID = client.MetaFQN(cj.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		cj.Namespace,
 		cj.Name,
+		computeVulScore(cj.ObjectMeta, &cj.Spec.JobTemplate.Spec.Template.Spec),
 		cj.Spec.Schedule,
 		boolPtrToStr(cj.Spec.Suspend),
 		strconv.Itoa(len(cj.Status.Active)),
@@ -65,7 +71,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 		podImageNames(cj.Spec.JobTemplate.Spec.Template.Spec, true),
 		mapToStr(cj.Labels),
 		"",
-		toAge(cj.GetCreationTimestamp()),
+		ToAge(cj.GetCreationTimestamp()),
 	}
 
 	return nil

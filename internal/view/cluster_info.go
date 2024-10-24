@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -8,8 +11,8 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -50,7 +53,7 @@ func (c *ClusterInfo) StylesChanged(s *config.Styles) {
 func (c *ClusterInfo) hasMetrics() bool {
 	mx := c.app.Conn().HasMetrics()
 	if mx {
-		auth, err := c.app.Conn().CanI("", "metrics.k8s.io/v1beta1/nodes", client.ListAccess)
+		auth, err := c.app.Conn().CanI("", "metrics.k8s.io/v1beta1/nodes", "", client.ListAccess)
 		if err != nil {
 			log.Warn().Err(err).Msgf("No nodes metrics access")
 		}
@@ -97,6 +100,14 @@ func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
 	c.ClusterInfoChanged(data, data)
 }
 
+func (c *ClusterInfo) warnCell(s string, w bool) string {
+	if w {
+		return fmt.Sprintf("[orangered::b]%s", s)
+	}
+
+	return s
+}
+
 // ClusterInfoChanged notifies the cluster meta was changed.
 func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 	c.app.QueueUpdateDraw(func() {
@@ -116,8 +127,8 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 			_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
 			c.setDefCon(curr.Cpu, curr.Mem)
 		} else {
-			row = c.setCell(row, "[orangered::b]n/a")
-			_ = c.setCell(row, "[orangered::b]n/a")
+			row = c.setCell(row, c.warnCell(render.NAValue, true))
+			_ = c.setCell(row, c.warnCell(render.NAValue, true))
 		}
 		c.updateStyle()
 	})

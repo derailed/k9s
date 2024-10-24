@@ -1,8 +1,7 @@
-package config
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
 
-import (
-	"github.com/derailed/k9s/internal/client"
-)
+package config
 
 const (
 	// SeverityLow tracks low severity.
@@ -62,7 +61,7 @@ func NewThreshold() Threshold {
 }
 
 // Validate a namespace is setup correctly.
-func (t Threshold) Validate(c client.Connection, ks KubeSettings) {
+func (t Threshold) Validate() Threshold {
 	for _, k := range []string{"cpu", "memory"} {
 		v, ok := t[k]
 		if !ok {
@@ -71,6 +70,8 @@ func (t Threshold) Validate(c client.Connection, ks KubeSettings) {
 			v.Validate()
 		}
 	}
+
+	return t
 }
 
 // LevelFor returns a defcon level for the current state.

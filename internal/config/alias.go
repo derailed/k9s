@@ -1,16 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
+	"errors"
+	"fmt"
+	"io/fs"
 	"os"
-	"path/filepath"
 	"sync"
 
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
-
-// K9sAlias manages K9s aliases.
-var K9sAlias = filepath.Join(K9sHome(), "alias.yml")
 
 // Alias tracks shortname to GVR mappings.
 type Alias map[string]string
@@ -20,7 +24,7 @@ type ShortNames map[string][]string
 
 // Aliases represents a collection of aliases.
 type Aliases struct {
-	Alias Alias `yaml:"alias"`
+	Alias Alias `yaml:"aliases"`
 	mx    sync.RWMutex
 }
 
@@ -29,6 +33,20 @@ func NewAliases() *Aliases {
 	return &Aliases{
 		Alias: make(Alias, 50),
 	}
+}
+
+func (a *Aliases) AliasesFor(s string) []string {
+	aa := make([]string, 0, 10)
+
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+	for k, v := range a.Alias {
+		if v == s {
+			aa = append(aa, k)
+		}
+	}
+
+	return aa
 }
 
 // Keys returns all aliases keys.
@@ -98,25 +116,48 @@ func (a *Aliases) Define(gvr string, aliases ...string) {
 }
 
 // Load K9s aliases.
-func (a *Aliases) Load() error {
+func (a *Aliases) Load(path string) error {
 	a.loadDefaultAliases()
-	return a.LoadFileAliases(K9sAlias)
+
+	f, err := EnsureAliasesCfgFile()
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to gen config aliases")
+	}
+
+	// load global alias file
+	if err := a.LoadFile(f); err != nil {
+		return err
+	}
+
+	// load context specific aliases if any
+	return a.LoadFile(path)
 }
 
-// LoadFileAliases loads alias from a given file.
-func (a *Aliases) LoadFileAliases(path string) error {
-	f, err := os.ReadFile(path)
-	if err == nil {
-		var aa Aliases
-		if err := yaml.Unmarshal(f, &aa); err != nil {
-			return err
-		}
+// LoadFile loads alias from a given file.
+func (a *Aliases) LoadFile(path string) error {
+	if path == "" {
+		return nil
+	}
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
 
-		a.mx.Lock()
-		defer a.mx.Unlock()
-		for k, v := range aa.Alias {
-			a.Alias[k] = v
-		}
+	bb, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := data.JSONValidator.Validate(json.AliasesSchema, bb); err != nil {
+		return fmt.Errorf("validation failed for %q: %w", path, err)
+	}
+
+	var aa Aliases
+	if err := yaml.Unmarshal(bb, &aa); err != nil {
+		return err
+	}
+	a.mx.Lock()
+	defer a.mx.Unlock()
+	for k, v := range aa.Alias {
+		a.Alias[k] = v
 	}
 
 	return nil
@@ -133,43 +174,39 @@ func (a *Aliases) loadDefaultAliases() {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
-	a.Alias["dp"] = "apps/v1/deployments"
-	a.Alias["sec"] = "v1/secrets"
-	a.Alias["jo"] = "batch/v1/jobs"
-	a.Alias["cr"] = "rbac.authorization.k8s.io/v1/clusterroles"
-	a.Alias["crb"] = "rbac.authorization.k8s.io/v1/clusterrolebindings"
-	a.Alias["ro"] = "rbac.authorization.k8s.io/v1/roles"
-	a.Alias["rb"] = "rbac.authorization.k8s.io/v1/rolebindings"
-	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
-
 	a.declare("help", "h", "?")
-	a.declare("quit", "q", "Q")
+	a.declare("quit", "q", "q!", "qa", "Q")
 	a.declare("aliases", "alias", "a")
-	a.declare("popeye", "pop")
+	// !!BOZO!!
+	// a.declare("popeye", "pop")
 	a.declare("helm", "charts", "chart", "hm")
 	a.declare("dir", "d")
 	a.declare("contexts", "context", "ctx")
 	a.declare("users", "user", "usr")
 	a.declare("groups", "group", "grp")
 	a.declare("portforwards", "portforward", "pf")
-	a.declare("benchmarks", "bench", "benchmark", "be")
+	a.declare("benchmarks", "benchmark", "bench")
 	a.declare("screendumps", "screendump", "sd")
 	a.declare("pulses", "pulse", "pu", "hz")
 	a.declare("xrays", "xray", "x")
+	a.declare("workloads", "workload", "wk")
 }
 
 // Save alias to disk.
 func (a *Aliases) Save() error {
 	log.Debug().Msg("[Config] Saving Aliases...")
-	return a.SaveAliases(K9sAlias)
+	return a.SaveAliases(AppAliasesFile)
 }
 
 // SaveAliases saves aliases to a given file.
 func (a *Aliases) SaveAliases(path string) error {
-	EnsurePath(path, DefaultDirMod)
+	if err := data.EnsureDirPath(path, data.DefaultDirMod); err != nil {
+		return err
+	}
 	cfg, err := yaml.Marshal(a)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, cfg, 0644)
+
+	return os.WriteFile(path, cfg, data.DefaultFileMod)
 }

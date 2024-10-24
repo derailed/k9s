@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model_test
 
 import (
@@ -44,9 +47,7 @@ func TestMenuHintsSort(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			o := make(model.MenuHints, len(u.hh))
-			for i := range u.hh {
-				o[i] = u.hh[i]
-			}
+			copy(o, u.hh)
 			sort.Sort(u.hh)
 			for i, idx := range u.e {
 				assert.Equal(t, o[idx], u.hh[i])

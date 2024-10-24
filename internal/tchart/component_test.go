@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package tchart_test
 
 import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/tchart"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 

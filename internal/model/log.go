@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
@@ -105,7 +108,7 @@ func (l *Log) SetSinceSeconds(ctx context.Context, i int64) {
 }
 
 // Configure sets logger configuration.
-func (l *Log) Configure(opts *config.Logger) {
+func (l *Log) Configure(opts config.Logger) {
 	l.logOptions.Lines = int64(opts.TailCount)
 	l.logOptions.SinceSeconds = opts.SinceSeconds
 }

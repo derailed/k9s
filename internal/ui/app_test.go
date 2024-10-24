@@ -1,15 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui_test
 
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAppGetCmd(t *testing.T) {
-	a := ui.NewApp(config.NewConfig(nil), "")
+	a := ui.NewApp(mock.NewMockConfig(), "")
 	a.Init()
 	a.CmdBuff().SetText("blee", "")
 
@@ -17,7 +20,7 @@ func TestAppGetCmd(t *testing.T) {
 }
 
 func TestAppInCmdMode(t *testing.T) {
-	a := ui.NewApp(config.NewConfig(nil), "")
+	a := ui.NewApp(mock.NewMockConfig(), "")
 	a.Init()
 	a.CmdBuff().SetText("blee", "")
 	assert.False(t, a.InCmdMode())
@@ -27,7 +30,7 @@ func TestAppInCmdMode(t *testing.T) {
 }
 
 func TestAppResetCmd(t *testing.T) {
-	a := ui.NewApp(config.NewConfig(nil), "")
+	a := ui.NewApp(mock.NewMockConfig(), "")
 	a.Init()
 	a.CmdBuff().SetText("blee", "")
 
@@ -37,7 +40,7 @@ func TestAppResetCmd(t *testing.T) {
 }
 
 func TestAppHasCmd(t *testing.T) {
-	a := ui.NewApp(config.NewConfig(nil), "")
+	a := ui.NewApp(mock.NewMockConfig(), "")
 	a.Init()
 
 	a.ActivateCmd(true)
@@ -48,16 +51,16 @@ func TestAppHasCmd(t *testing.T) {
 }
 
 func TestAppGetActions(t *testing.T) {
-	a := ui.NewApp(config.NewConfig(nil), "")
+	a := ui.NewApp(mock.NewMockConfig(), "")
 	a.Init()
 
-	a.AddActions(ui.KeyActions{ui.KeyZ: ui.KeyAction{Description: "zorg"}})
+	a.GetActions().Add(ui.KeyZ, ui.KeyAction{Description: "zorg"})
 
-	assert.Equal(t, 6, len(a.GetActions()))
+	assert.Equal(t, 6, a.GetActions().Len())
 }
 
 func TestAppViews(t *testing.T) {
-	a := ui.NewApp(config.NewConfig(nil), "")
+	a := ui.NewApp(mock.NewMockConfig(), "")
 	a.Init()
 
 	vv := []string{"crumbs", "logo", "prompt", "menu"}

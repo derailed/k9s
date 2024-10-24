@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package cmd
 
 import (
@@ -13,32 +16,31 @@ func Test_getScreenDumpDirForInfo(t *testing.T) {
 		expectedScreenDumpDir string
 	}{
 		"withK9sConfigFile": {
-			k9sConfigFile:         "testdata/k9s.yml",
+			k9sConfigFile:         "testdata/k9s.yaml",
 			expectedScreenDumpDir: "/tmp",
 		},
 		"withEmptyK9sConfigFile": {
 			k9sConfigFile:         "",
-			expectedScreenDumpDir: config.K9sDefaultScreenDumpDir,
+			expectedScreenDumpDir: config.AppDumpsDir,
 		},
 		"withInvalidK9sConfigFilePath": {
 			k9sConfigFile:         "invalid",
-			expectedScreenDumpDir: config.K9sDefaultScreenDumpDir,
+			expectedScreenDumpDir: config.AppDumpsDir,
 		},
 		"withScreenDumpDirEmptyInK9sConfigFile": {
-			k9sConfigFile:         "testdata/k9s1.yml",
-			expectedScreenDumpDir: config.K9sDefaultScreenDumpDir,
+			k9sConfigFile:         "testdata/k9s1.yaml",
+			expectedScreenDumpDir: config.AppDumpsDir,
 		},
 	}
 	for k := range tests {
 		u := tests[k]
 		t.Run(k, func(t *testing.T) {
-			initK9sConfigFile := config.K9sConfigFile
-
-			config.K9sConfigFile = u.k9sConfigFile
+			initK9sConfigFile := config.AppConfigFile
+			config.AppConfigFile = u.k9sConfigFile
 
 			assert.Equal(t, u.expectedScreenDumpDir, getScreenDumpDirForInfo())
 
-			config.K9sConfigFile = initK9sConfigFile
+			config.AppConfigFile = initK9sConfigFile
 		})
 	}
 }

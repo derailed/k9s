@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -7,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,14 +19,25 @@ import (
 )
 
 var (
-	_ Accessor = (*Job)(nil)
-	_ Nuker    = (*Job)(nil)
-	_ Loggable = (*Job)(nil)
+	_ Accessor    = (*Job)(nil)
+	_ Nuker       = (*Job)(nil)
+	_ Loggable    = (*Job)(nil)
+	_ ImageLister = (*Deployment)(nil)
 )
 
 // Job represents a K8s job resource.
 type Job struct {
 	Resource
+}
+
+// ListImages lists container images.
+func (j *Job) ListImages(ctx context.Context, fqn string) ([]string, error) {
+	job, err := j.GetInstance(fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&job.Spec.Template.Spec), nil
 }
 
 // List returns a collection of resources.
@@ -58,7 +73,7 @@ func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // TailLogs tail logs for all pods represented by this Job.
 func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
-	o, err := j.GetFactory().Get(j.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := j.getFactory().Get(j.gvrStr(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -76,10 +91,25 @@ func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 	return podLogs(ctx, job.Spec.Selector.MatchLabels, opts)
 }
 
+func (j *Job) GetInstance(fqn string) (*batchv1.Job, error) {
+	o, err := j.getFactory().Get(j.gvrStr(), fqn, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var job batchv1.Job
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &job)
+	if err != nil {
+		return nil, errors.New("expecting a job resource")
+	}
+
+	return &job, nil
+}
+
 // ScanSA scans for serviceaccount refs.
 func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := j.GetFactory().List(j.GVR(), ns, wait, labels.Everything())
+	oo, err := j.getFactory().List(j.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +121,7 @@ func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 		if err != nil {
 			return nil, errors.New("expecting Job resource")
 		}
-		if job.Spec.Template.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(job.Spec.Template.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
@@ -103,9 +133,9 @@ func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 }
 
 // Scan scans for resource references.
-func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (j *Job) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := j.GetFactory().List(j.GVR(), ns, wait, labels.Everything())
+	oo, err := j.getFactory().List(j.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +148,7 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 			return nil, errors.New("expecting Job resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case CmGVR:
 			if !hasConfigMap(&job.Spec.Template.Spec, n) {
 				continue
 			}
@@ -126,7 +156,7 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
-		case "v1/secrets":
+		case SecGVR:
 			found, err := hasSecret(j.Factory, &job.Spec.Template.Spec, job.Namespace, n, wait)
 			if err != nil {
 				log.Warn().Err(err).Msgf("locate secret %q", fqn)
@@ -139,7 +169,7 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case PcGVR:
 			if !hasPC(&job.Spec.Template.Spec, n) {
 				continue
 			}

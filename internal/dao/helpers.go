@@ -1,23 +1,62 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math"
-	"regexp"
 
-	"github.com/derailed/tview"
-	runewidth "github.com/mattn/go-runewidth"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 )
 
-var (
-	inverseRx = regexp.MustCompile(`\A\!`)
-	fuzzyRx   = regexp.MustCompile(`\A\-f`)
+const (
+	defaultServiceAccount      = "default"
+	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
 )
+
+// GetDefaultContainer returns a container name if specified in an annotation.
+func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
+	defaultContainer, ok := m.Annotations[defaultContainerAnnotation]
+	if !ok {
+		return "", false
+	}
+
+	for _, container := range spec.Containers {
+		if container.Name == defaultContainer {
+			return defaultContainer, true
+		}
+	}
+	log.Warn().Msg(defaultContainer + " container  not found. " + defaultContainerAnnotation + " annotation will be ignored")
+
+	return "", false
+}
+
+func extractFQN(o runtime.Object) string {
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		log.Error().Err(fmt.Errorf("expecting unstructured but got %T", o))
+		return client.NA
+	}
+
+	return FQN(u.GetNamespace(), u.GetName())
+}
+
+// FQN returns a fully qualified resource name.
+func FQN(ns, n string) string {
+	if ns == "" {
+		return n
+	}
+	return ns + "/" + n
+}
 
 func inList(ll []string, s string) bool {
 	for _, l := range ll {
@@ -28,32 +67,11 @@ func inList(ll []string, s string) bool {
 	return false
 }
 
-// IsInverseSelector checks if inverse char has been provided.
-func IsInverseSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return inverseRx.MatchString(s)
-}
-
-// IsFuzzySelector checks if filter is fuzzy or not.
-func IsFuzzySelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return fuzzyRx.MatchString(s)
-}
-
 func toPerc(v1, v2 float64) float64 {
 	if v2 == 0 {
 		return 0
 	}
 	return math.Round((v1 / v2) * 100)
-}
-
-// Truncate a string to the given l and suffix ellipsis if needed.
-func Truncate(str string, width int) string {
-	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))
 }
 
 // ToYAML converts a resource to its YAML representation.
@@ -80,4 +98,28 @@ func ToYAML(o runtime.Object, showManaged bool) (string, error) {
 	}
 
 	return buff.String(), nil
+}
+
+// serviceAccountMatches validates that the ServiceAccount referenced in the PodSpec matches the incoming
+// ServiceAccount. If the PodSpec ServiceAccount is blank kubernetes will use the "default" ServiceAccount
+// when deploying the pod, so if the incoming SA is "default" and podSA is an empty string that is also a match.
+func serviceAccountMatches(podSA, saName string) bool {
+	if podSA == "" {
+		podSA = defaultServiceAccount
+	}
+	return podSA == saName
+}
+
+// ContinuousRanges takes a sorted slice of integers and returns a slice of
+// sub-slices representing continuous ranges of integers.
+func ContinuousRanges(indexes []int) [][]int {
+	var ranges [][]int
+	for i, p := 1, 0; i <= len(indexes); i++ {
+		if i == len(indexes) || indexes[i]-indexes[p] != i-p {
+			ranges = append(ranges, []int{indexes[p], indexes[i-1] + 1})
+			p = i
+		}
+	}
+
+	return ranges
 }

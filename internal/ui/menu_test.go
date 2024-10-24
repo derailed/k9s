@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui_test
 
 import (
@@ -24,16 +27,16 @@ func TestNewMenu(t *testing.T) {
 
 func TestActionHints(t *testing.T) {
 	uu := map[string]struct {
-		aa ui.KeyActions
+		aa *ui.KeyActions
 		e  model.MenuHints
 	}{
 		"a": {
-			aa: ui.KeyActions{
+			aa: ui.NewKeyActionsFromMap(ui.KeyMap{
 				ui.KeyB: ui.NewKeyAction("bleeB", nil, true),
 				ui.KeyA: ui.NewKeyAction("bleeA", nil, true),
 				ui.Key0: ui.NewKeyAction("zero", nil, true),
 				ui.Key1: ui.NewKeyAction("one", nil, false),
-			},
+			}),
 			e: model.MenuHints{
 				{Mnemonic: "0", Description: "zero", Visible: true},
 				{Mnemonic: "1", Description: "one", Visible: false},

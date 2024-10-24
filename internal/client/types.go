@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package client
 
 import (
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/dynamic"
@@ -18,8 +20,8 @@ const (
 	// NamespaceAll designates the fictional all namespace.
 	NamespaceAll = "all"
 
-	// AllNamespaces designates all namespaces.
-	AllNamespaces = ""
+	// BlankNamespace designates no namespace.
+	BlankNamespace = ""
 
 	// DefaultNamespace designates the default namespace.
 	DefaultNamespace = "default"
@@ -53,12 +55,18 @@ const (
 )
 
 var (
+	// PatchAccess patch a resource.
+	PatchAccess = []string{PatchVerb}
+
 	// GetAccess reads a resource.
 	GetAccess = []string{GetVerb}
+
 	// ListAccess list resources.
 	ListAccess = []string{ListVerb}
+
 	// MonitorAccess monitors a collection of resources.
 	MonitorAccess = []string{ListVerb, WatchVerb}
+
 	// ReadAllAccess represents an all read access to a resource.
 	ReadAllAccess = []string{GetVerb, ListVerb, WatchVerb}
 )
@@ -75,7 +83,7 @@ type PodsMetricsMap map[string]*mv1beta1.PodMetrics
 // Authorizer checks what a user can or cannot do to a resource.
 type Authorizer interface {
 	// CanI returns true if the user can use these actions for a given resource.
-	CanI(ns, gvr string, verbs []string) (bool, error)
+	CanI(ns, gvr, n string, verbs []string) (bool, error)
 }
 
 // Connection represents a Kubernetes apiserver connection.
@@ -112,8 +120,11 @@ type Connection interface {
 	// HasMetrics checks if metrics server is available.
 	HasMetrics() bool
 
-	// ValidNamespaces returns all available namespaces.
-	ValidNamespaces() ([]v1.Namespace, error)
+	// ValidNamespaceNames returns all available namespace names.
+	ValidNamespaceNames() (NamespaceNames, error)
+
+	// IsValidNamespace checks if given namespace is known.
+	IsValidNamespace(string) bool
 
 	// ServerVersion returns current server version.
 	ServerVersion() (*version.Info, error)
@@ -121,8 +132,8 @@ type Connection interface {
 	// CheckConnectivity checks if api server connection is happy or not.
 	CheckConnectivity() bool
 
-	// ActiveCluster returns the current cluster name.
-	ActiveCluster() string
+	// ActiveContext returns the current context name.
+	ActiveContext() string
 
 	// ActiveNamespace returns the current namespace.
 	ActiveNamespace() string

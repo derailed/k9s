@@ -1,0 +1,88 @@
+# -----------------------------------------------------------------------------
+# Snazzy skin
+# -----------------------------------------------------------------------------
+
+# Skin...
+k9s:
+  body:
+    fgColor: "#97979b"
+    bgColor: "#282a36"
+    logoColor: "#5af78e"
+  prompt:
+    fgColor: "#97979b"
+    bgColor: "#282a36"
+    suggestColor: "#5af78e"
+  info:
+    fgColor: white
+    sectionColor: "#5af78e"
+  dialog:
+    fgColor: "#97979b"
+    bgColor: "#282a36"
+    buttonFgColor: "#97979b"
+    buttonBgColor: "#282a36"
+    buttonFocusFgColor: "#97979b"
+    buttonFocusBgColor: "#5af78e"
+    labelFgColor: "#97979b"
+    fieldFgColor: "#5af78e"
+  frame:
+    border:
+      fgColor: "#5af78e"
+      focusColor: "#5af78e"
+    menu:
+      fgColor: white
+      keyColor: "#57c7ff"
+      numKeyColor: "#ff6ac1"
+    crumbs:
+      fgColor: "#282a36"
+      bgColor: white
+      activeColor: "#f3f99d"
+    status:
+      newColor: "#eff0eb"
+      modifyColor: "#5af78e"
+      addColor: "#57c7ff"
+      errorColor: "#ff5c57"
+      highlightColor: "#f3f99d"
+      killColor: mediumpurple
+      completedColor: gray
+    title:
+      fgColor: "#5af78e"
+      bgColor: "#282a36"
+      highlightColor: white
+      counterColor: white
+      filterColor: "#57c7ff"
+  views:
+    # Charts skins...
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - "#57c7ff"
+        - "#ff5c57"
+      defaultChartColors:
+        - "#57c7ff"
+        - "#ff5c57"
+    table:
+      fgColor: "#57c7ff"
+      bgColor: "#282a36"
+      markColor: darkgoldenrod
+      header:
+        fgColor: white
+        bgColor: "#282a36"
+        sorterColor: orange
+    xray:
+      fgColor: "#57c7ff"
+      bgColor: "#282a36"
+      cursorColor: "#5af78e"
+      graphicColor: darkgoldenrod
+      showIcons: false
+    yaml:
+      keyColor: "#ff5c57"
+      colonColor: white
+      valueColor: "#f3f99d"
+    logs:
+      fgColor: white
+      bgColor: "#282a36"
+      indicator:
+        fgColor: white
+        bgColor: "#282a36"
+        toggleOnColor: "#ff5c57"
+        toggleOffColor: white

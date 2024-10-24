@@ -1,16 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package perf
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/derailed/k9s/internal/dao"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/derailed/k9s/internal/config/data"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -23,12 +28,6 @@ const (
 	benchTimeout = 2 * time.Minute
 	benchFmat    = "%s_%s_%d.txt"
 	k9sUA        = "k9s/"
-)
-
-
-var (
-	// K9sBenchDir directory to store K9s Benchmark files.
-	K9sBenchDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-bench-%s", config.MustK9sUser()))
 )
 
 // Benchmark puts a workload under load.
@@ -107,45 +106,45 @@ func (b *Benchmark) Canceled() bool {
 	return b.canceled
 }
 
-// Run starts a benchmark,.
-func (b *Benchmark) Run(cluster string, done func()) {
-	log.Debug().Msgf("Running benchmark on cluster %s", cluster)
+// Run starts a benchmark.
+func (b *Benchmark) Run(cluster, context string, done func()) {
+	log.Debug().Msgf("Running benchmark on context %s", cluster)
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
 	// this call will block until the benchmark is complete or times out.
 	b.worker.Run()
 	b.worker.Stop()
-	if len(buff.Bytes()) > 0 {
-		if err := b.save(cluster, buff); err != nil {
+	if buff.Len() > 0 {
+		if err := b.save(cluster, context, buff); err != nil {
 			log.Error().Err(err).Msg("Saving Benchmark")
 		}
 	}
 	done()
 }
 
-func (b *Benchmark) save(cluster string, r io.Reader) error {
-	dir := filepath.Join(K9sBenchDir, cluster)
-	if err := os.MkdirAll(dir, 0744); err != nil {
+func (b *Benchmark) save(cluster, context string, r io.Reader) error {
+	ns, n := client.Namespaced(b.config.Name)
+	n = strings.Replace(n, "|", "_", -1)
+	n = strings.Replace(n, ":", "_", -1)
+	dir, err := config.EnsureBenchmarksDir(cluster, context)
+	if err != nil {
+		return err
+	}
+	bf := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
+	if err := data.EnsureDirPath(bf, data.DefaultDirMod); err != nil {
 		return err
 	}
 
-	ns, n := client.Namespaced(b.config.Name)
-	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, dao.BenchRx.ReplaceAllString(n, "_"), time.Now().UnixNano()))
-	f, err := os.Create(file)
+	f, err := os.Create(bf)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if e := f.Close(); e != nil {
-			log.Fatal().Err(e).Msg("Bench save")
+			log.Error().Err(e).Msgf("Benchmark file close failed: %q", bf)
 		}
 	}()
-
-	bb, err := io.ReadAll(r)
-	if err != nil {
-		return err
-	}
-	if _, err := f.Write(bb); err != nil {
+	if _, err = io.Copy(f, r); err != nil {
 		return err
 	}
 

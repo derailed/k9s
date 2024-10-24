@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui_test
 
 import (
@@ -9,11 +12,11 @@ import (
 )
 
 func TestKeyActionsHints(t *testing.T) {
-	kk := ui.KeyActions{
+	kk := ui.NewKeyActionsFromMap(ui.KeyMap{
 		ui.KeyF: ui.NewKeyAction("fred", nil, true),
 		ui.KeyB: ui.NewKeyAction("blee", nil, true),
 		ui.KeyZ: ui.NewKeyAction("zorg", nil, false),
-	}
+	})
 
 	hh := kk.Hints()
 

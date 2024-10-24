@@ -1,14 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,8 +36,9 @@ func NewPortForwardExtender(r ResourceViewer) ResourceViewer {
 	return &p
 }
 
-func (p *PortForwardExtender) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (p *PortForwardExtender) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyF:      ui.NewKeyAction("Show PortForward", p.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("Port-Forward", p.portFwdCmd, true),
 	})
 }
@@ -47,20 +54,37 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Err(err)
 		return nil
 	}
-	pod, err := fetchPod(p.App().factory, podName)
+	if err := ensurePodPortFwdAllowed(p.App().factory, podName); err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	if err := showFwdDialog(p, podName, startFwdCB); err != nil {
+		p.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (p *PortForwardExtender) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	podName, err := p.fetchPodName(path)
 	if err != nil {
 		p.App().Flash().Err(err)
 		return nil
 	}
-	if pod.Status.Phase != v1.PodRunning {
-		p.App().Flash().Errf("pod must be running. Current status=%v", pod.Status.Phase)
+
+	if !p.App().factory.Forwarders().IsPodForwarded(podName) {
+		p.App().Flash().Errf("no port-forward defined")
 		return nil
 	}
-	if p.App().factory.Forwarders().IsPodForwarded(path) {
-		p.App().Flash().Errf("A PortForward already exists for pod %s", pod.Name)
-		return nil
-	}
-	if err := showFwdDialog(p, podName, startFwdCB); err != nil {
+
+	pf := NewPortForward(client.NewGVR("portforwards"))
+	pf.SetContextFn(p.portForwardContext)
+	if err := p.App().inject(pf, false); err != nil {
 		p.App().Flash().Err(err)
 	}
 
@@ -80,8 +104,28 @@ func (p *PortForwardExtender) fetchPodName(path string) (string, error) {
 	return ctrl.Pod(path)
 }
 
+func (p *PortForwardExtender) portForwardContext(ctx context.Context) context.Context {
+	if bc := p.App().BenchFile; bc != "" {
+		ctx = context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
+	}
+
+	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func ensurePodPortFwdAllowed(factory dao.Factory, podName string) error {
+	pod, err := fetchPod(factory, podName)
+	if err != nil {
+		return err
+	}
+	if pod.Status.Phase != v1.PodRunning {
+		return fmt.Errorf("pod must be running. Current status=%v", pod.Status.Phase)
+	}
+
+	return nil
+}
 
 func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForwarder) {
 	v.App().factory.AddForwarder(pf)
@@ -93,11 +137,9 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 	pf.SetActive(true)
 	if err := f.ForwardPorts(); err != nil {
 		v.App().Flash().Err(err)
-		return
 	}
-
 	v.App().QueueUpdateDraw(func() {
-		v.App().factory.DeleteForwarder(pf.FQN())
+		v.App().factory.DeleteForwarder(pf.ID())
 		pf.SetActive(false)
 	})
 }
@@ -110,7 +152,7 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 	tt := make([]string, 0, len(pts))
 	for _, pt := range pts {
 		if _, ok := v.App().factory.ForwarderFor(dao.PortForwardID(path, pt.Container, pt.PortMap())); ok {
-			return fmt.Errorf("A port-forward is already active on pod %s", path)
+			return fmt.Errorf("port-forward is already active on pod %s", path)
 		}
 		pf := dao.NewPortForwarder(v.App().factory)
 		fwd, err := pf.Start(path, pt)
@@ -119,7 +161,7 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 		}
 		log.Debug().Msgf(">>> Starting port forward %q -- %#v", pf.ID(), pt)
 		go runForward(v, pf, fwd)
-		tt = append(tt, pt.ContainerPort)
+		tt = append(tt, pt.LocalPort)
 	}
 	if len(tt) == 1 {
 		v.App().Flash().Infof("PortForward activated %s", tt[0])
@@ -131,6 +173,10 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 }
 
 func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
+	ct, err := v.App().Config.CurrentContext()
+	if err != nil {
+		return err
+	}
 	mm, anns, err := fetchPodPorts(v.App().factory, path)
 	if err != nil {
 		return err
@@ -150,7 +196,7 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 			return err
 		}
 
-		pts, err := pfs.ToTunnels(v.App().Config.CurrentCluster().PortForwardAddress, ports, port.IsPortFree)
+		pts, err := pfs.ToTunnels(ct.PortForwardAddress, ports, port.IsPortFree)
 		if err != nil {
 			return err
 		}

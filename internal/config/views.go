@@ -1,18 +1,26 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
+	"cmp"
+	"errors"
+	"fmt"
+	"io/fs"
 	"os"
-	"path/filepath"
+	"slices"
+	"strings"
+
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
 
 	"gopkg.in/yaml.v2"
 )
 
-// K9sViewConfigFile represents the location for the views configuration.
-var K9sViewConfigFile = filepath.Join(K9sHome(), "views.yml")
-
 // ViewConfigListener represents a view config listener.
 type ViewConfigListener interface {
-	// ConfigChanged notifies listener the view configuration changed.
+	// ViewSettingsChanged notifies listener the view configuration changed.
 	ViewSettingsChanged(ViewSetting)
 }
 
@@ -22,51 +30,74 @@ type ViewSetting struct {
 	SortColumn string   `yaml:"sortColumn"`
 }
 
-// ViewSettings represent a collection of view configurations.
-type ViewSettings struct {
-	Views map[string]ViewSetting `yaml:"views"`
+func (v *ViewSetting) HasCols() bool {
+	return len(v.Columns) > 0
 }
 
-// NewViewSettings returns a new configuration.
-func NewViewSettings() ViewSettings {
-	return ViewSettings{
-		Views: make(map[string]ViewSetting),
+func (v *ViewSetting) IsBlank() bool {
+	return v == nil || len(v.Columns) == 0
+}
+
+func (v *ViewSetting) SortCol() (string, bool, error) {
+	if v == nil || v.SortColumn == "" {
+		return "", false, fmt.Errorf("no sort column specified")
 	}
+	tt := strings.Split(v.SortColumn, ":")
+	if len(tt) < 2 {
+		return "", false, fmt.Errorf("invalid sort column spec: %q. must be col-name:asc|desc", v.SortColumn)
+	}
+
+	return tt[0], tt[1] == "desc", nil
+}
+
+func (v *ViewSetting) Equals(vs *ViewSetting) bool {
+	if v == nil || vs == nil {
+		return v == nil && vs == nil
+	}
+	if c := slices.Compare(v.Columns, vs.Columns); c != 0 {
+		return false
+	}
+	return cmp.Compare(v.SortColumn, vs.SortColumn) == 0
 }
 
 // CustomView represents a collection of view customization.
 type CustomView struct {
-	K9s       ViewSettings `yaml:"k9s"`
+	Views     map[string]ViewSetting `yaml:"views"`
 	listeners map[string]ViewConfigListener
 }
 
 // NewCustomView returns a views configuration.
 func NewCustomView() *CustomView {
 	return &CustomView{
-		K9s:       NewViewSettings(),
+		Views:     make(map[string]ViewSetting),
 		listeners: make(map[string]ViewConfigListener),
 	}
 }
 
 // Reset clears out configurations.
 func (v *CustomView) Reset() {
-	for k := range v.K9s.Views {
-		delete(v.K9s.Views, k)
+	for k := range v.Views {
+		delete(v.Views, k)
 	}
 }
 
 // Load loads view configurations.
 func (v *CustomView) Load(path string) error {
-	raw, err := os.ReadFile(path)
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-
+	if err := data.JSONValidator.Validate(json.ViewsSchema, bb); err != nil {
+		return fmt.Errorf("validation failed for %q: %w", path, err)
+	}
 	var in CustomView
-	if err := yaml.Unmarshal(raw, &in); err != nil {
+	if err := yaml.Unmarshal(bb, &in); err != nil {
 		return err
 	}
-	v.K9s = in.K9s
+	v.Views = in.Views
 	v.fireConfigChanged()
 
 	return nil
@@ -85,8 +116,10 @@ func (v *CustomView) RemoveListener(gvr string) {
 
 func (v *CustomView) fireConfigChanged() {
 	for gvr, list := range v.listeners {
-		if v, ok := v.K9s.Views[gvr]; ok {
+		if v, ok := v.Views[gvr]; ok {
 			list.ViewSettingsChanged(v)
+		} else {
+			list.ViewSettingsChanged(ViewSetting{})
 		}
 	}
 }

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view_test
 
 import (
@@ -13,5 +16,5 @@ func TestContext(t *testing.T) {
 
 	assert.Nil(t, ctx.Init(makeCtx()))
 	assert.Equal(t, "Contexts", ctx.Name())
-	assert.Equal(t, 4, len(ctx.Hints()))
+	assert.Equal(t, 5, len(ctx.Hints()))
 }

@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // Event represents a command alias view.
@@ -22,9 +25,9 @@ func NewEvent(gvr client.GVR) ResourceViewer {
 	return &e
 }
 
-func (e *Event) bindKeys(aa ui.KeyActions) {
+func (e *Event) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlD, ui.KeyE, ui.KeyA)
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftL: ui.NewKeyAction("Sort LastSeen", e.GetTable().SortColCmd("LAST SEEN", false), false),
 		ui.KeyShiftF: ui.NewKeyAction("Sort FirstSeen", e.GetTable().SortColCmd("FIRST SEEN", false), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Type", e.GetTable().SortColCmd("TYPE", true), false),

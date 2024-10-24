@@ -1,20 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 )
 
 const (
@@ -41,6 +42,9 @@ func NewHelp(app *App) *Help {
 		hints: app.Content.Top().Hints,
 	}
 }
+
+func (h *Help) SetFilter(string)                 {}
+func (h *Help) SetLabelFilter(map[string]string) {}
 
 // Init initializes the component.
 func (h *Help) Init(ctx context.Context) error {
@@ -73,7 +77,7 @@ func (h *Help) StylesChanged(s *config.Styles) {
 
 func (h *Help) bindKeys() {
 	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS, ui.KeySlash)
-	h.Actions().Set(ui.KeyActions{
+	h.Actions().Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, true),
 		ui.KeyHelp:      ui.NewKeyAction("Back", h.app.PrevCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Back", h.app.PrevCmd, false),
@@ -187,7 +191,7 @@ func (h *Help) showNav() model.MenuHints {
 
 func (h *Help) showHotKeys() (model.MenuHints, error) {
 	hh := config.NewHotKeys()
-	if err := hh.Load(); err != nil {
+	if err := hh.Load(h.App().Config.ContextHotkeysPath()); err != nil {
 		return nil, fmt.Errorf("no hotkey configuration found")
 	}
 	kk := make(sort.StringSlice, 0, len(hh.HotKey))
@@ -281,7 +285,6 @@ func (h *Help) resetTitle() {
 
 func (h *Help) addSpacer(c int) {
 	cell := tview.NewTableCell(render.Pad("", h.maxKey))
-	cell.SetBackgroundColor(h.App().Styles.BgColor())
 	cell.SetExpansion(1)
 	h.SetCell(0, c, cell)
 }
@@ -297,7 +300,7 @@ func (h *Help) addSection(c int, title string, hh model.MenuHints) {
 
 	for _, hint := range hh {
 		col := c
-		h.SetCell(row, col, padCellWithRef(toMnemonic(hint.Mnemonic), h.maxKey, hint.Mnemonic))
+		h.SetCell(row, col, padCellWithRef(ui.ToMnemonic(hint.Mnemonic), h.maxKey, hint.Mnemonic))
 		col++
 		h.SetCell(row, col, padCell(hint.Description, h.maxDesc))
 		row++
@@ -349,32 +352,12 @@ func (h *Help) updateStyle() {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func toMnemonic(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-
-	return "<" + keyConv(strings.ToLower(s)) + ">"
-}
-
 func extractRef(c *tview.TableCell) string {
 	if ref, ok := c.GetReference().(string); ok {
 		return ref
 	}
 
 	return c.Text
-}
-
-func keyConv(s string) string {
-	if !strings.Contains(s, "alt") {
-		return s
-	}
-
-	if runtime.GOOS != "darwin" {
-		return s
-	}
-
-	return strings.Replace(s, "alt", "opt", 1)
 }
 
 func (h *Help) titleCell(title string) *tview.TableCell {

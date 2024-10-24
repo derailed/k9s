@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -5,8 +8,8 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -82,7 +85,7 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 }
 
 func (f *Flash) flashEmoji(l model.FlashLevel) string {
-	if f.app.Config.K9s.NoIcons {
+	if f.app.Config.K9s.UI.NoIcons {
 		return ""
 	}
 	// nolint:exhaustive

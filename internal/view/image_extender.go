@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -7,8 +10,8 @@ import (
 
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -53,13 +56,11 @@ func NewImageExtender(r ResourceViewer) ResourceViewer {
 	return &s
 }
 
-func (s *ImageExtender) bindKeys(aa ui.KeyActions) {
+func (s *ImageExtender) bindKeys(aa *ui.KeyActions) {
 	if s.App().Config.K9s.IsReadOnly() {
 		return
 	}
-	aa.Add(ui.KeyActions{
-		ui.KeyI: ui.NewKeyAction("Set Image", s.setImageCmd, false),
-	})
+	aa.Add(ui.KeyI, ui.NewKeyAction("Set Image", s.setImageCmd, false))
 }
 
 func (s *ImageExtender) setImageCmd(evt *tcell.EventKey) *tcell.EventKey {

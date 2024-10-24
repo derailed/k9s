@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -5,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,28 +20,28 @@ type RoleBinding struct {
 }
 
 // Header returns a header rbw.
-func (RoleBinding) Header(ns string) Header {
-	var h Header
+func (RoleBinding) Header(ns string) model1.Header {
+	var h model1.Header
 	if client.IsAllNamespaces(ns) {
-		h = append(h, HeaderColumn{Name: "NAMESPACE"})
+		h = append(h, model1.HeaderColumn{Name: "NAMESPACE"})
 	}
 
 	return append(h,
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "ROLE"},
-		HeaderColumn{Name: "KIND"},
-		HeaderColumn{Name: "SUBJECTS"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "ROLE"},
+		model1.HeaderColumn{Name: "KIND"},
+		model1.HeaderColumn{Name: "SUBJECTS"},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	)
 }
 
 // Render renders a K8s resource to screen.
-func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
+func (r RoleBinding) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected RoleBinding, but got %T", o)
+		return fmt.Errorf("expected RoleBinding, but got %T", o)
 	}
 	var rb rbacv1.RoleBinding
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &rb)
@@ -48,7 +52,7 @@ func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
 	kind, ss := renderSubjects(rb.Subjects)
 
 	row.ID = client.MetaFQN(rb.ObjectMeta)
-	row.Fields = make(Fields, 0, len(r.Header(ns)))
+	row.Fields = make(model1.Fields, 0, len(r.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		row.Fields = append(row.Fields, rb.Namespace)
 	}
@@ -59,7 +63,7 @@ func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
 		ss,
 		mapToStr(rb.Labels),
 		"",
-		toAge(rb.GetCreationTimestamp()),
+		ToAge(rb.GetCreationTimestamp()),
 	)
 
 	return nil

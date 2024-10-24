@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -13,7 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,7 +35,9 @@ type Service struct {
 func NewService(gvr client.GVR) ResourceViewer {
 	s := Service{
 		ResourceViewer: NewPortForwardExtender(
-			NewLogsExtender(NewBrowser(gvr), nil),
+			NewOwnerExtender(
+				NewLogsExtender(NewBrowser(gvr), nil),
+			),
 		),
 	}
 	s.AddBindKeysFn(s.bindKeys)
@@ -43,14 +48,14 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 // Protocol...
 
-func (s *Service) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlL: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
+func (s *Service) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyB:      ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
+		ui.KeyShiftT: ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
 	})
 }
 
-func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
+func (s *Service) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
 	var res dao.Service
 	res.Init(a.factory, s.GVR())
 
@@ -63,13 +68,17 @@ func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
 		a.Flash().Warnf("No matching pods. Service %s is an external service.", path)
 		return
 	}
+	if svc.Spec.Selector == nil {
+		a.Flash().Warnf("No matching pods. Service %s does not provide any selectors", path)
+		return
+	}
 
-	showPodsWithLabels(a, path, svc.Spec.Selector)
+	showPods(a, path, toLabelsStr(svc.Spec.Selector), "")
 }
 
 func (s *Service) checkSvc(svc *v1.Service) error {
 	if svc.Spec.Type != "NodePort" && svc.Spec.Type != "LoadBalancer" {
-		return errors.New("You must select a reachable service")
+		return errors.New("you must select a reachable service")
 	}
 	return nil
 }
@@ -83,7 +92,7 @@ func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
 	// Grab the first port pair for now...
 	tokens := strings.Split(pp[0], "►")
 	if len(tokens) < 2 {
-		return "", errors.New("No ports pair found")
+		return "", errors.New("no ports pair found")
 	}
 
 	return tokens[1], nil
@@ -142,18 +151,34 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 // BOZO!! Refactor used by forwards.
 func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	if cfg.HTTP.Host == "" {
-		return fmt.Errorf("Invalid benchmark host %q", cfg.HTTP.Host)
+		return fmt.Errorf("invalid benchmark host %q", cfg.HTTP.Host)
 	}
 
 	var err error
-	base := "http://" + cfg.HTTP.Host + ":" + port + cfg.HTTP.Path
+	base := cfg.HTTP.Host
+	if !strings.Contains(base, ":") {
+		base += ":" + port + cfg.HTTP.Path
+	} else {
+		base += cfg.HTTP.Path
+	}
+	if strings.Index(base, "http") != 0 {
+		base = "http://" + base
+	}
+
 	if s.bench, err = perf.NewBenchmark(base, s.App().version, cfg); err != nil {
 		return err
 	}
 
 	s.App().Status(model.FlashWarn, "Benchmark in progress...")
-	log.Debug().Msg("Bench starting...")
-	go s.bench.Run(s.App().Config.K9s.CurrentCluster, s.benchDone)
+	log.Debug().Msg("Benchmark starting...")
+
+	ct, err := s.App().Config.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	name := s.App().Config.K9s.ActiveContextName()
+
+	go s.bench.Run(ct.ClusterName, name, s.benchDone)
 
 	return nil
 }

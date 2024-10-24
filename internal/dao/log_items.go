@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -7,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -171,8 +175,8 @@ func (l *LogItems) Filter(index int, q string, showTime bool) ([]int, [][]int, e
 	if q == "" {
 		return nil, nil, nil
 	}
-	if IsFuzzySelector(q) {
-		mm, ii := l.fuzzyFilter(index, strings.TrimSpace(q[2:]), showTime)
+	if f, ok := internal.IsFuzzySelector(q); ok {
+		mm, ii := l.fuzzyFilter(index, f, showTime)
 		return mm, ii, nil
 	}
 	matches, indices, err := l.filterLogs(index, q, showTime)
@@ -197,7 +201,7 @@ func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]i
 
 func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]int, error) {
 	var invert bool
-	if IsInverseSelector(q) {
+	if internal.IsInverseSelector(q) {
 		invert = true
 		q = q[1:]
 	}

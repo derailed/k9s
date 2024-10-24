@@ -1,24 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"context"
 	"time"
 
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-)
-
-type (
-	// SortFn represent a function that can sort columnar data.
-	SortFn func(rows render.Rows, sortCol SortColumn)
-
-	// SortColumn represents a sortable column.
-	SortColumn struct {
-		name string
-		asc  bool
-	}
 )
 
 // Namespaceable represents a namespaceable model.
@@ -53,14 +46,17 @@ type Tabular interface {
 	// SetLabelFilter sets the label filter.
 	SetLabelFilter(string)
 
+	// GetLabelFilter fetch the label filter.
+	GetLabelFilter() string
+
 	// Empty returns true if model has no data.
 	Empty() bool
 
-	// Count returns the model data count.
-	Count() int
+	// RowCount returns the model data count.
+	RowCount() int
 
 	// Peek returns current model data.
-	Peek() *render.TableData
+	Peek() *model1.TableData
 
 	// Watch watches a given resource for changes.
 	Watch(context.Context) error
@@ -78,5 +74,5 @@ type Tabular interface {
 	RemoveListener(model.TableListener)
 
 	// Delete a resource.
-	Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, force bool) error
+	Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error
 }

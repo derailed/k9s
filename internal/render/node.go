@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -8,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,7 +22,7 @@ import (
 
 const (
 	labelNodeRolePrefix = "node-role.kubernetes.io/"
-	nodeLabelRole       = "kubernetes.io/role"
+	labelNodeRoleSuffix = "kubernetes.io/role"
 )
 
 // Node renders a K8s Node to screen.
@@ -27,37 +31,39 @@ type Node struct {
 }
 
 // Header returns a header row.
-func (Node) Header(_ string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "ROLE"},
-		HeaderColumn{Name: "VERSION"},
-		HeaderColumn{Name: "KERNEL", Wide: true},
-		HeaderColumn{Name: "INTERNAL-IP", Wide: true},
-		HeaderColumn{Name: "EXTERNAL-IP", Wide: true},
-		HeaderColumn{Name: "PODS", Align: tview.AlignRight},
-		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "CPU/A", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (Node) Header(string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "ROLE"},
+		model1.HeaderColumn{Name: "ARCH", Wide: true},
+		model1.HeaderColumn{Name: "TAINTS"},
+		model1.HeaderColumn{Name: "VERSION"},
+		model1.HeaderColumn{Name: "KERNEL", Wide: true},
+		model1.HeaderColumn{Name: "INTERNAL-IP", Wide: true},
+		model1.HeaderColumn{Name: "EXTERNAL-IP", Wide: true},
+		model1.HeaderColumn{Name: "PODS", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "CPU/A", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n Node) Render(o interface{}, ns string, r *Row) error {
+func (n Node) Render(o interface{}, ns string, r *model1.Row) error {
 	oo, ok := o.(*NodeWithMetrics)
 	if !ok {
-		return fmt.Errorf("Expected *NodeAndMetrics, but got %T", o)
+		return fmt.Errorf("expected *NodeAndMetrics, but got %T", o)
 	}
 	meta, ok := oo.Raw.Object["metadata"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("Unable to extract meta")
+		return fmt.Errorf("unable to extract meta")
 	}
 	na := extractMetaField(meta, "name")
 	var no v1.Node
@@ -77,16 +83,22 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 	nodeRoles(&no, roles)
 	sort.Sort(roles)
 
+	podCount := strconv.Itoa(oo.PodCount)
+	if pc := oo.PodCount; pc == -1 {
+		podCount = NAValue
+	}
 	r.ID = client.FQN("", na)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		no.Name,
 		join(statuses, ","),
 		join(roles, ","),
+		no.Status.NodeInfo.Architecture,
+		strconv.Itoa(len(no.Spec.Taints)),
 		no.Status.NodeInfo.KubeletVersion,
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		strconv.Itoa(oo.PodCount),
+		podCount,
 		toMc(c.cpu),
 		toMi(c.mem),
 		client.ToPercentageStr(c.cpu, a.cpu),
@@ -94,8 +106,8 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		toMc(a.cpu),
 		toMi(a.mem),
 		mapToStr(no.Labels),
-		asStatus(n.diagnose(statuses)),
-		toAge(no.GetCreationTimestamp()),
+		AsStatus(n.diagnose(statuses)),
+		ToAge(no.GetCreationTimestamp()),
 	}
 
 	return nil
@@ -169,7 +181,7 @@ func nodeRoles(node *v1.Node, res []string) {
 				res[index] = role
 				index++
 			}
-		case k == nodeLabelRole && v != "":
+		case strings.HasSuffix(k, labelNodeRoleSuffix) && v != "":
 			res[index] = v
 			index++
 		}

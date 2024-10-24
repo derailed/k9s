@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -9,10 +12,11 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/xray"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -21,7 +25,7 @@ import (
 
 var _ ResourceViewer = (*Sanitizer)(nil)
 
-// Sanitizer represents an sanitizer tree view.
+// Sanitizer represents a sanitizer tree view.
 type Sanitizer struct {
 	*ui.Tree
 
@@ -42,6 +46,9 @@ func NewSanitizer(gvr client.GVR) ResourceViewer {
 		model: model.NewTree(gvr),
 	}
 }
+
+func (s *Sanitizer) SetFilter(string)                 {}
+func (s *Sanitizer) SetLabelFilter(map[string]string) {}
 
 // Init initializes the view.
 func (s *Sanitizer) Init(ctx context.Context) error {
@@ -93,7 +100,7 @@ func (*Sanitizer) InCmdMode() bool {
 
 // ExtraHints returns additional hints.
 func (s *Sanitizer) ExtraHints() map[string]string {
-	if s.app.Config.K9s.NoIcons {
+	if s.app.Config.K9s.UI.NoIcons {
 		return nil
 	}
 	return xray.EmojiInfo()
@@ -103,7 +110,7 @@ func (s *Sanitizer) ExtraHints() map[string]string {
 func (s *Sanitizer) SetInstance(string) {}
 
 func (s *Sanitizer) bindKeys() {
-	s.Actions().Add(ui.KeyActions{
+	s.Actions().Bulk(ui.KeyMap{
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", s.activateCmd, false),
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", s.resetCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Goto", s.gotoCmd, true),
@@ -202,7 +209,7 @@ func (s *Sanitizer) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (s *Sanitizer) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.CmdBuff().IsActive() {
-		if ui.IsLabelSelector(s.CmdBuff().GetText()) {
+		if internal.IsLabelSelector(s.CmdBuff().GetText()) {
 			s.Start()
 		}
 		s.CmdBuff().SetActive(false)
@@ -231,16 +238,16 @@ func (s *Sanitizer) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (s *Sanitizer) filter(root *xray.TreeNode) *xray.TreeNode {
 	q := s.CmdBuff().GetText()
-	if s.CmdBuff().Empty() || ui.IsLabelSelector(q) {
+	if s.CmdBuff().Empty() || internal.IsLabelSelector(q) {
 		return root
 	}
 
 	s.UpdateTitle()
-	if ui.IsFuzzySelector(q) {
-		return root.Filter(q, fuzzyFilter)
+	if f, ok := internal.IsFuzzySelector(q); ok {
+		return root.Filter(f, fuzzyFilter)
 	}
 
-	if ui.IsInverseSelector(q) {
+	if internal.IsInverseSelector(q) {
 		return root.Filter(q, rxInverseFilter)
 	}
 
@@ -263,7 +270,7 @@ func (s *Sanitizer) TreeLoadFailed(err error) {
 }
 
 func (s *Sanitizer) update(node *xray.TreeNode) {
-	root := makeTreeNode(node, s.ExpandNodes(), s.app.Config.K9s.NoIcons, s.app.Styles)
+	root := makeTreeNode(node, s.ExpandNodes(), s.app.Config.K9s.UI.NoIcons, s.app.Styles)
 	if node == nil {
 		s.app.QueueUpdateDraw(func() {
 			s.SetRoot(root)
@@ -310,7 +317,7 @@ func (s *Sanitizer) TreeChanged(node *xray.TreeNode) {
 }
 
 func (s *Sanitizer) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
-	node := makeTreeNode(n, s.ExpandNodes(), s.app.Config.K9s.NoIcons, s.app.Styles)
+	node := makeTreeNode(n, s.ExpandNodes(), s.app.Config.K9s.UI.NoIcons, s.app.Styles)
 	for _, c := range n.Children {
 		s.hydrate(node, c)
 	}
@@ -411,16 +418,16 @@ func (s *Sanitizer) styleTitle() string {
 
 	var title string
 	if ns == client.ClusterScope {
-		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, s.Count), s.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, render.AsThousands(int64(s.Count))), s.app.Styles.Frame())
 	} else {
-		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, s.Count), s.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, render.AsThousands(int64(s.Count))), s.app.Styles.Frame())
 	}
 
 	buff := s.CmdBuff().GetText()
 	if buff == "" {
 		return title
 	}
-	if ui.IsLabelSelector(buff) {
+	if internal.IsLabelSelector(buff) {
 		buff = ui.TrimLabelSelector(buff)
 	}
 

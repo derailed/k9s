@@ -1,16 +1,16 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
-	"github.com/sahilm/fuzzy"
 )
 
 const (
@@ -21,10 +21,10 @@ const (
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
 	// NSTitleFmt represents a namespaced view title.
-	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	// TitleFmt represents a standard view title.
-	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	descIndicator = "↓"
 	ascIndicator  = "↑"
@@ -34,15 +34,6 @@ const (
 
 	// NoNSFmat specifies a cluster wide dump file name.
 	NoNSFmat = "%s-%d.csv"
-)
-
-var (
-	// LabelRx identifies a label query.
-	LabelRx = regexp.MustCompile(`\A\-l`)
-
-	inverseRx = regexp.MustCompile(`\A\!`)
-
-	fuzzyRx = regexp.MustCompile(`\A\-f`)
 )
 
 func mustExtractStyles(ctx context.Context) *config.Styles {
@@ -63,33 +54,13 @@ func TrimCell(tv *SelectTable, row, col int) string {
 	return strings.TrimSpace(c.Text)
 }
 
-// IsLabelSelector checks if query is a label query.
-func IsLabelSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return LabelRx.MatchString(s)
-}
-
-// IsFuzzySelector checks if query is fuzzy.
-func IsFuzzySelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return fuzzyRx.MatchString(s)
-}
-
-// IsInverseSelector checks if inverse char has been provided.
-func IsInverseSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return inverseRx.MatchString(s)
-}
-
 // TrimLabelSelector extracts label query.
 func TrimLabelSelector(s string) string {
-	return strings.TrimSpace(s[2:])
+	if strings.Index(s, "-l") == 0 {
+		return strings.TrimSpace(s[2:])
+	}
+
+	return s
 }
 
 // SkinTitle decorates a title.
@@ -126,78 +97,4 @@ func formatCell(field string, padding int) string {
 	}
 
 	return field
-}
-
-func filterToast(data *render.TableData) *render.TableData {
-	validX := data.Header.IndexOf("VALID", true)
-	if validX == -1 {
-		return data
-	}
-
-	toast := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	for _, re := range data.RowEvents {
-		if re.Row.Fields[validX] != "" {
-			toast.RowEvents = append(toast.RowEvents, re)
-		}
-	}
-
-	return &toast
-}
-
-func rxFilter(q string, inverse bool, data *render.TableData) (*render.TableData, error) {
-	if inverse {
-		q = q[1:]
-	}
-	rx, err := regexp.Compile(`(?i)(` + q + `)`)
-	if err != nil {
-		return data, fmt.Errorf("%w -- %s", err, q)
-	}
-
-	filtered := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	ageIndex := -1
-	if data.Header.HasAge() {
-		ageIndex = data.Header.IndexOf("AGE", true)
-	}
-	const spacer = " "
-	for _, re := range data.RowEvents {
-		ff := re.Row.Fields
-		if ageIndex > 0 {
-			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
-		}
-		fields := strings.Join(ff, spacer)
-		if (inverse && !rx.MatchString(fields)) ||
-			((!inverse) && rx.MatchString(fields)) {
-			filtered.RowEvents = append(filtered.RowEvents, re)
-		}
-	}
-
-	return &filtered, nil
-}
-
-func fuzzyFilter(q string, data *render.TableData) *render.TableData {
-	q = strings.TrimSpace(q)
-	ss := make([]string, 0, len(data.RowEvents))
-	for _, re := range data.RowEvents {
-		ss = append(ss, re.Row.ID)
-	}
-
-	filtered := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	mm := fuzzy.Find(q, ss)
-	for _, m := range mm {
-		filtered.RowEvents = append(filtered.RowEvents, data.RowEvents[m.Index])
-	}
-
-	return &filtered
 }

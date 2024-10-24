@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package watch
 
 import (
@@ -8,6 +11,8 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
@@ -67,12 +72,12 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
-	inf, err := f.CanForResource(ns, gvr, client.MonitorAccess)
+	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
 	if err != nil {
 		return nil, err
 	}
 	if client.IsAllNamespace(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 
 	var oo []runtime.Object
@@ -94,7 +99,7 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 
 // HasSynced checks if given informer is up to date.
 func (f *Factory) HasSynced(gvr, ns string) (bool, error) {
-	inf, err := f.CanForResource(ns, gvr, client.MonitorAccess)
+	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
 	if err != nil {
 		return false, err
 	}
@@ -128,7 +133,7 @@ func (f *Factory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runtime.
 
 func (f *Factory) waitForCacheSync(ns string) {
 	if client.IsClusterWide(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 
 	f.mx.RLock()
@@ -179,14 +184,14 @@ func (f *Factory) SetActiveNS(ns string) error {
 func (f *Factory) isClusterWide() bool {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
-	_, ok := f.factories[client.AllNamespaces]
+	_, ok := f.factories[client.BlankNamespace]
 
 	return ok
 }
 
 // CanForResource return an informer is user has access.
 func (f *Factory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
-	auth, err := f.Client().CanI(ns, gvr, verbs)
+	auth, err := f.Client().CanI(ns, gvr, "", verbs)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +223,7 @@ func (f *Factory) ForResource(ns, gvr string) (informers.GenericInformer, error)
 
 func (f *Factory) ensureFactory(ns string) (di.DynamicSharedInformerFactory, error) {
 	if client.IsClusterWide(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 	f.mx.Lock()
 	defer f.mx.Unlock()
@@ -272,8 +277,8 @@ func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
 	return fwd, ok
 }
 
-// BOZO!! Review!!!
 // ValidatePortForwards check if pods are still around for portforwards.
+// BOZO!! Review!!!
 func (f *Factory) ValidatePortForwards() {
 	for k, fwd := range f.forwarders {
 		tokens := strings.Split(k, ":")
@@ -285,8 +290,17 @@ func (f *Factory) ValidatePortForwards() {
 		if len(paths) < 1 {
 			log.Error().Msgf("Invalid path %q", tokens[0])
 		}
-		_, err := f.Get("v1/pods", paths[0], false, labels.Everything())
+		o, err := f.Get("v1/pods", paths[0], false, labels.Everything())
 		if err != nil {
+			fwd.Stop()
+			delete(f.forwarders, k)
+			continue
+		}
+		var pod v1.Pod
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
+			continue
+		}
+		if pod.GetCreationTimestamp().Time.Unix() > fwd.Age().Unix() {
 			fwd.Stop()
 			delete(f.forwarders, k)
 		}

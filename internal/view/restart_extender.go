@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -9,7 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // RestartExtender represents a restartable resource.
@@ -26,13 +29,16 @@ func NewRestartExtender(v ResourceViewer) ResourceViewer {
 }
 
 // BindKeys creates additional menu actions.
-func (r *RestartExtender) bindKeys(aa ui.KeyActions) {
+func (r *RestartExtender) bindKeys(aa *ui.KeyActions) {
 	if r.App().Config.K9s.IsReadOnly() {
 		return
 	}
-	aa.Add(ui.KeyActions{
-		ui.KeyR: ui.NewKeyAction("Restart", r.restartCmd, true),
-	})
+	aa.Add(ui.KeyR, ui.NewKeyActionWithOpts("Restart", r.restartCmd,
+		ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		},
+	))
 }
 
 func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {

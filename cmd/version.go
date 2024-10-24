@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package cmd
 
 import (
@@ -41,7 +44,7 @@ func printVersion(short bool) {
 
 func printTuple(fmat, section, value string, outputColor color.Paint) {
 	if outputColor != -1 {
-		fmt.Fprintf(out, fmat, color.Colorize(section+":", outputColor), color.Colorize(value, color.LightGray))
+		fmt.Fprintf(out, fmat, color.Colorize(section+":", outputColor), value)
 		return
 	}
 	fmt.Fprintf(out, fmat, section, value)

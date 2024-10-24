@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao_test
 
 import (
@@ -14,7 +17,7 @@ func TestBenchForConfig(t *testing.T) {
 		spec      config.BenchConfig
 	}{
 		"no_file": {file: "", key: "", spec: config.DefaultBenchSpec()},
-		"spec": {file: "testdata/benchspec.yml", key: "default/nginx-123-456:nginx", spec: config.BenchConfig{
+		"spec": {file: "testdata/benchspec.yaml", key: "default/nginx-123-456|nginx", spec: config.BenchConfig{
 			C: 2,
 			N: 3000,
 			HTTP: config.HTTP{

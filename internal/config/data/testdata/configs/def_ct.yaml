@@ -1,0 +1,12 @@
+k9s:
+  cluster: cl-test
+  namespace:
+    active: default
+    lockFavorites: false
+    favorites:
+    - default
+  view:
+    active: po
+  featureGates:
+    nodeShell: false
+  portForwardAddress: localhost

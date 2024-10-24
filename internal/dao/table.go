@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -7,13 +10,15 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
 )
 
-// BOZO!! Figure out how to convert to table def and use factory.
+const gvFmt = "application/json;as=Table;v=%s;g=%s, application/json"
+
+var genScheme = runtime.NewScheme()
 
 // Table retrieves K8s resources as tabular data.
 type Table struct {
@@ -22,19 +27,19 @@ type Table struct {
 
 // Get returns a given resource.
 func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
-	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
-	_, codec := t.codec()
-
-	c, err := t.getClient()
+	f, p := t.codec()
+	c, err := t.getClient(f)
 	if err != nil {
 		return nil, err
 	}
+
 	ns, n := client.Namespaced(path)
+	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
 	req := c.Get().
 		SetHeader("Accept", a).
 		Name(n).
 		Resource(t.gvr.R()).
-		VersionedParams(&metav1beta1.TableOptions{}, codec)
+		VersionedParams(&metav1.TableOptions{}, p)
 	if ns != client.ClusterScope {
 		req = req.Namespace(ns)
 	}
@@ -44,23 +49,25 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List all Resources in a given namespace.
 func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	labelSel, ok := ctx.Value(internal.KeyLabels).(string)
-	if !ok {
-		labelSel = ""
-	}
+	labelSel, _ := ctx.Value(internal.KeyLabels).(string)
+	fieldSel, _ := ctx.Value(internal.KeyFields).(string)
 
-	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
-	_, codec := t.codec()
-
-	c, err := t.getClient()
+	f, p := t.codec()
+	c, err := t.getClient(f)
 	if err != nil {
 		return nil, err
 	}
+	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
 	o, err := c.Get().
 		SetHeader("Accept", a).
 		Namespace(ns).
 		Resource(t.gvr.R()).
-		VersionedParams(&metav1.ListOptions{LabelSelector: labelSel}, codec).
+		VersionedParams(&metav1.ListOptions{
+			LabelSelector:        labelSel,
+			FieldSelector:        fieldSel,
+			ResourceVersion:      "0",
+			ResourceVersionMatch: v1.ResourceVersionMatchNotOlderThan,
+		}, p).
 		Do(ctx).Get()
 	if err != nil {
 		return nil, err
@@ -72,9 +79,7 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-const gvFmt = "application/json;as=Table;v=%s;g=%s, application/json"
-
-func (t *Table) getClient() (*rest.RESTClient, error) {
+func (t *Table) getClient(f serializer.CodecFactory) (*rest.RESTClient, error) {
 	cfg, err := t.Client().RestConfig()
 	if err != nil {
 		return nil, err
@@ -85,8 +90,7 @@ func (t *Table) getClient() (*rest.RESTClient, error) {
 	if t.gvr.G() == "" {
 		cfg.APIPath = "/api"
 	}
-	codec, _ := t.codec()
-	cfg.NegotiatedSerializer = codec.WithoutConversion()
+	cfg.NegotiatedSerializer = f.WithoutConversion()
 
 	crRestClient, err := rest.RESTClientFor(cfg)
 	if err != nil {
@@ -97,11 +101,12 @@ func (t *Table) getClient() (*rest.RESTClient, error) {
 }
 
 func (t *Table) codec() (serializer.CodecFactory, runtime.ParameterCodec) {
-	scheme := runtime.NewScheme()
+	var tt metav1.Table
+	opts := metav1.TableOptions{IncludeObject: v1.IncludeObject}
 	gv := t.gvr.GV()
-	metav1.AddToGroupVersion(scheme, gv)
-	scheme.AddKnownTypes(gv, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
-	scheme.AddKnownTypes(metav1beta1.SchemeGroupVersion, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
+	metav1.AddToGroupVersion(genScheme, gv)
+	genScheme.AddKnownTypes(gv, &tt, &opts)
+	genScheme.AddKnownTypes(metav1.SchemeGroupVersion, &tt, &opts)
 
-	return serializer.NewCodecFactory(scheme), runtime.NewParameterCodec(scheme)
+	return serializer.NewCodecFactory(genScheme), runtime.NewParameterCodec(genScheme)
 }

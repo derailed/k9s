@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dialog
 
 import (
@@ -22,9 +25,9 @@ func TestDeleteDialog(t *testing.T) {
 	}
 	ShowDelete(config.Dialog{}, p, "Yo", okFunc, caFunc)
 
-	d := p.GetPrimitive(deleteKey).(*tview.ModalForm)
+	d := p.GetPrimitive(dialogKey).(*tview.ModalForm)
 	assert.NotNil(t, d)
 
-	dismissDelete(p)
-	assert.Nil(t, p.GetPrimitive(deleteKey))
+	dismiss(p)
+	assert.Nil(t, p.GetPrimitive(dialogKey))
 }

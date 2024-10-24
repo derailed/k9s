@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -6,7 +9,8 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/tcell/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,54 +24,52 @@ type PersistentVolume struct {
 }
 
 // ColorerFunc colors a resource row.
-func (p PersistentVolume) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		if !Happy(ns, h, re.Row) {
-			return ErrColor
-		}
+func (p PersistentVolume) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
 
-		statusCol := h.IndexOf("STATUS", true)
-		if statusCol == -1 {
-			return DefaultColorer(ns, h, re)
+		idx, ok := h.IndexOf("STATUS", true)
+		if ok {
+			return c
 		}
-		switch strings.TrimSpace(re.Row.Fields[statusCol]) {
+		switch strings.TrimSpace(re.Row.Fields[idx]) {
 		case string(v1.VolumeBound):
-			return StdColor
+			return model1.StdColor
 		case string(v1.VolumeAvailable):
 			return tcell.ColorGreen
 		case string(v1.VolumePending):
-			return PendingColor
+			return model1.PendingColor
 		case terminatingPhase:
-			return CompletedColor
+			return model1.CompletedColor
 		}
 
-		return DefaultColorer(ns, h, re)
+		return c
 	}
 }
 
 // Header returns a header rbw.
-func (PersistentVolume) Header(string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "CAPACITY"},
-		HeaderColumn{Name: "ACCESS MODES"},
-		HeaderColumn{Name: "RECLAIM POLICY"},
-		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "CLAIM"},
-		HeaderColumn{Name: "STORAGECLASS"},
-		HeaderColumn{Name: "REASON"},
-		HeaderColumn{Name: "VOLUMEMODE", Wide: true},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (PersistentVolume) Header(string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "CAPACITY", Capacity: true},
+		model1.HeaderColumn{Name: "ACCESS MODES"},
+		model1.HeaderColumn{Name: "RECLAIM POLICY"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "CLAIM"},
+		model1.HeaderColumn{Name: "STORAGECLASS"},
+		model1.HeaderColumn{Name: "REASON"},
+		model1.HeaderColumn{Name: "VOLUMEMODE", Wide: true},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
+func (p PersistentVolume) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected PersistentVolume, but got %T", o)
+		return fmt.Errorf("expected PersistentVolume, but got %T", o)
 	}
 	var pv v1.PersistentVolume
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pv)
@@ -91,7 +93,7 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 	size := pv.Spec.Capacity[v1.ResourceStorage]
 
 	r.ID = client.MetaFQN(pv.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		pv.Name,
 		size.String(),
 		accessMode(pv.Spec.AccessModes),
@@ -102,8 +104,8 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 		pv.Status.Reason,
 		p.volumeMode(pv.Spec.VolumeMode),
 		mapToStr(pv.Labels),
-		asStatus(p.diagnose(phase)),
-		toAge(pv.GetCreationTimestamp()),
+		AsStatus(p.diagnose(phase)),
+		ToAge(pv.GetCreationTimestamp()),
 	}
 
 	return nil

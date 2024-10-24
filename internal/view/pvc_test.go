@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view_test
 
 import (
@@ -13,5 +16,5 @@ func TestPVCNew(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "PersistentVolumeClaims", v.Name())
-	assert.Equal(t, 10, len(v.Hints()))
+	assert.Equal(t, 11, len(v.Hints()))
 }

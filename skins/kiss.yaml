@@ -1,0 +1,75 @@
+# -----------------------------------------------------------------------------
+# K9s Kiss Skin
+# Author: [@beejeebus](justin.p.randell@gmail.com)
+# -----------------------------------------------------------------------------
+
+# Skin...
+k9s:
+  body:
+    fgColor: default
+    bgColor: default
+    logoColor: default
+  prompt:
+    fgColor: default
+    bgColor: default
+    suggestColor: default
+  info:
+    fgColor: default
+    sectionColor: default
+  dialog:
+    fgColor: default
+    bgColor: default
+    buttonFgColor: default
+    buttonBgColor: default
+    buttonFocusFgColor: default
+    buttonFocusBgColor: default
+    labelFgColor: default
+    fieldFgColor: default
+  frame:
+    border:
+      fgColor: default
+      focusColor: default
+    menu:
+      fgColor: default
+      keyColor: default
+      numKeyColor: default
+    crumbs:
+      fgColor: default
+      bgColor: default
+      activeColor: default
+    status:
+      newColor: default
+      modifyColor: default
+      addColor: default
+      errorColor: default
+      highlightColor: default
+      killColor: default
+      completedColor: default
+    title:
+      fgColor: default
+      bgColor: default
+      highlightColor: default
+      counterColor: default
+      filterColor: default
+  views:
+    table:
+      fgColor: default
+      bgColor: default
+      cursorFgColor: default
+      cursorBfColor: default
+      header:
+        fgColor: default
+        bgColor: default
+        sorterColor: default
+    yaml:
+      keyColor: default
+      colonColor: default
+      valueColor: default
+    logs:
+      fgColor: default
+      bgColor: default
+      indicator:
+        fgColor: default
+        bgColor: default
+        toggleOnColor: default
+        toggleOffColor: default

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -61,10 +64,12 @@ func (p *Policy) loadClusterRoleBinding(kind, name string) (render.Policies, err
 		return nil, err
 	}
 
+	ns, n := client.Namespaced(name)
 	var nn []string
 	for _, crb := range crbs {
 		for _, s := range crb.Subjects {
-			if s.Kind == kind && s.Name == name {
+			s := s
+			if isSameSubject(kind, ns, n, &s) {
 				nn = append(nn, crb.RoleRef.Name)
 			}
 		}
@@ -86,21 +91,20 @@ func (p *Policy) loadClusterRoleBinding(kind, name string) (render.Policies, err
 }
 
 func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
-	ss, err := p.fetchRoleBindingSubjects(kind, name)
+	rbsMap, err := p.fetchRoleBindingNamespaces(kind, name)
 	if err != nil {
 		return nil, err
 	}
-
 	crs, err := p.fetchClusterRoles()
 	if err != nil {
 		return nil, err
 	}
 	rows := make(render.Policies, 0, len(crs))
 	for _, cr := range crs {
-		if !inList(ss, "ClusterRole:"+cr.Name) {
-			continue
+		if rbNs, ok := rbsMap["ClusterRole:"+cr.Name]; ok {
+			log.Debug().Msgf("Loading rules for clusterrole %q:%q", rbNs, cr.Name)
+			rows = append(rows, parseRules(rbNs, "CR:"+cr.Name, cr.Rules)...)
 		}
-		rows = append(rows, parseRules("*", "CR:"+cr.Name, cr.Rules)...)
 	}
 
 	ros, err := p.fetchRoles()
@@ -108,7 +112,7 @@ func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
 		return nil, err
 	}
 	for _, ro := range ros {
-		if !inList(ss, "Role:"+ro.Name) {
+		if _, ok := rbsMap["Role:"+ro.Name]; !ok {
 			continue
 		}
 		log.Debug().Msgf("Loading rules for role %q:%q", ro.Namespace, ro.Name)
@@ -154,16 +158,19 @@ func fetchRoleBindings(f Factory) ([]rbacv1.RoleBinding, error) {
 	return rbs, nil
 }
 
-func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
+func (p *Policy) fetchRoleBindingNamespaces(kind, name string) (map[string]string, error) {
 	rbs, err := fetchRoleBindings(p.Factory)
 	if err != nil {
 		return nil, err
 	}
-	ss := make([]string, 0, len(rbs))
+
+	ns, n := client.Namespaced(name)
+	ss := make(map[string]string, len(rbs))
 	for _, rb := range rbs {
 		for _, s := range rb.Subjects {
-			if s.Kind == kind && s.Name == name {
-				ss = append(ss, rb.RoleRef.Kind+":"+rb.Name)
+			s := s
+			if isSameSubject(kind, ns, n, &s) {
+				ss[rb.RoleRef.Kind+":"+rb.RoleRef.Name] = rb.Namespace
 			}
 		}
 	}
@@ -171,10 +178,24 @@ func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
 	return ss, nil
 }
 
+// isSameSubject verifies if the incoming type name and namespace match a subject from a
+// cluster/roleBinding. A ServiceAccount will always have a namespace and needs to be validated to ensure
+// we don't display permissions for a ServiceAccount with the same name in a different namespace
+func isSameSubject(kind, ns, name string, subject *rbacv1.Subject) bool {
+	if subject.Kind != kind || subject.Name != name {
+		return false
+	}
+	if kind == rbacv1.ServiceAccountKind {
+		// Kind and name were checked above, check the namespace
+		return client.IsAllNamespaces(ns) || subject.Namespace == ns
+	}
+	return true
+}
+
 func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/clusterroles"
 
-	oo, err := p.GetFactory().List(gvr, client.ClusterScope, false, labels.Everything())
+	oo, err := p.getFactory().List(gvr, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +215,7 @@ func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 func (p *Policy) fetchRoles() ([]rbacv1.Role, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/roles"
 
-	oo, err := p.GetFactory().List(gvr, client.AllNamespaces, false, labels.Everything())
+	oo, err := p.getFactory().List(gvr, client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

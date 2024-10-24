@@ -1,0 +1,16 @@
+# $HOME/.k9s/plugin.yml
+plugins:
+  # Issues a helm delete --purge for the resource associated with the selected pod
+  # Requires https://github.com/derailed/k9s/blob/master/plugins/kubectl/kubectl-purge
+  helm-purge:
+    shortCut: Ctrl-P
+    description: Helm Purge
+    dangerous: true
+    scopes:
+    - po
+    command: kubectl
+    background: true
+    args:
+    - purge
+    - $NAMESPACE
+    - $NAME

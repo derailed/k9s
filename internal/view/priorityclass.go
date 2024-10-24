@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // PriorityClass presents a priority class viewer.
@@ -21,12 +25,10 @@ func NewPriorityClass(gvr client.GVR) ResourceViewer {
 	return &s
 }
 
-func (s *PriorityClass) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyU: ui.NewKeyAction("UsedBy", s.refCmd, true),
-	})
+func (s *PriorityClass) bindKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyU, ui.NewKeyAction("UsedBy", s.refCmd, true))
 }
 
 func (s *PriorityClass) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanRefs(evt, s.App(), s.GetTable(), "scheduling.k8s.io/v1/priorityclasses")
+	return scanRefs(evt, s.App(), s.GetTable(), dao.PcGVR)
 }

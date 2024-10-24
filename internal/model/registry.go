@@ -1,14 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/render/helm"
 	"github.com/derailed/k9s/internal/xray"
 )
 
 // Registry tracks resources metadata.
 // BOZO!! Break up deps and merge into single registrar.
 var Registry = map[string]ResourceMeta{
+	"workloads": {
+		DAO:      &dao.Workload{},
+		Renderer: &render.Workload{},
+	},
 	// Custom...
 	"references": {
 		DAO:      &dao.Reference{},
@@ -22,18 +30,21 @@ var Registry = map[string]ResourceMeta{
 		DAO: &dao.Pulse{},
 	},
 	"helm": {
-		DAO:      &dao.Helm{},
-		Renderer: &render.Helm{},
+		DAO:      &dao.HelmChart{},
+		Renderer: &helm.Chart{},
 	},
-	// BOZO!! revamp with latest...
-	// "openfaas": {
-	// 	DAO:      &dao.OpenFaas{},
-	// 	Renderer: &render.OpenFaas{},
-	// },
+	"helm-history": {
+		DAO:      &dao.HelmHistory{},
+		Renderer: &helm.History{},
+	},
 	"containers": {
 		DAO:          &dao.Container{},
 		Renderer:     &render.Container{},
 		TreeRenderer: &xray.Container{},
+	},
+	"scans": {
+		DAO:      &dao.ImageScan{},
+		Renderer: &render.ImageScan{},
 	},
 	"contexts": {
 		DAO:      &dao.Context{},
@@ -71,14 +82,15 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Alias{},
 		Renderer: &render.Alias{},
 	},
-	"popeye": {
-		DAO:      &dao.Popeye{},
-		Renderer: &render.Popeye{},
-	},
-	"sanitizer": {
-		DAO:          &dao.Popeye{},
-		TreeRenderer: &xray.Section{},
-	},
+	// !!BOZO!! Popeye
+	//"popeye": {
+	//	DAO:      &dao.Popeye{},
+	//	Renderer: &render.Popeye{},
+	//},
+	//"sanitizer": {
+	//	DAO:          &dao.Popeye{},
+	//	TreeRenderer: &xray.Section{},
+	//},
 
 	// Core...
 	"v1/endpoints": {
@@ -90,7 +102,16 @@ var Registry = map[string]ResourceMeta{
 		TreeRenderer: &xray.Pod{},
 	},
 	"v1/namespaces": {
+		DAO:      &dao.Namespace{},
 		Renderer: &render.Namespace{},
+	},
+	"v1/secrets": {
+		DAO:      &dao.Secret{},
+		Renderer: &render.Secret{},
+	},
+	"v1/configmaps": {
+		DAO:      &dao.ConfigMap{},
+		Renderer: &render.ConfigMap{},
 	},
 	"v1/nodes": {
 		DAO:      &dao.Node{},
@@ -101,6 +122,10 @@ var Registry = map[string]ResourceMeta{
 		Renderer:     &render.Service{},
 		TreeRenderer: &xray.Service{},
 	},
+	"v1/events": {
+		DAO:      &dao.Table{},
+		Renderer: &render.Event{},
+	},
 	"v1/serviceaccounts": {
 		Renderer: &render.ServiceAccount{},
 	},
@@ -109,10 +134,6 @@ var Registry = map[string]ResourceMeta{
 	},
 	"v1/persistentvolumeclaims": {
 		Renderer: &render.PersistentVolumeClaim{},
-	},
-	"v1/events": {
-		DAO:      &dao.Table{},
-		Renderer: &render.Event{},
 	},
 
 	// Apps...
@@ -142,7 +163,7 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// Batch...
-	"batch/v1beta1/cronjobs": {
+	"batch/v1/cronjobs": {
 		DAO:      &dao.CronJob{},
 		Renderer: &render.CronJob{},
 	},
@@ -153,6 +174,7 @@ var Registry = map[string]ResourceMeta{
 
 	// CRDs...
 	"apiextensions.k8s.io/v1/customresourcedefinitions": {
+		DAO:      &dao.CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 
@@ -162,7 +184,7 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// Policy...
-	"policy/v1beta1/poddisruptionbudgets": {
+	"policy/v1/poddisruptionbudgets": {
 		Renderer: &render.PodDisruptionBudget{},
 	},
 
@@ -179,5 +201,15 @@ var Registry = map[string]ResourceMeta{
 	},
 	"rbac.authorization.k8s.io/v1/rolebindings": {
 		Renderer: &render.RoleBinding{},
+	},
+
+	// Autoscaling...
+	"autoscaling/v1/horizontalpodautoscalers": {
+		Renderer: &render.HorizontalPodAutoscaler{},
+		DAO:      &dao.Table{},
+	},
+	"autoscaling/v2/horizontalpodautoscalers": {
+		Renderer: &render.HorizontalPodAutoscaler{},
+		DAO:      &dao.Table{},
 	},
 }

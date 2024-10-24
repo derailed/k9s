@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,13 +20,13 @@ func TestNodeRender(t *testing.T) {
 	}
 
 	var no render.Node
-	r := render.NewRow(14)
+	r := model1.NewRow(14)
 	err := no.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "minikube", r.ID)
-	e := render.Fields{"minikube", "Ready", "master", "v1.15.2", "4.15.0", "192.168.64.107", "<none>", "0", "10", "20", "0", "0", "4000", "7874"}
-	assert.Equal(t, e, r.Fields[:14])
+	e := model1.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "4.15.0", "192.168.64.107", "<none>", "0", "10", "20", "0", "0", "4000", "7874"}
+	assert.Equal(t, e, r.Fields[:16])
 }
 
 func BenchmarkNodeRender(b *testing.B) {
@@ -31,7 +35,7 @@ func BenchmarkNodeRender(b *testing.B) {
 		MX:  makeNodeMX("n1", "10m", "10Mi"),
 	}
 	var no render.Node
-	r := render.NewRow(14)
+	r := model1.NewRow(14)
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

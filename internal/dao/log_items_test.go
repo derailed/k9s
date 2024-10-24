@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao_test
 
 import (
@@ -108,7 +111,7 @@ func TestLogItemsRender(t *testing.T) {
 				Container:     "blee",
 				ShowTimestamp: true,
 			},
-			e: "[gray::b]2018-12-14T10:36:43.326972-07:00 [teal::]fred [teal::b]blee[-::-] Testing 1,2,3...\n",
+			e: "[gray::b]2018-12-14T10:36:43.326972-07:00 [-::-][teal::]fred [teal::b]blee[-::-] Testing 1,2,3...\n",
 		},
 	}
 
