@@ -172,6 +172,9 @@ func (p Pod) diagnose(phase string, cr, ct int) error {
 	if cr != ct || ct == 0 {
 		return fmt.Errorf("container ready check failed: %d of %d", cr, ct)
 	}
+	if phase == Terminating {
+		return fmt.Errorf("pod is terminating")
+	}
 
 	return nil
 }
