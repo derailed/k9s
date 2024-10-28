@@ -1,7 +1,7 @@
 plugins:
   # List all the resources managed by a Composite Resource
   kube-lineage:
-    shortCut: Ctrl-X
+    shortCut: Ctrl-U
     confirm: false
     description: "Kube Lineage"
     scopes:

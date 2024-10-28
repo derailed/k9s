@@ -13,7 +13,7 @@ plugins:
     - "{ namespace = \"$NAMESPACE\", pod = \"$POD\", container = \"$NAME\" }"
     - -f
   loki-container-raw:
-    shortCut: Ctrl-L
+    shortCut: Ctrl-E
     description: "loki raw"
     scopes:
     - containers

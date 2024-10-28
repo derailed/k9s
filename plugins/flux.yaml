@@ -152,7 +152,7 @@ plugins:
         -n $NAMESPACE $NAME
         | less -K
   trace:
-    shortCut: Shift-A
+    shortCut: Shift-P
     confirm: false
     description: Flux trace
     scopes:
