@@ -86,7 +86,13 @@ func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOpti
 		Lines:         cfg.TailCount,
 		Previous:      prevLogs,
 		ShowTimestamp: cfg.ShowTime,
+		DecodeJson:    cfg.DecodeJson,
+		Json: dao.JsonOptions{
+			GlobalExpressions: cfg.JsonConfig.GlobalExpressions,
+			Templates:         dao.TemplatesFromConfig(cfg.JsonConfig),
+		},
 	}
+	opts.Json.SetCurrentTemplateByName(cfg.JsonConfig.DefaultTemplate)
 	if opts.Container == "" {
 		opts.AllContainers = true
 	}
@@ -104,9 +110,15 @@ func podLogOptions(app *App, fqn string, prev bool, m *metav1.ObjectMeta, spec *
 			SinceSeconds:    cfg.SinceSeconds,
 			SingleContainer: len(cc) == 1,
 			ShowTimestamp:   cfg.ShowTime,
+			DecodeJson:      cfg.DecodeJson,
 			Previous:        prev,
+			Json: dao.JsonOptions{
+				GlobalExpressions: cfg.JsonConfig.GlobalExpressions,
+				Templates:         dao.TemplatesFromConfig(cfg.JsonConfig),
+			},
 		}
 	)
+	opts.Json.SetCurrentTemplateByName(cfg.JsonConfig.DefaultTemplate)
 	if c, ok := dao.GetDefaultContainer(m, spec); ok {
 		opts.Container, opts.DefaultContainer = c, c
 	} else if len(cc) == 1 {
