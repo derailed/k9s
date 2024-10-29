@@ -27,6 +27,8 @@ type LogOptions struct {
 	MultiPods        bool
 	ShowTimestamp    bool
 	AllContainers    bool
+	DecodeJson       bool
+	Json             JsonOptions
 }
 
 // Info returns the option pod and container info.
@@ -53,6 +55,8 @@ func (o *LogOptions) Clone() *LogOptions {
 		SinceTime:        o.SinceTime,
 		SinceSeconds:     o.SinceSeconds,
 		AllContainers:    o.AllContainers,
+		DecodeJson:       o.DecodeJson,
+		Json:             o.Json,
 	}
 }
 

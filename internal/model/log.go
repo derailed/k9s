@@ -93,6 +93,12 @@ func (l *Log) ToggleShowTimestamp(b bool) {
 	l.Refresh()
 }
 
+// ToggleDecodeJson toggles to decode json in logs.
+func (l *Log) ToggleDecodeJson(b bool, ctx context.Context) {
+	l.logOptions.DecodeJson = b
+	l.Restart(ctx)
+}
+
 func (l *Log) Head(ctx context.Context) {
 	l.mx.Lock()
 	l.logOptions.Head = true
