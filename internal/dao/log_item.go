@@ -5,12 +5,15 @@ package dao
 
 import (
 	"bytes"
+	"regexp"
 )
 
 // LogChan represents a channel for logs.
 type LogChan chan *LogItem
 
 var ItemEOF = new(LogItem)
+
+var dateTimePrefixRegEx = regexp.MustCompile("^\\d{4}-\\d{2}-\\d{2}T?.*")
 
 // LogItem represents a container log line.
 type LogItem struct {
@@ -68,13 +71,17 @@ func (l *LogItem) Size() int {
 
 // Render returns a log line as string.
 func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
-	index := bytes.Index(l.Bytes, []byte{' '})
+	var index = -1
+	if dateTimePrefixRegEx.MatchString(string(l.Bytes)) {
+		index = bytes.Index(l.Bytes, []byte{' '})
+	}
 	if showTime && index > 0 {
 		bb.WriteString("[gray::b]")
 		bb.Write(l.Bytes[:index])
 		bb.WriteString(" ")
 		if l := 30 - len(l.Bytes[:index]); l > 0 {
-			bb.Write(bytes.Repeat([]byte{' '}, l))
+			// turned off to avoid empty column spaces
+			// bb.Write(bytes.Repeat([]byte{' '}, l))
 		}
 		bb.WriteString("[-::-]")
 	}
