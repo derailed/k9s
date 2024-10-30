@@ -1,0 +1,19 @@
+# Force delete pod
+# <shift-k> Force delete pod
+plugins:
+  pod-force-delete:
+    shortCut: Shift-K
+    confirm: true
+    description: Force Delete
+    scopes:
+      - po
+    command: kubectl
+    background: true
+    args:
+      - delete 
+      - pod 
+      - $NAME 
+      - --grace-period=0 
+      - --force 
+      - -n 
+      - $NAMESPACE
