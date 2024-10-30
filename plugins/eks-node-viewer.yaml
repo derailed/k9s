@@ -1,0 +1,15 @@
+# plugin to easily open eks-node-viewer on viewed context
+# requires eks-node-viewer installed on system
+# https://github.com/awslabs/eks-node-viewer/
+plugins:
+  eks-node-viewer:
+    shortCut: Shift-X
+    description: "eks-node-viewer"
+    scopes:
+      - node
+    background: false
+    command: bash
+    args:
+    - -c
+    - |
+      env $(kubectl config view --context $CONTEXT --minify -o json | jq -r ".users[0].user.exec.env[] | select(.name == \"AWS_PROFILE\") | \"AWS_PROFILE=\" + .value" && kubectl config view --context $CONTEXT --minify -o json | jq -r ".users[0].user.exec.args | \"AWS_REGION=\" + .[1]") eks-node-viewer --context $CONTEXT --resources cpu,memory --extra-labels karpenter.sh/nodepool,eks-node-viewer/node-age --node-sort=creation=dsc
