@@ -25,7 +25,7 @@ plugins:
       - $CONTEXT
       - --namespace
       - $NAMESPACE
-      - $RESOURCE_NAME
+      - $RESOURCE_NAME.$RESOURCE_GROUP
       - $NAME
       - -p
       - '{"metadata":{"finalizers":null}}'
