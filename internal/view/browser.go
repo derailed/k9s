@@ -585,17 +585,17 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 	aa.Add(ui.Key0, ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true))
 	b.namespaces[0] = client.NamespaceAll
 	index := 1
-	for _, ns := range b.app.Config.FavNamespaces() {
+	favNamespaces := b.app.Config.FavNamespaces()
+	for _, ns := range favNamespaces {
 		if ns == client.NamespaceAll {
 			continue
 		}
-		numKey := ui.Key0 + tcell.Key(index)
-		// no assumption is made about the length of FavNamespaces
-		if numKey > ui.Key9 {
-			break
+		if numKey, ok := ui.NumKeys[index]; ok {
+			aa.Add(numKey, ui.NewKeyAction(ns, b.switchNamespaceCmd, true))
+			b.namespaces[index] = ns
+		} else {
+			log.Warn().Msgf("No number key available for favorite namespace %s (%d of %d). Skipping...", ns, index, len(favNamespaces))
 		}
-		aa.Add(numKey, ui.NewKeyAction(ns, b.switchNamespaceCmd, true))
-		b.namespaces[index] = ns
 		index++
 	}
 }
