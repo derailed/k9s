@@ -5,6 +5,7 @@ package render_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
@@ -163,8 +164,8 @@ func TestPodRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "<none>", "<none>"}
-	assert.Equal(t, e, r.Fields[:19])
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "n/a", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "<none>", "<none>"}
+	assert.Equal(t, e, r.Fields[:20])
 }
 
 func BenchmarkPodRender(b *testing.B) {
@@ -194,8 +195,8 @@ func TestPodInitRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "<none>", "<none>"}
-	assert.Equal(t, e, r.Fields[:19])
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "n/a", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "<none>", "<none>"}
+	assert.Equal(t, e, r.Fields[:20])
 }
 
 func TestPodSidecarRender(t *testing.T) {
@@ -210,8 +211,8 @@ func TestPodSidecarRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/sleep", r.ID)
-	e := model1.Fields{"default", "sleep", "0", "●", "1/1", "Running", "0", "100", "40", "50:250", "50:80", "200", "40", "80", "50", "10.244.0.8", "kind-control-plane", "<none>", "<none>"}
-	assert.Equal(t, e, r.Fields[:19])
+	e := model1.Fields{"default", "sleep", "0", "●", "1/1", "Running", "0", "n/a", "100", "40", "50:250", "50:80", "200", "40", "80", "50", "10.244.0.8", "kind-control-plane", "<none>", "<none>"}
+	assert.Equal(t, e, r.Fields[:20])
 }
 
 func TestCheckPodStatus(t *testing.T) {
@@ -539,6 +540,82 @@ func TestCheckPodStatus(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, render.PodStatus(&u.pod))
+		})
+	}
+}
+
+func TestPodLastRestart(t *testing.T) {
+	uu := map[string]struct {
+		containerStatuses []v1.ContainerStatus
+		expected          metav1.Time
+	}{
+		"no-restarts": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name:                 "c1",
+					LastTerminationState: v1.ContainerState{},
+				},
+			},
+			expected: metav1.Time{},
+		},
+		"single-container-restart": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name: "c1",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+		"multiple-container-restarts": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name: "c1",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime().Add(-1 * time.Hour)},
+						},
+					},
+				},
+				{
+					Name: "c2",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+		"mixed-termination-states": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name:                 "c1",
+					LastTerminationState: v1.ContainerState{},
+				},
+				{
+					Name: "c2",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+	}
+
+	var p render.Pod
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.expected, p.LastRestart(u.containerStatuses))
 		})
 	}
 }
