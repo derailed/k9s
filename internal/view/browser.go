@@ -593,10 +593,11 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 		if numKey, ok := ui.NumKeys[index]; ok {
 			aa.Add(numKey, ui.NewKeyAction(ns, b.switchNamespaceCmd, true))
 			b.namespaces[index] = ns
+			index++
 		} else {
 			log.Warn().Msgf("No number key available for favorite namespace %s (%d of %d). Skipping...", ns, index, len(favNamespaces))
+			break
 		}
-		index++
 	}
 }
 
