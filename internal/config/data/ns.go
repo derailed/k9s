@@ -12,7 +12,7 @@ import (
 
 const (
 	// MaxFavoritesNS number # favorite namespaces to keep in the configuration.
-	MaxFavoritesNS = 10
+	MaxFavoritesNS = 9
 )
 
 // Namespace tracks active and favorites namespaces.
