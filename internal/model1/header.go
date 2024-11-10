@@ -85,13 +85,19 @@ func (h Header) MapIndices(cols []string, wide bool) ([]int, ExtractionInfoBag) 
 
 	for _, col := range cols {
 		idx, ok := h.IndexOf(col, true)
-		if !ok {
-			log.Warn().Msgf("Column %q not found on resource", col)
-		}
+
 		ii, cc[idx] = append(ii, idx), struct{}{}
 
-		// If the column already found OR the it doesn't match the regex
-		if ok || !regex.MatchString(col) {
+		// Continue to next iteration if the column is found
+		if ok {
+			continue
+		}
+
+		log.Warn().Msgf("Column %q not found on resource", col)
+
+		// Continue to next iteration ff the column doesn't match the regex
+		if !regex.MatchString(col) {
+			log.Warn().Msgf("Column %q doesn't match regex pattern", col)
 			continue
 		}
 
@@ -103,9 +109,11 @@ func (h Header) MapIndices(cols []string, wide bool) ([]int, ExtractionInfoBag) 
 
 		// now only support LABELS
 		if headerName != "LABELS" {
+			log.Warn().Msgf("Custom Column %q is not supported", col)
 			continue
 		}
 
+		log.Warn().Msgf("Custom column %q is extracting value with header name: %q and key: %q", col, headerName, key)
 		currentIdx := len(ii) - 1
 		idxInFields, _ := h.IndexOf(headerName, true)
 		eib[currentIdx] = ExtractionInfo{idxInFields, headerName, key}
