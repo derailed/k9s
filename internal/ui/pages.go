@@ -5,6 +5,7 @@ package ui
 
 import (
 	"fmt"
+
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"

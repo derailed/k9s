@@ -16,7 +16,6 @@ type HeaderColumn struct {
 	Name      string
 	Align     int
 	Decorator DecoratorFunc
-	Hide      bool
 	Wide      bool
 	MX        bool
 	Time      bool

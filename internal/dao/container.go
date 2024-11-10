@@ -23,6 +23,12 @@ var (
 	_ Loggable = (*Container)(nil)
 )
 
+const (
+	initIDX = "I"
+	mainIDX = "M"
+	ephIDX  = "E"
+)
+
 // Container represents a pod's container dao.
 type Container struct {
 	NonResource
@@ -49,13 +55,13 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 	}
 	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers)+len(po.Spec.EphemeralContainers))
 	for i, co := range po.Spec.InitContainers {
-		res = append(res, makeContainerRes("I"+strconv.Itoa(i+1), co, po, cmx[co.Name]))
+		res = append(res, makeContainerRes(initIDX, i, co, po, cmx[co.Name]))
 	}
 	for i, co := range po.Spec.Containers {
-		res = append(res, makeContainerRes("M"+strconv.Itoa(i+1), co, po, cmx[co.Name]))
+		res = append(res, makeContainerRes(mainIDX, i, co, po, cmx[co.Name]))
 	}
 	for i, co := range po.Spec.EphemeralContainers {
-		res = append(res, makeContainerRes("E"+strconv.Itoa(i+1), v1.Container(co.EphemeralContainerCommon), po, cmx[co.Name]))
+		res = append(res, makeContainerRes(ephIDX, i, v1.Container(co.EphemeralContainerCommon), po, cmx[co.Name]))
 	}
 
 	return res, nil
@@ -72,30 +78,29 @@ func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeContainerRes(idx string, co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics) render.ContainerRes {
+func makeContainerRes(kind string, idx int, co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics) render.ContainerRes {
 	return render.ContainerRes{
+		Idx:       kind + strconv.Itoa(idx+1),
 		Container: &co,
-		Status:    getContainerStatus(co.Name, po.Status),
+		Status:    getContainerStatus(kind, idx, po.Status),
 		MX:        cmx,
-		Idx:       idx,
 		Age:       po.GetCreationTimestamp(),
 	}
 }
 
-func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
-	for _, c := range status.ContainerStatuses {
-		if c.Name == co {
-			return &c
+func getContainerStatus(kind string, idx int, status v1.PodStatus) *v1.ContainerStatus {
+	switch kind {
+	case mainIDX:
+		if idx < len(status.ContainerStatuses) {
+			return &status.ContainerStatuses[idx]
 		}
-	}
-	for _, c := range status.InitContainerStatuses {
-		if c.Name == co {
-			return &c
+	case initIDX:
+		if idx < len(status.InitContainerStatuses) {
+			return &status.InitContainerStatuses[idx]
 		}
-	}
-	for _, c := range status.EphemeralContainerStatuses {
-		if c.Name == co {
-			return &c
+	case ephIDX:
+		if idx < len(status.EphemeralContainerStatuses) {
+			return &status.EphemeralContainerStatuses[idx]
 		}
 	}
 

@@ -295,12 +295,11 @@ func Test_restartableInitCO(t *testing.T) {
 	}
 }
 
-func Test_filterRestartableInitCO(t *testing.T) {
+func Test_filterSidecarCO(t *testing.T) {
 	always := v1.ContainerRestartPolicyAlways
 
 	uu := map[string]struct {
-		cc  []v1.Container
-		ecc []v1.Container
+		cc, ecc []v1.Container
 	}{
 		"empty": {
 			cc:  []v1.Container{},
@@ -350,7 +349,7 @@ func Test_filterRestartableInitCO(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.ecc, filterRestartableInitCO(u.cc))
+			assert.Equal(t, u.ecc, filterSidecarCO(u.cc))
 		})
 	}
 }

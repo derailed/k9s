@@ -53,10 +53,8 @@ linters-settings:
       - nilness
   goimports:
     local-prefixes: github.com/cilium/cilium
-  staticcheck:
-    go: "1.20"
   unused:
-    go: "1.20"
+    go: "1.23"
   goheader:
     values:
       regexp:
@@ -93,7 +91,7 @@ issues:
       text: "SA9003: empty branch"
     - linters: [staticcheck]
       text: "SA2001: empty critical section"
-    - linters: [goerr113]
+    - linters: [err113]
       text: "do not define dynamic errors, use wrapped static errors instead" # This rule to avoid opinionated check fmt.Errorf("text")
     # Skip goimports check on generated files
     - path: \\.(generated\\.deepcopy|pb)\\.go$
@@ -107,13 +105,12 @@ issues:
 linters:
   disable-all: true
   enable:
-    - goerr113
+    - err113
     - gofmt
     - goimports
     - govet
     - ineffassign
     - misspell
-    - staticcheck
     - unused
     - goheader
     - gosec

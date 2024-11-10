@@ -72,7 +72,7 @@ func (n *Namespace) Validate(c client.Connection) {
 	if len(n.Favorites) > MaxFavoritesNS {
 		log.Debug().Msgf("[Namespace] Number of favorite exceeds hard limit of %v. Trimming.", MaxFavoritesNS)
 		for _, ns := range n.Favorites[MaxFavoritesNS:] {
-            n.rmFavNS(ns)
+			n.rmFavNS(ns)
 		}
 	}
 }
