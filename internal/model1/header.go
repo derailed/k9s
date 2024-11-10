@@ -5,11 +5,22 @@ package model1
 
 import (
 	"reflect"
+	"regexp"
 
 	"github.com/rs/zerolog/log"
 )
 
 const ageCol = "AGE"
+
+// ExtractionInfo stores data for a field to extract value from another field
+type ExtractionInfo struct {
+	IdxInFields int
+	HeaderName  string
+	Key         string
+}
+
+// ExtractionInfoBag store ExtractionInfo by using the index of the column
+type ExtractionInfoBag map[int]ExtractionInfo
 
 // HeaderColumn represent a table header.
 type HeaderColumn struct {
@@ -64,18 +75,44 @@ func (h Header) Labelize(cols []int, labelCol int, rr *RowEvents) Header {
 }
 
 // MapIndices returns a collection of mapped column indices based of the requested columns.
-func (h Header) MapIndices(cols []string, wide bool) []int {
+// And the extraction information used to extract a value for a field from another field.
+func (h Header) MapIndices(cols []string, wide bool) ([]int, ExtractionInfoBag) {
 	ii := make([]int, 0, len(cols))
 	cc := make(map[int]struct{}, len(cols))
+
+	eib := make(ExtractionInfoBag)
+	regex, _ := regexp.Compile(`^(?<HEADER_NAME>.*)\[(?<KEY>.*)\]$`)
+
 	for _, col := range cols {
 		idx, ok := h.IndexOf(col, true)
 		if !ok {
 			log.Warn().Msgf("Column %q not found on resource", col)
 		}
 		ii, cc[idx] = append(ii, idx), struct{}{}
+
+		// If the column already found OR the it doesn't match the regex
+		if ok || !regex.MatchString(col) {
+			continue
+		}
+
+		// Check if the column matches the pattern
+		// For example: `LABELS[beta.kubernetes.io/os]` will match
+		matches := regex.FindStringSubmatch(col)
+		headerName := matches[1]
+		key := matches[2]
+
+		// now only support LABELS
+		if headerName != "LABELS" {
+			continue
+		}
+
+		currentIdx := len(ii) - 1
+		idxInFields, _ := h.IndexOf(headerName, true)
+		eib[currentIdx] = ExtractionInfo{idxInFields, headerName, key}
 	}
+
 	if !wide {
-		return ii
+		return ii, eib
 	}
 
 	for i := range h {
@@ -84,7 +121,7 @@ func (h Header) MapIndices(cols []string, wide bool) []int {
 		}
 		ii = append(ii, i)
 	}
-	return ii
+	return ii, eib
 }
 
 // Customize builds a header from custom col definitions.

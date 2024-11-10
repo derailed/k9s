@@ -16,10 +16,11 @@ import (
 func BenchmarkRowCustomize(b *testing.B) {
 	row := model1.Row{ID: "fred", Fields: model1.Fields{"f1", "f2", "f3"}}
 	cols := []int{0, 1, 2}
+	eib := model1.ExtractionInfoBag{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = row.Customize(cols)
+		_ = row.Customize(cols, eib)
 	}
 }
 
@@ -28,6 +29,7 @@ func TestFieldCustomize(t *testing.T) {
 		fields model1.Fields
 		cols   []int
 		e      model1.Fields
+		eib    model1.ExtractionInfoBag
 	}{
 		"empty": {
 			fields: model1.Fields{},
@@ -49,13 +51,22 @@ func TestFieldCustomize(t *testing.T) {
 			cols:   []int{10, 0},
 			e:      model1.Fields{"", "f1"},
 		},
+		"labels": {
+			fields: model1.Fields{"f1", "f2", "f3", "kubernetes.io/os=linux kubernetes.io/hostname=node1"},
+			cols:   []int{0, -1, -1},
+			e:      model1.Fields{"f1", "node1", "linux"},
+			eib: model1.ExtractionInfoBag{
+				1: model1.ExtractionInfo{3, "LABELS", "kubernetes.io/hostname"},
+				2: model1.ExtractionInfo{3, "LABELS", "kubernetes.io/os"},
+			},
+		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			ff := make(model1.Fields, len(u.cols))
-			u.fields.Customize(u.cols, ff)
+			u.fields.Customize(u.cols, ff, u.eib)
 			assert.Equal(t, u.e, ff)
 		})
 	}
@@ -74,6 +85,7 @@ func TestRowlabelize(t *testing.T) {
 		row  model1.Row
 		cols []int
 		e    model1.Row
+		eib  model1.ExtractionInfoBag
 	}{
 		"empty": {
 			row:  model1.Row{},
@@ -95,7 +107,7 @@ func TestRowlabelize(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			row := u.row.Customize(u.cols)
+			row := u.row.Customize(u.cols, u.eib)
 			assert.Equal(t, u.e, row)
 		})
 	}
@@ -106,6 +118,7 @@ func TestRowCustomize(t *testing.T) {
 		row  model1.Row
 		cols []int
 		e    model1.Row
+		eib  model1.ExtractionInfoBag
 	}{
 		"empty": {
 			row:  model1.Row{},
@@ -127,7 +140,7 @@ func TestRowCustomize(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			row := u.row.Customize(u.cols)
+			row := u.row.Customize(u.cols, u.eib)
 			assert.Equal(t, u.e, row)
 		})
 	}

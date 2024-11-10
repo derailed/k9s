@@ -15,6 +15,7 @@ func TestRowEventCustomize(t *testing.T) {
 	uu := map[string]struct {
 		re1, e model1.RowEvent
 		cols   []int
+		eib    model1.ExtractionInfoBag
 	}{
 		"empty": {
 			re1: model1.RowEvent{
@@ -101,7 +102,7 @@ func TestRowEventCustomize(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.re1.Customize(u.cols))
+			assert.Equal(t, u.e, u.re1.Customize(u.cols, u.eib))
 		})
 	}
 }
@@ -297,6 +298,7 @@ func TestRowEventsCustomize(t *testing.T) {
 	uu := map[string]struct {
 		re, e *model1.RowEvents
 		cols  []int
+		eib   model1.ExtractionInfoBag
 	}{
 		"same": {
 			re: model1.NewRowEventsWithEvts(
@@ -355,7 +357,7 @@ func TestRowEventsCustomize(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.re.Customize(u.cols))
+			assert.Equal(t, u.e, u.re.Customize(u.cols, u.eib))
 		})
 	}
 }

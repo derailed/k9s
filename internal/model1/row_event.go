@@ -47,7 +47,7 @@ func (r RowEvent) Clone() RowEvent {
 }
 
 // Customize returns a new subset based on the given column indices.
-func (r RowEvent) Customize(cols []int) RowEvent {
+func (r RowEvent) Customize(cols []int, extractionInfoBag ExtractionInfoBag) RowEvent {
 	delta := r.Deltas
 	if !r.Deltas.IsBlank() {
 		delta = make(DeltaRow, len(cols))
@@ -57,7 +57,7 @@ func (r RowEvent) Customize(cols []int) RowEvent {
 	return RowEvent{
 		Kind:   r.Kind,
 		Deltas: delta,
-		Row:    r.Row.Customize(cols),
+		Row:    r.Row.Customize(cols, extractionInfoBag),
 	}
 }
 
@@ -158,10 +158,10 @@ func (r *RowEvents) Labelize(cols []int, labelCol int, labels []string) *RowEven
 }
 
 // Customize returns custom row events based on columns layout.
-func (r *RowEvents) Customize(cols []int) *RowEvents {
+func (r *RowEvents) Customize(cols []int, extractionInfoBag ExtractionInfoBag) *RowEvents {
 	ee := make([]RowEvent, 0, len(cols))
 	for _, re := range r.events {
-		ee = append(ee, re.Customize(cols))
+		ee = append(ee, re.Customize(cols, extractionInfoBag))
 	}
 
 	return NewRowEventsWithEvts(ee...)

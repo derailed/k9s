@@ -16,34 +16,49 @@ func TestHeaderMapIndices(t *testing.T) {
 		cols []string
 		wide bool
 		e    []int
+		eib  model1.ExtractionInfoBag
 	}{
 		"all": {
 			h1:   makeHeader(),
 			cols: []string{"A", "B", "C"},
 			e:    []int{0, 1, 2},
+			eib:  model1.ExtractionInfoBag{},
 		},
 		"reverse": {
 			h1:   makeHeader(),
 			cols: []string{"C", "B", "A"},
 			e:    []int{2, 1, 0},
+			eib:  model1.ExtractionInfoBag{},
 		},
 		"missing": {
 			h1:   makeHeader(),
 			cols: []string{"Duh", "B", "A"},
 			e:    []int{-1, 1, 0},
+			eib:  model1.ExtractionInfoBag{},
 		},
 		"skip": {
 			h1:   makeHeader(),
 			cols: []string{"C", "A"},
 			e:    []int{2, 0},
+			eib:  model1.ExtractionInfoBag{},
+		},
+		"labels": {
+			h1:   makeHeader(),
+			cols: []string{"A", "LABELS[kubernetes.io/hostname]", "B", "LABELS[topology.kubernetes.io/region]"},
+			e:    []int{0, -1, 1, -1},
+			eib: model1.ExtractionInfoBag{
+				1: model1.ExtractionInfo{3, "LABELS", "kubernetes.io/hostname"},
+				3: model1.ExtractionInfo{3, "LABELS", "topology.kubernetes.io/region"},
+			},
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			ii := u.h1.MapIndices(u.cols, u.wide)
+			ii, eib := u.h1.MapIndices(u.cols, u.wide)
 			assert.Equal(t, u.e, ii)
+			assert.Equal(t, u.eib, eib)
 		})
 	}
 }
@@ -264,11 +279,11 @@ func TestHeaderColumns(t *testing.T) {
 		},
 		"regular": {
 			h: makeHeader(),
-			e: []string{"A", "C"},
+			e: []string{"A", "C", "LABELS"},
 		},
 		"wide": {
 			h:    makeHeader(),
-			e:    []string{"A", "B", "C"},
+			e:    []string{"A", "B", "C", "LABELS"},
 			wide: true,
 		},
 	}
@@ -314,5 +329,6 @@ func makeHeader() model1.Header {
 		model1.HeaderColumn{Name: "A"},
 		model1.HeaderColumn{Name: "B", Wide: true},
 		model1.HeaderColumn{Name: "C"},
+		model1.HeaderColumn{Name: "LABELS"},
 	}
 }
