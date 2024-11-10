@@ -123,6 +123,30 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 	return err
 }
 
+// Pause a Deployment
+func (d *Deployment) Pause(ctx context.Context, path string) error {
+	ns, n := client.Namespaced(path)
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.AppsV1().Deployments(ns).Patch(ctx, n, types.MergePatchType, []byte(`{"spec": {"paused": true}}`), metav1.PatchOptions{})
+
+	return err
+}
+
+// Resume a paused Deployment
+func (d *Deployment) Resume(ctx context.Context, path string) error {
+	ns, n := client.Namespaced(path)
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.AppsV1().Deployments(ns).Patch(ctx, n, types.MergePatchType, []byte(`{"spec": {"paused": false}}`), metav1.PatchOptions{})
+
+	return err
+}
+
 // TailLogs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	dp, err := d.GetInstance(opts.Path)

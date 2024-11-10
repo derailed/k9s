@@ -120,6 +120,12 @@ type Scalable interface {
 	Scale(ctx context.Context, path string, replicas int32) error
 }
 
+// Pausable represents resources that can be paused/resumed
+type Pausable interface {
+	Pause(ctx context.Context, path string) error
+	Resume(ctx context.Context, path string) error
+}
+
 // Controller represents a pod controller.
 type Controller interface {
 	// Pod returns a pod instance matching the selector.
