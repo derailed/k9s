@@ -5,6 +5,7 @@ package render_test
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -17,26 +18,38 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+func TestContainerRes_IndexSorting(t *testing.T) {
+	ephm1 := model1.Row{Fields: []string{"E1"}}
+	ephm10 := model1.Row{Fields: []string{"E10"}}
+	init1 := model1.Row{Fields: []string{"I1"}}
+	init2 := model1.Row{Fields: []string{"I2"}}
+	main1 := model1.Row{Fields: []string{"M1"}}
+
+	rows := model1.Rows{ephm1, ephm10, init1, init2, main1}
+	sorter := model1.RowSorter{Rows: rows, Index: 0, Asc: true}
+	assert.True(t, sort.IsSorted(sorter))
+}
+
 func TestContainer(t *testing.T) {
 	var c render.Container
 
 	cres := render.ContainerRes{
+		Index:     "M1",
 		Container: makeContainer(),
 		Status:    makeContainerStatus(),
 		MX:        makeContainerMetrics(),
-		IsInit:    false,
 		Age:       makeAge(),
 	}
 	var r model1.Row
 	assert.Nil(t, c.Render(cres, "blee", &r))
 	assert.Equal(t, "fred", r.ID)
 	assert.Equal(t, model1.Fields{
+		"M1",
 		"fred",
 		"●",
 		"img",
 		"false",
 		"Running",
-		"false",
 		"0",
 		"off:off:off",
 		"10",
@@ -58,10 +71,10 @@ func BenchmarkContainerRender(b *testing.B) {
 	var c render.Container
 
 	cres := render.ContainerRes{
+		Index:     "M1",
 		Container: makeContainer(),
 		Status:    makeContainerStatus(),
 		MX:        makeContainerMetrics(),
-		IsInit:    false,
 		Age:       makeAge(),
 	}
 	var r model1.Row
