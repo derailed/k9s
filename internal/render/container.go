@@ -72,12 +72,12 @@ func (c Container) ColorerFunc() model1.ColorerFunc {
 // Header returns a header row.
 func (Container) Header(ns string) model1.Header {
 	return model1.Header{
+		model1.HeaderColumn{Name: "IDX"},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "PF"},
 		model1.HeaderColumn{Name: "IMAGE"},
 		model1.HeaderColumn{Name: "READY"},
 		model1.HeaderColumn{Name: "STATE"},
-		model1.HeaderColumn{Name: "INIT"},
 		model1.HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
 		model1.HeaderColumn{Name: "PROBES(L:R:S)"},
 		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
@@ -109,12 +109,12 @@ func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 
 	r.ID = co.Container.Name
 	r.Fields = model1.Fields{
+		co.Idx,
 		co.Container.Name,
 		"●",
 		co.Container.Image,
 		ready,
 		state,
-		boolToStr(co.IsInit),
 		restarts,
 		probe(co.Container.LivenessProbe) + ":" + probe(co.Container.ReadinessProbe) + ":" + probe(co.Container.StartupProbe),
 		toMc(cur.cpu),
@@ -241,7 +241,7 @@ type ContainerRes struct {
 	Container *v1.Container
 	Status    *v1.ContainerStatus
 	MX        *mv1beta1.ContainerMetrics
-	IsInit    bool
+	Idx       string
 	Age       metav1.Time
 }
 

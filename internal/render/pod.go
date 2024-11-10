@@ -194,7 +194,7 @@ func asReadinessGate(pod v1.Pod) string {
 		return MissingValue
 	}
 
-	trueConditions := 0
+	var trueConditions int
 	for _, readinessGate := range pod.Spec.ReadinessGates {
 		conditionType := readinessGate.ConditionType
 		for _, condition := range pod.Status.Conditions {
@@ -228,7 +228,7 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 
 func gatherCoMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
 	cc := make([]v1.Container, 0, len(spec.InitContainers)+len(spec.Containers))
-	cc = append(cc, filterRestartableInitCO(spec.InitContainers)...)
+	cc = append(cc, filterSidecarCO(spec.InitContainers)...)
 	cc = append(cc, spec.Containers...)
 
 	rcpu, rmem := cosRequests(cc)
@@ -498,12 +498,13 @@ func restartableInitCO(p *v1.ContainerRestartPolicy) bool {
 	return p != nil && *p == v1.ContainerRestartPolicyAlways
 }
 
-func filterRestartableInitCO(cc []v1.Container) []v1.Container {
+func filterSidecarCO(cc []v1.Container) []v1.Container {
 	rcc := make([]v1.Container, 0, len(cc))
 	for _, c := range cc {
 		if c.RestartPolicy != nil && *c.RestartPolicy == v1.ContainerRestartPolicyAlways {
 			rcc = append(rcc, c)
 		}
 	}
+
 	return rcc
 }

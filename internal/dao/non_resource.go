@@ -53,5 +53,5 @@ func (n *NonResource) GVR() string {
 
 // Get returns the given resource.
 func (n *NonResource) Get(context.Context, string) (runtime.Object, error) {
-	return nil, fmt.Errorf("NYI!")
+	return nil, fmt.Errorf("nyi")
 }

@@ -24,7 +24,7 @@ type Reference struct {
 func (r *Reference) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	gvr, ok := ctx.Value(internal.KeyGVR).(client.GVR)
 	if !ok {
-		return nil, errors.New("No context GVR found")
+		return nil, errors.New("no context for gvr found")
 	}
 	switch gvr {
 	case SaGVR:

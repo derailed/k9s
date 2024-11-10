@@ -24,19 +24,18 @@ func TestContainer(t *testing.T) {
 		Container: makeContainer(),
 		Status:    makeContainerStatus(),
 		MX:        makeContainerMetrics(),
-		IsInit:    false,
 		Age:       makeAge(),
 	}
 	var r model1.Row
 	assert.Nil(t, c.Render(cres, "blee", &r))
 	assert.Equal(t, "fred", r.ID)
 	assert.Equal(t, model1.Fields{
+		"",
 		"fred",
 		"●",
 		"img",
 		"false",
 		"Running",
-		"false",
 		"0",
 		"off:off:off",
 		"10",
@@ -61,7 +60,6 @@ func BenchmarkContainerRender(b *testing.B) {
 		Container: makeContainer(),
 		Status:    makeContainerStatus(),
 		MX:        makeContainerMetrics(),
-		IsInit:    false,
 		Age:       makeAge(),
 	}
 	var r model1.Row

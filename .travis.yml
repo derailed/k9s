@@ -1,7 +1,7 @@
 language: go
 go_import_path: github.com/derailed/k9s
 go:
-  - "1.15"
+  - "1.23"
 
 jobs:
   include:

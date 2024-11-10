@@ -255,7 +255,7 @@ func (r *RowEvents) FindIndex(id string) (int, bool) {
 
 // Sort rows based on column index and order.
 func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, asc bool) {
-	if sortCol == -1 {
+	if sortCol == -1 || r == nil {
 		return
 	}
 
@@ -290,6 +290,7 @@ func (r RowEventSorter) Len() int {
 }
 
 func (r RowEventSorter) Swap(i, j int) {
+
 	r.Events.events[i], r.Events.events[j] = r.Events.events[j], r.Events.events[i]
 }
 

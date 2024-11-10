@@ -173,15 +173,16 @@ func newNoOpForwarder() noOpForwarder {
 	return noOpForwarder{}
 }
 
-func (m noOpForwarder) Start(path string, tunnel port.PortTunnel) (*portforward.PortForwarder, error) {
+func (noOpForwarder) Start(path string, tunnel port.PortTunnel) (*portforward.PortForwarder, error) {
 	return nil, nil
 }
-func (m noOpForwarder) Stop()                      {}
-func (m noOpForwarder) ID() string                 { return "" }
-func (m noOpForwarder) Container() string          { return "" }
-func (m noOpForwarder) Port() string               { return "" }
-func (m noOpForwarder) FQN() string                { return "" }
-func (m noOpForwarder) Active() bool               { return false }
-func (m noOpForwarder) SetActive(bool)             {}
-func (m noOpForwarder) Age() time.Time             { return time.Now() }
-func (m noOpForwarder) HasPortMapping(string) bool { return false }
+func (noOpForwarder) Stop()                      {}
+func (noOpForwarder) ID() string                 { return "" }
+func (noOpForwarder) Container() string          { return "" }
+func (noOpForwarder) Port() string               { return "" }
+func (noOpForwarder) FQN() string                { return "" }
+func (noOpForwarder) Active() bool               { return false }
+func (noOpForwarder) SetActive(bool)             {}
+func (noOpForwarder) Age() time.Time             { return time.Now() }
+func (noOpForwarder) HasPortMapping(string) bool { return false }
+func (noOpForwarder) Address() string            { return "" }

@@ -72,6 +72,11 @@ func (p *PortForwarder) Port() string {
 	return p.tunnel.PortMap()
 }
 
+// Address returns the port Address.
+func (p *PortForwarder) Address() string {
+	return p.tunnel.Address
+}
+
 // ContainerPort returns the container port.
 func (p *PortForwarder) ContainerPort() string {
 	return p.tunnel.ContainerPort

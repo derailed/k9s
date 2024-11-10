@@ -130,7 +130,7 @@ func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan,
 		return nil, err
 	}
 	if dp.Spec.Selector == nil || len(dp.Spec.Selector.MatchLabels) == 0 {
-		return nil, fmt.Errorf("No valid selector found on Deployment %s", opts.Path)
+		return nil, fmt.Errorf("no valid selector found on deployment: %s", opts.Path)
 	}
 
 	return podLogs(ctx, dp.Spec.Selector.MatchLabels, opts)

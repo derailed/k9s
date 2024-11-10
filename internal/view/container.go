@@ -33,6 +33,7 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	c.SetEnvFn(c.k9sEnv)
 	c.GetTable().SetEnterFn(c.viewLogs)
 	c.GetTable().SetDecorateFn(c.decorateRows)
+	c.GetTable().SetSortCol("IDX", true)
 	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetDecorateFn(c.portForwardIndicator)
 
@@ -90,6 +91,7 @@ func (c *Container) bindKeys(aa *ui.KeyActions) {
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
+		ui.KeyShiftI: ui.NewKeyAction("Sort Idx", c.GetTable().SortColCmd("IDX", true), false),
 	})
 	aa.Merge(resourceSorters(c.GetTable()))
 }

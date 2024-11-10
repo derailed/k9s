@@ -66,3 +66,7 @@ func (f fwd) Active() bool {
 func (f fwd) Age() time.Time {
 	return testTime()
 }
+
+func (f fwd) Address() string {
+	return ""
+}
