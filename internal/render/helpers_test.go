@@ -98,40 +98,6 @@ func TestToAgeHuman(t *testing.T) {
 	}
 }
 
-func TestToRestartAge(t *testing.T) {
-	t.Parallel()
-
-	cases := map[string]struct {
-		input    metav1.Time
-		expected string
-	}{
-		"zero time": {
-			input:    metav1.Time{},
-			expected: NAValue,
-		},
-		"valid time": {
-			input:    metav1.Time{Time: time.Now().Add(-10 * time.Minute)},
-			expected: "10m",
-		},
-		"valid time hours": {
-			input:    metav1.Time{Time: time.Now().Add(-3 * time.Hour)},
-			expected: "3h",
-		},
-		"valid time minutes": {
-			input:    metav1.Time{Time: time.Now().Add(-5 * time.Hour).Add(-21 * time.Minute)},
-			expected: "5h21m",
-		},
-	}
-
-	for n, tc := range cases {
-		tc := tc
-		t.Run(n, func(t *testing.T) {
-			t.Parallel()
-			assert.Equal(t, tc.expected, ToRestartAge(tc.input))
-		})
-	}
-}
-
 func TestJoin(t *testing.T) {
 	uu := map[string]struct {
 		i []string

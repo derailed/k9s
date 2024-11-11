@@ -203,15 +203,6 @@ func toAgeHuman(s string) string {
 	return duration.HumanDuration(time.Since(t))
 }
 
-// ToRestartAge converts pod last restart time to human duration.
-func ToRestartAge(t metav1.Time) string {
-	if t.IsZero() {
-		return NAValue
-	}
-	
-	return duration.HumanDuration(time.Since(t.Time))
-}
-
 // Truncate a string to the given l and suffix ellipsis if needed.
 func Truncate(str string, width int) string {
 	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))
