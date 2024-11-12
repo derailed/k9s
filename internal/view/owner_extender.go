@@ -7,16 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/rs/zerolog/log"
-
-	"github.com/derailed/tcell/v2"
-	"github.com/go-errors/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
