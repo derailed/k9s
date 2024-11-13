@@ -188,7 +188,7 @@ func initK9sFlags() {
 		k9sFlags.LogLevel,
 		"logLevel", "l",
 		config.DefaultLogLevel,
-		"Specify a log level (info, warn, debug, trace, error)",
+		"Specify a log level (error, warn, info, debug, trace)",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogFile,
