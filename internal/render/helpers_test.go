@@ -54,7 +54,7 @@ func TestTableHydrate(t *testing.T) {
 
 	assert.Nil(t, model1.Hydrate("blee", oo, rr, Pod{}))
 	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, 23, len(rr[0].Fields))
+	assert.Equal(t, 24, len(rr[0].Fields))
 }
 
 func TestToAge(t *testing.T) {
