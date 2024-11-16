@@ -334,6 +334,12 @@ func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, e
 		}
 	}
 
+	for _, imagePullSecret := range spec.ImagePullSecrets {
+		if imagePullSecret.Name == name {
+			return true, nil
+		}
+	}
+
 	saName := spec.ServiceAccountName
 	if saName != "" {
 		o, err := f.Get("v1/serviceaccounts", client.FQN(ns, saName), wait, labels.Everything())
