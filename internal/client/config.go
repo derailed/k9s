@@ -80,6 +80,9 @@ func (c *Config) SwitchContext(name string) error {
 	flags.Namespace = c.flags.Namespace
 	flags.Timeout = c.flags.Timeout
 	flags.KubeConfig = c.flags.KubeConfig
+	flags.Impersonate = c.flags.Impersonate
+	flags.ImpersonateGroup = c.flags.ImpersonateGroup
+	flags.ImpersonateUID = c.flags.ImpersonateUID
 	c.flags = flags
 
 	return nil
