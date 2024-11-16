@@ -57,6 +57,9 @@ func ShowDrain(view ResourceViewer, sels []string, opts dao.DrainOptions, okFn D
 	f.AddCheckbox("Force:", opts.Force, func(_ string, v bool) {
 		opts.Force = v
 	})
+	f.AddCheckbox("Disable Eviction:", opts.DisableEviction, func(_ string, v bool) {
+		opts.DisableEviction = v
+	})
 
 	pages := view.App().Content.Pages
 	f.AddButton("Cancel", func() {
