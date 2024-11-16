@@ -171,7 +171,7 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 
 ## Building From Source
 
- K9s is currently using GO v1.22.X or above.
+ K9s is currently using GO v1.23.X or above.
  In order to build K9s from source you must:
 
  1. Clone the repo
