@@ -332,19 +332,21 @@ func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, e
 			return true, nil
 		}
 	}
+
 	for _, c := range spec.Containers {
 		if containerHasSecret(c.EnvFrom, c.Env, name) {
 			return true, nil
 		}
 	}
+
 	for _, c := range spec.EphemeralContainers {
 		if containerHasSecret(c.EnvFrom, c.Env, name) {
 			return true, nil
 		}
 	}
 
-	for _, imagePullSecret := range spec.ImagePullSecrets {
-		if imagePullSecret.Name == name {
+	for _, s := range spec.ImagePullSecrets {
+		if s.Name == name {
 			return true, nil
 		}
 	}

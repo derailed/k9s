@@ -163,7 +163,7 @@ func TestPodRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "<unknown>", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "<none>", "<none>"}
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "<unknown>", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "default", "<none>"}
 	assert.Equal(t, e, r.Fields[:20])
 }
 
@@ -194,7 +194,7 @@ func TestPodInitRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "<unknown>", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "<none>", "<none>"}
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "<unknown>", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "default", "<none>"}
 	assert.Equal(t, e, r.Fields[:20])
 }
 
@@ -210,7 +210,7 @@ func TestPodSidecarRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/sleep", r.ID)
-	e := model1.Fields{"default", "sleep", "0", "●", "1/1", "Running", "0", "<unknown>", "100", "40", "50:250", "50:80", "200", "40", "80", "50", "10.244.0.8", "kind-control-plane", "<none>", "<none>"}
+	e := model1.Fields{"default", "sleep", "0", "●", "1/1", "Running", "0", "<unknown>", "100", "40", "50:250", "50:80", "200", "40", "80", "50", "10.244.0.8", "kind-control-plane", "default", "<none>"}
 	assert.Equal(t, e, r.Fields[:20])
 }
 
