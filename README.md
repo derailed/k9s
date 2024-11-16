@@ -115,7 +115,7 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 * On Ubuntu
 
   ```shell
-  wget https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_linux_amd64.deb && apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
+  wget https://github.com/derailed/k9s/releases/download/v0.32.7/k9s_linux_amd64.deb && apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
   ```
 
 * Via [Winget](https://github.com/microsoft/winget-cli) for Windows
@@ -662,7 +662,7 @@ A plugin is defined as follows:
 * Background specifies whether or not the command runs in the background
 * Args specifies the various arguments that should apply to the command above
 * OverwriteOutput boolean option allows plugin developers to provide custom messages on plugin stdout execution. See example in [#2644](https://github.com/derailed/k9s/pull/2644)
-* Dangerous boolean option enables disabling the plugin when read-only mode is set. See [#2604](https://github.com/derailed/k9s/issues/2604) 
+* Dangerous boolean option enables disabling the plugin when read-only mode is set. See [#2604](https://github.com/derailed/k9s/issues/2604)
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
@@ -694,9 +694,9 @@ plugins:
   fred:
     shortCut: Ctrl-L
     override: false
-    overwriteOutput: false 
+    overwriteOutput: false
     confirm: false
-    dangerous: false 
+    dangerous: false
     description: Pod logs
     scopes:
     - pods

@@ -301,12 +301,17 @@ func hasPC(spec *v1.PodSpec, name string) bool {
 
 func hasConfigMap(spec *v1.PodSpec, name string) bool {
 	for _, c := range spec.InitContainers {
-		if containerHasConfigMap(c, name) {
+		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
 			return true
 		}
 	}
 	for _, c := range spec.Containers {
-		if containerHasConfigMap(c, name) {
+		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
+			return true
+		}
+	}
+	for _, c := range spec.EphemeralContainers {
+		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
 			return true
 		}
 	}
@@ -321,27 +326,32 @@ func hasConfigMap(spec *v1.PodSpec, name string) bool {
 	return false
 }
 
-// BOZO !! Need to deal with ephemeral containers.
 func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, error) {
 	for _, c := range spec.InitContainers {
-		if containerHasSecret(c, name) {
+		if containerHasSecret(c.EnvFrom, c.Env, name) {
 			return true, nil
 		}
 	}
+
 	for _, c := range spec.Containers {
-		if containerHasSecret(c, name) {
+		if containerHasSecret(c.EnvFrom, c.Env, name) {
 			return true, nil
 		}
 	}
 
-	for _, imagePullSecret := range spec.ImagePullSecrets {
-		if imagePullSecret.Name == name {
+	for _, c := range spec.EphemeralContainers {
+		if containerHasSecret(c.EnvFrom, c.Env, name) {
 			return true, nil
 		}
 	}
 
-	saName := spec.ServiceAccountName
-	if saName != "" {
+	for _, s := range spec.ImagePullSecrets {
+		if s.Name == name {
+			return true, nil
+		}
+	}
+
+	if saName := spec.ServiceAccountName; saName != "" {
 		o, err := f.Get("v1/serviceaccounts", client.FQN(ns, saName), wait, labels.Everything())
 		if err != nil {
 			return false, err
@@ -370,13 +380,13 @@ func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, e
 	return false, nil
 }
 
-func containerHasSecret(c v1.Container, name string) bool {
-	for _, e := range c.EnvFrom {
+func containerHasSecret(envFrom []v1.EnvFromSource, env []v1.EnvVar, name string) bool {
+	for _, e := range envFrom {
 		if e.SecretRef != nil && e.SecretRef.Name == name {
 			return true
 		}
 	}
-	for _, e := range c.Env {
+	for _, e := range env {
 		if e.ValueFrom == nil || e.ValueFrom.SecretKeyRef == nil {
 			continue
 		}
@@ -388,13 +398,13 @@ func containerHasSecret(c v1.Container, name string) bool {
 	return false
 }
 
-func containerHasConfigMap(c v1.Container, name string) bool {
-	for _, e := range c.EnvFrom {
+func containerHasConfigMap(envFrom []v1.EnvFromSource, env []v1.EnvVar, name string) bool {
+	for _, e := range envFrom {
 		if e.ConfigMapRef != nil && e.ConfigMapRef.Name == name {
 			return true
 		}
 	}
-	for _, e := range c.Env {
+	for _, e := range env {
 		if e.ValueFrom == nil || e.ValueFrom.ConfigMapKeyRef == nil {
 			continue
 		}

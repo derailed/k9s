@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	grypeDb "github.com/anchore/grype/grype/db/v5"
+	grypeDB "github.com/anchore/grype/grype/db/v5"
 	"github.com/anchore/grype/grype/match"
 	"github.com/anchore/grype/grype/vulnerability"
 )
@@ -59,9 +59,9 @@ func (s *Scan) run(mm *match.Matches, store vulnerability.MetadataProvider) erro
 		}
 		fixVersion := strings.Join(m.Vulnerability.Fix.Versions, ", ")
 		switch m.Vulnerability.Fix.State {
-		case grypeDb.WontFixState:
+		case grypeDB.WontFixState:
 			fixVersion = wontFix
-		case grypeDb.UnknownFixState:
+		case grypeDB.UnknownFixState:
 			fixVersion = naValue
 		}
 		s.Table.addRow(newRow(m.Package.Name, m.Package.Version, fixVersion, string(m.Package.Type), m.Vulnerability.ID, severity))

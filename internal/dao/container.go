@@ -82,25 +82,31 @@ func makeContainerRes(kind string, idx int, co v1.Container, po *v1.Pod, cmx *mv
 	return render.ContainerRes{
 		Idx:       kind + strconv.Itoa(idx+1),
 		Container: &co,
-		Status:    getContainerStatus(kind, idx, po.Status),
+		Status:    getContainerStatus(kind, co.Name, po.Status),
 		MX:        cmx,
 		Age:       po.GetCreationTimestamp(),
 	}
 }
 
-func getContainerStatus(kind string, idx int, status v1.PodStatus) *v1.ContainerStatus {
+func getContainerStatus(kind string, name string, status v1.PodStatus) *v1.ContainerStatus {
 	switch kind {
 	case mainIDX:
-		if idx < len(status.ContainerStatuses) {
-			return &status.ContainerStatuses[idx]
+		for _, s := range status.ContainerStatuses {
+			if s.Name == name {
+				return &s
+			}
 		}
 	case initIDX:
-		if idx < len(status.InitContainerStatuses) {
-			return &status.InitContainerStatuses[idx]
+		for _, s := range status.InitContainerStatuses {
+			if s.Name == name {
+				return &s
+			}
 		}
 	case ephIDX:
-		if idx < len(status.EphemeralContainerStatuses) {
-			return &status.EphemeralContainerStatuses[idx]
+		for _, s := range status.EphemeralContainerStatuses {
+			if s.Name == name {
+				return &s
+			}
 		}
 	}
 

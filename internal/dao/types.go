@@ -88,6 +88,7 @@ type DrainOptions struct {
 	IgnoreAllDaemonSets bool
 	DeleteEmptyDirData  bool
 	Force               bool
+	DisableEviction     bool
 }
 
 // NodeMaintainer performs node maintenance operations.

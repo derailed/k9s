@@ -2,7 +2,7 @@ name: K9s Lint
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   golangci:

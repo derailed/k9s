@@ -10,13 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog/log"
-
 	"github.com/anchore/clio"
 	"github.com/anchore/grype/cmd/grype/cli/options"
 	"github.com/anchore/grype/grype"
 	"github.com/anchore/grype/grype/db"
+	"github.com/anchore/grype/grype/db/legacy/distribution"
 	"github.com/anchore/grype/grype/matcher"
 	"github.com/anchore/grype/grype/matcher/dotnet"
 	"github.com/anchore/grype/grype/matcher/golang"
@@ -29,6 +27,8 @@ import (
 	"github.com/anchore/grype/grype/store"
 	"github.com/anchore/grype/grype/vex"
 	"github.com/anchore/syft/syft"
+	"github.com/derailed/k9s/internal/config"
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -43,7 +43,7 @@ const (
 type imageScanner struct {
 	store       *store.Store
 	dbCloser    *db.Closer
-	dbStatus    *db.Status
+	dbStatus    *distribution.Status
 	opts        *options.Grype
 	scans       Scans
 	mx          sync.RWMutex
@@ -232,7 +232,7 @@ func getMatchers(opts *options.Grype) []matcher.Matcher {
 	)
 }
 
-func validateDBLoad(loadErr error, status *db.Status) error {
+func validateDBLoad(loadErr error, status *distribution.Status) error {
 	if loadErr != nil {
 		return fmt.Errorf("failed to load vulnerability db: %w", loadErr)
 	}

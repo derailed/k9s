@@ -41,7 +41,7 @@ func IsAllNamespaces(ns string) bool {
 
 // IsNamespaced returns true if a specific ns is given.
 func IsNamespaced(ns string) bool {
-	return !IsAllNamespaces(ns)
+	return !IsAllNamespaces(ns) && !IsClusterScoped(ns)
 }
 
 // IsClusterScoped returns true if resource is not namespaced.
