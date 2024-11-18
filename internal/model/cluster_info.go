@@ -152,7 +152,7 @@ func (c *ClusterInfo) Refresh() {
 	}
 	v2 := NewSemVer(latestRev)
 
-	data.K9sVer, data.K9sLatest = v1.String(), v2.String()
+	data.K9sVer, data.K9sLatest = v1.String()+"j", v2.String()
 	if v1.IsCurrent(v2) {
 		data.K9sLatest = ""
 	}
