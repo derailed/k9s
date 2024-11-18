@@ -61,6 +61,7 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 		model:  model.NewLog(gvr, opts, defaultFlushTimeout),
 		follow: true,
 	}
+
 	return &l
 }
 
@@ -504,8 +505,7 @@ func (l *Log) toggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) toggleDecodeJsonCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.indicator.ToggleDecodeJson()
-	ctx := l.getContext()
-	l.model.ToggleDecodeJson(l.indicator.decodeJson, ctx)
+	l.model.ToggleDecodeJson(l.indicator.decodeJson, l.getContext())
 	l.indicator.Refresh()
 	l.updateTitle()
 

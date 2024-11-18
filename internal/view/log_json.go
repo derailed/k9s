@@ -12,6 +12,7 @@ type LogTemplateForm struct {
 	model *dao.JsonOptions
 	app   *App
 	form  *tview.Form
+	modal *tview.ModalForm
 }
 
 // NewLogTemplateForm returns a new json template form.
@@ -33,13 +34,10 @@ func (l *LogTemplateForm) showJsonTemplatesCmd(_ *tcell.EventKey) *tcell.EventKe
 	currentTemplate := l.model.GetCurrentTemplate()
 
 	form := tview.NewForm().
-		AddDropDown("Template  :",
-			l.model.GetAllTemplateNames(),
-			l.model.CurrentTemplateIndex,
-			l.jsonTemplateSelected).
-		AddInputField(labelLogLevel, currentTemplate.LogLevelExpression, 0, nil, nil).
-		AddInputField(labelDateTime, currentTemplate.DateTimeExpression, 0, nil, nil).
-		AddInputField(labelMessage, currentTemplate.MessageExpression, 0, nil, nil).
+		AddDropDown("Template", l.model.GetAllTemplateNames(), l.model.CurrentTemplateIndex, l.jsonTemplateSelected).
+		AddInputField(labelLogLevel, currentTemplate.LogLevelExpression, 0, nil, l.validateLogLevelExpression).
+		AddInputField(labelDateTime, currentTemplate.DateTimeExpression, 0, nil, l.validateLogLevelExpression).
+		AddInputField(labelMessage, currentTemplate.MessageExpression, 0, nil, l.validateLogLevelExpression).
 		AddButton("Apply", l.applyNewJsonExpressions).
 		AddButton("Quit", l.dismissDialog)
 
@@ -53,15 +51,16 @@ func (l *LogTemplateForm) showJsonTemplatesCmd(_ *tcell.EventKey) *tcell.EventKe
 		SetFieldTextColor(styles.FieldFgColor.Color()).
 		SetFieldBackgroundColor(tcell.GetColor("darkslategray").TrueColor())
 
-	confirm := tview.NewModalForm(" JSON Expressions ", form)
-	confirm.SetText(fmt.Sprintf("Set field expressions"))
-	confirm.SetDoneFunc(func(int, string) {
+	modal := tview.NewModalForm(" JSON Expressions ", form)
+	modal.SetText(fmt.Sprintf("Set field expressions"))
+	modal.SetDoneFunc(func(int, string) {
 		l.dismissDialog()
 	})
 	l.form = form
+	l.modal = modal
 	l.model.AddListener(l)
 
-	l.app.Content.AddPage(jsonTemplateDialogKey, confirm, true, false)
+	l.app.Content.AddPage(jsonTemplateDialogKey, modal, true, false)
 	l.app.Content.ShowPage(jsonTemplateDialogKey)
 
 	return nil
@@ -87,8 +86,42 @@ func (l *LogTemplateForm) applyNewJsonExpressions() {
 	logLevelExpression := l.form.GetFormItemByLabel(labelLogLevel).(*tview.InputField).GetText()
 	dateTimeExpression := l.form.GetFormItemByLabel(labelDateTime).(*tview.InputField).GetText()
 	messageExpression := l.form.GetFormItemByLabel(labelMessage).(*tview.InputField).GetText()
-	l.model.UpdateCurrentTemplate(logLevelExpression, dateTimeExpression, messageExpression)
-	l.dismissDialog()
+
+	err := l.model.TestJsonQueryCode(logLevelExpression, dateTimeExpression, messageExpression)
+	if err == nil {
+		l.model.UpdateCurrentTemplate(logLevelExpression, dateTimeExpression, messageExpression)
+		l.dismissDialog()
+	}
+}
+
+func (l *LogTemplateForm) validateLogLevelExpression(logLevelExpression string) {
+	dateTimeExpression := l.form.GetFormItemByLabel(labelDateTime).(*tview.InputField).GetText()
+	messageExpression := l.form.GetFormItemByLabel(labelMessage).(*tview.InputField).GetText()
+	l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
+}
+
+func (l *LogTemplateForm) validateDateTimeExpression(dateTimeExpression string) {
+	logLevelExpression := l.form.GetFormItemByLabel(labelLogLevel).(*tview.InputField).GetText()
+	messageExpression := l.form.GetFormItemByLabel(labelMessage).(*tview.InputField).GetText()
+	l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
+}
+
+func (l *LogTemplateForm) validateMessageExpression(messageExpression string) {
+	logLevelExpression := l.form.GetFormItemByLabel(labelLogLevel).(*tview.InputField).GetText()
+	dateTimeExpression := l.form.GetFormItemByLabel(labelDateTime).(*tview.InputField).GetText()
+	l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
+}
+
+func (l *LogTemplateForm) validateExpressions(logLevelExpression string, dateTimeExpression string, messageExpression string) error {
+	err := l.model.TestJsonQueryCode(logLevelExpression, dateTimeExpression, messageExpression)
+	if err != nil {
+		l.modal.SetTextColor(l.app.Styles.Frame().Status.ErrorColor.Color())
+		l.modal.SetText(fmt.Sprintf("Set field expressions\nProblem: %s", err.Error()))
+	} else {
+		l.modal.SetTextColor(l.app.Styles.Dialog().FgColor.Color())
+		l.modal.SetText("Set field expressions")
+	}
+	return err
 }
 
 func (l *LogTemplateForm) dismissDialog() {
