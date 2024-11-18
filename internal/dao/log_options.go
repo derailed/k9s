@@ -4,7 +4,11 @@
 package dao
 
 import (
+	bytes "bytes"
+	"errors"
 	"fmt"
+	"github.com/rs/zerolog/log"
+	"io"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -114,6 +118,38 @@ func (o *LogOptions) ToPodLogOptions() *v1.PodLogOptions {
 	}
 
 	return &opts
+}
+
+// HandleJson if JSON decoding is turned on, processes JSON templates with JQ
+func (o *LogOptions) HandleJson(bb []byte) []byte {
+	if !o.DecodeJson {
+		return bb
+	}
+
+	var b bytes.Buffer
+	orgLine := string(bb)
+	result, _ := o.Json.GetCompiledJsonQuery().Run(orgLine).Next()
+	err := PrintJsonResult(result, &b)
+	if err != nil {
+		log.Trace().AnErr("Error", err).Msg("Error printing JQ result")
+		fmt.Fprintf(&b, "%s: %s\n", "JQ", err)
+		fmt.Fprintf(&b, "Original line: %s", orgLine)
+	}
+	if b.Bytes()[b.Len()-1] != '\n' {
+		b.WriteByte('\n')
+	}
+	return b.Bytes()
+}
+
+func PrintJsonResult(value any, outStream io.Writer) error {
+	if err, ok := value.(error); ok {
+		return err
+	}
+	if s, ok := value.(string); ok {
+		_, err := outStream.Write([]byte(s))
+		return err
+	}
+	return errors.New("JQ result not a string")
 }
 
 // ToLogItem add a log header to display po/co information along with the log message.

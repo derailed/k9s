@@ -122,6 +122,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 		Previous:        prev,
 		DecodeJson:      cfg.DecodeJson,
 		Json: dao.JsonOptions{
+			Debug:             cfg.JsonConfig.Debug,
 			GlobalExpressions: cfg.JsonConfig.GlobalExpressions,
 			Templates:         dao.TemplatesFromConfig(cfg.JsonConfig),
 		},

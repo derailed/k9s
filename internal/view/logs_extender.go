@@ -88,6 +88,7 @@ func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOpti
 		ShowTimestamp: cfg.ShowTime,
 		DecodeJson:    cfg.DecodeJson,
 		Json: dao.JsonOptions{
+			Debug:             cfg.JsonConfig.Debug,
 			GlobalExpressions: cfg.JsonConfig.GlobalExpressions,
 			Templates:         dao.TemplatesFromConfig(cfg.JsonConfig),
 		},
@@ -113,6 +114,7 @@ func podLogOptions(app *App, fqn string, prev bool, m *metav1.ObjectMeta, spec *
 			DecodeJson:      cfg.DecodeJson,
 			Previous:        prev,
 			Json: dao.JsonOptions{
+				Debug:             cfg.JsonConfig.Debug,
 				GlobalExpressions: cfg.JsonConfig.GlobalExpressions,
 				Templates:         dao.TemplatesFromConfig(cfg.JsonConfig),
 			},
