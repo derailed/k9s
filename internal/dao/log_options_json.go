@@ -6,6 +6,8 @@ package dao
 import (
 	"fmt"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/itchyny/gojq"
+	"github.com/rs/zerolog/log"
 	"slices"
 	"strings"
 )
@@ -34,8 +36,10 @@ func (o *JsonTemplate) Clone() *JsonTemplate {
 }
 
 type JsonOptions struct {
+	Debug                bool
 	GlobalExpressions    string
 	CurrentTemplateIndex int
+	CompiledQuery        *gojq.Code
 	Templates            []JsonTemplate
 	listeners            []JsonTemplateListener
 }
@@ -72,28 +76,32 @@ func (o *JsonOptions) SetCurrentTemplateByName(templateName string) {
 	if (o.CurrentTemplateIndex < 0) || (o.CurrentTemplateIndex >= len(o.Templates)) {
 		o.CurrentTemplateIndex = 0
 	}
+	o.CompiledQuery = nil
 	o.NotifyListeners()
 }
 
 // IterateToNextTemplate Iterates the currently selected template to next (back to first on end).
 func (o *JsonOptions) IterateToNextTemplate() {
 	o.CurrentTemplateIndex = (o.CurrentTemplateIndex + 1) % len(o.Templates)
+	o.CompiledQuery = nil
 	o.NotifyListeners()
 }
 
 // SetCurrentTemplate Set the currently selected template.
 func (o *JsonOptions) SetCurrentTemplate(index int) *JsonTemplate {
 	o.CurrentTemplateIndex = index
+	o.CompiledQuery = nil
 	o.NotifyListeners()
 	return o.GetCurrentTemplate()
 }
 
 // UpdateCurrentTemplate Updates the currently selected template and notifies listeners.
-func (o *JsonOptions) UpdateCurrentTemplate(LogLevelExpression string, DateTimeExpression string, MessageExpression string) *JsonTemplate {
+func (o *JsonOptions) UpdateCurrentTemplate(logLevelExpression string, dateTimeExpression string, messageExpression string) *JsonTemplate {
 	var template = o.GetCurrentTemplate()
-	template.LogLevelExpression = LogLevelExpression
-	template.DateTimeExpression = DateTimeExpression
-	template.MessageExpression = MessageExpression
+	template.LogLevelExpression = logLevelExpression
+	template.DateTimeExpression = dateTimeExpression
+	template.MessageExpression = messageExpression
+	o.CompiledQuery = nil
 	o.NotifyListeners()
 	return template
 }
@@ -101,6 +109,25 @@ func (o *JsonOptions) UpdateCurrentTemplate(LogLevelExpression string, DateTimeE
 // GetCurrentTemplate Return the currently selected template.
 func (o *JsonOptions) GetCurrentTemplate() *JsonTemplate {
 	return &o.Templates[o.CurrentTemplateIndex]
+}
+
+func (o *JsonOptions) TestJsonQueryCode(logLevelExpression string, dateTimeExpression string, messageExpression string) error {
+	template := JsonTemplate{
+		LogLevelExpression: logLevelExpression,
+		DateTimeExpression: dateTimeExpression,
+		MessageExpression:  messageExpression,
+	}
+	query, err := gojq.Parse(o.GetJsonQuery(&template))
+	if err != nil {
+		return err
+	}
+
+	_, err = gojq.Compile(query)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetAllTemplateNames Return all template names.
@@ -113,13 +140,30 @@ func (o *JsonOptions) GetAllTemplateNames() []string {
 }
 
 func (o *JsonOptions) GetCurrentJsonQuery() string {
-	var template = o.GetCurrentTemplate()
+	return o.GetJsonQuery(o.GetCurrentTemplate())
+}
+
+func (o *JsonOptions) GetJsonQuery(template *JsonTemplate) string {
 	var query = `%s . as $line | try ( capture("^(?<ts>[0-9-:]{8,10}[^0-9][0-9\\.:]{0,10}[^ ]+) (?<js>.*)") | .ts as $k8sts | .js | fromjson | { datetime:(%s), lvl:(%s), msg:(%s) } | "\(.datetime) \(.lvl) \(.msg)" ) catch $line`
+	if o.Debug {
+		// remove try catch in order to see the parsing errors in output
+		query = `%s . as $line | ( capture("^(?<ts>[0-9-:]{8,10}[^0-9][0-9\\.:]{0,10}[^ ]+) (?<js>.*)") | .ts as $k8sts | .js | fromjson | { datetime:(%s), lvl:(%s), msg:(%s) } | "\(.datetime) \(.lvl) \(.msg)" )`
+	}
 	var globalExpression = strings.Trim(strings.Trim(strings.ReplaceAll(o.GlobalExpressions, "\n", " "), " "), ";")
 	if len(globalExpression) > 0 {
 		globalExpression += ";"
 	}
 	return fmt.Sprintf(query, globalExpression, template.DateTimeExpression, template.LogLevelExpression, template.MessageExpression)
+}
+
+func (o *JsonOptions) GetCompiledJsonQuery() *gojq.Code {
+	query, err := gojq.Parse(o.GetCurrentJsonQuery())
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to parse jq query")
+		return nil
+	}
+	o.CompiledQuery, err = gojq.Compile(query)
+	return o.CompiledQuery
 }
 
 // Clone clones options.
@@ -129,6 +173,7 @@ func (o *JsonOptions) Clone() *JsonOptions {
 		cTemplates[i] = *t.Clone()
 	}
 	return &JsonOptions{
+		Debug:                o.Debug,
 		GlobalExpressions:    o.GlobalExpressions,
 		CurrentTemplateIndex: o.CurrentTemplateIndex,
 		Templates:            cTemplates,

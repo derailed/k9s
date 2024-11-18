@@ -22,6 +22,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
+	github.com/rs/zerolog v1.22.0
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0

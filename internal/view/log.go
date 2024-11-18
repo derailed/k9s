@@ -62,6 +62,7 @@ func NewLog(gvr *client.GVR, opts *dao.LogOptions) *Log {
 		model:  model.NewLog(gvr, opts, defaultFlushTimeout),
 		follow: true,
 	}
+
 	return &l
 }
 
@@ -348,7 +349,7 @@ func (l *Log) updateTitle() {
 
 	if l.model.LogOptions().DecodeJson {
 		jsonTemplateName := l.model.LogOptions().Json.GetCurrentTemplate().Name
-		title += ui.SkinTitle(fmt.Sprintf("[[::b]%s[-::]] ", jsonTemplateName), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf("[[::b]%s[-::]] ", jsonTemplateName), &styles)
 	}
 
 	buff := l.logs.cmdBuff.GetText()
@@ -508,8 +509,7 @@ func (l *Log) toggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) toggleDecodeJsonCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.indicator.ToggleDecodeJson()
-	ctx := l.getContext()
-	l.model.ToggleDecodeJson(l.indicator.decodeJson, ctx)
+	l.model.ToggleDecodeJson(l.indicator.decodeJson, l.getContext())
 	l.indicator.Refresh()
 	l.updateTitle()
 

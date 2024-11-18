@@ -22,6 +22,7 @@ type JsonTemplate struct {
 }
 
 type JsonConfig struct {
+	Debug             bool           `json:"debug" yaml:"debug"`
 	GlobalExpressions string         `json:"globalExpressions" yaml:"globalExpressions"`
 	DefaultTemplate   string         `json:"defaultTemplate" yaml:"defaultTemplate"`
 	Templates         []JsonTemplate `json:"templates" yaml:"templates"`
@@ -30,6 +31,7 @@ type JsonConfig struct {
 // NewJsonConfig returns a new instance.
 func NewJsonConfig() JsonConfig {
 	return JsonConfig{
+		Debug:             false,
 		GlobalExpressions: "",
 		DefaultTemplate:   "",
 		Templates:         []JsonTemplate{},
