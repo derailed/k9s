@@ -244,6 +244,13 @@ func initK9sFlags() {
 		"",
 		"Sets a path to a dir for a screen dumps",
 	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.IdiotLight,
+		"idiot-light",
+		false,
+		"Enable idiot light to warn the user for potentially destructive operations, e.g., delete a node",
+	)
+
 	rootCmd.Flags()
 }
 
