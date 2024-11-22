@@ -563,6 +563,13 @@ In order to surface hotkeys globally please follow these steps:
 
 ---
 
+## Port Forwarding over websockets
+
+K9s follows `kubectl` feature flag environment variables to enable/disable port-forwarding over websockets. (default enabled in >1.30)
+To disable Websocket support, set `KUBECTL_PORT_FORWARD_WEBSOCKETS=false`
+
+---
+
 ## FastForwards
 
 As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
