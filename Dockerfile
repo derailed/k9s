@@ -20,7 +20,7 @@ COPY --from=build /k9s/execs/k9s /bin/k9s
 RUN apk --no-cache add --update ca-certificates \
   && apk --no-cache add --update -t deps curl vim \
   && TARGET_ARCH=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
-  && curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/${TARGET_ARCH}/kubectl -o /usr/local/bin/kubectl \
+  && curl -f -L https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TARGET_ARCH}/kubectl -o /usr/local/bin/kubectl \
   && chmod +x /usr/local/bin/kubectl \
   && apk del --purge deps
 
