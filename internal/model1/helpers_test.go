@@ -87,3 +87,29 @@ func BenchmarkDurationToSecond(b *testing.B) {
 		durationToSeconds(t)
 	}
 }
+
+func TestEscapeDots(t *testing.T) {
+	var s string
+
+	s = escapeDots("kubernetes.io/hostname")
+	assert.Equal(t, "kubernetes\\.io/hostname", s)
+
+	s = escapeDots("kubernetes-io/hostname")
+	assert.Equal(t, "kubernetes-io/hostname", s)
+}
+
+func TestExtractValueFromFields(t *testing.T) {
+	k := escapeDots("kubernetes.io/hostname")
+	f := "kubernetes.io/arch=amd64 kubernetes.io/hostname=a-b-c-d kubernetes.io/os=linux"
+
+	var s string
+
+	s = extractValueFromField(k, f)
+	assert.Equal(t, "a-b-c-d", s)
+
+	s = extractValueFromField(k, "kubernetes.io/hostname=e-f-g-h "+f)
+	assert.Equal(t, "e-f-g-h", s)
+
+	s = extractValueFromField("random-key", f)
+	assert.Equal(t, "", s)
+}
