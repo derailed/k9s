@@ -396,7 +396,7 @@ You can now override the context portForward default address configuration by se
     maxConnRetry: 5
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
-    # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
+    # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exit k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
     #UI settings
     ui:
@@ -661,7 +661,7 @@ K9s allows you to extend your command line and tooling by defining your very own
 A plugin is defined as follows:
 
 * Shortcut option represents the key combination a user would type to activate the plugin. Valid values are [a-z], Shift-[A-Z], Ctrl-[A-Z].
-* Override option make that the default action related to the shortcut will be overrided by the plugin
+* Override option make that the default action related to the shortcut will be overridden by the plugin
 * Confirm option (when enabled) lets you see the command that is going to be executed and gives you an option to confirm or prevent execution
 * Description will be printed next to the shortcut in the k9s menu
 * Scopes defines a collection of resources names/short-names for the views associated with the plugin. You can specify `all` to provide this shortcut for all views.
