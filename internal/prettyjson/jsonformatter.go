@@ -16,18 +16,18 @@ import (
 // ColorRule defines a coloring rule for string fields
 type ColorRule struct {
 	KeyPattern *regexp.Regexp
-	Pattern *regexp.Regexp
-	Color   *color.Color
+	Pattern    *regexp.Regexp
+	Color      *color.Color
 }
 
 // PrimitiveColor set coloring for primitive types
 
 type PrimitiveColor struct {
-	BooleanColor    *color.Color
-	NumberColor     *color.Color
-	NullColor       *color.Color
-	StringColor     *color.Color
-	KeyColor        *color.Color
+	BooleanColor *color.Color
+	NumberColor  *color.Color
+	NullColor    *color.Color
+	StringColor  *color.Color
+	KeyColor     *color.Color
 }
 
 // ColorEncoder wraps the standard JSON encoder with color formatting
@@ -40,11 +40,11 @@ type ColorEncoder struct {
 func NewColorEncoder() *ColorEncoder {
 	return &ColorEncoder{
 		typeColors: PrimitiveColor{
-			BooleanColor:    color.New(color.FgYellow),
-			NumberColor:     color.New(color.FgCyan),
-			NullColor:       color.New(color.FgMagenta),
-			StringColor:     color.New(color.FgWhite),
-			KeyColor:        color.New(color.FgWhite),
+			BooleanColor: color.New(color.FgYellow),
+			NumberColor:  color.New(color.FgCyan),
+			NullColor:    color.New(color.FgMagenta),
+			StringColor:  color.New(color.FgWhite),
+			KeyColor:     color.New(color.FgWhite),
 		},
 		stringRules: []ColorRule{},
 	}
@@ -74,6 +74,7 @@ func (c *ColorEncoder) Encode(v []byte) ([]byte, error) {
 	return processed.Bytes(), err
 }
 
+// Main function used to colorize JSON tokens
 func (c *ColorEncoder) colorizeTokens(dec *json.Decoder, out *bytes.Buffer) error {
 	token, err := dec.Token()
 	if err == io.EOF {
@@ -86,97 +87,126 @@ func (c *ColorEncoder) colorizeTokens(dec *json.Decoder, out *bytes.Buffer) erro
 	case json.Delim:
 		switch v {
 		case '{':
-			out.WriteString("{\n")
-			c.processObject(dec, out, 1)
+			err := c.processMap(dec, out, 1)
+			if err != nil {
+				return err
+			}
 			out.WriteString("}")
 		case '[':
-			out.WriteString("[\n")
-			c.processArray(dec, out, 1)
-			out.WriteString("]")
-		case '}', ']':
-			out.WriteString(string(v))
-		}
-	default:
-		c.writeValue(out, token, "")
-	}
-	return nil
-}
-func (c *ColorEncoder) processObject(dec *json.Decoder, out *bytes.Buffer, depth int) error {
-	indent := strings.Repeat("  ", depth)
-	for dec.More() {
-		// Key
-		token, err := dec.Token()
-		if err != nil {
-			return err
-		}
-		key := ""
-		ok := false
-		if key, ok = token.(string); ok {
-			out.WriteString(indent)
-			out.WriteString(c.typeColors.KeyColor.Sprintf("%q", key))
-			out.WriteString(": ")
-		}
-		// Value
-		token, err = dec.Token()
-		if err != nil {
-			return err
-		}
-		switch v := token.(type) {
-		case json.Delim:
-			switch v {
-			case '{':
-				out.WriteString("{\n")
-				c.processObject(dec, out, depth+1)
-				out.WriteString(indent)
-				out.WriteString("}")
-			case '[':
-				out.WriteString("[\n")
-				c.processArray(dec, out, depth+1)
-				out.WriteString(indent)
-				out.WriteString("]")
+			err := c.processArray(dec, out, 1)
+			if err != nil {
+				return err
 			}
-		default:
-			c.writeValue(out, token, key)
+			out.WriteString("]")
 		}
-		if dec.More() {
-			out.WriteString(",")
-		}
-		out.WriteString("\n")
 	}
 	return nil
 }
+
+// process an array
 func (c *ColorEncoder) processArray(dec *json.Decoder, out *bytes.Buffer, depth int) error {
 	indent := strings.Repeat("  ", depth)
-	for dec.More() {
+	out.WriteString("[\n")
+	for {
 		token, err := dec.Token()
 		if err != nil {
 			return err
 		}
-		out.WriteString(indent)
 		switch v := token.(type) {
 		case json.Delim:
 			switch v {
 			case '{':
-				out.WriteString("{\n")
-				c.processObject(dec, out, depth+1)
+				out.WriteString(indent)
+				c.processMap(dec, out, depth+1)
 				out.WriteString(indent)
 				out.WriteString("}")
 			case '[':
-				out.WriteString("[\n")
+				out.WriteString(indent)
 				c.processArray(dec, out, depth+1)
 				out.WriteString(indent)
 				out.WriteString("]")
+			case ']', '}':
+				if dec.More() && depth == 1 {
+					continue
+				} else {
+					return nil
+				}
+
 			}
 		default:
-			c.writeValue(out, token, "")
+			out.WriteString(indent)
+			c.writeValue(out, v, "")
 		}
 		if dec.More() {
 			out.WriteString(",")
 		}
 		out.WriteString("\n")
 	}
-	return nil
 }
+
+// process a map
+func (c *ColorEncoder) processMap(dec *json.Decoder, out *bytes.Buffer, depth int) error {
+	indent := strings.Repeat("  ", depth)
+	out.WriteString("{\n")
+	for {
+		key, err := dec.Token()
+		if err != nil {
+			return err
+		}
+		switch k := key.(type) {
+		case json.Delim:
+			switch k {
+			case '}', ']':
+				if dec.More() && depth == 1 {
+					continue
+				} else {
+					return nil
+				}
+			}
+		case string:
+			color := c.typeColors.KeyColor
+			out.WriteString(indent)
+			out.WriteString(color.Sprintf("\"%v\": ", key))
+		}
+		shouldReturn, returnValue := c.processValue(dec, out, depth, key.(string))
+		if shouldReturn {
+			return returnValue
+		}
+		if dec.More() {
+			out.WriteString(",")
+		}
+		out.WriteString("\n")
+
+	}
+}
+
+// process a map value
+func (c *ColorEncoder) processValue(dec *json.Decoder, out *bytes.Buffer, depth int, key string) (bool, error) {
+	indent := strings.Repeat("  ", depth)
+	value, err := dec.Token()
+	if err != nil {
+		return true, err
+	}
+	switch v := value.(type) {
+	case json.Delim:
+		switch v {
+		case '{':
+			c.processMap(dec, out, depth+1)
+			out.WriteString(indent)
+			out.WriteString("}")
+		case '[':
+			c.processArray(dec, out, depth+1)
+			out.WriteString(indent)
+			out.WriteString("]")
+		}
+	default:
+		c.writeValue(out, v, key)
+
+	}
+	return false, nil
+}
+
+// Write a basic type map value or array item 
 func (c *ColorEncoder) writeValue(out *bytes.Buffer, v interface{}, key string) {
 	switch val := v.(type) {
 	case string:
