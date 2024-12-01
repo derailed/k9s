@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -17,10 +16,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
+
+	"github.com/derailed/k9s/internal/client"
 )
 
 const (
-	defaultResync = 10 * time.Minute
+	defaultResync   = 10 * time.Minute
+	defaultWaitTime = 250 * time.Millisecond
 )
 
 // Factory tracks various resource informers.
@@ -142,8 +144,13 @@ func (f *Factory) waitForCacheSync(ns string) {
 		return
 	}
 
-	// we must block until all started informers' caches were synced
-	_ = fac.WaitForCacheSync(f.stopChan)
+	// Hang for a sec for the cache to refresh if still not done bail out!
+	c := make(chan struct{})
+	go func(c chan struct{}) {
+		<-time.After(defaultWaitTime)
+		close(c)
+	}(c)
+	_ = fac.WaitForCacheSync(c)
 }
 
 // WaitForCacheSync waits for all factories to update their cache.

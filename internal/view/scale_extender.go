@@ -9,13 +9,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/config"
-
-	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
+
+	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/ui"
 )
 
 // ScaleExtender adds scaling extensions.
@@ -35,12 +35,21 @@ func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
 	if s.App().Config.K9s.IsReadOnly() {
 		return
 	}
-	aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
-		ui.ActionOpts{
-			Visible:   true,
-			Dangerous: true,
-		},
-	))
+
+	meta, err := dao.MetaAccess.MetaFor(s.GVR())
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to retrieve meta information for %s", s.GVR())
+		return
+	}
+
+	if !dao.IsCRD(meta) || dao.IsScalable(meta) {
+		aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		))
+	}
 }
 
 func (s *ScaleExtender) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -127,7 +136,7 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 	if len(sels) == 1 {
 		// If the CRD resource supports scaling, then first try to
 		// read the replicas directly from the CRD.
-		if dao.MetaAccess.IsScalable(s.GVR()) {
+		if meta, _ := dao.MetaAccess.MetaFor(s.GVR()); dao.IsScalable(meta) {
 			replicas, err := s.replicasFromScaleSubresource(sels[0])
 			if err == nil && len(replicas) != 0 {
 				factor = replicas
@@ -169,7 +178,7 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 				return
 			}
 		}
-		if len(sels) == 1 {
+		if len(sels) != 1 {
 			s.App().Flash().Infof("[%d] %s scaled successfully", len(sels), singularize(s.GVR().R()))
 		} else {
 			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), sels[0])

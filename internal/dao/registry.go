@@ -5,17 +5,20 @@ package dao
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/derailed/k9s/internal/client"
 )
 
 const (
@@ -95,10 +98,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 
 	r, ok := m[gvr]
 	if !ok {
-		r = new(Generic)
-		if MetaAccess.IsScalable(gvr) {
-			r = new(Scaler)
-		}
+		r = new(Scaler)
 		log.Debug().Msgf("No DAO registry entry for %q. Using generics!", gvr)
 	}
 	r.Init(f, gvr)
@@ -144,12 +144,7 @@ func (m *Meta) GVK2GVR(gv schema.GroupVersion, kind string) (client.GVR, bool, b
 
 // IsCRD checks if resource represents a CRD
 func IsCRD(r metav1.APIResource) bool {
-	for _, c := range r.Categories {
-		if c == crdCat {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(r.Categories, crdCat)
 }
 
 // MetaFor returns a resource metadata for a given gvr.
@@ -166,24 +161,19 @@ func (m *Meta) MetaFor(gvr client.GVR) (metav1.APIResource, error) {
 
 // IsK8sMeta checks for non resource meta.
 func IsK8sMeta(m metav1.APIResource) bool {
-	for _, c := range m.Categories {
-		if c == k9sCat || c == helmCat {
-			return false
-		}
-	}
-
-	return true
+	return !slices.ContainsFunc(m.Categories, func(category string) bool {
+		return category == k9sCat || category == helmCat
+	})
 }
 
 // IsK9sMeta checks for non resource meta.
 func IsK9sMeta(m metav1.APIResource) bool {
-	for _, c := range m.Categories {
-		if c == k9sCat {
-			return true
-		}
-	}
+	return slices.Contains(m.Categories, k9sCat)
+}
 
-	return false
+// IsScalable check if the resource can be scaled
+func IsScalable(m metav1.APIResource) bool {
+	return slices.Contains(m.Categories, scaleCat)
 }
 
 // LoadResources hydrates server preferred+CRDs resource metadata.
@@ -196,22 +186,12 @@ func (m *Meta) LoadResources(f Factory) error {
 		return err
 	}
 	loadNonResource(m.resMetas)
+
+	// We've actually loaded all the CRDs in loadPreferred, and we're now adding
+	// some additional CRD properties on top of that.
 	loadCRDs(f, m.resMetas)
 
 	return nil
-}
-
-// IsScalable check if the resource can be scaled
-func (m *Meta) IsScalable(gvr client.GVR) bool {
-	if meta, ok := m.resMetas[gvr]; ok {
-		for _, c := range meta.Categories {
-			if c == scaleCat {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 // BOZO!! Need countermeasures for direct commands!
@@ -419,11 +399,13 @@ func isDeprecated(gvr client.GVR) bool {
 	return ok
 }
 
+// loadCRDs Wait for the cache to synced and then add some additional properties to CRD.
 func loadCRDs(f Factory, m ResourceMetas) {
 	if f.Client() == nil || !f.Client().ConnectionOK() {
 		return
 	}
-	oo, err := f.List(crdGVR, client.ClusterScope, false, labels.Everything())
+
+	oo, err := f.List(crdGVR, client.ClusterScope, true, labels.Everything())
 	if err != nil {
 		log.Warn().Err(err).Msgf("Fail CRDs load")
 		return
@@ -437,29 +419,29 @@ func loadCRDs(f Factory, m ResourceMetas) {
 			continue
 		}
 
-		var meta metav1.APIResource
-		meta.Kind = crd.Spec.Names.Kind
-		meta.Group = crd.Spec.Group
-		meta.Name = crd.Name
-		meta.SingularName = crd.Spec.Names.Singular
-		meta.ShortNames = crd.Spec.Names.ShortNames
-		meta.Namespaced = crd.Spec.Scope == apiext.NamespaceScoped
-		for _, v := range crd.Spec.Versions {
-			if v.Served && !v.Deprecated {
-				meta.Version = v.Name
-				break
+		if gvr, version, ok := newGVRFromCRD(&crd); ok {
+			if meta, ok := m[gvr]; ok && version.Subresources != nil && version.Subresources.Scale != nil {
+				if !slices.Contains(meta.Categories, scaleCat) {
+					meta.Categories = append(meta.Categories, scaleCat)
+					m[gvr] = meta
+				}
 			}
 		}
-
-		// meta, errs := extractMeta(o)
-		// if len(errs) > 0 {
-		// 	log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
-		// 	continue
-		// }
-		meta.Categories = append(meta.Categories, crdCat)
-		gvr := client.NewGVRFromMeta(meta)
-		m[gvr] = meta
 	}
+}
+
+func newGVRFromCRD(crd *apiext.CustomResourceDefinition) (client.GVR, apiext.CustomResourceDefinitionVersion, bool) {
+	for _, v := range crd.Spec.Versions {
+		if v.Served && !v.Deprecated {
+			return client.NewGVRFromMeta(metav1.APIResource{
+				Group:   crd.Spec.Group,
+				Name:    crd.Spec.Names.Plural,
+				Version: v.Name,
+			}), v, true
+		}
+	}
+
+	return client.GVR{}, apiext.CustomResourceDefinitionVersion{}, false
 }
 
 func extractMeta(o runtime.Object) (metav1.APIResource, []error) {
