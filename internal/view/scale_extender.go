@@ -83,22 +83,69 @@ func (s *ScaleExtender) valueOf(col string) (string, error) {
 	return s.GetTable().GetSelectedCell(colIdx), nil
 }
 
+func (s *ScaleExtender) replicasFromReady(_ string) (string, error) {
+	replicas, err := s.valueOf("READY")
+	if err != nil {
+		return "", err
+	}
+
+	tokens := strings.Split(replicas, "/")
+	if len(tokens) < 2 {
+		return "", fmt.Errorf("unable to locate replicas from %s", replicas)
+	}
+
+	return strings.TrimRight(tokens[1], ui.DeltaSign), nil
+}
+
+func (s *ScaleExtender) replicasFromScaleSubresource(sel string) (string, error) {
+	res, err := dao.AccessorFor(s.App().factory, s.GVR())
+	if err != nil {
+		return "", err
+	}
+
+	replicasGetter, ok := res.(dao.ReplicasGetter)
+	if !ok {
+		return "", fmt.Errorf("expecting a replicasGetter resource for %q", s.GVR())
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
+	defer cancel()
+
+	replicas, err := replicasGetter.Replicas(ctx, sel)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.Itoa(int(replicas)), nil
+}
+
 func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 	styles := s.App().Styles.Dialog()
 	f := s.makeStyledForm(styles)
 
 	factor := "0"
 	if len(sels) == 1 {
-		replicas, err := s.valueOf("READY")
-		if err != nil {
-			return nil, err
+		// If the CRD resource supports scaling, then first try to
+		// read the replicas directly from the CRD.
+		if dao.MetaAccess.IsScalable(s.GVR()) {
+			replicas, err := s.replicasFromScaleSubresource(sels[0])
+			if err == nil && len(replicas) != 0 {
+				factor = replicas
+			}
 		}
-		tokens := strings.Split(replicas, "/")
-		if len(tokens) < 2 {
-			return nil, fmt.Errorf("unable to locate replicas from %s", replicas)
+
+		// For built-in resources or cases where we can't get the replicas from the CRD, we can
+		// only try to get the number of copies from the READY field.
+		if factor == "0" {
+			replicas, err := s.replicasFromReady(sels[0])
+			if err != nil {
+				return nil, err
+			}
+
+			factor = replicas
 		}
-		factor = strings.TrimRight(tokens[1], ui.DeltaSign)
 	}
+
 	f.AddInputField("Replicas:", factor, 4, func(textToCheck string, lastChar rune) bool {
 		_, err := strconv.Atoi(textToCheck)
 		return err == nil

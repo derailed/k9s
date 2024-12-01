@@ -11,7 +11,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -20,10 +19,11 @@ import (
 )
 
 const (
-	crdCat  = "crd"
-	k9sCat  = "k9s"
-	helmCat = "helm"
-	crdGVR  = "apiextensions.k8s.io/v1/customresourcedefinitions"
+	crdCat   = "crd"
+	k9sCat   = "k9s"
+	helmCat  = "helm"
+	scaleCat = "scale"
+	crdGVR   = "apiextensions.k8s.io/v1/customresourcedefinitions"
 )
 
 // MetaAccess tracks resources metadata.
@@ -96,6 +96,9 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	r, ok := m[gvr]
 	if !ok {
 		r = new(Generic)
+		if MetaAccess.IsScalable(gvr) {
+			r = new(Scaler)
+		}
 		log.Debug().Msgf("No DAO registry entry for %q. Using generics!", gvr)
 	}
 	r.Init(f, gvr)
@@ -196,6 +199,19 @@ func (m *Meta) LoadResources(f Factory) error {
 	loadCRDs(f, m.resMetas)
 
 	return nil
+}
+
+// IsScalable check if the resource can be scaled
+func (m *Meta) IsScalable(gvr client.GVR) bool {
+	if meta, ok := m.resMetas[gvr]; ok {
+		for _, c := range meta.Categories {
+			if c == scaleCat {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // BOZO!! Need countermeasures for direct commands!
