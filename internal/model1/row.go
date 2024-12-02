@@ -29,9 +29,9 @@ func (r Row) Labelize(cols []int, labelCol int, labels []string) Row {
 }
 
 // Customize returns a row subset based on given col indices.
-func (r Row) Customize(cols []int) Row {
+func (r Row) Customize(cols []int, extractionInfoBag ExtractionInfoBag) Row {
 	out := NewRow(len(cols))
-	r.Fields.Customize(cols, out.Fields)
+	r.Fields.Customize(cols, out.Fields, extractionInfoBag)
 	out.ID = r.ID
 
 	return out
