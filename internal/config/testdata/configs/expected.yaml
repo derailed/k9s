@@ -37,6 +37,12 @@ k9s:
     textWrap: false
     disableAutoscroll: false
     showTime: false
+    decodeJson: false
+    json:
+      debug: false
+      globalExpressions: ""
+      defaultTemplate: ""
+      templates: []
   thresholds:
     cpu:
       critical: 90
