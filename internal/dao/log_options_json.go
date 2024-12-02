@@ -5,11 +5,12 @@ package dao
 
 import (
 	"fmt"
+	"slices"
+	"strings"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/itchyny/gojq"
 	"github.com/rs/zerolog/log"
-	"slices"
-	"strings"
 )
 
 // JsonTemplateListener represents a json template selection listener.
@@ -45,7 +46,7 @@ type JsonOptions struct {
 }
 
 func TemplatesFromConfig(config config.JsonConfig) []JsonTemplate {
-	var templates []JsonTemplate
+	templates := make([]JsonTemplate, 0, len(config.Templates))
 	for _, obj := range config.Templates {
 		templates = append(templates, JsonTemplate{
 			Name:               obj.Name,
@@ -132,7 +133,7 @@ func (o *JsonOptions) TestJsonQueryCode(logLevelExpression string, dateTimeExpre
 
 // GetAllTemplateNames Return all template names.
 func (o *JsonOptions) GetAllTemplateNames() []string {
-	var names []string
+	names := make([]string, 0, len(o.Templates))
 	for _, obj := range o.Templates {
 		names = append(names, obj.Name)
 	}
@@ -162,7 +163,7 @@ func (o *JsonOptions) GetCompiledJsonQuery() *gojq.Code {
 		log.Warn().Err(err).Msg("Failed to parse jq query")
 		return nil
 	}
-	o.CompiledQuery, err = gojq.Compile(query)
+	o.CompiledQuery, _ = gojq.Compile(query)
 	return o.CompiledQuery
 }
 

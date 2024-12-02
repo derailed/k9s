@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"fmt"
+
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -36,8 +40,8 @@ func (l *LogTemplateForm) showJsonTemplatesCmd(_ *tcell.EventKey) *tcell.EventKe
 	form := tview.NewForm().
 		AddDropDown("Template", l.model.GetAllTemplateNames(), l.model.CurrentTemplateIndex, l.jsonTemplateSelected).
 		AddInputField(labelLogLevel, currentTemplate.LogLevelExpression, 0, nil, l.validateLogLevelExpression).
-		AddInputField(labelDateTime, currentTemplate.DateTimeExpression, 0, nil, l.validateLogLevelExpression).
-		AddInputField(labelMessage, currentTemplate.MessageExpression, 0, nil, l.validateLogLevelExpression).
+		AddInputField(labelDateTime, currentTemplate.DateTimeExpression, 0, nil, l.validateDateTimeExpression).
+		AddInputField(labelMessage, currentTemplate.MessageExpression, 0, nil, l.validateMessageExpression).
 		AddButton("Apply", l.applyNewJsonExpressions).
 		AddButton("Quit", l.dismissDialog)
 
@@ -52,7 +56,7 @@ func (l *LogTemplateForm) showJsonTemplatesCmd(_ *tcell.EventKey) *tcell.EventKe
 		SetFieldBackgroundColor(tcell.GetColor("darkslategray").TrueColor())
 
 	modal := tview.NewModalForm(" JSON Expressions ", form)
-	modal.SetText(fmt.Sprintf("Set field expressions"))
+	modal.SetText("Set field expressions")
 	modal.SetDoneFunc(func(int, string) {
 		l.dismissDialog()
 	})
@@ -97,19 +101,19 @@ func (l *LogTemplateForm) applyNewJsonExpressions() {
 func (l *LogTemplateForm) validateLogLevelExpression(logLevelExpression string) {
 	dateTimeExpression := l.form.GetFormItemByLabel(labelDateTime).(*tview.InputField).GetText()
 	messageExpression := l.form.GetFormItemByLabel(labelMessage).(*tview.InputField).GetText()
-	l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
+	_ = l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
 }
 
 func (l *LogTemplateForm) validateDateTimeExpression(dateTimeExpression string) {
 	logLevelExpression := l.form.GetFormItemByLabel(labelLogLevel).(*tview.InputField).GetText()
 	messageExpression := l.form.GetFormItemByLabel(labelMessage).(*tview.InputField).GetText()
-	l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
+	_ = l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
 }
 
 func (l *LogTemplateForm) validateMessageExpression(messageExpression string) {
 	logLevelExpression := l.form.GetFormItemByLabel(labelLogLevel).(*tview.InputField).GetText()
 	dateTimeExpression := l.form.GetFormItemByLabel(labelDateTime).(*tview.InputField).GetText()
-	l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
+	_ = l.validateExpressions(logLevelExpression, dateTimeExpression, messageExpression)
 }
 
 func (l *LogTemplateForm) validateExpressions(logLevelExpression string, dateTimeExpression string, messageExpression string) error {
