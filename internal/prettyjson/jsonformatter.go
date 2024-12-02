@@ -206,20 +206,16 @@ func (c *ColorEncoder) processValue(dec *json.Decoder, out *bytes.Buffer, depth 
 	return false, nil
 }
 
-// Write a basic type map value or array item 
+// Write a basic type map value or array item
 func (c *ColorEncoder) writeValue(out *bytes.Buffer, v interface{}, key string) {
 	switch val := v.(type) {
 	case string:
 		// Check string rules first
 		color := c.typeColors.StringColor
 		for _, rule := range c.stringRules {
-			if key != "" {
-				if rule.KeyPattern.MatchString(key) {
-					if rule.Pattern.MatchString(val) {
-						color = rule.Color
-						break
-					}
-				}
+			if key != "" && rule.KeyPattern.MatchString(key) && rule.Pattern.MatchString(val) {
+				color = rule.Color
+				break
 			}
 		}
 		out.WriteString(color.Sprintf("%q", val))
