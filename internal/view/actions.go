@@ -104,7 +104,7 @@ func hotKeyActions(r Runner, aa *ui.KeyActions) error {
 
 func gotoCmd(r Runner, cmd, path string, clearStack bool) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		r.App().gotoResource(cmd, path, clearStack)
+		r.App().gotoResource(cmd, path, clearStack, true)
 		return nil
 	}
 }
