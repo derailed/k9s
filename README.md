@@ -398,6 +398,8 @@ You can now override the context portForward default address configuration by se
     readOnly: false
     # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exit k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
+    # Toggles whether k9s should be suspended and sent to background when CTRL-Z is pressed. Default is false. Not supported on Windows
+    allowSuspend: false
     #UI settings
     ui:
       # Enable mouse support. Default false
@@ -936,6 +938,7 @@ k9s:
   maxConnRetry: 5
   readOnly: false
   noExitOnCtrlC: false
+  allowSuspend: false
   ui:
     enableMouse: false
     headless: false
