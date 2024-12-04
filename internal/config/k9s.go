@@ -18,19 +18,20 @@ import (
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
-	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
-	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
-	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
-	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
-	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
-	UI                  UI         `json:"ui" yaml:"ui"`
-	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
-	DisablePodCounting  bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
-	ShellPod            ShellPod   `json:"shellPod" yaml:"shellPod"`
-	ImageScans          ImageScans `json:"imageScans" yaml:"imageScans"`
-	Logger              Logger     `json:"logger" yaml:"logger"`
-	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
+	LiveViewAutoRefresh bool          `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
+	ScreenDumpDir       string        `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
+	RefreshRate         int           `json:"refreshRate" yaml:"refreshRate"`
+	MaxConnRetry        int           `json:"maxConnRetry" yaml:"maxConnRetry"`
+	ReadOnly            bool          `json:"readOnly" yaml:"readOnly"`
+	NoExitOnCtrlC       bool          `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	UI                  UI            `json:"ui" yaml:"ui"`
+	SkipLatestRevCheck  bool          `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
+	DisablePodCounting  bool          `json:"disablePodCounting" yaml:"disablePodCounting"`
+	ShellPod            ShellPod      `json:"shellPod" yaml:"shellPod"`
+	ImageScans          ImageScans    `json:"imageScans" yaml:"imageScans"`
+	Logger              Logger        `json:"logger" yaml:"logger"`
+	Thresholds          Threshold     `json:"thresholds" yaml:"thresholds"`
+	CustomWorkloadGVRs  []WorkloadGVR `json:"customWorkloadGVRs,omitempty" yaml:"customWorkloadGVRs,omitempty"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
@@ -49,16 +50,17 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	return &K9s{
-		RefreshRate:   defaultRefreshRate,
-		MaxConnRetry:  defaultMaxConnRetry,
-		ScreenDumpDir: AppDumpsDir,
-		Logger:        NewLogger(),
-		Thresholds:    NewThreshold(),
-		ShellPod:      NewShellPod(),
-		ImageScans:    NewImageScans(),
-		dir:           data.NewDir(AppContextsDir),
-		conn:          conn,
-		ks:            ks,
+		RefreshRate:        defaultRefreshRate,
+		MaxConnRetry:       defaultMaxConnRetry,
+		ScreenDumpDir:      AppDumpsDir,
+		Logger:             NewLogger(),
+		Thresholds:         NewThreshold(),
+		ShellPod:           NewShellPod(),
+		ImageScans:         NewImageScans(),
+		CustomWorkloadGVRs: NewDefaultWorkloadGVRs(),
+		dir:                data.NewDir(AppContextsDir),
+		conn:               conn,
+		ks:                 ks,
 	}
 }
 
@@ -107,6 +109,10 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.ImageScans = k1.ImageScans
 	if k1.Thresholds != nil {
 		k.Thresholds = k1.Thresholds
+	}
+	// TODO: comment, we don't want to update the list if not set, this should use the default values instead
+	if k1.CustomWorkloadGVRs != nil {
+		k.CustomWorkloadGVRs = k1.CustomWorkloadGVRs
 	}
 }
 

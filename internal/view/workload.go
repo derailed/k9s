@@ -32,8 +32,14 @@ func NewWorkload(gvr client.GVR) ResourceViewer {
 	w.GetTable().SetEnterFn(w.showRes)
 	w.AddBindKeysFn(w.bindKeys)
 	w.GetTable().SetSortCol("KIND", true)
+	w.SetContextFn(w.workloadContext)
 
 	return &w
+}
+
+// TODO: workloadContext Add comment, this is actually setting the config workloadGVRs from the config
+func (n *Workload) workloadContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, internal.KeyCustomWorkloadGVRs, n.App().Config.K9s.CustomWorkloadGVRs)
 }
 
 func (w *Workload) bindDangerousKeys(aa *ui.KeyActions) {

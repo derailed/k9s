@@ -13,6 +13,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -21,23 +22,22 @@ import (
 )
 
 const (
-	StatusOK       = "OK"
 	DegradedStatus = "DEGRADED"
+	NotAvailable   = "n/a"
 )
 
 var (
-	SaGVR   = client.NewGVR("v1/serviceaccounts")
-	PvcGVR  = client.NewGVR("v1/persistentvolumeclaims")
-	PcGVR   = client.NewGVR("scheduling.k8s.io/v1/priorityclasses")
-	CmGVR   = client.NewGVR("v1/configmaps")
-	SecGVR  = client.NewGVR("v1/secrets")
-	PodGVR  = client.NewGVR("v1/pods")
-	SvcGVR  = client.NewGVR("v1/services")
-	DsGVR   = client.NewGVR("apps/v1/daemonsets")
-	StsGVR  = client.NewGVR("apps/v1/statefulSets")
-	DpGVR   = client.NewGVR("apps/v1/deployments")
-	RsGVR   = client.NewGVR("apps/v1/replicasets")
-	resList = []client.GVR{PodGVR, SvcGVR, DsGVR, StsGVR, DpGVR, RsGVR}
+	SaGVR  = client.NewGVR("v1/serviceaccounts")
+	PvcGVR = client.NewGVR("v1/persistentvolumeclaims")
+	PcGVR  = client.NewGVR("scheduling.k8s.io/v1/priorityclasses")
+	CmGVR  = client.NewGVR("v1/configmaps")
+	SecGVR = client.NewGVR("v1/secrets")
+	PodGVR = client.NewGVR("v1/pods")
+	SvcGVR = client.NewGVR("v1/services")
+	DsGVR  = client.NewGVR("apps/v1/daemonsets")
+	StsGVR = client.NewGVR("apps/v1/statefulSets")
+	DpGVR  = client.NewGVR("apps/v1/deployments")
+	RsGVR  = client.NewGVR("apps/v1/replicasets")
 )
 
 // Workload tracks a select set of resources in a given namespace.
@@ -100,10 +100,15 @@ func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav
 // List fetch workloads.
 func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo := make([]runtime.Object, 0, 100)
-	for _, gvr := range resList {
-		table, err := a.fetch(ctx, gvr, ns)
+
+	workloadGVRs, _ := ctx.Value(internal.KeyCustomWorkloadGVRs).([]config.WorkloadGVR)
+	for _, wkgvr := range workloadGVRs {
+		wkgvr.ApplyDefault()
+
+		table, err := a.fetch(ctx, wkgvr.GetGVR(), ns)
 		if err != nil {
-			return nil, err
+			// TODO: Add log, skipping in case the resource doesn't exists on the cluster
+			continue
 		}
 		var (
 			ns string
@@ -122,14 +127,14 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 					ts = m.CreationTimestamp
 				}
 			}
-			stat := status(gvr, r, table.ColumnDefinitions)
+
 			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []interface{}{
-				gvr.String(),
+				wkgvr.GetGVR().String(),
 				ns,
 				r.Cells[indexOf("Name", table.ColumnDefinitions)],
-				stat,
-				readiness(gvr, r, table.ColumnDefinitions),
-				validity(stat),
+				a.getStatus(wkgvr, table.ColumnDefinitions, r.Cells),
+				a.getReadiness(wkgvr, table.ColumnDefinitions, r.Cells),
+				a.getValidity(wkgvr, table.ColumnDefinitions, r.Cells),
 				ts,
 			}}})
 		}
@@ -138,65 +143,86 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 	return oo, nil
 }
 
-// Helpers...
+// TODO: getStatus add comment to explain how it retrieve / try to get the status
+func (wk *Workload) getStatus(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	status := NotAvailable
 
-func readiness(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
-	switch gvr {
-	case PodGVR, DpGVR, StsGVR:
-		return r.Cells[indexOf("Ready", h)].(string)
-	case RsGVR, DsGVR:
-		c := r.Cells[indexOf("Ready", h)].(int64)
-		d := r.Cells[indexOf("Desired", h)].(int64)
-		return fmt.Sprintf("%d/%d", c, d)
-	case SvcGVR:
-		return ""
-	}
-
-	return render.NAValue
-}
-
-func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
-	switch gvr {
-	case PodGVR:
-		if status := r.Cells[indexOf("Status", h)]; status == render.PhaseCompleted {
-			return StatusOK
-		} else if !isReady(r.Cells[indexOf("Ready", h)].(string)) || status != render.PhaseRunning {
-			return DegradedStatus
+	if wkgvr.Status != nil {
+		if statusIndex := indexOf(string(wkgvr.Status.CellName), cd); statusIndex != -1 {
+			status = valueToString(cells[statusIndex])
 		}
-	case DpGVR, StsGVR:
-		if !isReady(r.Cells[indexOf("Ready", h)].(string)) {
-			return DegradedStatus
-		}
-	case RsGVR, DsGVR:
-		rd, ok1 := r.Cells[indexOf("Ready", h)].(int64)
-		de, ok2 := r.Cells[indexOf("Desired", h)].(int64)
-		if ok1 && ok2 {
-			if !isReady(fmt.Sprintf("%d/%d", rd, de)) {
-				return DegradedStatus
-			}
-			break
-		}
-		rds, oks1 := r.Cells[indexOf("Ready", h)].(string)
-		des, oks2 := r.Cells[indexOf("Desired", h)].(string)
-		if oks1 && oks2 {
-			if !isReady(fmt.Sprintf("%s/%s", rds, des)) {
-				return DegradedStatus
-			}
-		}
-	case SvcGVR:
-	default:
-		return render.MissingValue
-	}
-
-	return StatusOK
-}
-
-func validity(status string) string {
-	if status != "DEGRADED" {
-		return ""
 	}
 
 	return status
+}
+
+// TODO: getReadiness add comment to explain how it retrieve / try to get the readiness
+func (wk *Workload) getReadiness(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	ready := NotAvailable
+
+	if wkgvr.Readiness != nil {
+		if readyIndex := indexOf(string(wkgvr.Readiness.CellName), cd); readyIndex != -1 {
+			ready = valueToString(cells[readyIndex])
+		}
+
+		if extrReadyIndex := indexOf(string(wkgvr.Readiness.ExtraCellName), cd); extrReadyIndex != -1 {
+			ready = fmt.Sprintf("%s/%s", ready, valueToString(cells[extrReadyIndex]))
+		}
+	}
+
+	return ready
+}
+
+// TODO: getValidity add comment to explain how it retrieve / try to get the validity (to show them as error when doing ctrl+z)
+func (wk *Workload) getValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	var validity string
+
+	if wkgvr.Validity != nil {
+		if wkgvr.Validity.Matchs != nil {
+			for _, m := range wkgvr.Validity.Matchs {
+				v := ""
+				if matchCellNameIndex := indexOf(string(m.CellName), cd); matchCellNameIndex != -1 {
+					v = valueToString(cells[matchCellNameIndex])
+				}
+
+				if v != m.Value {
+					validity = DegradedStatus
+				}
+			}
+		}
+
+		if wkgvr.Validity.Replicas.AllCellName != "" {
+			if allCellNameIndex := indexOf(string(wkgvr.Validity.Replicas.AllCellName), cd); allCellNameIndex != -1 {
+				if !isReady(valueToString(cells[allCellNameIndex])) {
+					validity = DegradedStatus
+				}
+			}
+		}
+
+		if wkgvr.Validity.Replicas.CurrentCellName != "" && wkgvr.Validity.Replicas.DesiredCellName != "" {
+			currentIndex := indexOf(string(wkgvr.Validity.Replicas.CurrentCellName), cd)
+			desiredIndex := indexOf(string(wkgvr.Validity.Replicas.DesiredCellName), cd)
+			if currentIndex != -1 && desiredIndex != -1 {
+				if !isReady(fmt.Sprintf("%s/%s", valueToString(cells[desiredIndex]), valueToString(cells[currentIndex]))) {
+					validity = DegradedStatus
+				}
+			}
+		}
+	}
+
+	return validity
+}
+
+func valueToString(v interface{}) string {
+	if sv, ok := v.(string); ok {
+		return sv
+	}
+
+	if iv, ok := v.(int64); ok {
+		return strconv.Itoa(int(iv))
+	}
+
+	return ""
 }
 
 func isReady(s string) bool {
@@ -222,6 +248,10 @@ func isReady(s string) bool {
 }
 
 func indexOf(n string, defs []metav1.TableColumnDefinition) int {
+	if n == "" {
+		return -1
+	}
+
 	for i, d := range defs {
 		if d.Name == n {
 			return i
