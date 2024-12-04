@@ -126,11 +126,21 @@ func edit(a *App, opts shellOpts) bool {
 		err error
 	)
 	for _, e := range editorEnvVars {
-		env := os.Getenv(e)
-		if env == "" {
+		editorCommand := os.Getenv(e)
+		if editorCommand == "" {
 			continue
 		}
-		if bin, err = exec.LookPath(env); err == nil {
+
+		// Ensure to check only the EDITOR binary
+		editorCommandWithArgs := strings.Split(editorCommand, " ")
+
+		if bin, err = exec.LookPath(editorCommandWithArgs[0]); err == nil {
+
+			// Brings back possible parameters set on the EDITOR
+			if len(editorCommandWithArgs) > 1 {
+				opts.args = append(editorCommandWithArgs[1:], opts.args...)
+			}
+
 			break
 		}
 	}

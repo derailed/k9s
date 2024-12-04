@@ -17,6 +17,11 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Workload{},
 		Renderer: &render.Workload{},
 	},
+	// TODO: find better name
+	"workloadgvr": {
+		DAO:      &dao.WorkloadGVR{},
+		Renderer: &render.WorkloadGVR{},
+	},
 	// Custom...
 	"references": {
 		DAO:      &dao.Reference{},

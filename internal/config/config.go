@@ -53,6 +53,21 @@ func (c *Config) ContextAliasesPath() string {
 	return AppContextAliasesFile(ct.GetClusterName(), c.K9s.activeContextName)
 }
 
+// ContextWorkloadPath returns a context specific workload file spec.
+func (c *Config) ContextWorkloadPath() string {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+
+	return AppContextWorkloadFile(ct.GetClusterName(), c.K9s.activeContextName)
+}
+
+// ContextWorkloadDir returns the workload directory (which contains the custom GVRs)
+func (c *Config) ContextWorkloadDir() string {
+	return AppWorkloadsDir()
+}
+
 // ContextPluginsPath returns a context specific plugins file spec.
 func (c *Config) ContextPluginsPath() (string, error) {
 	ct, err := c.K9s.ActiveContext()

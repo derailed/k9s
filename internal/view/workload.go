@@ -6,16 +6,19 @@ package view
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,11 +32,34 @@ func NewWorkload(gvr client.GVR) ResourceViewer {
 	w := Workload{
 		ResourceViewer: NewBrowser(gvr),
 	}
+	w.SetContextFn(w.workloadContext)
 	w.GetTable().SetEnterFn(w.showRes)
 	w.AddBindKeysFn(w.bindKeys)
 	w.GetTable().SetSortCol("KIND", true)
 
 	return &w
+}
+
+// workloadContext will set the configuration's values of the workloadGVRs in the context to be used in the dao/workload
+func (n *Workload) workloadContext(ctx context.Context) context.Context {
+
+	// TODO: Add comments and explanations
+
+	var gvrFilenames []string
+
+	ctxWorkloadPath := n.App().Config.ContextWorkloadPath()
+
+	wkg := config.WkC{}
+	configData, err := os.ReadFile(ctxWorkloadPath)
+	if err == nil {
+		if err := yaml.Unmarshal(configData, &wkg); err == nil {
+			gvrFilenames = wkg.GVRFilenames
+		}
+	}
+
+	wkgvs := config.NewWorkloadGVRs(n.App().Config.ContextWorkloadDir(), gvrFilenames)
+
+	return context.WithValue(ctx, internal.KeyWorkloadGVRs, wkgvs)
 }
 
 func (w *Workload) bindDangerousKeys(aa *ui.KeyActions) {
