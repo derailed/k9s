@@ -36,8 +36,8 @@ require (
 	k8s.io/cli-runtime v0.31.3
 	k8s.io/client-go v0.31.3
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.31.1
-	k8s.io/metrics v0.31.2
+	k8s.io/kubectl v0.31.3
+	k8s.io/metrics v0.31.3
 	sigs.k8s.io/yaml v1.4.0
 )
 
