@@ -13,6 +13,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -21,23 +22,22 @@ import (
 )
 
 const (
-	StatusOK       = "OK"
 	DegradedStatus = "DEGRADED"
+	NotAvailable   = "n/a"
 )
 
 var (
-	SaGVR   = client.NewGVR("v1/serviceaccounts")
-	PvcGVR  = client.NewGVR("v1/persistentvolumeclaims")
-	PcGVR   = client.NewGVR("scheduling.k8s.io/v1/priorityclasses")
-	CmGVR   = client.NewGVR("v1/configmaps")
-	SecGVR  = client.NewGVR("v1/secrets")
-	PodGVR  = client.NewGVR("v1/pods")
-	SvcGVR  = client.NewGVR("v1/services")
-	DsGVR   = client.NewGVR("apps/v1/daemonsets")
-	StsGVR  = client.NewGVR("apps/v1/statefulSets")
-	DpGVR   = client.NewGVR("apps/v1/deployments")
-	RsGVR   = client.NewGVR("apps/v1/replicasets")
-	resList = []client.GVR{PodGVR, SvcGVR, DsGVR, StsGVR, DpGVR, RsGVR}
+	SaGVR  = client.NewGVR("v1/serviceaccounts")
+	PvcGVR = client.NewGVR("v1/persistentvolumeclaims")
+	PcGVR  = client.NewGVR("scheduling.k8s.io/v1/priorityclasses")
+	CmGVR  = client.NewGVR("v1/configmaps")
+	SecGVR = client.NewGVR("v1/secrets")
+	PodGVR = client.NewGVR("v1/pods")
+	SvcGVR = client.NewGVR("v1/services")
+	DsGVR  = client.NewGVR("apps/v1/daemonsets")
+	StsGVR = client.NewGVR("apps/v1/statefulSets")
+	DpGVR  = client.NewGVR("apps/v1/deployments")
+	RsGVR  = client.NewGVR("apps/v1/replicasets")
 )
 
 // Workload tracks a select set of resources in a given namespace.
@@ -80,6 +80,62 @@ func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.
 	return dial.Namespace(ns).Delete(ctx, n, opts)
 }
 
+// List fetch workloads.
+func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	oo := make([]runtime.Object, 0, 100)
+
+	workloadGVRs, _ := ctx.Value(internal.KeyWorkloadGVRs).([]config.WorkloadGVR)
+	for i, wkgvr := range workloadGVRs {
+		// Apply default values
+		workloadGVRs[i].ApplyDefault()
+
+		table, err := a.fetch(ctx, workloadGVRs[i].GetGVR(), ns)
+		if err != nil {
+			log.Warn().Msgf("could not fetch gvr %s: %q", workloadGVRs[i].Name, err)
+			continue
+		}
+
+		for _, r := range table.Rows {
+			ns, ts := a.getNamespaceAndTimestamp(r)
+
+			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []interface{}{
+				workloadGVRs[i].GetGVR().String(),
+				ns,
+				r.Cells[indexOf("Name", table.ColumnDefinitions)],
+				a.getStatus(wkgvr, table.ColumnDefinitions, r.Cells),
+				a.getReadiness(wkgvr, table.ColumnDefinitions, r.Cells),
+				a.getValidity(wkgvr, table.ColumnDefinitions, r.Cells),
+				ts,
+			}}})
+		}
+	}
+
+	return oo, nil
+}
+
+// getNamespaceAndTimestamp will retrieve the namespace and the timestamp of a given resource
+func (a *Workload) getNamespaceAndTimestamp(r metav1.TableRow) (string, metav1.Time) {
+	var (
+		ns string
+		ts metav1.Time
+	)
+
+	if obj := r.Object.Object; obj != nil {
+		if m, err := meta.Accessor(obj); err == nil {
+			ns = m.GetNamespace()
+			ts = m.GetCreationTimestamp()
+		}
+	} else {
+		var m metav1.PartialObjectMetadata
+		if err := json.Unmarshal(r.Object.Raw, &m); err == nil {
+			ns = m.GetNamespace()
+			ts = m.CreationTimestamp
+		}
+	}
+
+	return ns, ts
+}
+
 func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav1.Table, error) {
 	a.Table.gvr = gvr
 	oo, err := a.Table.List(ctx, ns)
@@ -97,106 +153,136 @@ func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav
 	return tt, nil
 }
 
-// List fetch workloads.
-func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	oo := make([]runtime.Object, 0, 100)
-	for _, gvr := range resList {
-		table, err := a.fetch(ctx, gvr, ns)
-		if err != nil {
-			return nil, err
-		}
-		var (
-			ns string
-			ts metav1.Time
-		)
-		for _, r := range table.Rows {
-			if obj := r.Object.Object; obj != nil {
-				if m, err := meta.Accessor(obj); err == nil {
-					ns = m.GetNamespace()
-					ts = m.GetCreationTimestamp()
-				}
-			} else {
-				var m metav1.PartialObjectMetadata
-				if err := json.Unmarshal(r.Object.Raw, &m); err == nil {
-					ns = m.GetNamespace()
-					ts = m.CreationTimestamp
-				}
-			}
-			stat := status(gvr, r, table.ColumnDefinitions)
-			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []interface{}{
-				gvr.String(),
-				ns,
-				r.Cells[indexOf("Name", table.ColumnDefinitions)],
-				stat,
-				readiness(gvr, r, table.ColumnDefinitions),
-				validity(stat),
-				ts,
-			}}})
-		}
+// getStatus will retrieve the status of the resource depending of it's configuration
+func (wk *Workload) getStatus(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	status := NotAvailable
+
+	if wkgvr.Status == nil || wkgvr.Status.NA {
+		return status
 	}
 
-	return oo, nil
-}
+	if statusIndex := indexOf(string(wkgvr.Status.CellName), cd); statusIndex != -1 {
+		status = valueToString(cells[statusIndex])
 
-// Helpers...
-
-func readiness(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
-	switch gvr {
-	case PodGVR, DpGVR, StsGVR:
-		return r.Cells[indexOf("Ready", h)].(string)
-	case RsGVR, DsGVR:
-		c := r.Cells[indexOf("Ready", h)].(int64)
-		d := r.Cells[indexOf("Desired", h)].(int64)
-		return fmt.Sprintf("%d/%d", c, d)
-	case SvcGVR:
-		return ""
-	}
-
-	return render.NAValue
-}
-
-func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
-	switch gvr {
-	case PodGVR:
-		if status := r.Cells[indexOf("Status", h)]; status == render.PhaseCompleted {
-			return StatusOK
-		} else if !isReady(r.Cells[indexOf("Ready", h)].(string)) || status != render.PhaseRunning {
-			return DegradedStatus
-		}
-	case DpGVR, StsGVR:
-		if !isReady(r.Cells[indexOf("Ready", h)].(string)) {
-			return DegradedStatus
-		}
-	case RsGVR, DsGVR:
-		rd, ok1 := r.Cells[indexOf("Ready", h)].(int64)
-		de, ok2 := r.Cells[indexOf("Desired", h)].(int64)
-		if ok1 && ok2 {
-			if !isReady(fmt.Sprintf("%d/%d", rd, de)) {
-				return DegradedStatus
-			}
-			break
-		}
-		rds, oks1 := r.Cells[indexOf("Ready", h)].(string)
-		des, oks2 := r.Cells[indexOf("Desired", h)].(string)
-		if oks1 && oks2 {
-			if !isReady(fmt.Sprintf("%s/%s", rds, des)) {
-				return DegradedStatus
-			}
-		}
-	case SvcGVR:
-	default:
-		return render.MissingValue
-	}
-
-	return StatusOK
-}
-
-func validity(status string) string {
-	if status != "DEGRADED" {
-		return ""
 	}
 
 	return status
+}
+
+// getReadiness will retrieve the readiness of the resource depending of it's configuration
+func (wk *Workload) getReadiness(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	ready := NotAvailable
+
+	if wkgvr.Readiness == nil || wkgvr.Readiness.NA {
+		return ready
+	}
+
+	if readyIndex := indexOf(string(wkgvr.Readiness.CellName), cd); readyIndex != -1 {
+		ready = valueToString(cells[readyIndex])
+	}
+
+	if extrReadyIndex := indexOf(string(wkgvr.Readiness.CellExtraName), cd); extrReadyIndex != -1 {
+		ready = fmt.Sprintf("%s/%s", ready, valueToString(cells[extrReadyIndex]))
+	}
+
+	return ready
+}
+
+// getValidity will retrieve the validity of the resource depending of it's configuration
+func (wk *Workload) getValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	if wkgvr.Validity == nil || wkgvr.Validity.NA {
+		return ""
+	}
+
+	if validity := getMatchesValidity(wkgvr, cd, cells); validity == DegradedStatus {
+		return DegradedStatus
+	}
+
+	if validity := getReplicasValidity(wkgvr, cd, cells); validity == DegradedStatus {
+		return DegradedStatus
+	}
+
+	return ""
+}
+
+// getMatchesValidity retrieve the validity depending if all the matches are fullfiled or not
+func getMatchesValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	for _, m := range wkgvr.Validity.Matchs {
+		v := ""
+		if matchCellNameIndex := indexOf(string(m.CellName), cd); matchCellNameIndex != -1 {
+			v = valueToString(cells[matchCellNameIndex])
+		}
+
+		if v != m.Value {
+			return DegradedStatus
+		}
+
+	}
+
+	return ""
+}
+
+// getReplicasValidity returns the validity corresponding of the replicas from 2 cells or a single one
+func getReplicasValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	if getReplicasGrouped(wkgvr, cd, cells) == DegradedStatus {
+		return DegradedStatus
+	}
+
+	if getReplicasSeparated(wkgvr, cd, cells) == DegradedStatus {
+		return DegradedStatus
+	}
+
+	return ""
+}
+
+// getReplicasGrouped returns the validity corresponding of the replicas from one cell
+func getReplicasGrouped(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	if wkgvr.Validity.Replicas.CellAllName == "" {
+		return ""
+	}
+
+	allCellNameIndex := indexOf(string(wkgvr.Validity.Replicas.CellAllName), cd)
+	if allCellNameIndex < 0 {
+		return ""
+	}
+
+	if !isReady(valueToString(cells[allCellNameIndex])) {
+		return DegradedStatus
+	}
+
+	return ""
+}
+
+// getReplicasSeparated returns the validity corresponding of the replicas from 2 cells (current/desired)
+func getReplicasSeparated(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	if wkgvr.Validity.Replicas.CellCurrentName == "" || wkgvr.Validity.Replicas.CellDesiredName == "" {
+		return ""
+	}
+
+	currentIndex := indexOf(string(wkgvr.Validity.Replicas.CellCurrentName), cd)
+	desiredIndex := indexOf(string(wkgvr.Validity.Replicas.CellDesiredName), cd)
+
+	if currentIndex < 0 || desiredIndex < 0 {
+		return ""
+	}
+
+	if !isReady(fmt.Sprintf("%s/%s", valueToString(cells[desiredIndex]), valueToString(cells[currentIndex]))) {
+		return DegradedStatus
+	}
+
+	return ""
+}
+
+func valueToString(v interface{}) string {
+	if sv, ok := v.(string); ok {
+		return sv
+	}
+
+	if iv, ok := v.(int64); ok {
+		return strconv.Itoa(int(iv))
+	}
+
+	return ""
 }
 
 func isReady(s string) bool {
@@ -222,6 +308,10 @@ func isReady(s string) bool {
 }
 
 func indexOf(n string, defs []metav1.TableColumnDefinition) int {
+	if n == "" {
+		return -1
+	}
+
 	for i, d := range defs {
 		if d.Name == n {
 			return i

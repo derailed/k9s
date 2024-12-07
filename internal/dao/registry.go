@@ -66,6 +66,7 @@ func NewMeta() *Meta {
 func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	m := Accessors{
 		client.NewGVR("workloads"):                                         &Workload{},
+		client.NewGVR("workloadgvrs"):                                      &WorkloadGVR{},
 		client.NewGVR("contexts"):                                          &Context{},
 		client.NewGVR("containers"):                                        &Container{},
 		client.NewGVR("scans"):                                             &ImageScan{},
@@ -212,6 +213,14 @@ func loadK9s(m ResourceMetas) {
 		SingularName: "workload",
 		Namespaced:   true,
 		ShortNames:   []string{"wk"},
+		Categories:   []string{k9sCat},
+	}
+	m[client.NewGVR("workloadgvrs")] = metav1.APIResource{
+		Name:         "workloadgvrs",
+		Kind:         "Workloadgvr",
+		SingularName: "workloadgvr",
+		Namespaced:   true,
+		ShortNames:   []string{"wkg"},
 		Categories:   []string{k9sCat},
 	}
 	m[client.NewGVR("pulses")] = metav1.APIResource{

@@ -31,7 +31,7 @@ type Aliases struct {
 // NewAliases return a new alias.
 func NewAliases() *Aliases {
 	return &Aliases{
-		Alias: make(Alias, 50),
+		Alias: make(Alias, 56),
 	}
 }
 
@@ -190,6 +190,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("pulses", "pulse", "pu", "hz")
 	a.declare("xrays", "xray", "x")
 	a.declare("workloads", "workload", "wk")
+	a.declare("workloadgvrs", "workloadgvr", "wkg")
 }
 
 // Save alias to disk.

@@ -200,9 +200,19 @@ func AppContextDir(cluster, context string) string {
 	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context))
 }
 
+// AppWorkloadsDir generates a valid workload folder path
+func AppWorkloadsDir() string {
+	return filepath.Join(AppContextsDir, "workloads")
+}
+
 // AppContextAliasesFile generates a valid context specific aliases file path.
 func AppContextAliasesFile(cluster, context string) string {
 	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "aliases.yaml")
+}
+
+// AppContextWorkloadFile generates a valid context specific workload file path.
+func AppContextWorkloadFile(cluster, context string) string {
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "workloads.yaml")
 }
 
 // AppContextPluginsFile generates a valid context specific plugins file path.

@@ -1056,6 +1056,20 @@ k9s:
 
 ---
 
+## Custom Workload View
+
+You can customize the workload view with CRDs or any resources you want to see on this view.
+
+To do so, you can go to the `workloadGVR` view, you'll be able to see all your custom GVRs. You can also create, edit, delete them.
+
+You can also describe by pressing `d` or simulate them by pressing `enter`.
+
+You can create new one from this view, this will ask you for a custom GVR name and will set default values (to comment or uncomment).
+
+There is a way to add a custom GVR to you cluster context or to delete them, they will be added on top of the default workloads GVRS.
+
+---
+
 ## Contributors
 
 Without the contributions from these fine folks, this project would be a total dud!
