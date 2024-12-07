@@ -26,6 +26,7 @@ type LogOptions struct {
 	SingleContainer  bool
 	MultiPods        bool
 	ShowTimestamp    bool
+	JsonPretty       bool
 	AllContainers    bool
 }
 
@@ -49,6 +50,7 @@ func (o *LogOptions) Clone() *LogOptions {
 		SingleContainer:  o.SingleContainer,
 		MultiPods:        o.MultiPods,
 		ShowTimestamp:    o.ShowTimestamp,
+		JsonPretty:       o.JsonPretty,
 		SinceTime:        o.SinceTime,
 		SinceSeconds:     o.SinceSeconds,
 		AllContainers:    o.AllContainers,
