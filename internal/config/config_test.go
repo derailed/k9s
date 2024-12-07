@@ -214,6 +214,39 @@ func TestActiveView(t *testing.T) {
 	}
 }
 
+func TestActiveFilter(t *testing.T) {
+	var (
+		filter = "flt"
+	)
+
+	uu := map[string]struct {
+		ct       string
+		k9sFlags *config.Flags
+		e        string
+	}{
+		"empty": {
+			k9sFlags: &config.Flags{},
+			e:        "",
+		},
+		"cli-override": {
+			k9sFlags: &config.Flags{
+				Filter: &filter,
+			},
+			e: "flt",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			c := mock.NewMockConfig()
+			_, _ = c.K9s.ActivateContext(u.ct)
+			c.K9s.Override(u.k9sFlags)
+			assert.Equal(t, u.e, c.ActiveFilter())
+		})
+	}
+}
+
 func TestFavNamespaces(t *testing.T) {
 	uu := map[string]struct {
 		ct string
