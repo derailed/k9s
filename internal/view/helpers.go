@@ -163,6 +163,27 @@ func podCtx(_ *App, path, fieldSel string) ContextFunc {
 	}
 }
 
+func showReplicasets(app *App, path, labelSel, fieldSel string) {
+	v := NewReplicaSet(client.NewGVR("apps/v1/replicasets"))
+	v.SetContextFn(replicasetCtx(app, path, fieldSel))
+	v.SetLabelFilter(cmd.ToLabels(labelSel))
+
+	ns, _ := client.Namespaced(path)
+	if err := app.Config.SetActiveNamespace(ns); err != nil {
+		log.Error().Err(err).Msg("Config NS set failed!")
+	}
+	if err := app.inject(v, false); err != nil {
+		app.Flash().Err(err)
+	}
+}
+
+func replicasetCtx(_ *App, path, fieldSel string) ContextFunc {
+	return func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		return context.WithValue(ctx, internal.KeyFields, fieldSel)
+	}
+}
+
 func extractApp(ctx context.Context) (*App, error) {
 	app, ok := ctx.Value(internal.KeyApp).(*App)
 	if !ok {
