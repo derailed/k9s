@@ -433,6 +433,8 @@ You can now override the context portForward default address configuration by se
       textWrap: false
       # Toggles log line timestamp info. Default false
       showTime: false
+      # Toggles whether JSON log lines should be colorized. Default false
+      showJSON: false
     # Provide shell pod customization when nodeShell feature gate is enabled!
     shellPod:
       # The shell pod image to use.
