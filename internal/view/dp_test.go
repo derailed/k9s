@@ -6,9 +6,10 @@ package view_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDeploy(t *testing.T) {
