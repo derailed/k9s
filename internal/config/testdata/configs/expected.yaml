@@ -32,6 +32,12 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     showTime: false
+    decodeJson: false
+    json:
+      debug: false
+      globalExpressions: ""
+      defaultTemplate: ""
+      templates: []
   thresholds:
     cpu:
       critical: 90
