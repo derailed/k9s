@@ -6,6 +6,7 @@ package render
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
@@ -34,7 +35,9 @@ func (ReplicaSet) Header(ns string) model1.Header {
 		model1.HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
 		model1.HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
 		model1.HeaderColumn{Name: "READY", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "CONTAINERS", Wide: true},
+		model1.HeaderColumn{Name: "IMAGES", Wide: true},
+		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
 		model1.HeaderColumn{Name: "VALID", Wide: true},
 		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
@@ -46,10 +49,19 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *model1.Row) error {
 	if !ok {
 		return fmt.Errorf("expected ReplicaSet, but got %T", o)
 	}
+
 	var rs appsv1.ReplicaSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &rs)
 	if err != nil {
 		return err
+	}
+
+	var (
+		cc        = rs.Spec.Template.Spec.Containers
+		cos, imgs = make([]string, 0, len(cc)), make([]string, 0, len(cc))
+	)
+	for _, co := range cc {
+		cos, imgs = append(cos, co.Name), append(imgs, co.Image)
 	}
 
 	row.ID = client.MetaFQN(rs.ObjectMeta)
@@ -60,6 +72,8 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *model1.Row) error {
 		strconv.Itoa(int(*rs.Spec.Replicas)),
 		strconv.Itoa(int(rs.Status.Replicas)),
 		strconv.Itoa(int(rs.Status.ReadyReplicas)),
+		strings.Join(cos, ","),
+		strings.Join(imgs, ","),
 		mapToStr(rs.Labels),
 		AsStatus(r.diagnose(rs)),
 		ToAge(rs.GetCreationTimestamp()),
