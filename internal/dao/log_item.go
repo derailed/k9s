@@ -13,7 +13,7 @@ type LogChan chan *LogItem
 
 var ItemEOF = new(LogItem)
 
-var dateTimePrefixRegEx = regexp.MustCompile(`^\\d{4}-\\d{2}-\\d{2}T?.*`)
+var dateTimePrefixRegEx = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T?.*`)
 
 // LogItem represents a container log line.
 type LogItem struct {
