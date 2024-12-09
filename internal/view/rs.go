@@ -9,8 +9,8 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/derailed/tview"
 )
 
 // ReplicaSet presents a replicaset viewer.
@@ -59,12 +59,9 @@ func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	r.showModal(fmt.Sprintf("Rollback %s %s?", r.GVR(), path), func(_ int, button string) {
-		defer r.dismissModal()
+	msg := fmt.Sprintf("Rollback %s %s?", r.GVR(), path)
 
-		if button != "OK" {
-			return
-		}
+	dialog.ShowConfirm(r.App().Styles.Dialog(), r.App().Content.Pages, "Rollback", msg, func() {
 		r.App().Flash().Infof("Rolling back %s %s", r.GVR(), path)
 		var drs dao.ReplicaSet
 		drs.Init(r.App().factory, r.GVR())
@@ -74,23 +71,7 @@ func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 			r.App().Flash().Infof("%s successfully rolled back", path)
 		}
 		r.Refresh()
-	})
+	}, func() {})
 
 	return nil
-}
-
-func (r *ReplicaSet) dismissModal() {
-	r.App().Content.RemovePage("confirm")
-}
-
-func (r *ReplicaSet) showModal(msg string, done func(int, string)) {
-	styles := r.App().Styles.Dialog()
-	confirm := tview.NewModal().
-		AddButtons([]string{"Cancel", "OK"}).
-		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
-		SetTextColor(tcell.ColorFuchsia).
-		SetText(msg).
-		SetDoneFunc(done)
-	r.App().Content.AddPage("confirm", confirm, false, false)
-	r.App().Content.ShowPage("confirm")
 }
