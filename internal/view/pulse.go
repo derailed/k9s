@@ -320,7 +320,7 @@ func (p *Pulse) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if res == "cpu" || res == "mem" {
 		res = "pod"
 	}
-	p.App().gotoResource(res+" all", "", false)
+	p.App().gotoResource(res+" all", "", false, true)
 
 	return nil
 }

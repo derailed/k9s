@@ -240,13 +240,16 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.NewKeyActionsFromMap(ui.KeyMap{
-		ui.KeyShift9:   ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
-		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
-		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
-		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
-		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
-		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
-		tcell.KeyCtrlC: ui.NewKeyAction("Quit", a.quitCmd, false),
+		ui.KeyShift9:       ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
+		tcell.KeyCtrlE:     ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		tcell.KeyCtrlG:     ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
+		ui.KeyHelp:         ui.NewSharedKeyAction("Help", a.helpCmd, false),
+		ui.KeyLeftBracket:  ui.NewSharedKeyAction("Go Back", a.previousCommand, false),
+		ui.KeyRightBracket: ui.NewSharedKeyAction("Go Forward", a.nextCommand, false),
+		ui.KeyDash:         ui.NewSharedKeyAction("Last View", a.lastCommand, false),
+		tcell.KeyCtrlA:     ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
+		tcell.KeyEnter:     ui.NewKeyAction("Goto", a.gotoCmd, false),
+		tcell.KeyCtrlC:     ui.NewKeyAction("Quit", a.quitCmd, false),
 	}))
 }
 
@@ -482,7 +485,7 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		log.Debug().Msgf("--> Switching Context %q -- %q -- %q", name, ns, a.Config.ActiveView())
 		a.Flash().Infof("Switching context to %q::%q", name, ns)
 		a.ReloadStyles()
-		a.gotoResource(a.Config.ActiveView(), "", true)
+		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		a.clusterModel.Reset(a.factory)
 	}
 
@@ -630,7 +633,7 @@ func (a *App) toggleCrumbsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		a.gotoResource(a.GetCmd(), "", true)
+		a.gotoResource(a.GetCmd(), "", true, true)
 		a.ResetCmd()
 		return nil
 	}
@@ -691,6 +694,52 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// previousCommand returns to the command prior to the current one in the history
+func (a *App) previousCommand(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == rune(ui.KeyLeftBracket) && a.Prompt().InCmdMode() {
+		return evt
+	}
+	cmds := a.cmdHistory.List()
+	if !a.cmdHistory.Back() {
+		a.App.Flash().Warn("Can't go back any further")
+		return evt
+	}
+	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	return nil
+}
+
+// nextCommand returns to the command subsequent to the current one in the history
+func (a *App) nextCommand(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == rune(ui.KeyRightBracket) && a.Prompt().InCmdMode() {
+		return evt
+	}
+	cmds := a.cmdHistory.List()
+	if !a.cmdHistory.Forward() {
+		a.App.Flash().Warn("Can't go forward any further")
+		return evt
+	}
+	// We go to the resource before updating the history so that
+	// gotoResource doesn't add this command to the history
+	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	return nil
+}
+
+// lastCommand switches between the last command and the current one a la `cd -`
+func (a *App) lastCommand(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == ui.KeyDash && a.Prompt().InCmdMode() {
+		return evt
+	}
+	cmds := a.cmdHistory.List()
+	if len(cmds) < 1 {
+		a.App.Flash().Warn("No previous view to switch to")
+		return evt
+	} else {
+		a.cmdHistory.Last()
+		a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	}
+	return nil
+}
+
 func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.Content.Top() != nil && a.Content.Top().Name() == aliasTitle {
 		a.Content.Pop()
@@ -704,8 +753,8 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(c, path string, clearStack bool) {
-	err := a.command.run(cmd.NewInterpreter(c), path, clearStack)
+func (a *App) gotoResource(c, path string, clearStack bool, pushCmd bool) {
+	err := a.command.run(cmd.NewInterpreter(c), path, clearStack, pushCmd)
 	if err != nil {
 		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 	}
