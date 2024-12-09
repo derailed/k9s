@@ -40,13 +40,50 @@ type LogItems struct {
 // NewLogItems returns a new instance.
 func NewLogItems() *LogItems {
 	colorEncoder := prettyjson.NewColorEncoder()
-	colorEncoder.AddStringRule(`([Ll]og)*[Ll]evel`, `INFO|Info`, color.New(color.FgHiGreen))
-	colorEncoder.AddStringRule(`([Ll]og)*[Ll]evel`, `ERROR|Error`, color.New(color.FgHiMagenta))
-	colorEncoder.AddStringRule(`([Ll]og)*[Ll]evel`, `CRITICAL|Critical`, color.New(color.FgHiRed))
-	colorEncoder.AddStringRule(`([Ll]og)*[Ll]evel`, `WARN|WARNING|Warn|Warning`, color.New(color.FgHiYellow))
-	colorEncoder.AddStringRule(`(M|m)essage`, `.*`, color.New(color.FgCyan))
-	colorEncoder.AddStringRule(`(L|l)ogger`, `^.*$`, color.New(color.FgBlue))
-	colorEncoder.AddStringRule(`stack[tT]race`,`.*`, color.New(color.FgYellow))
+	for _, rule := range []struct {
+		keyregex string
+		regex string
+		color *color.Color
+	}{
+		{
+			`([Ll]og)*[Ll]evel`,
+			`INFO|Info`,
+			color.New(color.FgHiGreen),
+		},
+		{
+			`([Ll]og)*[Ll]evel`,
+			`ERROR|Error`,
+			color.New(color.FgHiMagenta),
+		},
+		{
+			`([Ll]og)*[Ll]evel`,
+			`CRITICAL|Critical`,
+			color.New(color.FgHiRed),
+		},
+		{
+			`([Ll]og)*[Ll]evel`,
+			`WARN|WARNING|Warn|Warning`,
+			color.New(color.FgHiYellow),
+		},
+		{
+			`(M|m)essage`,
+			`.*`,
+			color.New(color.FgCyan),
+		},
+		{
+			`(L|l)ogger`,
+			`^.*$`,
+			color.New(color.FgBlue),
+		},
+		{
+			`stack[tT]race`,
+			`.*`,
+			color.New(color.FgYellow),
+		},
+	} {
+		_ = colorEncoder.AddStringRule(rule.keyregex, rule.regex, rule.color)
+	}
+
 	return &LogItems{
 		podColors: make(map[string]string),
 		jsonColorEncoder: colorEncoder,

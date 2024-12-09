@@ -3,10 +3,6 @@
 
 package config
 
-import (
-	"github.com/derailed/k9s/internal/prettyjson"
-)
-
 const (
 	// DefaultLoggerTailCount tracks default log tail size.
 	DefaultLoggerTailCount = 100
@@ -17,12 +13,6 @@ const (
 	// DefaultSinceSeconds tracks default log age.
 	DefaultSinceSeconds = -1 // tail logs by default
 )
-
-// JsonPrettifier options
-type JsonPrettifier struct {
-	enabled bool
-	rules []prettyjson.ColorRule
-}
 
 // Logger tracks logger options.
 type Logger struct {

@@ -1,5 +1,5 @@
-// Copyright (c) 2024 Robert Bosch Manufacturing GmbH
 // SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2024 Robert Bosch Manufacturing GmbH
 package prettyjson
 
 import (
@@ -78,6 +78,9 @@ func TestRenderingForBasicTypes(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			encoder := NewColorEncoder()
 			input, err := json.Marshal(tc.input)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 			buf, err := encoder.Encode([]byte(input))
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)

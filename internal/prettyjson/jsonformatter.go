@@ -1,5 +1,5 @@
-// Copyright (c) 2024 Robert Bosch Manufacturing GmbH
 // SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2024 Robert Bosch Manufacturing GmbH
 package prettyjson
 
 import (
@@ -117,12 +117,18 @@ func (c *ColorEncoder) processArray(dec *json.Decoder, out *bytes.Buffer, depth 
 			switch v {
 			case '{':
 				out.WriteString(indent)
-				c.processMap(dec, out, depth+1)
+				err := c.processMap(dec, out, depth+1)
+				if err != nil {
+					return err
+				}
 				out.WriteString(indent)
 				out.WriteString("}")
 			case '[':
 				out.WriteString(indent)
-				c.processArray(dec, out, depth+1)
+				err := c.processArray(dec, out, depth+1)
+				if err != nil {
+					return err
+				}
 				out.WriteString(indent)
 				out.WriteString("]")
 			case ']', '}':
@@ -191,11 +197,17 @@ func (c *ColorEncoder) processValue(dec *json.Decoder, out *bytes.Buffer, depth 
 	case json.Delim:
 		switch v {
 		case '{':
-			c.processMap(dec, out, depth+1)
+			err := c.processMap(dec, out, depth+1)
+			if err != nil {
+				return true, err
+			}
 			out.WriteString(indent)
 			out.WriteString("}")
 		case '[':
-			c.processArray(dec, out, depth+1)
+			err := c.processArray(dec, out, depth+1)
+			if err != nil {
+				return true, err
+			}
 			out.WriteString(indent)
 			out.WriteString("]")
 		}
@@ -220,7 +232,7 @@ func (c *ColorEncoder) writeValue(out *bytes.Buffer, v interface{}, key string) 
 		}
 		out.WriteString(color.Sprintf("%q", val))
 	case json.Number:
-		out.WriteString(c.typeColors.NumberColor.Sprintf(string(val)))
+		out.WriteString(c.typeColors.NumberColor.Sprintf("%v",val))
 	case bool:
 		out.WriteString(c.typeColors.BooleanColor.Sprintf("%v", val))
 	case nil:
