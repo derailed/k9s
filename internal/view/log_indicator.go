@@ -20,6 +20,7 @@ type LogIndicator struct {
 	styles                     *config.Styles
 	scrollStatus               int32
 	indicator                  []byte
+	jsonPretty                 bool
 	fullScreen                 bool
 	textWrap                   bool
 	showTime                   bool
@@ -34,6 +35,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		TextView:                   tview.NewTextView(),
 		indicator:                  make([]byte, 0, 100),
 		scrollStatus:               1,
+		jsonPretty:                 cfg.K9s.Logger.JsonPrettifier,
 		fullScreen:                 cfg.K9s.UI.DefaultsToFullScreen,
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
@@ -74,6 +76,11 @@ func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
 }
 
+//JsonPretty reports the prettifier state
+func (l *LogIndicator) JsonPretty() bool {
+	return l.jsonPretty
+}
+
 // ToggleTimestamp toggles the current timestamp mode.
 func (l *LogIndicator) ToggleTimestamp() {
 	l.showTime = !l.showTime
@@ -82,6 +89,12 @@ func (l *LogIndicator) ToggleTimestamp() {
 // ToggleFullScreen toggles the screen mode.
 func (l *LogIndicator) ToggleFullScreen() {
 	l.fullScreen = !l.fullScreen
+	l.Refresh()
+}
+
+// ToggleJsonPretty toggles the json prettifier mode.
+func (l *LogIndicator) ToggleJsonPrettifier() {
+	l.jsonPretty = !l.jsonPretty
 	l.Refresh()
 }
 
@@ -149,9 +162,15 @@ func (l *LogIndicator) Refresh() {
 	}
 
 	if l.TextWrap() {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Wrap", "")...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Wrap", spacer)...)
 	} else {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Wrap", "")...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Wrap", spacer)...)
+	}
+
+	if l.JsonPretty() {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "JsonPretty", "")...)
+	} else {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "JsonPretty", "")...)
 	}
 
 	_, _ = l.Write(l.indicator)
