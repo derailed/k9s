@@ -6,6 +6,7 @@ package model1
 import (
 	"fmt"
 	"math"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -163,4 +164,24 @@ func lessNumber(s1, s2 string) bool {
 	v1, v2 := strings.Replace(s1, ",", "", -1), strings.Replace(s2, ",", "", -1)
 
 	return sortorder.NaturalLess(v1, v2)
+}
+
+// Escape dots from the string
+// For example: `kubernetes.io/hostname` needs to be escaped to `kubernetes\.io/hostname`
+func escapeDots(s string) string {
+	return strings.ReplaceAll(s, ".", "\\.")
+}
+
+func extractValueFromField(key string, field string) string {
+	// Extract the value by using regex
+	pattern := fmt.Sprintf(`%s=([^ ]+)`, key)
+	regex := regexp.MustCompile(pattern)
+
+	// Find the value in the field that store original values
+	matches := regex.FindStringSubmatch(field)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+
+	return ""
 }
