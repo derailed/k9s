@@ -58,7 +58,7 @@ Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgj
 
 ## Resolved Issues
 
-* [#2476](https://github.com/derailed/k9s/issues/2476) Pod's are not displayed for the selected namespace. Hopefully!
+* [#2476](https://github.com/derailed/k9s/issues/2476) Pods are not displayed for the selected namespace. Hopefully!
 * [#2471](https://github.com/derailed/k9s/issues/2471) Shell autocomplete functions do not work correctly
 
 ---

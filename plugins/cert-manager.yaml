@@ -1,4 +1,4 @@
-# Manage cert-manager Certificate resouces via cmctl.
+# Manage cert-manager Certificate resources via cmctl.
 # See: https://github.com/cert-manager/cmctl
 plugins:
   cert-status:

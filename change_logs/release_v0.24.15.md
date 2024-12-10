@@ -27,7 +27,7 @@ I want to recognize the following folks that have been kind enough to join our s
 * [Thomas Peter Bernsten](https://github.com/tpberntsen)
 * [EMR-Bear](https://github.com/emrbear)
 
-So if you feel K9s is helping with your productivity while administering your Kubernetes clusters, please consider pitching in as it will go a long way in ensuring a thriving environment for this repo and our k9ers community at large.
+So if you feel K9s is helping with your productivity while administering your Kubernetes clusters, please consider pitching in as it will go a long way in ensuring a thriving environment for this repo and our K9sers community at large.
 
 Thank you!!
 
@@ -35,7 +35,7 @@ Thank you!!
 
 ## !!BREAKING CHANGE!!... We've moved!
 
-As of this drop, k9s home directory is now configurable via [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html). Please see the specification depending on your platform of choice. You will now need to set or use the default for `$XDG_CONFIG_HOME` if not already present on your system. This is now the defacto replacement for`HOME/.k9s` as K9s will no longer honor this directory to load artifacts such as config, skins, views, etc... If you have existing customizations, you will need to move those over to your `$XDG_CONFIG_HOME/k9s` dir.
+As of this drop, k9s home directory is now configurable via [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html). Please see the specification depending on your platform of choice. You will now need to set or use the default for `$XDG_CONFIG_HOME` if not already present on your system. This is now the de facto replacement for`HOME/.k9s` as K9s will no longer honor this directory to load artifacts such as config, skins, views, etc... If you have existing customizations, you will need to move those over to your `$XDG_CONFIG_HOME/k9s` dir.
 
 This feature is still fresh and we could have totally missed a piece, so please proceed with caution and keep that issue tracker handy...
 

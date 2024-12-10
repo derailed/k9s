@@ -22,7 +22,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## Maintenance Release
 
-Please join me in giving a big THANK YOU and ATTA BOY!! to [Aleksei Romanenko](https://github.com/slimus) for allocating his personal time in helping out his fellow K9ser's with issues, PRs and slack!!
+Please join me in giving a big THANK YOU and ATTA BOY!! to [Aleksei Romanenko](https://github.com/slimus) for allocating his personal time in helping out his fellow K9sers with issues, PRs and slack!!
 
 Also in the last drop, I'd updated k8s API's to the latest which caused some `disturbance in the farce!` and hosed AWS cluster connections in the same swop ;( Please see [Issue#119](https://github.com/derailed/k9s/issues/1619) for `a` resolve... I did not catch it early enough hence the release bump on this drop. My bad!!
 
@@ -32,7 +32,7 @@ Also in the last drop, I'd updated k8s API's to the latest which caused some `di
 
 * [Issue #1655](https://github.com/derailed/k9s/issues/1655) Text not appearing in context windows
 * [Issue #1654](https://github.com/derailed/k9s/issues/1654) K9s crash on m1 with index out of range [0] with length 0
-* [Issue #1652](https://github.com/derailed/k9s/issues/1652) HPA with custom metrics has "Target% column showing "unknown/unknown"
+* [Issue #1652](https://github.com/derailed/k9s/issues/1652) HPA with custom metrics has "Target%" column showing "unknown/unknown"
 * [Issue #1639](https://github.com/derailed/k9s/issues/1639) Helm releases view broken after interacting with 0.25.21
 
 ## Resolved PR

@@ -83,7 +83,7 @@ func (t *Table) HeaderIndex(colName string) (int, bool) {
 	return 0, false
 }
 
-// SendKey sends an keyboard event (testing only!).
+// SendKey sends a keyboard event (testing only!).
 func (t *Table) SendKey(evt *tcell.EventKey) {
 	t.app.Prompt().SendKey(evt)
 }

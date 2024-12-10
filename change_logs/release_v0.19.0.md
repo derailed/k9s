@@ -27,7 +27,7 @@ As you might have heard, the good Kubernetes folks just dropped some big feature
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_popeye.png" align="center" width="400" height="auto"/>
 
 As you may know, I am the author of [Popeye](https://popeyecli.io) a Kubernetes cluster linter/sanitizer. Popeye scans your clusters live and reports potential issues, things like: referential integrity, misconfiguration, resource usage, etc...
-In this drop, we've integrated K9s and Popeye to produce what I believe is a killer combo. Not only can you manage/observe your cluster resources in the wild, but you can now assert that your resources are indeed cool and potentially get ride of dead weights that might add up to your monthly cloud service bills. How cool is that?
+In this drop, we've integrated K9s and Popeye to produce what I believe is a killer combo. Not only can you manage/observe your cluster resources in the wild, but you can now assert that your resources are indeed cool and potentially get rid of dead weights that might add up to your monthly cloud service bills. How cool is that?
 
 In order to run your sanitization and produce reports, you can enter a new command `:popeye`. Once your cluster sanitization is complete, you can use familiar keyboard shortcuts to sort columns and view the sanitization reports by pressing `enter` on a given resource linter. Popeye also supports a configuration file namely `spinach.yml`, this file provides for customizing what resources get scanned as well as setting different severity levels to your own company policies. Please read the Popeye docs on how to customize your reports. The spinach.yml file will be read from K9s home directory `$HOME/.k9s/MY_CLUSTER_CONTEXT_NAME_spinach.yml`
 
@@ -38,7 +38,7 @@ NOTE! This is very much still experimental, so you may experience some disturban
 
 ## Command History Support
 
-K9s now supports for command history. Entering command mode via `:` you can now up/down arrow to navigate thru your command history. Pression `tab` or `ctrl-e` or `->` will activate the selected command upon `enter`.
+K9s now supports for command history. Entering command mode via `:` you can now up/down arrow to navigate thru your command history. Pressing `tab` or `ctrl-e` or `->` will activate the selected command upon `enter`.
 
 ## K9s Icons
 
