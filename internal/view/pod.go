@@ -236,7 +236,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if err := containerShellin(p.App(), p, path, ""); err != nil {
+	if err := containerShellIn(p.App(), p, path, ""); err != nil {
 		p.App().Flash().Err(err)
 	}
 
@@ -358,7 +358,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func containerShellin(a *App, comp model.Component, path, co string) error {
+func containerShellIn(a *App, comp model.Component, path, co string) error {
 	if co != "" {
 		resumeShellIn(a, comp, path, co)
 		return nil

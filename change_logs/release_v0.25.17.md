@@ -19,7 +19,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 ## Resolved Issues
 
 * [Issue #1402](https://github.com/derailed/k9s/issues/1402) Sort functionality does not work properly on v0.25.16
-* [Issue #1401](https://github.com/derailed/k9s/issues/1401) Nothin selected when last item deleted
+* [Issue #1401](https://github.com/derailed/k9s/issues/1401) Nothing selected when last item deleted
 
 ---
 

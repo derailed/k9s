@@ -21,7 +21,7 @@ Thank you so much for your support and awesome suggestions to make K9s better!!
    2. The RBAC view will auto-refresh just like any K9s views hence showing live RBAC updates
    3. RBAC view supports standard K8s verbs ie get,list,deletecollection,watch,create,patch,update,delete.
    4. Any verbs not in this standard K8s verb list, will end up in the EXTRAS column.
-   5. For non resource URLS, we map standard REST verbs to K8s verbs ie post=create patch=update, etc..
+   5. For non resource URLS, we map standard REST verbs to K8s verbs ie post=create patch=update, etc.
    6. Added initial sorts by name and group while in RBAC view.
    7. Usage: To activate, enter command mode via `:cr` or `:ro` for clusterrole(cr)/role(ro), select a row and press `<enter>`
    8. To bail out of the view and return to previous use `p` or `<esc>`

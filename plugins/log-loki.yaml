@@ -5,7 +5,7 @@ plugins:
     shortCut: Shift-L
     description: "loki fmt"
     scopes:
-    - cantainers
+    - containers
     command: logcli
     background: false
     args:

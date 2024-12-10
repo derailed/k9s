@@ -27,7 +27,7 @@ As always please help me flush/report issues and I'll address them promptly! Tha
 
 ## Improved Node Shell Usability
 
-In this drop we've changed the configuration of the node shell action that let's you shell into nodes. Big thanks to [Patrick Decat](https://github.com/pdecat) for helping us flesh out this beta feature! We've added configuration to not only customize the image but also the resources and namespace on how to run these K9s pods on your clusters. The new configuration is set at the cluster scope level.
+In this drop we've changed the configuration of the node shell action that lets you shell into nodes. Big thanks to [Patrick Decat](https://github.com/pdecat) for helping us flesh out this beta feature! We've added configuration to not only customize the image but also the resources and namespace on how to run these K9s pods on your clusters. The new configuration is set at the cluster scope level.
 
 Here is an example of the new pod shell config options:
 

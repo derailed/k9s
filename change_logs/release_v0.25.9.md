@@ -19,7 +19,7 @@ I want to recognize the following folks that have been kind enough to join our s
 * [Maxim](https://github.com/bsod90)
 * [Sönke Schau](https://github.com/xgcssch)
 
-So if you feel K9s is helping with your productivity while administering your Kubernetes clusters, please consider pitching in as it will go a long way in ensuring a thriving environment for this repo and our k9ers community at large.
+So if you feel K9s is helping with your productivity while administering your Kubernetes clusters, please consider pitching in as it will go a long way in ensuring a thriving environment for this repo and our K9sers community at large.
 
 Also please take some time and give a huge shoot out to all the good folks below that have spent time plowing thru the code to help improve K9s for all of us!
 
@@ -36,7 +36,7 @@ Thank you!!
 * [Issue #1361](https://github.com/derailed/k9s/issues/1361) Pulses not displaying graphs
 * [Issue #1358](https://github.com/derailed/k9s/issues/1358) Namespace list is empty
 * [Issue #1357](https://github.com/derailed/k9s/issues/1357) Benchmarks doesn't work on windows
-* [Issue #1355](https://github.com/derailed/k9s/issues/1355) Trace log level does not exists
+* [Issue #1355](https://github.com/derailed/k9s/issues/1355) Trace log level does not exist
 * [Issue #1345](https://github.com/derailed/k9s/issues/1345) Access denied after context switch
 
 ---

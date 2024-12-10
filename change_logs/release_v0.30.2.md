@@ -28,7 +28,7 @@ Thank you all for pitching in and help flesh out bugs!!
 ## [!!FEATURE NAME CHANGED!!] Vulnerability Scan Exclusions...
 
 As it seems customary with all k9s new features, folks want to turn them off ;(
-The `Vulscan` feature did not get out unscaped ;(
+The `Vulscan` feature did not get out unscathed ;(
 As it was rightfully so pointed out, you may want to opted out scans for images that you do not control.
 Tho I think it might be a good idea to run wide open once in a while to see if your cluster has any holes??
 For this reason, we've opted to intro an exclusion section under the image scan configuration to exclude certain images from the scans.

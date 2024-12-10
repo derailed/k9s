@@ -69,7 +69,7 @@ func TestFieldClone(t *testing.T) {
 	assert.NotEqual(t, fmt.Sprintf("%p", f), fmt.Sprintf("%p", f1))
 }
 
-func TestRowlabelize(t *testing.T) {
+func TestRowLabelize(t *testing.T) {
 	uu := map[string]struct {
 		row  model1.Row
 		cols []int

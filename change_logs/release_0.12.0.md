@@ -12,7 +12,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### Searchable Logs
 
-There has been quiet a few demands for this feature. It should now be generally available in this drop. It works the same as the resource view ie `/fred`, you can also specify a fuzzy filter using `/-f blee-duh`. The paint is still fresh on that deal and not super confident that it will work nominally as I had to rework the logs to enable. So totally possible I've hosed something in the process.
+There has been quite a few demands for this feature. It should now be generally available in this drop. It works the same as the resource view ie `/fred`, you can also specify a fuzzy filter using `/-f blee-duh`. The paint is still fresh on that deal and not super confident that it will work nominally as I had to rework the logs to enable. So totally possible I've hosed something in the process.
 
 ### APIServer Dud
 
@@ -38,7 +38,7 @@ k9s:
 
 ### K9s Slackers
 
-I've enabled a [K9s slack channel](https://join.slack.com/t/k9sers/shared_invite/enQtOTAzNTczMDYwNjc5LWJlZjRkNzE2MzgzYWM0MzRiYjZhYTE3NDc1YjNhYmM2NTk2MjUxMWNkZGMzNjJiYzEyZmJiODBmZDYzOGQ5NWM) dedicated to all K9ers. This would be a place for us to meet and discuss ideas and use cases. I'll be honest here I am not a big slack afficionado as I don't do very well with interrupt drive workflows. But I think it would be a great resource for us all.
+I've enabled a [K9s slack channel](https://join.slack.com/t/k9sers/shared_invite/enQtOTAzNTczMDYwNjc5LWJlZjRkNzE2MzgzYWM0MzRiYjZhYTE3NDc1YjNhYmM2NTk2MjUxMWNkZGMzNjJiYzEyZmJiODBmZDYzOGQ5NWM) dedicated to all K9sers. This would be a place for us to meet and discuss ideas and use cases. I'll be honest here I am not a big slack aficionado as I don't do very well with interrupt drive workflows. But I think it would be a great resource for us all.
 
 NOTE: Please be kind to each others and threat everyone with respect as I would like this to be a safe and fun place for folks to hangout. Thank you for you support and understanding!!
 

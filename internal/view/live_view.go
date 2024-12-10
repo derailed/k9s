@@ -97,7 +97,7 @@ func (v *LiveView) InCmdMode() bool {
 	return v.cmdBuff.InCmdMode()
 }
 
-// ResourceFailed notifies when their is an issue.
+// ResourceFailed notifies when there is an issue.
 func (v *LiveView) ResourceFailed(err error) {
 	v.text.SetTextAlign(tview.AlignCenter)
 	x, _, w, _ := v.GetRect()

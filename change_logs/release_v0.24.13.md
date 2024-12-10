@@ -20,7 +20,7 @@ I want to recognize the following folks that have been kind enough to join our s
 * [Azar](https://github.com/azarudeena)
 * [Tim Orling](https://github.com/moto-timo)
 
-So if you feel K9s is helping with your productivity while administering you Kubernetes clusters, please consider pitching in as it will go a long way in ensuring a thriving environment for this repo and our k9ers community at large.
+So if you feel K9s is helping with your productivity while administering your Kubernetes clusters, please consider pitching in as it will go a long way in ensuring a thriving environment for this repo and our K9sers community at large.
 
 Thank you!!
 

@@ -31,7 +31,7 @@ type LogsListener interface {
 	// LogStop indicates logging was canceled.
 	LogStop()
 
-	// LogResume indicates loggings has resumed.
+	// LogResume indicates logging has resumed.
 	LogResume()
 
 	// LogCanceled indicates no more logs will come.

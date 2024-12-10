@@ -23,7 +23,7 @@ Big thanks in full effect to you all, I am so humbled and honored by your kind a
 
 ### Dracula Skin
 
-Since we're in the thank you phase, might as well lasso in [Josh Symonds](https://github.com/Veraticus) for contributing the `Dracula` K9s skin that is now available in this repo under the skins directory. Here is a sneak peek of what K9s looks like under that skin. I am hopeful that like minded `graphically` inclined K9ers will contribute cool skins for this project for us to share/use in our Kubernetes clusters.
+Since we're in the thank you phase, might as well lasso in [Josh Symonds](https://github.com/Veraticus) for contributing the `Dracula` K9s skin that is now available in this repo under the skins directory. Here is a sneak peek of what K9s looks like under that skin. I am hopeful that like minded `graphically` inclined K9sers will contribute cool skins for this project for us to share/use in our Kubernetes clusters.
 
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/skins/dracula.png"/>
 

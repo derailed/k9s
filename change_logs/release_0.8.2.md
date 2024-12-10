@@ -14,7 +14,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 Maintenance release.
 
-In this quick drop, we've opted to nuke any menu shortcut using the infamous `Alt` key. This includes the new pod kill command that is now `Ctrl-K` and for the most part the column sorting shortcuts for CPU% and MEMORY%. My apologizes to all on this fiasco as it turns out I had remapped opt->alt on my local dev machine and space it while trying to offer different key mappings. Will revisit this in the future when things seemer down a bit. Thank you to all that reported on this!
+In this quick drop, we've opted to nuke any menu shortcut using the infamous `Alt` key. This includes the new pod kill command that is now `Ctrl-K` and for the most part the column sorting shortcuts for CPU% and MEMORY%. My apologizes to all on this fiasco as it turns out I had remapped opt->alt on my local dev machine and space it while trying to offer different key mappings. Will revisit this in the future when things simmer down a bit. Thank you to all that reported on this!
 
 ---
 

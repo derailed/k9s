@@ -17,7 +17,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 ## A Word From Our Sponsors!
 
 I would like to extend a `Big Thank You` to the following generous K9s friends for joining our sponsorship program and supporting this project!
-Without your support this project will be another cadaver in Github's infamous `Dead Program Society`. Thank you!!
+Without your support this project will be another cadaver in GitHub's infamous `Dead Program Society`. Thank you!!
 
 * 😻 [Antoine Meaussone](https://github.com/Ameausoone)
 

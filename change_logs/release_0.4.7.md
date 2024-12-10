@@ -28,7 +28,7 @@ NOTE: In a K9s environment, if you'd like to specify a spinach config file, you 
 
 NOTE: There is a bit more that need to be done on this integration to be complete. Please file an issue if something does not work as expected.
 
-NOTE: Popeye will run it's own course and K9s is just a viewer for it, so if you'd like additional sanitation or find Popeye related issues, please tune to the corresponding repo!
+NOTE: Popeye will run its own course and K9s is just a viewer for it, so if you'd like additional sanitation or find Popeye related issues, please tune to the corresponding repo!
 
 Let us know if you dig it? And share your before/after clusters scores!
 

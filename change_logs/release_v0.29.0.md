@@ -119,7 +119,7 @@ While in the releases view, you can also rollback an install to a previous revis
 
 ### Spock! Are You Out Of Your VulScan Mind?
 
-Tired of having malignent folks shoot holes in your prod clusters or failing compliance testing?
+Tired of having malignant folks shoot holes in your prod clusters or failing compliance testing?
 
 Added ability to run image vulnerability scans directly from k9s. You can now monitor your security stance in dev/staging/... clusters
 prior to proclaiming `It's Open Season...` in prod!

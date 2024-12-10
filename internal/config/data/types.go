@@ -20,7 +20,7 @@ const (
 	// DefaultFileMod default unix perms for k9s files.
 	DefaultFileMod os.FileMode = 0600
 
-	// MainConfigFile track main configuration file..
+	// MainConfigFile track main configuration file.
 	MainConfigFile = "config.yaml"
 )
 

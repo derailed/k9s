@@ -16,7 +16,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ## Change Logs
 
-I am super excited about this drop of K9s. Lot's of cool improvements based on K9s friends excellent feedback!
+I am super excited about this drop of K9s. Lots of cool improvements based on K9s friends excellent feedback!
 
 
 ### Popeye
@@ -31,7 +31,7 @@ Added a container view to list all the containers available on a given pod. On a
 
 > Ever wanted to know where your pods originated from?
 
-Fear not, K9s has got your back! Some folks have expressed desires to navigate from a deployment to it's pods or see which pods are running on a given node. Whether you are starting from a Node, a Deployment, ReplicaSet, DaemonSet or StatefulSet, you can now simply `<enter>` of a selected item a view the associated pods. [Issue #149](https://github.com/derailed/k9s/issues/149)
+Fear not, K9s has got your back! Some folks have expressed desires to navigate from a deployment to its pods or see which pods are running on a given node. Whether you are starting from a Node, a Deployment, ReplicaSet, DaemonSet or StatefulSet, you can now simply `<enter>` of a selected item a view the associated pods. [Issue #149](https://github.com/derailed/k9s/issues/149)
 
 ### RollingBack ReplicaSets
 

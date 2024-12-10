@@ -23,7 +23,7 @@ const (
 	FlashErr
 )
 
-// LevelMessage tracks an message and severity.
+// LevelMessage tracks a message and severity.
 type LevelMessage struct {
 	Level FlashLevel
 	Text  string

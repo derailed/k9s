@@ -26,7 +26,7 @@ If you would like to support us, you can either join our github sponsors or purc
 
 ## Resolved Issues
 
-* [Issue #1063](https://github.com/derailed/k9s/issues/1063) Wierd colors on windows (Don't do windows so please help verify!)
+* [Issue #1063](https://github.com/derailed/k9s/issues/1063) Weird colors on windows (Don't do windows so please help verify!)
 * [Issue #1061](https://github.com/derailed/k9s/issues/1061) Container shell Windows (Don't do windows so please help verify!)
 * [Issue #1059](https://github.com/derailed/k9s/issues/1059) Monokai skin broken\
 * [Issue #177](https://github.com/derailed/k9s/issues/177) Shell first character lost

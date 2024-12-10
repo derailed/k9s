@@ -35,7 +35,7 @@ Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgj
 ## Resolved Issues
 
 * [#2394](https://github.com/derailed/k9s/issues/2394) Allow setting custom log dir
-* [#2393](https://github.com/derailed/k9s/issues/2393) When switching contexts k9s does not switching to cluster's pod/namespaces/other k8s kinds view
+* [#2393](https://github.com/derailed/k9s/issues/2393) When switching contexts k9s does not switch to cluster's pod/namespaces/other k8s kinds view
 * [#2387](https://github.com/derailed/k9s/issues/2387) Invalid namespace xxx - with feelings!
 
 ---

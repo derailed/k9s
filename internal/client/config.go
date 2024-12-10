@@ -166,7 +166,7 @@ func (c *Config) CurrentContext() (*api.Context, error) {
 	return c.GetContext(n)
 }
 
-// GetContext fetch a given context or error if it does not exists.
+// GetContext fetch a given context or error if it does not exist.
 func (c *Config) GetContext(n string) (*api.Context, error) {
 	cfg, err := c.RawConfig()
 	if err != nil {

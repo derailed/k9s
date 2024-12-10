@@ -36,7 +36,7 @@ This feature comes out of [Raman Gupta](https://github.com/rocketraman) report. 
 
 ### OldiesButGoodies?
 
-So the initial few releases of K9s did not have any failsafe counter measures while deleting resources. So we've beefed the deletion logic to make sure you did not inadvertantly blow something away by leveraging
+So the initial few releases of K9s did not have any failsafe counter measures while deleting resources. So we've beefed the deletion logic to make sure you did not inadvertently blow something away by leveraging
 dialogs. This was totally a reasonable thing to do! However in case of managed pods, one may want to quickly cycle on or more pod perhaps to pickup a new image or configuration. For this purpose we've introduced an alternate deletion mechanism to delete pod under `alt-k` for kill. Thanks to my fellow frenchma [ftorto](https://github.com/ftorto) for this one ;)
 
 ### HairPlugs!
@@ -74,7 +74,7 @@ plugins:
     scopes:
     - co
     description: Sniff
-    # NOTE! Ksniff has been install as a kubectl extension!
+    # NOTE! Ksniff has been installed as a kubectl extension!
     command: kubectl
     # Run this command in the background so that I can still do K9s stuff...
     background: true
