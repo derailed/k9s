@@ -89,6 +89,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.logs.SetBorderPadding(0, 0, 1, 1)
 	l.logs.SetText("[orange::d]" + logMessage)
 	l.logs.SetWrap(l.app.Config.K9s.Logger.TextWrap)
+
 	l.logs.SetMaxLines(l.app.Config.K9s.Logger.BufferSize)
 
 	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor.String(), l.app.Styles.Views().Log.BgColor.String())
@@ -102,6 +103,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.updateTitle()
 
 	l.model.ToggleShowTimestamp(l.app.Config.K9s.Logger.ShowTime)
+	l.model.ToggleJsonPretty(l.app.Config.K9s.Logger.JsonPrettifier)
 
 	return nil
 }
@@ -253,6 +255,7 @@ func (l *Log) bindKeys() {
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", l.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, false),
 		ui.KeyShiftC:    ui.NewKeyAction("Clear", l.clearCmd, true),
+		ui.KeyJ:         ui.NewKeyAction("Toggle Json pretty printing", l.toggleJsonPrettifierCmd, true),
 		ui.KeyM:         ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
@@ -476,6 +479,18 @@ func (l *Log) toggleTextWrapCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	l.indicator.ToggleTextWrap()
 	l.logs.SetWrap(l.indicator.textWrap)
+	l.indicator.Refresh()
+
+	return nil
+}
+
+func (l *Log) toggleJsonPrettifierCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+
+	l.indicator.ToggleJsonPrettifier()
+	l.model.ToggleJsonPretty(l.indicator.jsonPretty)
 	l.indicator.Refresh()
 
 	return nil
