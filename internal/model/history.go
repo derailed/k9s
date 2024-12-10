@@ -3,10 +3,6 @@
 
 package model
 
-import (
-	"strings"
-)
-
 // MaxHistory tracks max command history.
 const MaxHistory = 20
 
@@ -42,7 +38,6 @@ func (h *History) Push(c string) {
 		return
 	}
 
-	c = strings.ToLower(c)
 	if i := h.indexOf(c); i != -1 {
 		return
 	}
