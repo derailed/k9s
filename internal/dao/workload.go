@@ -80,36 +80,21 @@ func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.
 	return dial.Namespace(ns).Delete(ctx, n, opts)
 }
 
-func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav1.Table, error) {
-	a.Table.gvr = gvr
-	oo, err := a.Table.List(ctx, ns)
-	if err != nil {
-		return nil, err
-	}
-	if len(oo) == 0 {
-		return nil, fmt.Errorf("no table found for gvr: %s", gvr)
-	}
-	tt, ok := oo[0].(*metav1.Table)
-	if !ok {
-		return nil, errors.New("not a metav1.Table")
-	}
-
-	return tt, nil
-}
-
 // List fetch workloads.
 func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo := make([]runtime.Object, 0, 100)
 
-	workloadGVRs, _ := ctx.Value(internal.KeyCustomWorkloadGVRs).([]config.WorkloadGVR)
-	for _, wkgvr := range workloadGVRs {
-		wkgvr.ApplyDefault()
+	workloadGVRs, _ := ctx.Value(internal.KeyWorkloadGVRs).([]config.WorkloadGVR)
+	for i, wkgvr := range workloadGVRs {
+		// Apply default values
+		workloadGVRs[i].ApplyDefault()
 
-		table, err := a.fetch(ctx, wkgvr.GetGVR(), ns)
+		table, err := a.fetch(ctx, workloadGVRs[i].GetGVR(), ns)
 		if err != nil {
-			// TODO: Add log, skipping in case the resource doesn't exists on the cluster
+			log.Warn().Msgf("could not fetch gvr %s: %q", workloadGVRs[i].Name, err)
 			continue
 		}
+
 		var (
 			ns string
 			ts metav1.Time
@@ -129,7 +114,7 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 			}
 
 			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []interface{}{
-				wkgvr.GetGVR().String(),
+				workloadGVRs[i].GetGVR().String(),
 				ns,
 				r.Cells[indexOf("Name", table.ColumnDefinitions)],
 				a.getStatus(wkgvr, table.ColumnDefinitions, r.Cells),
@@ -143,11 +128,32 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 	return oo, nil
 }
 
-// TODO: getStatus add comment to explain how it retrieve / try to get the status
+func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav1.Table, error) {
+	a.Table.gvr = gvr
+	oo, err := a.Table.List(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
+	if len(oo) == 0 {
+		return nil, fmt.Errorf("no table found for gvr: %s", gvr)
+	}
+	tt, ok := oo[0].(*metav1.Table)
+	if !ok {
+		return nil, errors.New("not a metav1.Table")
+	}
+
+	return tt, nil
+}
+
+// getStatus will retrieve the status of the resource depending of it's configuration
 func (wk *Workload) getStatus(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	status := NotAvailable
 
 	if wkgvr.Status != nil {
+		if wkgvr.Status.NA {
+			return status
+		}
+
 		if statusIndex := indexOf(string(wkgvr.Status.CellName), cd); statusIndex != -1 {
 			status = valueToString(cells[statusIndex])
 		}
@@ -156,16 +162,20 @@ func (wk *Workload) getStatus(wkgvr config.WorkloadGVR, cd []metav1.TableColumnD
 	return status
 }
 
-// TODO: getReadiness add comment to explain how it retrieve / try to get the readiness
+// getReadiness will retrieve the readiness of the resource depending of it's configuration
 func (wk *Workload) getReadiness(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	ready := NotAvailable
 
 	if wkgvr.Readiness != nil {
+		if wkgvr.Readiness.NA {
+			return ready
+		}
+
 		if readyIndex := indexOf(string(wkgvr.Readiness.CellName), cd); readyIndex != -1 {
 			ready = valueToString(cells[readyIndex])
 		}
 
-		if extrReadyIndex := indexOf(string(wkgvr.Readiness.ExtraCellName), cd); extrReadyIndex != -1 {
+		if extrReadyIndex := indexOf(string(wkgvr.Readiness.CellExtraName), cd); extrReadyIndex != -1 {
 			ready = fmt.Sprintf("%s/%s", ready, valueToString(cells[extrReadyIndex]))
 		}
 	}
@@ -173,11 +183,15 @@ func (wk *Workload) getReadiness(wkgvr config.WorkloadGVR, cd []metav1.TableColu
 	return ready
 }
 
-// TODO: getValidity add comment to explain how it retrieve / try to get the validity (to show them as error when doing ctrl+z)
+// getValidity will retrieve the validity of the resource depending of it's configuration
 func (wk *Workload) getValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	var validity string
 
 	if wkgvr.Validity != nil {
+		if wkgvr.Validity.NA {
+			return validity
+		}
+
 		if wkgvr.Validity.Matchs != nil {
 			for _, m := range wkgvr.Validity.Matchs {
 				v := ""
@@ -191,17 +205,17 @@ func (wk *Workload) getValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColum
 			}
 		}
 
-		if wkgvr.Validity.Replicas.AllCellName != "" {
-			if allCellNameIndex := indexOf(string(wkgvr.Validity.Replicas.AllCellName), cd); allCellNameIndex != -1 {
+		if wkgvr.Validity.Replicas.CellAllName != "" {
+			if allCellNameIndex := indexOf(string(wkgvr.Validity.Replicas.CellAllName), cd); allCellNameIndex != -1 {
 				if !isReady(valueToString(cells[allCellNameIndex])) {
 					validity = DegradedStatus
 				}
 			}
 		}
 
-		if wkgvr.Validity.Replicas.CurrentCellName != "" && wkgvr.Validity.Replicas.DesiredCellName != "" {
-			currentIndex := indexOf(string(wkgvr.Validity.Replicas.CurrentCellName), cd)
-			desiredIndex := indexOf(string(wkgvr.Validity.Replicas.DesiredCellName), cd)
+		if wkgvr.Validity.Replicas.CellCurrentName != "" && wkgvr.Validity.Replicas.CellDesiredName != "" {
+			currentIndex := indexOf(string(wkgvr.Validity.Replicas.CellCurrentName), cd)
+			desiredIndex := indexOf(string(wkgvr.Validity.Replicas.CellDesiredName), cd)
 			if currentIndex != -1 && desiredIndex != -1 {
 				if !isReady(fmt.Sprintf("%s/%s", valueToString(cells[desiredIndex]), valueToString(cells[currentIndex]))) {
 					validity = DegradedStatus

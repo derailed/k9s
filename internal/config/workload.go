@@ -1,46 +1,36 @@
 package config
 
-import "github.com/derailed/k9s/internal/client"
+import (
+	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
+)
 
 var (
-	// TODO: Remove that and add it to the doc (with basic example)
-	// yaml
-	// customWorkloadGVRs:
-	// 	- Name: ""
-	// 	Status:
-	//		CellName: ""
-	//	Readiness:
-	// 		CellName: ""
-	// 		ExtraCellName: ""
-	//	Validity:
-	//		Replicas:
-	// 			AllCellName: ""
-	// 			CurrentCellName: ""
-	// 			DesiredCellName: ""
-	// 		Matchs:
-	//			- CellName: ""
-	//			  Value : ""
-	//			- CellName: ""
-	//			  Value: ""
-	//				...
+	// defaultGvr represent the default values uses if a custom gvr is set without status, validity or readiness
+	defaultGvr = WorkloadGVR{
+		Status:    &GVRStatus{CellName: "Status"},
+		Validity:  &GVRValidity{Matchs: []Match{{CellName: "Ready", Value: "True"}}},
+		Readiness: &GVRReadiness{CellName: "Ready"},
+	}
 
-	defaultGVRs = map[string]WorkloadGVR{
+	// defaultConfigGVRs represents the default configurations
+	defaultConfigGVRs = map[string]WorkloadGVR{
 		"v1/pods": {
 			Name:      "v1/pods",
-			Status:    &WKStatus{CellName: "Status"},
-			Readiness: &Readiness{CellName: "Ready"},
-			Validity: &Validity{
+			Status:    &GVRStatus{CellName: "Status"},
+			Readiness: &GVRReadiness{CellName: "Ready"},
+			Validity: &GVRValidity{
 				Matchs: []Match{
 					{CellName: "Status", Value: "Running"},
 				},
-				Replicas: Replicas{AllCellName: "Ready"},
+				Replicas: Replicas{CellAllName: "Ready"},
 			},
 		},
 		"apps/v1/replicasets": {
 			Name:      "apps/v1/replicasets",
-			Readiness: &Readiness{CellName: "Current", ExtraCellName: "Desired"},
-			Validity: &Validity{
-				Replicas: Replicas{DesiredCellName: "Desired", CurrentCellName: "Current"},
+			Readiness: &GVRReadiness{CellName: "Current", CellExtraName: "Desired"},
+			Validity: &GVRValidity{
+				Replicas: Replicas{CellDesiredName: "Desired", CellCurrentName: "Current"},
 			},
 		},
 		"v1/serviceaccounts":                   {Name: "v1/serviceaccounts"},
@@ -51,91 +41,103 @@ var (
 		"v1/services":                          {Name: "v1/services"},
 		"apps/v1/daemonsets": {
 			Name:      "apps/v1/daemonsets",
-			Readiness: &Readiness{CellName: "Ready", ExtraCellName: "Desired"},
-			Validity: &Validity{
-				Replicas: Replicas{DesiredCellName: "Desired", CurrentCellName: "Ready"},
+			Readiness: &GVRReadiness{CellName: "Ready", CellExtraName: "Desired"},
+			Validity: &GVRValidity{
+				Replicas: Replicas{CellDesiredName: "Desired", CellCurrentName: "Ready"},
 			},
 		},
 		"apps/v1/statefulSets": {
 			Name:      "apps/v1/statefulSets",
-			Status:    &WKStatus{CellName: "Ready"},
-			Readiness: &Readiness{CellName: "Ready"},
-			Validity: &Validity{
-				Replicas: Replicas{AllCellName: "Ready"},
+			Status:    &GVRStatus{CellName: "Ready"},
+			Readiness: &GVRReadiness{CellName: "Ready"},
+			Validity: &GVRValidity{
+				Replicas: Replicas{CellAllName: "Ready"},
 			},
 		},
 		"apps/v1/deployments": {
 			Name:      "apps/v1/deployments",
-			Readiness: &Readiness{CellName: "Ready"},
-			Validity: &Validity{
-				Replicas: Replicas{AllCellName: "Ready"},
+			Readiness: &GVRReadiness{CellName: "Ready"},
+			Validity: &GVRValidity{
+				Replicas: Replicas{CellAllName: "Ready"},
 			},
 		},
 	}
 )
 
-// TODO: Rename all fields with better names
-
 type CellName string
 
-type WKStatus struct {
-	CellName CellName `json:"name" yaml:"name"`
+type GVRStatus struct {
+	NA       bool     `json:"na" yaml:"na"`
+	CellName CellName `json:"cellName" yaml:"cellName"`
 }
 
-type Readiness struct {
-	CellName      CellName `json:"name" yaml:"name"`
-	ExtraCellName CellName `json:"extra_cell_name" yaml:"extra_cell_name"`
+type GVRReadiness struct {
+	NA            bool     `json:"na" yaml:"na"`
+	CellName      CellName `json:"cellName" yaml:"cellName"`
+	CellExtraName CellName `json:"cellExtraName" yaml:"cellExtraName"`
 }
 
 type Match struct {
-	CellName CellName `json:"name" yaml:"name"`
-	Value    string   `json:"value" yaml:"value"`
+	CellName CellName `json:"cellName" yaml:"cellName"`
+	Value    string   `json:"cellValue" yaml:"cellValue"`
 }
 
 type Replicas struct {
-	CurrentCellName CellName `json:"currentName" yaml:"currentName"`
-	DesiredCellName CellName `json:"desiredName" yaml:"desiredName"`
-	AllCellName     CellName `json:"allName" yaml:"allName"`
+	CellCurrentName CellName `json:"cellCurrentName" yaml:"cellCurrentName"`
+	CellDesiredName CellName `json:"cellDesiredName" yaml:"cellDesiredName"`
+	CellAllName     CellName `json:"cellAllName" yaml:"cellAllName"`
 }
 
-type Validity struct {
+type GVRValidity struct {
+	NA       bool     `json:"na" yaml:"na"`
 	Matchs   []Match  `json:"matchs,omitempty" yaml:"matchs,omitempty"`
 	Replicas Replicas `json:"replicas" yaml:"replicas"`
 }
 
 type WorkloadGVR struct {
-	Name      string     `json:"name" yaml:"name"`
-	Status    *WKStatus  `json:"status,omitempty" yaml:"status,omitempty"`
-	Readiness *Readiness `json:"readiness,omitempty" yaml:"readiness,omitempty"`
-	Validity  *Validity  `json:"validity,omitempty" yaml:"validity,omitempty"`
+	Name      string        `json:"name" yaml:"name"`
+	Status    *GVRStatus    `json:"status,omitempty" yaml:"status,omitempty"`
+	Readiness *GVRReadiness `json:"readiness,omitempty" yaml:"readiness,omitempty"`
+	Validity  *GVRValidity  `json:"validity,omitempty" yaml:"validity,omitempty"`
 }
 
-// TODO: Find a better name, this only create the default gvr values
-func NewDefaultWorkloadGVRs() []WorkloadGVR {
+// NewWorkloadGVRs returns the default GVRs to use if no custom config is set
+func NewWorkloadGVRs() []WorkloadGVR {
 	defaultWorkloadGVRs := make([]WorkloadGVR, 0)
-	for _, gvr := range defaultGVRs {
+	for _, gvr := range defaultConfigGVRs {
 		defaultWorkloadGVRs = append(defaultWorkloadGVRs, gvr)
 	}
 
 	return defaultWorkloadGVRs
 }
 
-// TODO: Add comment
+// GetGVR will return the GVR defined by the WorkloadGVR's name
 func (wgvr WorkloadGVR) GetGVR() client.GVR {
 	return client.NewGVR(wgvr.Name)
 }
 
-// TODO: Add comment, this is applying default value for GVR set partially
+// ApplyDefault will complete the GVR with missing values
+// If it's an existing GVR's name, it will apply their corresponding default values
+// If it's an unknown resources without readiness, status or validity it will use the default ones
 func (wkgvr *WorkloadGVR) ApplyDefault() {
-	if existingGvr, ok := defaultGVRs[wkgvr.Name]; ok {
-		if wkgvr.Status == nil {
-			wkgvr.Status = existingGvr.Status
-		}
-		if wkgvr.Readiness == nil {
-			wkgvr.Readiness = existingGvr.Readiness
-		}
-		if wkgvr.Validity == nil {
-			wkgvr.Validity = existingGvr.Validity
-		}
+	// Apply default values
+	existingGvr, ok := defaultConfigGVRs[wkgvr.Name]
+	if ok {
+		wkgvr.applyDefaultValues(existingGvr)
+	} else {
+		wkgvr.applyDefaultValues(defaultGvr)
 	}
+}
+
+func (wkgvr *WorkloadGVR) applyDefaultValues(defaultGVR WorkloadGVR) {
+	if wkgvr.Status == nil {
+		wkgvr.Status = defaultGVR.Status
+	}
+	if wkgvr.Readiness == nil {
+		wkgvr.Readiness = defaultGVR.Readiness
+	}
+	if wkgvr.Validity == nil {
+		wkgvr.Validity = defaultGVR.Validity
+	}
+	log.Warn().Msgf("Validity after: %s", wkgvr.Validity)
 }

@@ -1056,6 +1056,98 @@ k9s:
 
 ---
 
+## Custom Workload View
+
+You can customize the workload view with CRDs or any resources you want to see on this view.
+
+To do so, you will need to update your config to add a new field `workloadGVRs` following this pattern:
+```
+k9s:
+  workloadGVRs:
+    - name: "v1/pods"
+    - name: "test.com/v1alpha1/myCRD"
+      status:
+        cellName: "State"
+      readiness:
+        cellName: "Current"
+        # The cellExtraName will be added as `cellName/cellExtraName`
+        cellExtraName: "Desired"
+      validity:
+        replicas:
+          cellCurrentName: "Current"
+          cellDesiredName: "Desired"
+        matchs:
+          - cellName: "State"
+            cellValue: "Ready"
+    - name: "external-secrets.io/v1beta1/externalsecrets"
+      status:
+        na: true
+      validity:
+        matchs:
+          - cellName: Ready
+            cellValue: True
+          - cellName: Status
+            cellValue: SecretSynced
+```
+The first one (`v1/pods`) will be recognized by k9s and will set it's default values for the readiness, validity and status.
+
+The second one (`test.com/v1alpha1/myCRD`) will be an unknown GVR, it will use this configuration to be shown on the workload view.
+
+The third one (`external-secrets.io/v1beta1/externalsecrets`) will be an unknown GVR, it will use this configuration to be shown on the workload view, but as the readiness is not set, it will use the default values it. About the status, it's set as `na: true` not applicable (for example the secrets does not need a status)
+
+The default values applied for an unknown GVR are if they are not set and if they are not flagged as not applicable are:
+```
+  status:
+    cellName: "Status"
+  validity:
+    matchs:
+      - cellName: "Ready"
+        cellValue: "True"
+  readiness:
+    cellName: "Ready"
+```
+
+The known GVRs from k9s are:
+```
+  - v1/pods
+  - apps/v1/replicasets
+  - v1/serviceaccounts
+  - v1/persistentvolumeclaims
+  - scheduling.k8s.io/v1/priorityclasses
+  - v1/configmaps
+  - v1/secrets
+  - v1/services
+  - apps/v1/daemonsets
+  - apps/v1/statefulSets
+```
+
+The full structure about the configuration is:
+```
+  workloadGVRs:
+    - name: string
+      status:
+        cellName: string
+        na: bool
+      readiness:
+        cellName: string
+        cellExtraName: string
+        na: bool
+      validity:
+        matchs:
+          - cellName: string
+            cellValue: string
+          - cellName: string
+            cellValue: string
+            ...
+        replicas:
+          cellCurrentName: string
+          cellDesiredName: string
+          cellAllName: string
+        na: bool
+```
+
+---
+
 ## Contributors
 
 Without the contributions from these fine folks, this project would be a total dud!
