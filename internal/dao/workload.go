@@ -149,14 +149,13 @@ func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav
 func (wk *Workload) getStatus(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	status := NotAvailable
 
-	if wkgvr.Status != nil {
-		if wkgvr.Status.NA {
-			return status
-		}
+	if wkgvr.Status == nil || wkgvr.Status.NA {
+		return status
+	}
 
-		if statusIndex := indexOf(string(wkgvr.Status.CellName), cd); statusIndex != -1 {
-			status = valueToString(cells[statusIndex])
-		}
+	if statusIndex := indexOf(string(wkgvr.Status.CellName), cd); statusIndex != -1 {
+		status = valueToString(cells[statusIndex])
+
 	}
 
 	return status
@@ -166,18 +165,16 @@ func (wk *Workload) getStatus(wkgvr config.WorkloadGVR, cd []metav1.TableColumnD
 func (wk *Workload) getReadiness(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	ready := NotAvailable
 
-	if wkgvr.Readiness != nil {
-		if wkgvr.Readiness.NA {
-			return ready
-		}
+	if wkgvr.Readiness == nil || wkgvr.Readiness.NA {
+		return ready
+	}
 
-		if readyIndex := indexOf(string(wkgvr.Readiness.CellName), cd); readyIndex != -1 {
-			ready = valueToString(cells[readyIndex])
-		}
+	if readyIndex := indexOf(string(wkgvr.Readiness.CellName), cd); readyIndex != -1 {
+		ready = valueToString(cells[readyIndex])
+	}
 
-		if extrReadyIndex := indexOf(string(wkgvr.Readiness.CellExtraName), cd); extrReadyIndex != -1 {
-			ready = fmt.Sprintf("%s/%s", ready, valueToString(cells[extrReadyIndex]))
-		}
+	if extrReadyIndex := indexOf(string(wkgvr.Readiness.CellExtraName), cd); extrReadyIndex != -1 {
+		ready = fmt.Sprintf("%s/%s", ready, valueToString(cells[extrReadyIndex]))
 	}
 
 	return ready
@@ -185,46 +182,83 @@ func (wk *Workload) getReadiness(wkgvr config.WorkloadGVR, cd []metav1.TableColu
 
 // getValidity will retrieve the validity of the resource depending of it's configuration
 func (wk *Workload) getValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
-	var validity string
-
-	if wkgvr.Validity != nil {
-		if wkgvr.Validity.NA {
-			return validity
-		}
-
-		if wkgvr.Validity.Matchs != nil {
-			for _, m := range wkgvr.Validity.Matchs {
-				v := ""
-				if matchCellNameIndex := indexOf(string(m.CellName), cd); matchCellNameIndex != -1 {
-					v = valueToString(cells[matchCellNameIndex])
-				}
-
-				if v != m.Value {
-					validity = DegradedStatus
-				}
-			}
-		}
-
-		if wkgvr.Validity.Replicas.CellAllName != "" {
-			if allCellNameIndex := indexOf(string(wkgvr.Validity.Replicas.CellAllName), cd); allCellNameIndex != -1 {
-				if !isReady(valueToString(cells[allCellNameIndex])) {
-					validity = DegradedStatus
-				}
-			}
-		}
-
-		if wkgvr.Validity.Replicas.CellCurrentName != "" && wkgvr.Validity.Replicas.CellDesiredName != "" {
-			currentIndex := indexOf(string(wkgvr.Validity.Replicas.CellCurrentName), cd)
-			desiredIndex := indexOf(string(wkgvr.Validity.Replicas.CellDesiredName), cd)
-			if currentIndex != -1 && desiredIndex != -1 {
-				if !isReady(fmt.Sprintf("%s/%s", valueToString(cells[desiredIndex]), valueToString(cells[currentIndex]))) {
-					validity = DegradedStatus
-				}
-			}
-		}
+	if wkgvr.Validity == nil || wkgvr.Validity.NA {
+		return ""
 	}
 
-	return validity
+	if validity := getMatchesValidity(wkgvr, cd, cells); validity == DegradedStatus {
+		return DegradedStatus
+	}
+
+	if validity := getReplicasValidity(wkgvr, cd, cells); validity == DegradedStatus {
+		return DegradedStatus
+	}
+
+	return ""
+}
+
+func getMatchesValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	for _, m := range wkgvr.Validity.Matchs {
+		v := ""
+		if matchCellNameIndex := indexOf(string(m.CellName), cd); matchCellNameIndex != -1 {
+			v = valueToString(cells[matchCellNameIndex])
+		}
+
+		if v != m.Value {
+			return DegradedStatus
+		}
+
+	}
+
+	return ""
+}
+
+func getReplicasValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	if getReplicasGrouped(wkgvr, cd, cells) == DegradedStatus {
+		return DegradedStatus
+	}
+
+	if getReplicasSeparated(wkgvr, cd, cells) == DegradedStatus {
+		return DegradedStatus
+	}
+
+	return ""
+}
+
+func getReplicasGrouped(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	if wkgvr.Validity.Replicas.CellAllName == "" {
+		return ""
+	}
+
+	allCellNameIndex := indexOf(string(wkgvr.Validity.Replicas.CellAllName), cd)
+	if allCellNameIndex < 0 {
+		return ""
+	}
+
+	if !isReady(valueToString(cells[allCellNameIndex])) {
+		return DegradedStatus
+	}
+
+	return ""
+}
+
+func getReplicasSeparated(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
+	if wkgvr.Validity.Replicas.CellCurrentName == "" || wkgvr.Validity.Replicas.CellDesiredName == "" {
+		return ""
+	}
+
+	currentIndex := indexOf(string(wkgvr.Validity.Replicas.CellCurrentName), cd)
+	desiredIndex := indexOf(string(wkgvr.Validity.Replicas.CellDesiredName), cd)
+
+	if currentIndex < 0 || desiredIndex < 0 {
+		return ""
+	}
+
+	if !isReady(fmt.Sprintf("%s/%s", valueToString(cells[desiredIndex]), valueToString(cells[currentIndex]))) {
+		return DegradedStatus
+	}
+
+	return ""
 }
 
 func valueToString(v interface{}) string {
