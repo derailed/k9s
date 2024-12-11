@@ -5,12 +5,18 @@ package dao
 
 import (
 	"bytes"
+	"os"
+	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 // LogChan represents a channel for logs.
 type LogChan chan *LogItem
 
 var ItemEOF = new(LogItem)
+
+var locationFromTZ *time.Location = nil
 
 // LogItem represents a container log line.
 type LogItem struct {
@@ -66,17 +72,51 @@ func (l *LogItem) Size() int {
 	return 100 + len(l.Bytes) + len(l.Pod) + len(l.Container)
 }
 
+// RenderTimestampWithTimezone transform the date to the desired timezone and write the date in bb.
+func (l *LogItem) RenderTimestampWithTimezone(date []byte, bb *bytes.Buffer) {
+	t, err := time.Parse("2006-01-02T15:04:05.000000000Z", string(date))
+
+	if err != nil {
+		log.Error().Err(err).Msg("Invalid date log format")
+		return
+	}
+
+	if locationFromTZ == nil {
+		locationFromTZ, err = time.LoadLocation(os.Getenv("TZ"))
+
+		if err != nil {
+			log.Error().Err(err).Msg("Invalid timezone")
+			return
+		}
+	}
+
+	bb.Write([]byte(t.In(locationFromTZ).Format("2006-01-02T15:04:05.000000000Z")))
+}
+
+// RenderTimestamp write the date in bb.
+func (l *LogItem) RenderTimestamp(date []byte, index int, bb *bytes.Buffer) {
+	bb.WriteString("[gray::b]")
+
+	if os.Getenv("TZ") != "" {
+		l.RenderTimestampWithTimezone(date, bb)
+	} else {
+		bb.Write(date)
+	}
+
+	bb.WriteString(" ")
+	for i := len(l.Bytes[:index]); i < 30; i++ {
+		bb.WriteByte(' ')
+	}
+	bb.WriteString("[-::-]")
+}
+
 // Render returns a log line as string.
 func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
+
 	if showTime && index > 0 {
-		bb.WriteString("[gray::b]")
-		bb.Write(l.Bytes[:index])
-		bb.WriteString(" ")
-		if l := 30 - len(l.Bytes[:index]); l > 0 {
-			bb.Write(bytes.Repeat([]byte{' '}, l))
-		}
-		bb.WriteString("[-::-]")
+		date := l.Bytes[:index]
+		l.RenderTimestamp(date, index, bb)
 	}
 
 	if l.Pod != "" {
