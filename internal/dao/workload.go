@@ -113,6 +113,7 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 	return oo, nil
 }
 
+// getNamespaceAndTimestamp will retrieve the namespace and the timestamp of a given resource
 func (a *Workload) getNamespaceAndTimestamp(r metav1.TableRow) (string, metav1.Time) {
 	var (
 		ns string
@@ -204,6 +205,7 @@ func (wk *Workload) getValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColum
 	return ""
 }
 
+// getMatchesValidity retrieve the validity depending if all the matches are fullfiled or not
 func getMatchesValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	for _, m := range wkgvr.Validity.Matchs {
 		v := ""
@@ -220,6 +222,7 @@ func getMatchesValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinit
 	return ""
 }
 
+// getReplicasValidity returns the validity corresponding of the replicas from 2 cells or a single one
 func getReplicasValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	if getReplicasGrouped(wkgvr, cd, cells) == DegradedStatus {
 		return DegradedStatus
@@ -232,6 +235,7 @@ func getReplicasValidity(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefini
 	return ""
 }
 
+// getReplicasGrouped returns the validity corresponding of the replicas from one cell
 func getReplicasGrouped(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	if wkgvr.Validity.Replicas.CellAllName == "" {
 		return ""
@@ -249,6 +253,7 @@ func getReplicasGrouped(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinit
 	return ""
 }
 
+// getReplicasSeparated returns the validity corresponding of the replicas from 2 cells (current/desired)
 func getReplicasSeparated(wkgvr config.WorkloadGVR, cd []metav1.TableColumnDefinition, cells []interface{}) string {
 	if wkgvr.Validity.Replicas.CellCurrentName == "" || wkgvr.Validity.Replicas.CellDesiredName == "" {
 		return ""
