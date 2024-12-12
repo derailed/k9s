@@ -95,23 +95,8 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 			continue
 		}
 
-		var (
-			ns string
-			ts metav1.Time
-		)
 		for _, r := range table.Rows {
-			if obj := r.Object.Object; obj != nil {
-				if m, err := meta.Accessor(obj); err == nil {
-					ns = m.GetNamespace()
-					ts = m.GetCreationTimestamp()
-				}
-			} else {
-				var m metav1.PartialObjectMetadata
-				if err := json.Unmarshal(r.Object.Raw, &m); err == nil {
-					ns = m.GetNamespace()
-					ts = m.CreationTimestamp
-				}
-			}
+			ns, ts := a.getNamespaceAndTimestamp(r)
 
 			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []interface{}{
 				workloadGVRs[i].GetGVR().String(),
@@ -126,6 +111,28 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 	}
 
 	return oo, nil
+}
+
+func (a *Workload) getNamespaceAndTimestamp(r metav1.TableRow) (string, metav1.Time) {
+	var (
+		ns string
+		ts metav1.Time
+	)
+
+	if obj := r.Object.Object; obj != nil {
+		if m, err := meta.Accessor(obj); err == nil {
+			ns = m.GetNamespace()
+			ts = m.GetCreationTimestamp()
+		}
+	} else {
+		var m metav1.PartialObjectMetadata
+		if err := json.Unmarshal(r.Object.Raw, &m); err == nil {
+			ns = m.GetNamespace()
+			ts = m.CreationTimestamp
+		}
+	}
+
+	return ns, ts
 }
 
 func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav1.Table, error) {
