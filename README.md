@@ -1093,7 +1093,7 @@ The first one (`v1/pods`) will be recognized by k9s and will set it's default va
 
 The second one (`test.com/v1alpha1/myCRD`) will be an unknown GVR, it will use this configuration to be shown on the workload view.
 
-The third one (`external-secrets.io/v1beta1/externalsecrets`) will be an unknown GVR, it will use this configuration to be shown on the workload view, but as the readiness is not set, it will use the default values it. About the status, it's set as `na: true` not applicable (for example the secrets does not need a status)
+The third one (`external-secrets.io/v1beta1/externalsecrets`) will be an unknown GVR, it will use this configuration to be shown on the workload view, but as the readiness is not set, it will use the default values it. About the status, it's set as `na: true` not applicable (for example the secrets does not need a status).
 
 The default values applied for an unknown GVR are if they are not set and if they are not flagged as not applicable are:
 ```
