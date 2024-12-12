@@ -2,7 +2,6 @@ package config
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -133,11 +132,12 @@ func (wkgvr *WorkloadGVR) applyDefaultValues(defaultGVR WorkloadGVR) {
 	if wkgvr.Status == nil {
 		wkgvr.Status = defaultGVR.Status
 	}
+
 	if wkgvr.Readiness == nil {
 		wkgvr.Readiness = defaultGVR.Readiness
 	}
+
 	if wkgvr.Validity == nil {
 		wkgvr.Validity = defaultGVR.Validity
 	}
-	log.Warn().Msgf("Validity after: %s", wkgvr.Validity)
 }
