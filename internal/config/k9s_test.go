@@ -129,9 +129,6 @@ func TestK9sMerge(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			u.k1.Merge(u.k2)
-
-			u.ek.WorkloadGVRs = u.k1.WorkloadGVRs
-
 			assert.Equal(t, u.ek, u.k1)
 		})
 	}

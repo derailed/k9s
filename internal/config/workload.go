@@ -1,6 +1,8 @@
 package config
 
 import (
+	"sort"
+
 	"github.com/derailed/k9s/internal/client"
 )
 
@@ -14,6 +16,38 @@ var (
 
 	// defaultConfigGVRs represents the default configurations
 	defaultConfigGVRs = map[string]WorkloadGVR{
+		"apps/v1/deployments": {
+			Name:      "apps/v1/deployments",
+			Readiness: &GVRReadiness{CellName: "Ready"},
+			Validity: &GVRValidity{
+				Replicas: Replicas{CellAllName: "Ready"},
+			},
+		},
+		"apps/v1/daemonsets": {
+			Name:      "apps/v1/daemonsets",
+			Readiness: &GVRReadiness{CellName: "Ready", CellExtraName: "Desired"},
+			Validity: &GVRValidity{
+				Replicas: Replicas{CellDesiredName: "Desired", CellCurrentName: "Ready"},
+			},
+		},
+		"apps/v1/replicasets": {
+			Name:      "apps/v1/replicasets",
+			Readiness: &GVRReadiness{CellName: "Current", CellExtraName: "Desired"},
+			Validity: &GVRValidity{
+				Replicas: Replicas{CellDesiredName: "Desired", CellCurrentName: "Current"},
+			},
+		},
+		"apps/v1/statefulSets": {
+			Name:      "apps/v1/statefulSets",
+			Status:    &GVRStatus{CellName: "Ready"},
+			Readiness: &GVRReadiness{CellName: "Ready"},
+			Validity: &GVRValidity{
+				Replicas: Replicas{CellAllName: "Ready"},
+			},
+		},
+		"scheduling.k8s.io/v1/priorityclasses": {Name: "scheduling.k8s.io/v1/priorityclasses"},
+		"v1/configmaps":                        {Name: "v1/configmaps"},
+		"v1/persistentvolumeclaims":            {Name: "v1/persistentvolumeclaims"},
 		"v1/pods": {
 			Name:      "v1/pods",
 			Status:    &GVRStatus{CellName: "Status"},
@@ -25,41 +59,9 @@ var (
 				Replicas: Replicas{CellAllName: "Ready"},
 			},
 		},
-		"apps/v1/replicasets": {
-			Name:      "apps/v1/replicasets",
-			Readiness: &GVRReadiness{CellName: "Current", CellExtraName: "Desired"},
-			Validity: &GVRValidity{
-				Replicas: Replicas{CellDesiredName: "Desired", CellCurrentName: "Current"},
-			},
-		},
-		"v1/serviceaccounts":                   {Name: "v1/serviceaccounts"},
-		"v1/persistentvolumeclaims":            {Name: "v1/persistentvolumeclaims"},
-		"scheduling.k8s.io/v1/priorityclasses": {Name: "scheduling.k8s.io/v1/priorityclasses"},
-		"v1/configmaps":                        {Name: "v1/configmaps"},
-		"v1/secrets":                           {Name: "v1/secrets"},
-		"v1/services":                          {Name: "v1/services"},
-		"apps/v1/daemonsets": {
-			Name:      "apps/v1/daemonsets",
-			Readiness: &GVRReadiness{CellName: "Ready", CellExtraName: "Desired"},
-			Validity: &GVRValidity{
-				Replicas: Replicas{CellDesiredName: "Desired", CellCurrentName: "Ready"},
-			},
-		},
-		"apps/v1/statefulSets": {
-			Name:      "apps/v1/statefulSets",
-			Status:    &GVRStatus{CellName: "Ready"},
-			Readiness: &GVRReadiness{CellName: "Ready"},
-			Validity: &GVRValidity{
-				Replicas: Replicas{CellAllName: "Ready"},
-			},
-		},
-		"apps/v1/deployments": {
-			Name:      "apps/v1/deployments",
-			Readiness: &GVRReadiness{CellName: "Ready"},
-			Validity: &GVRValidity{
-				Replicas: Replicas{CellAllName: "Ready"},
-			},
-		},
+		"v1/secrets":         {Name: "v1/secrets"},
+		"v1/serviceaccounts": {Name: "v1/serviceaccounts"},
+		"v1/services":        {Name: "v1/services"},
 	}
 )
 
@@ -106,6 +108,10 @@ func NewWorkloadGVRs() []WorkloadGVR {
 	for _, gvr := range defaultConfigGVRs {
 		defaultWorkloadGVRs = append(defaultWorkloadGVRs, gvr)
 	}
+
+	sort.Slice(defaultWorkloadGVRs, func(i, j int) bool {
+		return defaultWorkloadGVRs[i].Name < defaultWorkloadGVRs[j].Name
+	})
 
 	return defaultWorkloadGVRs
 }

@@ -54,7 +54,6 @@ func TestConfigSave(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			c := mock.NewMockConfig()
 			_, err := c.K9s.ActivateContext(u.ct)
-			c.K9s.WorkloadGVRs = nil
 			assert.NoError(t, err)
 			if u.flags != nil {
 				c.K9s.Override(u.k9sFlags)
@@ -557,7 +556,6 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.ReadOnly = true
 	cfg.K9s.Logger.TailCount = 500
 	cfg.K9s.Logger.BufferSize = 800
-	cfg.K9s.WorkloadGVRs = nil
 	cfg.Validate()
 
 	path := filepath.Join("/tmp", "k9s.yaml")
@@ -576,7 +574,6 @@ func TestConfigReset(t *testing.T) {
 	cfg.Validate()
 
 	path := filepath.Join("/tmp", "k9s.yaml")
-	cfg.K9s.WorkloadGVRs = nil
 	assert.NoError(t, cfg.SaveFile(path))
 
 	bb, err := os.ReadFile(path)

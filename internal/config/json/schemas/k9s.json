@@ -125,6 +125,54 @@
               }
             }
           }
+        },
+        "workloadGVRs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "status": {
+                "type":"object",
+                "properties": {
+                  "cellName": {"type": "string"},
+                  "na": {"type": "boolean"}
+                }
+              },
+              "readiness": {
+                "type": "object",
+                "properties": {
+                  "cellName": {"type": "string"},
+                  "cellExtraName": {"type": "string"},
+                  "na": {"type": "boolean"}
+                }
+              },
+              "validity": {
+                "type": "object",
+                "properties": {
+                  "matchs": {
+                    "type": "array",
+                    "items": {
+                      "type" :"object",
+                      "properties": {
+                        "cellName": {"type": "string"},
+                        "cellValue": {"type": "string"}
+                      }
+                    }
+                  },
+                  "replicas": {
+                    "type": "object",
+                    "properties": {
+                      "cellCurrentName": {"type":"string"},
+                      "cellDesiredName": {"type":"string"},
+                      "cellAllName": {"type":"string"}
+                    }
+                  },
+                  "na": {"type": "boolean"}
+                }
+              }
+            }
+          }
         }
       }
     }
