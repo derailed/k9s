@@ -39,3 +39,74 @@ k9s:
     memory:
       critical: 90
       warn: 70
+  workloadGVRs:
+  - name: apps/v1/daemonsets
+    readiness:
+      na: false
+      cellName: Ready
+      cellExtraName: Desired
+    validity:
+      na: false
+      replicas:
+        cellCurrentName: Ready
+        cellDesiredName: Desired
+        cellAllName: ""
+  - name: apps/v1/deployments
+    readiness:
+      na: false
+      cellName: Ready
+      cellExtraName: ""
+    validity:
+      na: false
+      replicas:
+        cellCurrentName: ""
+        cellDesiredName: ""
+        cellAllName: Ready
+  - name: apps/v1/replicasets
+    readiness:
+      na: false
+      cellName: Current
+      cellExtraName: Desired
+    validity:
+      na: false
+      replicas:
+        cellCurrentName: Current
+        cellDesiredName: Desired
+        cellAllName: ""
+  - name: apps/v1/statefulSets
+    status:
+      na: false
+      cellName: Ready
+    readiness:
+      na: false
+      cellName: Ready
+      cellExtraName: ""
+    validity:
+      na: false
+      replicas:
+        cellCurrentName: ""
+        cellDesiredName: ""
+        cellAllName: Ready
+  - name: scheduling.k8s.io/v1/priorityclasses
+  - name: v1/configmaps
+  - name: v1/persistentvolumeclaims
+  - name: v1/pods
+    status:
+      na: false
+      cellName: Status
+    readiness:
+      na: false
+      cellName: Ready
+      cellExtraName: ""
+    validity:
+      na: false
+      matchs:
+      - cellName: Status
+        cellValue: Running
+      replicas:
+        cellCurrentName: ""
+        cellDesiredName: ""
+        cellAllName: Ready
+  - name: v1/secrets
+  - name: v1/serviceaccounts
+  - name: v1/services

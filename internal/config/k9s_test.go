@@ -98,11 +98,13 @@ func TestK9sMerge(t *testing.T) {
 				ImageScans:          config.ImageScans{},
 				Logger:              config.Logger{},
 				Thresholds:          nil,
+				WorkloadGVRs:        nil,
 			},
 			k2: &config.K9s{
 				LiveViewAutoRefresh: true,
 				MaxConnRetry:        100,
 				ShellPod:            config.NewShellPod(),
+				WorkloadGVRs:        nil,
 			},
 			ek: &config.K9s{
 				LiveViewAutoRefresh: true,
@@ -118,6 +120,7 @@ func TestK9sMerge(t *testing.T) {
 				ImageScans:          config.ImageScans{},
 				Logger:              config.Logger{},
 				Thresholds:          nil,
+				WorkloadGVRs:        nil,
 			},
 		},
 	}

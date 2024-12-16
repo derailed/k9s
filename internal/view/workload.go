@@ -29,11 +29,17 @@ func NewWorkload(gvr client.GVR) ResourceViewer {
 	w := Workload{
 		ResourceViewer: NewBrowser(gvr),
 	}
+	w.SetContextFn(w.workloadContext)
 	w.GetTable().SetEnterFn(w.showRes)
 	w.AddBindKeysFn(w.bindKeys)
 	w.GetTable().SetSortCol("KIND", true)
 
 	return &w
+}
+
+// workloadContext will set the configuration's values of the workloadGVRs in the context to be used in the dao/workload
+func (n *Workload) workloadContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, internal.KeyWorkloadGVRs, n.App().Config.K9s.WorkloadGVRs)
 }
 
 func (w *Workload) bindDangerousKeys(aa *ui.KeyActions) {
