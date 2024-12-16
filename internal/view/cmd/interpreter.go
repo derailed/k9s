@@ -72,7 +72,7 @@ func (c *Interpreter) Reset(s string) *Interpreter {
 	return c
 }
 
-// GetLine teturns the prompt.
+// GetLine returns the prompt.
 func (c *Interpreter) GetLine() string {
 	return strings.TrimSpace(c.line)
 }

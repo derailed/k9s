@@ -16,7 +16,7 @@ Thank you so much for your support!!
 
 + [Feature #97](https://github.com/derailed/k9s/issues/97)
   Changed log view to now use kubectl logs shell command.
-  There was some issues with the previous implementation with missing info and panics.
+  There were some issues with the previous implementation with missing info and panics.
   NOTE! User must type Ctrl-C to exit the logs and navigate back to K9s
 + Reordered containers to show spec.containers first vs spec.initcontainers.
 + [Feature #29](https://github.com/derailed/k9s/issues/29)

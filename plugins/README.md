@@ -2,7 +2,7 @@
 
 K9s plugins extend the tool to provide additional functionality via actions to further help you observe or administer your Kubernetes clusters.
 
-Following is an example of some of plugin files in this directory. Other files are not listed in this table.
+Following is an example of some plugin files in this directory. Other files are not listed in this table.
 
 | Plugin-Name                    | Description                                                                  | Available on Views                  | Shortcut  | Kubectl plugin, external dependencies                                                 |
 | ------------------------------ | ---------------------------------------------------------------------------- | ----------------------------------- |-----------| ------------------------------------------------------------------------------------- |

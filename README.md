@@ -68,7 +68,7 @@ Please refer to our [K9s documentation](https://k9scli.io) site for installation
 
 Wanna discuss K9s features with your fellow `K9sers` or simply show your support for this tool?
 
-* Channel: [K9ersSlack](https://k9sers.slack.com/)
+* Channel: [K9sersSlack](https://k9sers.slack.com/)
 * Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
 ## Installation
@@ -411,13 +411,13 @@ You can now override the context portForward default address configuration by se
       noIcons: false
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
-      # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
+      # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
       skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
-    # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
+    # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
     skipLatestRevCheck: false
     # When altering kubeconfig or using multiple kube configs, k9s will clean up clusters configurations that are no longer in use. Setting this flag to true will keep k9s from cleaning up inactive cluster configs. Defaults to false.
     keepMissingClusters: false
@@ -944,7 +944,7 @@ k9s:
     noIcons: false
     # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live  Defaults to false.
     reactive: false
-    # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
+    # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
     skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
     defaultsToFullScreen: false
   skipLatestRevCheck: false
