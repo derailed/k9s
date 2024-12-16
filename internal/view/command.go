@@ -11,9 +11,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 )
@@ -29,6 +31,10 @@ type Command struct {
 	alias *dao.Alias
 	mx    sync.Mutex
 }
+
+type newInterpreterFunc func(string) *cmd.Interpreter
+type resetInterpreterFunc func(*cmd.Interpreter, string) *cmd.Interpreter
+type lineWrapper func(string) string
 
 // NewCommand returns a new command.
 func NewCommand(app *App) *Command {
@@ -210,18 +216,20 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
+	newInterpreter, resetInterpreter := c.interpreterFuncs()
+
 	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
-		return c.run(cmd.NewInterpreter("context"), "", true)
+		return c.run(newInterpreter("context"), "", true)
 	}
 
-	p := cmd.NewInterpreter(c.app.Config.ActiveView())
+	p := newInterpreter(c.app.Config.ActiveView())
 	if p.IsBlank() {
-		return c.run(p.Reset("pod"), "", true)
+		return c.run(resetInterpreter(p, "pod"), "", true)
 	}
 
 	if err := c.run(p, "", true); err != nil {
 		log.Error().Err(err).Msgf("Default run command failed %q", p.GetLine())
-		return c.run(p.Reset("pod"), "", true)
+		return c.run(resetInterpreter(p, "pod"), "", true)
 	}
 
 	return nil
@@ -345,4 +353,34 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	c.app.cmdHistory.Push(p.GetLine())
 
 	return
+}
+
+func (c *Command) interpreterFuncs() (newInterpreterFunc, resetInterpreterFunc) {
+	filter := c.app.Config.ActiveFilter()
+	if filter != "" {
+		c.app.filterHistory.Push(filter)
+	}
+	wrapper := lineWrapperFunc(filter)
+	return func(s string) *cmd.Interpreter {
+			return cmd.NewInterpreter(wrapper(s))
+		},
+		func(c *cmd.Interpreter, s string) *cmd.Interpreter {
+			return c.Reset(wrapper(s))
+		}
+}
+
+func lineWrapperFunc(filter string) lineWrapper {
+	if filter == "" {
+		return func(s string) string {
+			return s
+		}
+	}
+	if internal.IsLabelSelector(filter) {
+		return func(s string) string {
+			return s + " " + ui.TrimLabelSelector(filter)
+		}
+	}
+	return func(s string) string {
+		return s + " /" + filter
+	}
 }
