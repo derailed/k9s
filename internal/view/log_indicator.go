@@ -25,10 +25,11 @@ type LogIndicator struct {
 	showTime                   bool
 	allContainers              bool
 	shouldDisplayAllContainers bool
+	decodeJson                 bool
 }
 
 // NewLogIndicator returns a new indicator.
-func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bool) *LogIndicator {
+func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bool, decodeJson bool) *LogIndicator {
 	l := LogIndicator{
 		styles:                     styles,
 		TextView:                   tview.NewTextView(),
@@ -38,6 +39,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
 		shouldDisplayAllContainers: allContainers,
+		decodeJson:                 decodeJson,
 	}
 	l.StylesChanged(styles)
 	styles.AddListener(&l)
@@ -69,6 +71,11 @@ func (l *LogIndicator) TextWrap() bool {
 	return l.textWrap
 }
 
+// DecodeJson reports the current wrap mode.
+func (l *LogIndicator) DecodeJson() bool {
+	return l.decodeJson
+}
+
 // FullScreen reports the current screen mode.
 func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
@@ -77,6 +84,11 @@ func (l *LogIndicator) FullScreen() bool {
 // ToggleTimestamp toggles the current timestamp mode.
 func (l *LogIndicator) ToggleTimestamp() {
 	l.showTime = !l.showTime
+}
+
+// ToggleDecodeJson toggles the json decode mode.
+func (l *LogIndicator) ToggleDecodeJson() {
+	l.decodeJson = !l.decodeJson
 }
 
 // ToggleFullScreen toggles the screen mode.
@@ -146,6 +158,12 @@ func (l *LogIndicator) Refresh() {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Timestamps", spacer)...)
 	} else {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Timestamps", spacer)...)
+	}
+
+	if l.DecodeJson() {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Json", spacer)...)
+	} else {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Json", spacer)...)
 	}
 
 	if l.TextWrap() {
