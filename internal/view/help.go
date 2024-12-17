@@ -186,6 +186,18 @@ func (h *Help) showNav() model.MenuHints {
 			Mnemonic:    "j",
 			Description: "Down",
 		},
+		{
+			Mnemonic:    "[",
+			Description: "History Back",
+		},
+		{
+			Mnemonic:    "]",
+			Description: "History Forward",
+		},
+		{
+			Mnemonic:    "-",
+			Description: "Last Used Command",
+		},
 	}
 }
 
