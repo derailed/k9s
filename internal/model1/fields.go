@@ -3,18 +3,22 @@
 
 package model1
 
-import "reflect"
+import (
+	"reflect"
+)
 
 // Fields represents a collection of row fields.
 type Fields []string
 
 // Customize returns a subset of fields.
-func (f Fields) Customize(cols []int, out Fields) {
+func (f Fields) Customize(cols []int, out Fields, extractionInfoBag ExtractionInfoBag) {
 	for i, c := range cols {
+
 		if c < 0 {
-			out[i] = NAValue
+			out[i] = getValueOfInvalidColumn(f, i, extractionInfoBag)
 			continue
 		}
+
 		if c < len(f) {
 			out[i] = f[c]
 		}
@@ -38,4 +42,20 @@ func (f Fields) Clone() Fields {
 	copy(cp, f)
 
 	return cp
+}
+
+func getValueOfInvalidColumn(f Fields, i int, extractionInfoBag ExtractionInfoBag) string {
+
+	extractionInfo, ok := extractionInfoBag[i]
+
+	// If the extractionInfo is existed in extractionInfoBag,
+	// meaning this column has to retrieve the actual value from other field.
+	// For example: `LABELS[kubernetes.io/hostname]` needs to extract the value from column `LABELS`
+	if ok {
+		idxInFields := extractionInfo.IdxInFields
+		escapedKey := escapeDots(extractionInfo.Key)
+		return extractValueFromField(escapedKey, f[idxInFields])
+	}
+
+	return NAValue
 }
