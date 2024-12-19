@@ -5,7 +5,6 @@ package view
 
 import (
 	"errors"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
@@ -37,7 +36,7 @@ func NewDeploy(gvr client.GVR) ResourceViewer {
 		),
 	)
 	d.AddBindKeysFn(d.bindKeys)
-	d.GetTable().SetEnterFn(d.showPods)
+	d.GetTable().SetEnterFn(d.showReplicasets)
 
 	return &d
 }
@@ -63,14 +62,14 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 	return podLogOptions(d.App(), path, prev, dp.ObjectMeta, dp.Spec.Template.Spec), nil
 }
 
-func (d *Deploy) showPods(app *App, model ui.Tabular, gvr client.GVR, fqn string) {
+func (d *Deploy) showReplicasets(app *App, model ui.Tabular, gvr client.GVR, fqn string) {
 	dp, err := d.getInstance(fqn)
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
-	showPodsFromSelector(app, fqn, dp.Spec.Selector)
+	showReplicasetsFromSelector(app, fqn, dp.Spec.Selector)
 }
 
 func (d *Deploy) getInstance(fqn string) (*appsv1.Deployment, error) {
@@ -91,4 +90,14 @@ func showPodsFromSelector(app *App, path string, sel *metav1.LabelSelector) {
 	}
 
 	showPods(app, path, l.String(), "")
+}
+
+func showReplicasetsFromSelector(app *App, path string, sel *metav1.LabelSelector) {
+	l, err := metav1.LabelSelectorAsSelector(sel)
+	if err != nil {
+		app.Flash().Err(err)
+		return
+	}
+
+	showReplicasets(app, path, l.String(), "")
 }
