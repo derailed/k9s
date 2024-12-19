@@ -204,7 +204,7 @@ func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 	for i, o := range oo {
 		var cr rbacv1.ClusterRole
 		if e := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cr); e != nil {
-			return nil, err
+			return nil, e
 		}
 		crs[i] = cr
 	}
