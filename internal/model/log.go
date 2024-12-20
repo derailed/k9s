@@ -6,8 +6,11 @@ package model
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
+
+	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -15,6 +18,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v2"
 )
 
 // LogsListener represents a log model listener.
@@ -38,6 +42,11 @@ type LogsListener interface {
 	LogCanceled()
 }
 
+// FilterConfig represents the structure of the filter.yaml file
+type FilterConfig struct {
+	Filters map[string]string `yaml:"filters"`
+}
+
 // Log represents a resource logger.
 type Log struct {
 	factory      dao.Factory
@@ -50,16 +59,19 @@ type Log struct {
 	filter       string
 	lastSent     int
 	flushTimeout time.Duration
+	filterConfig FilterConfig
 }
 
 // NewLog returns a new model.
 func NewLog(gvr client.GVR, opts *dao.LogOptions, flushTimeout time.Duration) *Log {
-	return &Log{
+	l := &Log{
 		gvr:          gvr,
 		logOptions:   opts,
 		lines:        dao.NewLogItems(),
 		flushTimeout: flushTimeout,
 	}
+	l.loadFilterConfig()
+	return l
 }
 
 func (l *Log) GVR() client.GVR {
@@ -202,14 +214,27 @@ func (l *Log) ClearFilter() {
 	l.fireLogChanged(ll)
 }
 
-// Filter filters the model using either fuzzy or regexp.
+// GetFilter returns the current filter.
+func (l *Log) GetFilter() string {
+	return l.filter
+}
+
+// Filter filters the model using either fuzzy, regexp, or predefined filters.
 func (l *Log) Filter(q string) {
 	l.mx.Lock()
-	{
+	if !strings.HasPrefix(q, "@") {
 		l.filter = q
+	} else {
+		customFilter, ok := l.filterConfig.Filters[q[1:]]
+		if !ok {
+			log.Debug().Msgf("Failed to find custom filter for: %s", q)
+			l.filter = q
+		} else {
+			log.Debug().Msgf("Using custom filter: %s", customFilter)
+			l.filter = customFilter
+		}
 	}
 	l.mx.Unlock()
-
 	l.fireLogCleared()
 	l.fireLogBuffChanged(0)
 }
@@ -426,5 +451,18 @@ func (l *Log) fireLogCleared() {
 	l.mx.RUnlock()
 	for _, lis := range ll {
 		lis.LogCleared()
+	}
+}
+
+// loadFilterConfig loads the filter configuration from filters.yaml
+func (l *Log) loadFilterConfig() {
+	data, err := os.ReadFile(config.AppFilterFile)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read filter config")
+		return
+	}
+
+	if err := yaml.Unmarshal(data, &l.filterConfig); err != nil {
+		log.Error().Err(err).Msg("Failed to parse filter config")
 	}
 }
