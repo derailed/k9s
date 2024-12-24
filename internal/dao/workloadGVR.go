@@ -36,6 +36,8 @@ func (a *WorkloadGVR) List(ctx context.Context, _ string) ([]runtime.Object, err
 	workloadsDir, _ := ctx.Value(internal.KeyDir).(string)
 	clusterContext, _ := ctx.Value(internal.KeyPath).(string)
 
+	// TODO: comments / explanation
+
 	ff, err := os.ReadDir(workloadsDir)
 	if err != nil {
 		return nil, err
@@ -53,6 +55,9 @@ func (a *WorkloadGVR) List(ctx context.Context, _ string) ([]runtime.Object, err
 }
 
 func (a *WorkloadGVR) isInContext(ctxPath, filename string) bool {
+
+	// TODO: comments / explanation
+
 	content, err := os.ReadFile(ctxPath)
 	if err != nil {
 		return false

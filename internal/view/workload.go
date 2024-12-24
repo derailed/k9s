@@ -57,7 +57,11 @@ func (n *Workload) workloadContext(ctx context.Context) context.Context {
 		}
 	}
 
-	wkgvs := config.NewWorkloadGVRs(n.App().Config.ContextWorkloadDir(), gvrFilenames)
+	wkgvs, err := config.NewWorkloadGVRs(n.App().Config.ContextWorkloadDir(), gvrFilenames)
+	if err != nil {
+		n.App().Flash().Errf("unable to find custom workload GVR: %q", err)
+		return ctx
+	}
 
 	return context.WithValue(ctx, internal.KeyWorkloadGVRs, wkgvs)
 }

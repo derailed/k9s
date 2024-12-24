@@ -130,7 +130,7 @@ type WkC struct {
 
 // TODO: Explains the parameters
 // NewWorkloadGVRs returns the default GVRs to use if no custom config is set
-func NewWorkloadGVRs(workloadPath string, filenames []string) []WorkloadGVR {
+func NewWorkloadGVRs(workloadPath string, filenames []string) ([]WorkloadGVR, error) {
 	workloadGVRs := make([]WorkloadGVR, 0)
 	for _, gvr := range defaultConfigGVRs {
 		workloadGVRs = append(workloadGVRs, gvr)
@@ -140,13 +140,14 @@ func NewWorkloadGVRs(workloadPath string, filenames []string) []WorkloadGVR {
 	if len(filenames) != 0 {
 		for _, filename := range filenames {
 			wkgvr, err := GetWorkloadGVRFromFile(path.Join(workloadPath, fmt.Sprintf("%s.%s", filename, "yaml")))
-			if err == nil {
-				workloadGVRs = append(workloadGVRs, wkgvr)
+			if err != nil {
+				return nil, err
 			}
+			workloadGVRs = append(workloadGVRs, wkgvr)
 		}
 	}
 
-	return workloadGVRs
+	return workloadGVRs, nil
 }
 
 // GetWorkloadGVRFromFile returns a gvr from a filepath

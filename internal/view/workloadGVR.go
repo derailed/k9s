@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"gopkg.in/yaml.v3"
@@ -56,7 +57,7 @@ func (a *WorkloadGVR) workloadGVRContext(ctx context.Context) context.Context {
 
 func (a *WorkloadGVR) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyN, ui.KeyD, ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace, ui.KeyShiftD)
-	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL)
+	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Simulate", a.simulateCmd, true),
 		ui.KeyD:        ui.NewKeyAction("Describe", a.describeCmd, true),
@@ -93,6 +94,8 @@ func (a *WorkloadGVR) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	// TODO: comments / explanation
+
 	pathFile := path.Join(a.App().Config.ContextWorkloadDir(), sel)
 	data, err := os.ReadFile(pathFile)
 	if err != nil {
@@ -110,6 +113,8 @@ func (a *WorkloadGVR) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *WorkloadGVR) createCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 	var GVRName string
+	// TODO: comments / explanation
+
 	form, err := a.makeCreateForm(&GVRName)
 	if err != nil {
 		return nil
@@ -126,6 +131,8 @@ func (a *WorkloadGVR) createCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *WorkloadGVR) makeCreateForm(sel *string) (*tview.Form, error) {
+	// TODO: comments / explanation
+
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -173,6 +180,8 @@ func (a *WorkloadGVR) editcustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	// TODO: comments / explanation
+
 	a.Stop()
 	defer a.Start()
 	if !edit(a.App(), shellOpts{clear: true, args: []string{path.Join(a.App().Config.ContextWorkloadDir(), sel)}}) {
@@ -191,13 +200,13 @@ func (a *WorkloadGVR) removeCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	filePath := path.Join(a.App().Config.ContextWorkloadDir(), sel)
 
-	// TODO:
-	// prompt confirmation
-
-	if err := os.Remove(filePath); err != nil {
-		a.App().Flash().Errf("could not delete GVR: %q", err)
-		return nil
-	}
+	msg := fmt.Sprintf("Are you sure to delete the custom gvr: %s", strings.TrimSuffix(sel, filepath.Ext(sel)))
+	dialog.ShowConfirm(a.App().Styles.Dialog(), a.App().Content.Pages, "Confirm Deletion", msg, func() {
+		if err := os.Remove(filePath); err != nil {
+			a.App().Flash().Errf("could not delete GVR: %q", err)
+			return
+		}
+	}, func() {})
 
 	return nil
 }
@@ -207,6 +216,8 @@ func (a *WorkloadGVR) addtoCurrentCtx(evt *tcell.EventKey) *tcell.EventKey {
 	if sel == "" {
 		return evt
 	}
+
+	// TODO: comments / explanation
 
 	filenames := make([]string, 0)
 
@@ -222,6 +233,8 @@ func (a *WorkloadGVR) addtoCurrentCtx(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	filenames = append(filenames, strings.TrimSuffix(sel, filepath.Ext(sel)))
+
+	// TODO: comments / explanation
 
 	m := make(map[string]string)
 	for _, n := range filenames {
@@ -254,6 +267,8 @@ func (a *WorkloadGVR) deletefromCurrentCtx(evt *tcell.EventKey) *tcell.EventKey 
 		return evt
 	}
 
+	// TODO: comments / explanation
+
 	filenames := make([]string, 0)
 	ctxWorkloadPath := a.App().Config.ContextWorkloadPath()
 	content, err := os.ReadFile(ctxWorkloadPath)
@@ -265,6 +280,8 @@ func (a *WorkloadGVR) deletefromCurrentCtx(evt *tcell.EventKey) *tcell.EventKey 
 		}
 		filenames = ctxConfig.GVRFilenames
 	}
+
+	// TODO: comments / explanation
 
 	m := make(map[string]string)
 	for _, n := range filenames {
