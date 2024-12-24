@@ -42,14 +42,13 @@ func NewWorkload(gvr client.GVR) ResourceViewer {
 
 // workloadContext will set the configuration's values of the workloadGVRs in the context to be used in the dao/workload
 func (n *Workload) workloadContext(ctx context.Context) context.Context {
-
-	// TODO: Add comments and explanations
-
 	var gvrFilenames []string
 
+	// Retrieve workload cluster context config file
 	ctxWorkloadPath := n.App().Config.ContextWorkloadPath()
 
-	wkg := config.WkC{}
+	// Read config file
+	wkg := config.WorkloadConfig{}
 	configData, err := os.ReadFile(ctxWorkloadPath)
 	if err == nil {
 		if err := yaml.Unmarshal(configData, &wkg); err == nil {
@@ -57,12 +56,14 @@ func (n *Workload) workloadContext(ctx context.Context) context.Context {
 		}
 	}
 
+	// Init workload GVRs from config
 	wkgvs, err := config.NewWorkloadGVRs(n.App().Config.ContextWorkloadDir(), gvrFilenames)
 	if err != nil {
 		n.App().Flash().Errf("unable to find custom workload GVR: %q", err)
 		return ctx
 	}
 
+	// Set in context
 	return context.WithValue(ctx, internal.KeyWorkloadGVRs, wkgvs)
 }
 

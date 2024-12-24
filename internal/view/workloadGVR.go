@@ -94,14 +94,15 @@ func (a *WorkloadGVR) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	// TODO: comments / explanation
-
+	// Retrieve custom workload gvr filepath
 	pathFile := path.Join(a.App().Config.ContextWorkloadDir(), sel)
 	data, err := os.ReadFile(pathFile)
 	if err != nil {
 		a.App().Flash().Err(err)
 		return nil
 	}
+
+	// Describe custom workload GVR
 	details := NewDetails(a.App(), "Describe", pathFile, contentYAML, true).Update(string(data))
 	if err := a.App().inject(details, false); err != nil {
 		a.App().Flash().Err(err)
@@ -113,8 +114,8 @@ func (a *WorkloadGVR) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *WorkloadGVR) createCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 	var GVRName string
-	// TODO: comments / explanation
 
+	// Generate creation form
 	form, err := a.makeCreateForm(&GVRName)
 	if err != nil {
 		return nil
@@ -131,8 +132,7 @@ func (a *WorkloadGVR) createCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *WorkloadGVR) makeCreateForm(sel *string) (*tview.Form, error) {
-	// TODO: comments / explanation
-
+	// Generate create form
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -148,9 +148,11 @@ func (a *WorkloadGVR) makeCreateForm(sel *string) (*tview.Form, error) {
 	f.AddButton("OK", func() {
 		defer a.dismissDialog()
 
+		// Generate new filename / filepath
 		filename := fmt.Sprintf("%s.yaml", *sel)
 		filePathName := path.Join(a.App().Config.ContextWorkloadDir(), filename)
 
+		// Create new GVR file
 		if err := os.WriteFile(filePathName, config.Template, 0644); err != nil {
 			a.App().Flash().Errf("Failed to create file: %q", err)
 			return
@@ -180,8 +182,7 @@ func (a *WorkloadGVR) editcustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	// TODO: comments / explanation
-
+	// Edit existing custom GVR
 	a.Stop()
 	defer a.Start()
 	if !edit(a.App(), shellOpts{clear: true, args: []string{path.Join(a.App().Config.ContextWorkloadDir(), sel)}}) {
@@ -198,8 +199,8 @@ func (a *WorkloadGVR) removeCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	// Remove custom GRV (with prompt)
 	filePath := path.Join(a.App().Config.ContextWorkloadDir(), sel)
-
 	msg := fmt.Sprintf("Are you sure to delete the custom gvr: %s", strings.TrimSuffix(sel, filepath.Ext(sel)))
 	dialog.ShowConfirm(a.App().Styles.Dialog(), a.App().Content.Pages, "Confirm Deletion", msg, func() {
 		if err := os.Remove(filePath); err != nil {
@@ -217,14 +218,12 @@ func (a *WorkloadGVR) addtoCurrentCtx(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	// TODO: comments / explanation
-
+	// Add custom GVR to cluster context
 	filenames := make([]string, 0)
-
 	ctxWorkloadPath := a.App().Config.ContextWorkloadPath()
 	content, err := os.ReadFile(ctxWorkloadPath)
 	if err == nil {
-		var ctxConfig config.WkC
+		var ctxConfig config.WorkloadConfig
 		if err := yaml.Unmarshal(content, &ctxConfig); err != nil {
 			a.App().Flash().Errf("could not read workload context configuration: %q", err)
 			return nil
@@ -234,20 +233,18 @@ func (a *WorkloadGVR) addtoCurrentCtx(evt *tcell.EventKey) *tcell.EventKey {
 
 	filenames = append(filenames, strings.TrimSuffix(sel, filepath.Ext(sel)))
 
-	// TODO: comments / explanation
-
+	// Ensure there is no duplicate
 	m := make(map[string]string)
 	for _, n := range filenames {
 		m[n] = n
 	}
-
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 
-	// Save keys
-	data, err := yaml.Marshal(config.WkC{GVRFilenames: keys})
+	// Save new config
+	data, err := yaml.Marshal(config.WorkloadConfig{GVRFilenames: keys})
 	if err != nil {
 		a.App().Flash().Errf("could not marshal new configuration: %q", err)
 		return nil
@@ -267,13 +264,12 @@ func (a *WorkloadGVR) deletefromCurrentCtx(evt *tcell.EventKey) *tcell.EventKey 
 		return evt
 	}
 
-	// TODO: comments / explanation
-
+	// Delete custom GVR from cluster context
 	filenames := make([]string, 0)
 	ctxWorkloadPath := a.App().Config.ContextWorkloadPath()
 	content, err := os.ReadFile(ctxWorkloadPath)
 	if err == nil {
-		var ctxConfig config.WkC
+		var ctxConfig config.WorkloadConfig
 		if err := yaml.Unmarshal(content, &ctxConfig); err != nil {
 			a.App().Flash().Errf("could not unmarshal configuration: %q", err)
 			return nil
@@ -281,22 +277,20 @@ func (a *WorkloadGVR) deletefromCurrentCtx(evt *tcell.EventKey) *tcell.EventKey 
 		filenames = ctxConfig.GVRFilenames
 	}
 
-	// TODO: comments / explanation
-
+	// Ensure there is no duplicate
 	m := make(map[string]string)
 	for _, n := range filenames {
 		if n != strings.TrimSuffix(sel, filepath.Ext(sel)) {
 			m[n] = n
 		}
 	}
-
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 
-	// Save keys
-	data, err := yaml.Marshal(config.WkC{GVRFilenames: keys})
+	// Save new config
+	data, err := yaml.Marshal(config.WorkloadConfig{GVRFilenames: keys})
 	if err != nil {
 		a.App().Flash().Errf("could not marshal new configuration: %q", err)
 		return nil

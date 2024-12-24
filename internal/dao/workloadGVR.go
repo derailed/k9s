@@ -36,12 +36,13 @@ func (a *WorkloadGVR) List(ctx context.Context, _ string) ([]runtime.Object, err
 	workloadsDir, _ := ctx.Value(internal.KeyDir).(string)
 	clusterContext, _ := ctx.Value(internal.KeyPath).(string)
 
-	// TODO: comments / explanation
-
+	// List files from custom workload directory
 	ff, err := os.ReadDir(workloadsDir)
 	if err != nil {
 		return nil, err
 	}
+
+	// Generate workload list from custom gvrs
 	oo := make([]runtime.Object, len(ff))
 	for i, f := range ff {
 		if fi, err := f.Info(); err == nil {
@@ -55,19 +56,19 @@ func (a *WorkloadGVR) List(ctx context.Context, _ string) ([]runtime.Object, err
 }
 
 func (a *WorkloadGVR) isInContext(ctxPath, filename string) bool {
-
-	// TODO: comments / explanation
-
+	// Read cluster context config
 	content, err := os.ReadFile(ctxPath)
 	if err != nil {
 		return false
 	}
 
-	var config config.WkC
+	// Unmarshal cluster config
+	var config config.WorkloadConfig
 	if err := yaml.Unmarshal(content, &config); err != nil {
 		return false
 	}
 
+	// Check if custom GVR is in context
 	for _, n := range config.GVRFilenames {
 		if n == strings.TrimSuffix(filename, filepath.Ext(filename)) {
 			return true

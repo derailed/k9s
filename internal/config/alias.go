@@ -190,8 +190,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("pulses", "pulse", "pu", "hz")
 	a.declare("xrays", "xray", "x")
 	a.declare("workloads", "workload", "wk")
-	// TODO: Find better name
-	a.declare("workloadgvr", "workloadgvr", "wkg")
+	a.declare("customWorkloadGVR", "customWorkloadGVR", "wcg")
 }
 
 // Save alias to disk.

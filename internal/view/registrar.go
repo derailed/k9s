@@ -63,8 +63,7 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("workloads")] = MetaViewer{
 		viewerFn: NewWorkload,
 	}
-	// TODO: find better name
-	vv[client.NewGVR("workloadgvr")] = MetaViewer{
+	vv[client.NewGVR("customWorkloadGVR")] = MetaViewer{
 		viewerFn: NewWorkloadGVR,
 	}
 	vv[client.NewGVR("contexts")] = MetaViewer{

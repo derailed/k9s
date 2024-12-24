@@ -123,23 +123,22 @@ type WorkloadGVR struct {
 	Validity  *GVRValidity  `json:"validity,omitempty" yaml:"validity,omitempty"`
 }
 
-// TODO: Find better name (maybe moving it to a new file as well)
-type WkC struct {
+type WorkloadConfig struct {
 	GVRFilenames []string `yaml:"wkg"`
 }
 
-// TODO: Explains the parameters
 // NewWorkloadGVRs returns the default GVRs to use if no custom config is set
-func NewWorkloadGVRs(workloadPath string, filenames []string) ([]WorkloadGVR, error) {
+// The workloadDir represent the directory of the custom workloads, the gvrNames are the custom gvrs names
+func NewWorkloadGVRs(workloadDir string, gvrNames []string) ([]WorkloadGVR, error) {
 	workloadGVRs := make([]WorkloadGVR, 0)
 	for _, gvr := range defaultConfigGVRs {
 		workloadGVRs = append(workloadGVRs, gvr)
 	}
 
 	// Append custom GVRS
-	if len(filenames) != 0 {
-		for _, filename := range filenames {
-			wkgvr, err := GetWorkloadGVRFromFile(path.Join(workloadPath, fmt.Sprintf("%s.%s", filename, "yaml")))
+	if len(gvrNames) != 0 {
+		for _, filename := range gvrNames {
+			wkgvr, err := GetWorkloadGVRFromFile(path.Join(workloadDir, fmt.Sprintf("%s.%s", filename, "yaml")))
 			if err != nil {
 				return nil, err
 			}
