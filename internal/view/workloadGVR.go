@@ -88,6 +88,7 @@ func (a *WorkloadGVR) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
+// describeCmd will show a custom GVR
 func (a *WorkloadGVR) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := a.GetTable().GetSelectedItem()
 	if sel == "" {
@@ -112,6 +113,7 @@ func (a *WorkloadGVR) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// createCustomCmd will create a custom worklad GVR wiht default template using a specified GVR's name
 func (a *WorkloadGVR) createCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 	var GVRName string
 
@@ -176,6 +178,7 @@ func (a *WorkloadGVR) dismissDialog() {
 	a.App().Content.RemovePage("NewGVRModal")
 }
 
+// editcustomCmd will edit the current custom workloadGVR
 func (a *WorkloadGVR) editcustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := a.GetTable().GetSelectedItem()
 	if sel == "" {
@@ -193,6 +196,7 @@ func (a *WorkloadGVR) editcustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// removeCustomCmd will delete the custom workload GVR
 func (a *WorkloadGVR) removeCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := a.GetTable().GetSelectedItem()
 	if sel == "" {
@@ -212,6 +216,7 @@ func (a *WorkloadGVR) removeCustomCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// addtoCurrentCtx will add the GVR to the current cluster context
 func (a *WorkloadGVR) addtoCurrentCtx(evt *tcell.EventKey) *tcell.EventKey {
 	sel := a.GetTable().GetSelectedItem()
 	if sel == "" {
@@ -258,6 +263,7 @@ func (a *WorkloadGVR) addtoCurrentCtx(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// deletefromCurrentCtx will delete the gvr from the current cluster context
 func (a *WorkloadGVR) deletefromCurrentCtx(evt *tcell.EventKey) *tcell.EventKey {
 	sel := a.GetTable().GetSelectedItem()
 	if sel == "" {
@@ -304,6 +310,7 @@ func (a *WorkloadGVR) deletefromCurrentCtx(evt *tcell.EventKey) *tcell.EventKey 
 	return nil
 }
 
+// simulateCmd will show the custom workload GVR in the workload view
 func (a *WorkloadGVR) simulateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	co := NewWorkload(client.NewGVR("workloads"))
 	co.SetContextFn(a.singleWorkloadCtx)
