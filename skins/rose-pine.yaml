@@ -111,5 +111,5 @@ k9s:
       indicator:
         fgColor: *foreground
         bgColor: *purple
-        toggleOnColor: *pink
-        toggleOffColor: *purple
+        toggleOnColor: *green
+        toggleOffColor: *selection
