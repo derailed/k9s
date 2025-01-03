@@ -39,7 +39,7 @@ const (
 	outputPrefix = "[output]"
 )
 
-var editorEnvVars = []string{"KUBE_EDITOR", "K9S_EDITOR", "EDITOR"}
+var editorEnvVars = []string{"K9S_EDITOR", "KUBE_EDITOR", "EDITOR"}
 
 type shellOpts struct {
 	clear, background bool
@@ -130,7 +130,22 @@ func edit(a *App, opts shellOpts) bool {
 		if env == "" {
 			continue
 		}
-		if bin, err = exec.LookPath(env); err == nil {
+
+		// There may be situations where the user sets the editor as the binary
+		// followed by some arguments (e.g. "code -w" to make it work with vscode)
+		//
+		// In such cases, the actual binary is only the first token
+		envTokens := strings.Split(env, " ")
+
+		if bin, err = exec.LookPath(envTokens[0]); err == nil {
+			// Make sure the path is at the end (this allows running editors
+			// with custom options)
+			if len(envTokens) > 1 {
+				originalArgs := opts.args
+				opts.args = envTokens[1:]
+				opts.args = append(opts.args, originalArgs...)
+			}
+
 			break
 		}
 	}
@@ -181,6 +196,20 @@ func execute(opts shellOpts, statusChan chan<- string) error {
 	cmds := make([]*exec.Cmd, 0, 1)
 	cmd := exec.CommandContext(ctx, opts.binary, opts.args...)
 	log.Debug().Msgf("RUNNING> %s", opts)
+
+	if env := os.Getenv("K9S_EDITOR"); env != "" {
+		// There may be situations where the user sets the editor as the binary
+		// followed by some arguments (e.g. "code -w" to make it work with vscode)
+		//
+		// In such cases, the actual binary is only the first token
+		binTokens := strings.Split(env, " ")
+
+		if bin, err := exec.LookPath(binTokens[0]); err == nil {
+			binTokens[0] = bin
+			cmd.Env = append(os.Environ(), fmt.Sprintf("KUBE_EDITOR=%s", strings.Join(binTokens, " ")))
+		}
+	}
+
 	cmds = append(cmds, cmd)
 
 	for _, p := range opts.pipes {
