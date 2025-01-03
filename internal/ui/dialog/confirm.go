@@ -68,13 +68,14 @@ func ShowConfirmAck(app *ui.App, pages *ui.Pages, acceptStr string, override boo
 
 // ShowConfirm pops a confirmation dialog.
 func ShowConfirm(styles config.Dialog, pages *ui.Pages, title, msg string, ack confirmFunc, cancel cancelFunc) {
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
+	f := tview.NewForm().
+		SetItemPadding(0).
+		SetButtonsAlign(tview.AlignCenter).
 		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
 		SetButtonTextColor(styles.ButtonFgColor.Color()).
 		SetLabelColor(styles.LabelFgColor.Color()).
-		SetFieldTextColor(styles.FieldFgColor.Color())
+		SetFieldTextColor(styles.FieldFgColor.Color()).
+		SetFieldBackgroundColor(styles.BgColor.Color())
 	f.AddButton("Cancel", func() {
 		dismiss(pages)
 		cancel()
