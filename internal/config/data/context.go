@@ -20,6 +20,7 @@ type Context struct {
 	View               *View        `yaml:"view"`
 	FeatureGates       FeatureGates `yaml:"featureGates"`
 	PortForwardAddress string       `yaml:"portForwardAddress"`
+	Proxy              *Proxy       `yaml:"proxy"`
 	mx                 sync.RWMutex
 }
 
