@@ -65,7 +65,7 @@ func (n *Namespace) Validate(c client.Connection) {
 	for _, ns := range n.Favorites {
 		if !c.IsValidNamespace(ns) {
 			log.Debug().Msgf("[Namespace] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
-			n.rmFavNS(ns)
+			n.RmFavNS(ns)
 		}
 	}
 
@@ -92,17 +92,18 @@ func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
 	n.Active = ns
 
 	if ns != "" && !n.LockFavorites {
-		n.addFavNS(ns)
+		n.AddFavNS(ns)
 	}
 
 	return nil
 }
 
 func (n *Namespace) isAllNamespaces() bool {
-	return n.Active == client.NamespaceAll || n.Active == ""
+	return client.IsAllNamespaces(n.Active)
 }
 
-func (n *Namespace) addFavNS(ns string) {
+// AddFavNS adds a namespace to the list of favorites namespaces
+func (n *Namespace) AddFavNS(ns string) {
 	if InList(n.Favorites, ns) {
 		return
 	}
@@ -117,11 +118,8 @@ func (n *Namespace) addFavNS(ns string) {
 	n.Favorites = nfv
 }
 
-func (n *Namespace) rmFavNS(ns string) {
-	if n.LockFavorites {
-		return
-	}
-
+// RmFavNS removes a namespace from the list of favorites namespaces
+func (n *Namespace) RmFavNS(ns string) {
 	victim := -1
 	for i, f := range n.Favorites {
 		if f == ns {
