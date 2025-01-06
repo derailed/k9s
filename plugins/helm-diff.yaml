@@ -1,0 +1,31 @@
+# Requires helm-diff plugin installed: https://github.com/databus23/helm-diff
+# In helm view: <Shift-D> Diff with Previous Revision
+# In helm-history view: <Shift-Q> Diff with Current Revision
+plugins:
+  helm-diff-previous:
+    shortCut: Shift-D
+    confirm: false
+    description: Diff with Previous Revision
+    scopes:
+      - helm
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        LAST_REVISION=$(($COL-REVISION-1));
+        helm diff revision $COL-NAME $COL-REVISION $LAST_REVISION --kube-context $CONTEXT --namespace $NAMESPACE --color | less -RK
+  helm-diff-current:
+    shortCut: Shift-Q
+    confirm: false
+    description: Diff with Current Revision
+    scopes:
+      - history
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        RELEASE_NAME=$(echo $NAME | cut -d':' -f1);
+        LATEST_REVISION=$(helm history -n $NAMESPACE --kube-context $CONTEXT $RELEASE_NAME | grep deployed | cut -d$'\t' -f1 | tr -d ' \t');
+        helm diff revision $RELEASE_NAME $LATEST_REVISION $COL-REVISION --kube-context $CONTEXT --namespace $NAMESPACE --color | less -RK
