@@ -26,6 +26,14 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Dir{},
 		Renderer: &render.Dir{},
 	},
+	"dirlocal": {
+		DAO:      &dao.DirLocal{},
+		Renderer: &render.Dir{},
+	},
+	"dirremote": {
+		DAO:      &dao.DirRemote{},
+		Renderer: &render.DirRemote{},
+	},
 	"pulses": {
 		DAO: &dao.Pulse{},
 	},

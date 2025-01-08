@@ -73,6 +73,8 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("benchmarks"):                                        &Benchmark{},
 		client.NewGVR("portforwards"):                                      &PortForward{},
 		client.NewGVR("dir"):                                               &Dir{},
+		client.NewGVR("dirlocal"):                                          &DirLocal{},
+		client.NewGVR("dirremote"):                                         &DirRemote{},
 		client.NewGVR("v1/services"):                                       &Service{},
 		client.NewGVR("v1/pods"):                                           &Pod{},
 		client.NewGVR("v1/nodes"):                                          &Node{},
@@ -225,6 +227,18 @@ func loadK9s(m ResourceMetas) {
 		Name:         "dir",
 		Kind:         "Dir",
 		SingularName: "dir",
+		Categories:   []string{k9sCat},
+	}
+	m[client.NewGVR("dirlocal")] = metav1.APIResource{
+		Name:         "dirlocal",
+		Kind:         "DirLocal",
+		SingularName: "dirlocal",
+		Categories:   []string{k9sCat},
+	}
+	m[client.NewGVR("dirremote")] = metav1.APIResource{
+		Name:         "dirremote",
+		Kind:         "DirRemote",
+		SingularName: "dirremote",
 		Categories:   []string{k9sCat},
 	}
 	m[client.NewGVR("xrays")] = metav1.APIResource{
