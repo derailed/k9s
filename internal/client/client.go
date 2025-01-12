@@ -286,8 +286,8 @@ func (a *APIClient) CheckConnectivity() bool {
 		}
 	}()
 
-	// Need reload to pick up any kubeconfig changes.
-	cfg, err := NewConfig(a.config.flags).RESTConfig()
+	cfg, err := a.config.RESTConfig()
+
 	if err != nil {
 		log.Error().Err(err).Msgf("restConfig load failed")
 		a.connOK = false
@@ -551,9 +551,8 @@ func (a *APIClient) SwitchContext(name string) error {
 	a.reset()
 	ResetMetrics()
 
-	if !a.CheckConnectivity() {
-		return fmt.Errorf("unable to connect to context %q", name)
-	}
+	// Need reload to pick up any kubeconfig changes.
+	a.config = NewConfig(a.config.flags)
 
 	return nil
 }
