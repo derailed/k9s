@@ -43,15 +43,12 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 		ns = client.BlankNamespace
 	}
 
-	var (
-		ll  *unstructured.UnstructuredList
-		err error
-	)
 	dial, err := g.dynClient()
 	if err != nil {
 		return nil, err
 	}
 
+	var ll *unstructured.UnstructuredList
 	if client.IsClusterScoped(ns) {
 		ll, err = dial.List(ctx, metav1.ListOptions{LabelSelector: labelSel})
 	} else {
@@ -71,12 +68,13 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 
 // Get returns a given resource.
 func (g *Generic) Get(ctx context.Context, path string) (runtime.Object, error) {
-	var opts metav1.GetOptions
 	ns, n := client.Namespaced(path)
 	dial, err := g.dynClient()
 	if err != nil {
 		return nil, err
 	}
+
+	var opts metav1.GetOptions
 	if client.IsClusterScoped(ns) {
 		return dial.Get(ctx, n, opts)
 	}
