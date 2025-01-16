@@ -74,7 +74,7 @@ func (a *WorkloadGVR) bindKeys(aa *ui.KeyActions) {
 			Visible:   true,
 			Dangerous: true,
 		}),
-		ui.KeyR: ui.NewKeyActionWithOpts("Delete custom GVR", a.deleteCustomCmd, ui.ActionOpts{
+		ui.KeyD: ui.NewKeyActionWithOpts("Delete custom GVR", a.deleteCustomCmd, ui.ActionOpts{
 			Visible:   true,
 			Dangerous: true,
 		}),
@@ -83,9 +83,9 @@ func (a *WorkloadGVR) bindKeys(aa *ui.KeyActions) {
 				Visible:   true,
 				Dangerous: true,
 			}),
+		ui.KeyS:        ui.NewKeyAction("Show", a.describeCmd, true),
 		ui.KeyShiftG:   ui.NewKeyAction("Sort GVR", a.GetTable().SortColCmd("NAME", true), false),
 		tcell.KeyEnter: ui.NewKeyAction("Simulate", a.simulateCmd, true),
-		ui.KeyD:        ui.NewKeyAction("Show", a.describeCmd, true),
 	})
 }
 
