@@ -31,7 +31,7 @@ func NewWorkloadGVR(f Factory) *WorkloadGVR {
 	return &a
 }
 
-// List returns a collection of aliases.
+// List returns a collection of workloadGVRs.
 func (a *WorkloadGVR) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	workloadsDir, _ := ctx.Value(internal.KeyDir).(string)
 	clusterContext, _ := ctx.Value(internal.KeyPath).(string)

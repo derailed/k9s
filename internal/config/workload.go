@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	// Template represents the template of new workload gvr
+	// Template represents the template of a new workload gvr
 	Template = []byte(`name: "test.com/v1alpha1/myCRD"
 status:
   cellName: "Status"

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/config/data"
@@ -202,7 +203,7 @@ func AppContextDir(cluster, context string) string {
 
 // AppWorkloadsDir generates a valid workload folder path
 func AppWorkloadsDir() string {
-	return filepath.Join(AppContextsDir, "workloads")
+	return path.Join(AppContextsDir, "workloads")
 }
 
 // AppContextAliasesFile generates a valid context specific aliases file path.
