@@ -8,9 +8,7 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/derailed/k9s/internal/config/data"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
 )
 
 // IsBoolSet checks if a bool ptr is set.
@@ -42,17 +40,6 @@ func UserTmpDir() (string, error) {
 	dir := filepath.Join(os.TempDir(), u.Username, AppName)
 
 	return dir, nil
-}
-
-// InNSList check if ns is in an ns collection.
-func InNSList(nn []interface{}, ns string) bool {
-	ss := make([]string, len(nn))
-	for i, n := range nn {
-		if nsp, ok := n.(v1.Namespace); ok {
-			ss[i] = nsp.Name
-		}
-	}
-	return data.InList(ss, ns)
 }
 
 // MustK9sUser establishes current user identity or fail.

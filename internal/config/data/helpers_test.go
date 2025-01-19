@@ -6,6 +6,7 @@ package data_test
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config/data"
@@ -57,7 +58,7 @@ func TestHelperInList(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		assert.Equal(t, u.expected, data.InList(u.list, u.item))
+		assert.Equal(t, u.expected, slices.Contains(u.list, u.item))
 	}
 }
 
