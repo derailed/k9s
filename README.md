@@ -1088,11 +1088,11 @@ to make this project a reality!
 
 ## Meet The Core Team!
 
+If you have chops in GO and K8s and would like to offer your time to help maintain and enhance this project, please reach out to me.
+
 * [Fernand Galiana](https://github.com/derailed)
   * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  fernand@imhotep.io
   * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-
-* [Aleksei Romanenko](https://github.com/slimus)
 
 We always enjoy hearing from folks who benefit from our work!
 
