@@ -292,7 +292,7 @@ func (k *K9s) Override(k9sFlags *Flags) {
 
 // IsHeadless returns headless setting.
 func (k *K9s) IsHeadless() bool {
-	if isBoolSet(k.manualHeadless) {
+	if IsBoolSet(k.manualHeadless) {
 		return true
 	}
 
@@ -301,7 +301,7 @@ func (k *K9s) IsHeadless() bool {
 
 // IsLogoless returns logoless setting.
 func (k *K9s) IsLogoless() bool {
-	if isBoolSet(k.manualLogoless) {
+	if IsBoolSet(k.manualLogoless) {
 		return true
 	}
 
@@ -310,7 +310,7 @@ func (k *K9s) IsLogoless() bool {
 
 // IsCrumbsless returns crumbsless setting.
 func (k *K9s) IsCrumbsless() bool {
-	if isBoolSet(k.manualCrumbsless) {
+	if IsBoolSet(k.manualCrumbsless) {
 		return true
 	}
 

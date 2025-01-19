@@ -393,6 +393,7 @@ func (l *Log) toggleAllContainers(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !l.logs.cmdBuff.IsActive() {
+		fmt.Fprintln(l.ansiWriter)
 		return evt
 	}
 
@@ -451,7 +452,7 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
 	_, _, w, _ := l.GetRect()
-	fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("─", w-4))
+	fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
 	l.follow = true
 
 	return nil

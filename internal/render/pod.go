@@ -138,8 +138,8 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	}
 	c, r := gatherCoMX(&po.Spec, ccmx)
 	phase := p.Phase(&po)
-	row.ID = client.MetaFQN(po.ObjectMeta)
 
+	row.ID = client.MetaFQN(po.ObjectMeta)
 	row.Fields = model1.Fields{
 		po.Namespace,
 		po.Name,
@@ -254,7 +254,7 @@ func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	for _, c := range cc {
 		limits := c.Resources.Limits
 		if len(limits) == 0 {
-			return resource.Quantity{}, resource.Quantity{}
+			continue
 		}
 		if limits.Cpu() != nil {
 			cpu.Add(*limits.Cpu())
@@ -263,6 +263,7 @@ func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 			mem.Add(*limits.Memory())
 		}
 	}
+
 	return *cpu, *mem
 }
 
