@@ -530,7 +530,7 @@ func (a *App) Run() error {
 		})
 	}()
 
-	if err := a.command.defaultCmd(); err != nil {
+	if err := a.command.defaultCmd(true); err != nil {
 		return err
 	}
 	a.SetRunning(true)

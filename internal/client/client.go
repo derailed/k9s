@@ -545,16 +545,13 @@ func (a *APIClient) SwitchContext(name string) error {
 	if err := a.config.SwitchContext(name); err != nil {
 		return err
 	}
-	if err := a.invalidateCache(); err != nil {
-		return err
-	}
 	a.reset()
 	ResetMetrics()
 
 	// Need reload to pick up any kubeconfig changes.
 	a.config = NewConfig(a.config.flags)
 
-	return nil
+	return a.invalidateCache()
 }
 
 func (a *APIClient) reset() {

@@ -424,7 +424,8 @@ func loadCRDs(f Factory, m ResourceMetas) {
 		var meta metav1.APIResource
 		meta.Kind = crd.Spec.Names.Kind
 		meta.Group = crd.Spec.Group
-		meta.Name = crd.Name
+		meta.Name = strings.TrimSuffix(crd.Name, "."+meta.Group)
+
 		meta.SingularName = crd.Spec.Names.Singular
 		meta.ShortNames = crd.Spec.Names.ShortNames
 		meta.Namespaced = crd.Spec.Scope == apiext.NamespaceScoped
@@ -435,11 +436,6 @@ func loadCRDs(f Factory, m ResourceMetas) {
 			}
 		}
 
-		// meta, errs := extractMeta(o)
-		// if len(errs) > 0 {
-		// 	log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
-		// 	continue
-		// }
 		meta.Categories = append(meta.Categories, crdCat)
 		gvr := client.NewGVRFromMeta(meta)
 		m[gvr] = meta

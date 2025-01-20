@@ -13,7 +13,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func isBoolSet(b *bool) bool {
+// IsBoolSet checks if a bool ptr is set.
+func IsBoolSet(b *bool) bool {
 	return b != nil && *b
 }
 
@@ -69,9 +70,4 @@ func MustK9sUser() string {
 		log.Fatal().Err(err).Msg("Die on retrieving user info")
 	}
 	return usr.Username
-}
-
-// IsBoolSet checks if a bool prt is set.
-func IsBoolSet(b *bool) bool {
-	return b != nil && *b
 }

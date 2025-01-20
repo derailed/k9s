@@ -20,8 +20,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const promptPage = "prompt"
-
 // PortForward presents active portforward viewer.
 type PortForward struct {
 	ResourceViewer
