@@ -116,7 +116,7 @@ func getContainerStatus(kind string, name string, status v1.PodStatus) *v1.Conta
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
 	o, err := c.getFactory().Get("v1/pods", fqn, true, labels.Everything())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to locate pod %q: %w", fqn, err)
 	}
 	var po v1.Pod
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po)

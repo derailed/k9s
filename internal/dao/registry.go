@@ -443,11 +443,6 @@ func loadCRDs(f Factory, m ResourceMetas) {
 			}
 		}
 
-		// meta, errs := extractMeta(o)
-		// if len(errs) > 0 {
-		// 	log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
-		// 	continue
-		// }
 		meta.Categories = append(meta.Categories, crdCat)
 		gvr := client.NewGVRFromMeta(meta)
 		m[gvr] = meta
