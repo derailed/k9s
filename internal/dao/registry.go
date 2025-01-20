@@ -431,7 +431,7 @@ func loadCRDs(f Factory, m ResourceMetas) {
 		//
 		// `Name` field of `meta/v1/APIResource` is supposed to be the plural name of the
 		// resource, without the group. Because of that we need to trim the group suffix.
-		meta.Name = strings.TrimSuffix(crd.Name, "." + meta.Group)
+		meta.Name = strings.TrimSuffix(crd.Name, "."+meta.Group)
 
 		meta.SingularName = crd.Spec.Names.Singular
 		meta.ShortNames = crd.Spec.Names.ShortNames
