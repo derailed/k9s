@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"sync"
 	"time"
 
@@ -43,7 +42,6 @@ const (
 
 type imageScanner struct {
 	store       *v5.ProviderStore
-	dbCloser    *io.Closer
 	dbStatus    *distribution.Status
 	opts        *options.Grype
 	scans       Scans
@@ -112,11 +110,6 @@ func (s *imageScanner) Init(name, version string) {
 func (s *imageScanner) Stop() {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
-
-	if s.dbCloser != nil {
-		(*s.dbCloser).Close()
-		s.dbCloser = nil
-	}
 }
 
 func (s *imageScanner) Score(ii ...string) string {

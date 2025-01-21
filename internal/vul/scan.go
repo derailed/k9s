@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/anchore/grype/grype/match"
-	vulnerability "github.com/anchore/grype/grype/vulnerability"
+	"github.com/anchore/grype/grype/vulnerability"
 )
 
 const (
