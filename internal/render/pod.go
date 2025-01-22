@@ -111,6 +111,7 @@ func (p Pod) Header(ns string) model1.Header {
 		model1.HeaderColumn{Name: "LABELS", Wide: true},
 		model1.HeaderColumn{Name: "VALID", Wide: true},
 		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "LABEL"},
 	}
 }
 
@@ -166,9 +167,15 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 		mapToStr(po.Labels),
 		AsStatus(p.diagnose(phase, cr, len(cs))),
 		ToAge(po.GetCreationTimestamp()),
+		ExtractLabel(po),
 	}
 
 	return nil
+}
+
+func ExtractLabel(pod v1.Pod) string {
+	// Need to get the "key" from the views.yaml config here
+	return pod.Labels["k8s-app"]
 }
 
 func (p Pod) diagnose(phase string, cr, ct int) error {

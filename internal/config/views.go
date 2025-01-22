@@ -26,8 +26,13 @@ type ViewConfigListener interface {
 
 // ViewSetting represents a view configuration.
 type ViewSetting struct {
-	Columns    []string `yaml:"columns"`
+	Columns    []Column `yaml:"columns"`
 	SortColumn string   `yaml:"sortColumn"`
+}
+
+type Column struct {
+	Name string `yaml:"name"`
+	Key  string `yaml:"key"`
 }
 
 func (v *ViewSetting) HasCols() bool {
@@ -54,7 +59,18 @@ func (v *ViewSetting) Equals(vs *ViewSetting) bool {
 	if v == nil || vs == nil {
 		return v == nil && vs == nil
 	}
-	if c := slices.Compare(v.Columns, vs.Columns); c != 0 {
+
+	var vkeys []string
+	var vskeys []string
+
+	for idx := range v.Columns {
+		vkeys = append(vkeys, v.Columns[idx].Name)
+	}
+	for idx := range vs.Columns {
+		vskeys = append(vskeys, vs.Columns[idx].Name)
+	}
+
+	if c := slices.Compare(vkeys, vskeys); c != 0 {
 		return false
 	}
 	return cmp.Compare(v.SortColumn, vs.SortColumn) == 0

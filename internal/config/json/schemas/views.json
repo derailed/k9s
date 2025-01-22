@@ -13,7 +13,14 @@
           "sortColumn": { "type": "string" },
           "columns": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": { 
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string"},
+                "key": { "type": "string" }
+              }
+            }
           }
         },
         "required": ["columns"]

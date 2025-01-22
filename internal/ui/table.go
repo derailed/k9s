@@ -360,6 +360,7 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 		if h[c].Decorator != nil {
 			field = h[c].Decorator(field)
 		}
+
 		if h[c].Align == tview.AlignLeft {
 			field = formatCell(field, pads[c])
 		}

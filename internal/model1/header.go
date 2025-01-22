@@ -6,6 +6,7 @@ package model1
 import (
 	"reflect"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/rs/zerolog/log"
 )
 
@@ -64,11 +65,11 @@ func (h Header) Labelize(cols []int, labelCol int, rr *RowEvents) Header {
 }
 
 // MapIndices returns a collection of mapped column indices based of the requested columns.
-func (h Header) MapIndices(cols []string, wide bool) []int {
+func (h Header) MapIndices(cols []config.Column, wide bool) []int {
 	ii := make([]int, 0, len(cols))
 	cc := make(map[int]struct{}, len(cols))
 	for _, col := range cols {
-		idx, ok := h.IndexOf(col, true)
+		idx, ok := h.IndexOf(col.Name, true)
 		if !ok {
 			log.Warn().Msgf("Column %q not found on resource", col)
 		}
@@ -88,22 +89,23 @@ func (h Header) MapIndices(cols []string, wide bool) []int {
 }
 
 // Customize builds a header from custom col definitions.
-func (h Header) Customize(cols []string, wide bool) Header {
+func (h Header) Customize(cols []config.Column, wide bool) Header {
 	if len(cols) == 0 {
 		return h
 	}
 	cc := make(Header, 0, len(h))
 	xx := make(map[int]struct{}, len(h))
 	for _, c := range cols {
-		idx, ok := h.IndexOf(c, true)
+		idx, ok := h.IndexOf(c.Name, true)
 		if !ok {
-			log.Warn().Msgf("Column %s is not available on this resource", c)
-			cc = append(cc, HeaderColumn{Name: c})
+			log.Warn().Msgf("Column %s is not available on this resource", c.Name)
+			cc = append(cc, HeaderColumn{Name: c.Name})
 			continue
 		}
 		xx[idx] = struct{}{}
 		col := h[idx].Clone()
 		col.Wide = false
+
 		cc = append(cc, col)
 	}
 
