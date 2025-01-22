@@ -56,6 +56,13 @@ func init() {
 		fmt.Printf("Fail to init k9s logs location %s\n", err)
 	}
 
+	// wrong TERM variables can cause panics. See https://github.com/derailed/k9s/issues/3052
+	// k9s requires xterm-256color to be set as per the README.md file
+	if term := os.Getenv("TERM"); term != "xterm-256color" {
+		fmt.Printf("WARN: $TERM must be set to 'xterm-256color', got '%s'\n", term)
+		os.Setenv("TERM", "xterm-256color")
+	}
+
 	rootCmd.SetFlagErrorFunc(func(command *cobra.Command, err error) error {
 		return flagError{err: err}
 	})
