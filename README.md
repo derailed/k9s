@@ -68,7 +68,7 @@ Please refer to our [K9s documentation](https://k9scli.io) site for installation
 
 Wanna discuss K9s features with your fellow `K9sers` or simply show your support for this tool?
 
-* Channel: [K9ersSlack](https://k9sers.slack.com/)
+* Channel: [K9sersSlack](https://k9sers.slack.com/)
 * Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
 ## Installation
@@ -396,7 +396,7 @@ You can now override the context portForward default address configuration by se
     maxConnRetry: 5
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
-    # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
+    # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exit k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
     #UI settings
     ui:
@@ -411,13 +411,13 @@ You can now override the context portForward default address configuration by se
       noIcons: false
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
-      # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
+      # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
       skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
-    # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
+    # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
     skipLatestRevCheck: false
     # When altering kubeconfig or using multiple kube configs, k9s will clean up clusters configurations that are no longer in use. Setting this flag to true will keep k9s from cleaning up inactive cluster configs. Defaults to false.
     keepMissingClusters: false
@@ -661,7 +661,7 @@ K9s allows you to extend your command line and tooling by defining your very own
 A plugin is defined as follows:
 
 * Shortcut option represents the key combination a user would type to activate the plugin. Valid values are [a-z], Shift-[A-Z], Ctrl-[A-Z].
-* Override option make that the default action related to the shortcut will be overrided by the plugin
+* Override option make that the default action related to the shortcut will be overridden by the plugin
 * Confirm option (when enabled) lets you see the command that is going to be executed and gives you an option to confirm or prevent execution
 * Description will be printed next to the shortcut in the k9s menu
 * Scopes defines a collection of resources names/short-names for the views associated with the plugin. You can specify `all` to provide this shortcut for all views.
@@ -944,7 +944,7 @@ k9s:
     noIcons: false
     # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live  Defaults to false.
     reactive: false
-    # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
+    # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
     skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
     defaultsToFullScreen: false
   skipLatestRevCheck: false
@@ -1088,11 +1088,11 @@ to make this project a reality!
 
 ## Meet The Core Team!
 
+If you have chops in GO and K8s and would like to offer your time to help maintain and enhance this project, please reach out to me.
+
 * [Fernand Galiana](https://github.com/derailed)
   * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  fernand@imhotep.io
   * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-
-* [Aleksei Romanenko](https://github.com/slimus)
 
 We always enjoy hearing from folks who benefit from our work!
 

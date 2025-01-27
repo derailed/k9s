@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/config"
-
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
@@ -84,9 +82,6 @@ func (s *ScaleExtender) valueOf(col string) (string, error) {
 }
 
 func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
-	styles := s.App().Styles.Dialog()
-	f := s.makeStyledForm(styles)
-
 	factor := "0"
 	if len(sels) == 1 {
 		replicas, err := s.valueOf("READY")
@@ -99,6 +94,16 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 		}
 		factor = strings.TrimRight(tokens[1], ui.DeltaSign)
 	}
+
+	styles := s.App().Styles.Dialog()
+	f := tview.NewForm().
+		SetItemPadding(0).
+		SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
+
 	f.AddInputField("Replicas:", factor, 4, func(textToCheck string, lastChar rune) bool {
 		_, err := strconv.Atoi(textToCheck)
 		return err == nil
@@ -138,23 +143,17 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 		}
 	}
 
+	for i := 0; i < f.GetButtonCount(); i++ {
+		f.GetButton(i).
+			SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color()).
+			SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	}
+
 	return f, nil
 }
 
 func (s *ScaleExtender) dismissDialog() {
 	s.App().Content.RemovePage(scaleDialogKey)
-}
-
-func (s *ScaleExtender) makeStyledForm(styles config.Dialog) *tview.Form {
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
-		SetButtonTextColor(styles.ButtonBgColor.Color()).
-		SetLabelColor(styles.LabelFgColor.Color()).
-		SetFieldTextColor(styles.FieldFgColor.Color())
-
-	return f
 }
 
 func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int) error {

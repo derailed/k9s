@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
@@ -216,6 +218,27 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	}
 	k.setActiveConfig(cfg)
 
+	if cfg.Context.Proxy != nil {
+		k.ks.SetProxy(func(*http.Request) (*url.URL, error) {
+			log.Debug().Msgf("[Proxy]: %s", cfg.Context.Proxy.Address)
+			return url.Parse(cfg.Context.Proxy.Address)
+		})
+
+		if k.conn != nil && k.conn.Config() != nil {
+			// We get on this branch when the user switches the context and k9s
+			// already has an API connection object so we just set the proxy to
+			// avoid recreation using client.InitConnection
+			k.conn.Config().SetProxy(func(*http.Request) (*url.URL, error) {
+				log.Debug().Msgf("[Proxy]: %s", cfg.Context.Proxy.Address)
+				return url.Parse(cfg.Context.Proxy.Address)
+			})
+
+			if !k.conn.CheckConnectivity() {
+				return nil, fmt.Errorf("unable to connect to context %q", n)
+			}
+		}
+	}
+
 	k.Validate(k.conn, k.ks)
 	// If the context specifies a namespace, use it!
 	if ns := ct.Namespace; ns != client.BlankNamespace {
@@ -269,7 +292,7 @@ func (k *K9s) Override(k9sFlags *Flags) {
 
 // IsHeadless returns headless setting.
 func (k *K9s) IsHeadless() bool {
-	if isBoolSet(k.manualHeadless) {
+	if IsBoolSet(k.manualHeadless) {
 		return true
 	}
 
@@ -278,7 +301,7 @@ func (k *K9s) IsHeadless() bool {
 
 // IsLogoless returns logoless setting.
 func (k *K9s) IsLogoless() bool {
-	if isBoolSet(k.manualLogoless) {
+	if IsBoolSet(k.manualLogoless) {
 		return true
 	}
 
@@ -287,7 +310,7 @@ func (k *K9s) IsLogoless() bool {
 
 // IsCrumbsless returns crumbsless setting.
 func (k *K9s) IsCrumbsless() bool {
-	if isBoolSet(k.manualCrumbsless) {
+	if IsBoolSet(k.manualCrumbsless) {
 		return true
 	}
 

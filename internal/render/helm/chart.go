@@ -76,7 +76,7 @@ func (c Chart) diagnose(s string) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// ReleaseRes represents an helm chart resource.
+// ReleaseRes represents a helm chart resource.
 type ReleaseRes struct {
 	Release *release.Release
 }
