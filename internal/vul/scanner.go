@@ -110,6 +110,11 @@ func (s *imageScanner) Init(name, version string) {
 func (s *imageScanner) Stop() {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
+
+	if s.store != nil {
+		s.store.Close()
+		s.store = nil
+	}
 }
 
 func (s *imageScanner) Score(ii ...string) string {
