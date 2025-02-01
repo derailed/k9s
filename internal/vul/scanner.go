@@ -13,7 +13,6 @@ import (
 	"github.com/anchore/clio"
 	"github.com/anchore/grype/cmd/grype/cli/options"
 	"github.com/anchore/grype/grype"
-
 	"github.com/anchore/grype/grype/db/legacy/distribution"
 	v5 "github.com/anchore/grype/grype/db/v5"
 	"github.com/anchore/grype/grype/db/v5/matcher"
@@ -161,7 +160,7 @@ func (s *imageScanner) scanWorker(ctx context.Context, img string) {
 	}
 }
 
-func (s *imageScanner) scan(ctx context.Context, img string, sc *Scan) error {
+func (s *imageScanner) scan(_ context.Context, img string, sc *Scan) error {
 	defer func(t time.Time) {
 		log.Debug().Msgf("ScanTime %q: %v", img, time.Since(t))
 	}(time.Now())
