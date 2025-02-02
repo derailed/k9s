@@ -424,6 +424,13 @@ func loadCRDs(f Factory, m ResourceMetas) {
 		var meta metav1.APIResource
 		meta.Kind = crd.Spec.Names.Kind
 		meta.Group = crd.Spec.Group
+		// Since CRD names are cluster scoped they need to be unique, however, it is allowed
+		// to have the CRDs with the same names in different groups. Because of that, the
+		// returned `crd.Name` values have the group as a suffix, for example
+		// "ciliumnetworkpolicies.cilium.io".
+		//
+		// `Name` field of `meta/v1/APIResource` is supposed to be the plural name of the
+		// resource, without the group. Because of that we need to trim the group suffix.
 		meta.Name = strings.TrimSuffix(crd.Name, "."+meta.Group)
 
 		meta.SingularName = crd.Spec.Names.Singular
