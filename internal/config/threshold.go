@@ -49,7 +49,7 @@ func validateRange(v int) bool {
 	return true
 }
 
-// Threshold tracks threshold to alert user when excided.
+// Threshold tracks threshold to alert user when exceeded.
 type Threshold map[string]*Severity
 
 // NewThreshold returns a new threshold.
@@ -90,7 +90,7 @@ func (t Threshold) LevelFor(k string, v int) SeverityLevel {
 	return SeverityLow
 }
 
-// SeverityColor returns an defcon level associated level.
+// SeverityColor returns a defcon level associated level.
 func (t *Threshold) SeverityColor(k string, v int) string {
 	// nolint:exhaustive
 	switch t.LevelFor(k, v) {

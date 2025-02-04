@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -92,6 +93,7 @@ func (p Pod) Header(ns string) model1.Header {
 		model1.HeaderColumn{Name: "READY"},
 		model1.HeaderColumn{Name: "STATUS"},
 		model1.HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "LAST RESTART", Align: tview.AlignRight, Time: true, Wide: true},
 		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		model1.HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight, Wide: true},
@@ -102,6 +104,7 @@ func (p Pod) Header(ns string) model1.Header {
 		model1.HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
 		model1.HeaderColumn{Name: "IP"},
 		model1.HeaderColumn{Name: "NODE"},
+		model1.HeaderColumn{Name: "SERVICEACCOUNT", Wide: true},
 		model1.HeaderColumn{Name: "NOMINATED NODE", Wide: true},
 		model1.HeaderColumn{Name: "READINESS GATES", Wide: true},
 		model1.HeaderColumn{Name: "QOS", Wide: true},
@@ -127,6 +130,7 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	_, _, irc := p.Statuses(ics)
 	cs := po.Status.ContainerStatuses
 	cr, _, rc := p.Statuses(cs)
+	lr := p.lastRestart(cs)
 
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
@@ -134,8 +138,8 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	}
 	c, r := gatherCoMX(&po.Spec, ccmx)
 	phase := p.Phase(&po)
-	row.ID = client.MetaFQN(po.ObjectMeta)
 
+	row.ID = client.MetaFQN(po.ObjectMeta)
 	row.Fields = model1.Fields{
 		po.Namespace,
 		po.Name,
@@ -144,6 +148,7 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
 		phase,
 		strconv.Itoa(rc + irc),
+		ToAge(lr),
 		toMc(c.cpu),
 		toMi(c.mem),
 		toMc(r.cpu) + ":" + toMc(r.lcpu),
@@ -154,6 +159,7 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 		client.ToPercentageStr(c.mem, r.lmem),
 		na(po.Status.PodIP),
 		na(po.Spec.NodeName),
+		na(po.Spec.ServiceAccountName),
 		asNominated(po.Status.NominatedNodeName),
 		asReadinessGate(po),
 		p.mapQOS(po.Status.QOSClass),
@@ -248,7 +254,7 @@ func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	for _, c := range cc {
 		limits := c.Resources.Limits
 		if len(limits) == 0 {
-			return resource.Quantity{}, resource.Quantity{}
+			continue
 		}
 		if limits.Cpu() != nil {
 			cpu.Add(*limits.Cpu())
@@ -257,6 +263,7 @@ func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 			mem.Add(*limits.Memory())
 		}
 	}
+
 	return *cpu, *mem
 }
 
@@ -314,6 +321,20 @@ func (*Pod) Statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 		rc += int(c.RestartCount)
 	}
 
+	return
+}
+
+// lastRestart returns the last container restart time.
+func (*Pod) lastRestart(ss []v1.ContainerStatus) (latest metav1.Time) {
+	for _, c := range ss {
+		if c.LastTerminationState.Terminated == nil {
+			continue
+		}
+		ts := c.LastTerminationState.Terminated.FinishedAt
+		if latest.IsZero() || ts.After(latest.Time) {
+			latest = ts
+		}
+	}
 	return
 }
 

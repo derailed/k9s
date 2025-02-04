@@ -6,6 +6,8 @@ package client
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -27,6 +29,7 @@ const (
 type Config struct {
 	flags *genericclioptions.ConfigFlags
 	mx    sync.RWMutex
+	proxy func(*http.Request) (*url.URL, error)
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
@@ -50,7 +53,17 @@ func (c *Config) CallTimeout() time.Duration {
 }
 
 func (c *Config) RESTConfig() (*restclient.Config, error) {
-	return c.clientConfig().ClientConfig()
+	cfg, err := c.clientConfig().ClientConfig()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if c.proxy != nil {
+		cfg.Proxy = c.proxy
+	}
+
+	return cfg, nil
 }
 
 // Flags returns configuration flags.
@@ -80,6 +93,9 @@ func (c *Config) SwitchContext(name string) error {
 	flags.Namespace = c.flags.Namespace
 	flags.Timeout = c.flags.Timeout
 	flags.KubeConfig = c.flags.KubeConfig
+	flags.Impersonate = c.flags.Impersonate
+	flags.ImpersonateGroup = c.flags.ImpersonateGroup
+	flags.ImpersonateUID = c.flags.ImpersonateUID
 	c.flags = flags
 
 	return nil
@@ -163,7 +179,7 @@ func (c *Config) CurrentContext() (*api.Context, error) {
 	return c.GetContext(n)
 }
 
-// GetContext fetch a given context or error if it does not exists.
+// GetContext fetch a given context or error if it does not exist.
 func (c *Config) GetContext(n string) (*api.Context, error) {
 	cfg, err := c.RawConfig()
 	if err != nil {
@@ -174,6 +190,15 @@ func (c *Config) GetContext(n string) (*api.Context, error) {
 	}
 
 	return nil, fmt.Errorf("getcontext - invalid context specified: %q", n)
+}
+
+func (c *Config) SetProxy(proxy func(*http.Request) (*url.URL, error)) {
+	c.proxy = proxy
+}
+
+func (c *Config) WithProxy(proxy func(*http.Request) (*url.URL, error)) *Config {
+	c.SetProxy(proxy)
+	return c
 }
 
 // Contexts fetch all available contexts.

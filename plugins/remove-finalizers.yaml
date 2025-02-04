@@ -3,7 +3,7 @@
 # Before deleting an object you need to ensure that all finalizers has been removed. Usually this would be done
 # by the specific controller but under some circumstances it is possible to encounter a set of objects blocked
 # for deletion.
-# This plugins makes this task easier by providing a shortcut to directly removing them all.
+# This plugin makes this task easier by providing a shortcut to directly removing them all.
 # Be careful when using this plugin as it may leave dangling resources or instantly deleting resources that were
 # blocked by the finalizers.
 # Author: github.com/jalvarezit

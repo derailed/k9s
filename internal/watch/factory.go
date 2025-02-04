@@ -21,7 +21,7 @@ import (
 
 const (
 	defaultResync   = 10 * time.Minute
-	defaultWaitTime = 250 * time.Millisecond
+	defaultWaitTime = 500 * time.Millisecond
 )
 
 // Factory tracks various resource informers.
@@ -72,12 +72,12 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
+	if client.IsAllNamespace(ns) {
+		ns = client.BlankNamespace
+	}
 	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
 	if err != nil {
 		return nil, err
-	}
-	if client.IsAllNamespace(ns) {
-		ns = client.BlankNamespace
 	}
 
 	var oo []runtime.Object
@@ -110,6 +110,10 @@ func (f *Factory) HasSynced(gvr, ns string) (bool, error) {
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	ns, n := namespaced(fqn)
+	if client.IsAllNamespace(ns) {
+		ns = client.BlankNamespace
+	}
+
 	inf, err := f.CanForResource(ns, gvr, []string{client.GetVerb})
 	if err != nil {
 		return nil, err
@@ -128,6 +132,7 @@ func (f *Factory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runtime.
 	if client.IsClusterScoped(ns) {
 		return inf.Lister().Get(n)
 	}
+
 	return inf.Lister().ByNamespace(ns).Get(n)
 }
 

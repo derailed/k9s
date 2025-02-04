@@ -103,6 +103,9 @@ func TestIsNamespaced(t *testing.T) {
 		"all": {
 			ns: client.NamespaceAll,
 		},
+		"cluster": {
+			ns: client.ClusterScope,
+		},
 		"none": {
 			ns: client.BlankNamespace,
 		},

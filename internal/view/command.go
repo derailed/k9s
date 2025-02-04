@@ -209,19 +209,24 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool, pushCmd b
 	return c.exec(p, gvr, co, clearStack, pushCmd)
 }
 
-func (c *Command) defaultCmd() error {
+func (c *Command) defaultCmd(isRoot bool) error {
 	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
 		return c.run(cmd.NewInterpreter("context"), "", true, true)
 	}
 
+	defCmd := "pod"
+	if isRoot {
+		defCmd = "ctx"
+	}
 	p := cmd.NewInterpreter(c.app.Config.ActiveView())
 	if p.IsBlank() {
-		return c.run(p.Reset("pod"), "", true, true)
+		return c.run(p.Reset(defCmd), "", true, true)
 	}
 
 	if err := c.run(p, "", true, true); err != nil {
-		log.Error().Err(err).Msgf("Default run command failed %q", p.GetLine())
-		return c.run(p.Reset("pod"), "", true, true)
+		p = p.Reset(defCmd)
+		log.Error().Err(fmt.Errorf("Command failed. Using default command: %s", p.GetLine()))
+		return c.run(p, "", true, true)
 	}
 
 	return nil

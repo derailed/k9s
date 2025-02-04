@@ -22,7 +22,7 @@ rev and see if we're happier with some of the fixes!
     ```text
     >po<ENTER>
     ```
-+ Similarly to filter on a given resource you can use `/' and type your filter.
++ Similarly to filter on a given resource you can use `/` and type your filter.
 + In both instances `<ESC>` will back you out of command mode and into navigation mode.
 
 <br/>

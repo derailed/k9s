@@ -112,7 +112,7 @@ func NewPrompt(app *App, noIcons bool, styles *config.Styles) *Prompt {
 	return &p
 }
 
-// SendKey sends an keyboard event (testing only!).
+// SendKey sends a keyboard event (testing only!).
 func (p *Prompt) SendKey(evt *tcell.EventKey) {
 	p.keyboard(evt)
 }

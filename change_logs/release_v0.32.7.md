@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s.png" align="center" width="800" height="auto"/>
 
-# Release v0.31.6
+# Release v0.32.7
 
 ## Notes
 
@@ -19,31 +19,6 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## Maintenance Release!
 
-😱 More aftermath... 😱
-
-Thank you all for pitching in and helping flesh out issues!!
-
-Please make sure to add gory details to issues ie relevant configs, debug logs, etc...
-
-Comments like: `same here!` or `me to!` doesn't really cut it for us to zero in ;(
-Everyone has slightly different settings/platforms so every little bits of info helps with the resolves even if seemingly irrelevant.
-
----
-
-## NOTE
-
-In this drop, we've made k9s a bit more resilient (hopefully!) to configuration issues and in most cases k9s will come up but may exhibit `limp mode` behaviors.
-Please double check your k9s logs if things don't work as expected and file an issue with the `gory` details!
-
-☢️ This drop may cause `some disturbance in the farce!` ☢️
-
-Please proceed with caution with this one as we did our best to attempt to address potential context config file corruption by eliminating race conditions.
-It's late and I am operating on minimal sleep so I may have hosed some behaviors 🫣
-If you experience k9s locking up or misbehaving, as per the above👆 you know what to do now and as customary
-we will do our best to address them quickly to get you back up and running!
-
-Thank you for your support, kindness and patience!
-
 ---
 
 ## Videos Are In The Can!
@@ -58,8 +33,13 @@ Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgj
 
 ## Resolved Issues
 
-* [#2476](https://github.com/derailed/k9s/issues/2476) Pods are not displayed for the selected namespace. Hopefully!
-* [#2471](https://github.com/derailed/k9s/issues/2471) Shell autocomplete functions do not work correctly
+* [#2970](https://github.com/derailed/k9s/issues/2970) Ctrl-z on events view causes runtime error in v0.32.6
+* [#2969](https://github.com/derailed/k9s/issues/2969) When using impersonation user information and permissions not preserved when switching context
+* [#2966](https://github.com/derailed/k9s/issues/2966) Go to the Contexts page and filter, contexts that are matched will be filtered ou
+* [#2962](https://github.com/derailed/k9s/issues/2962) Small colour/filtering related bug
+* [#2961](https://github.com/derailed/k9s/issues/2961) Drain node with the -disable-eviction
+* [#2958](https://github.com/derailed/k9s/issues/2958) Restart count in container view associated with the wrong container
+* [#2945](https://github.com/derailed/k9s/issues/2945) Could we add ServiceAccount Column in v1/POD view
 
 ---
 
@@ -67,8 +47,9 @@ Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgj
 
 Please be sure to give `Big Thanks!` and `ATTA Girls/Boys!` to all the fine contributors for making K9s better for all of us!!
 
-* [#2480](https://github.com/derailed/k9s/pull/2480) Adding system arch to nodes view
-* [#2477](https://github.com/derailed/k9s/pull/2477) Shell autocomplete for k8s flags
+* [#2968](https://github.com/derailed/k9s/pull/2968) Update go version to 1.23.X in README
+* [#2964](https://github.com/derailed/k9s/pull/2964) feat(dao,used-by-cmd): check imagePullSecrets as well
+* [#2960](https://github.com/derailed/k9s/pull/2960) Put log levels in order in cmd help
 
 ---
 
