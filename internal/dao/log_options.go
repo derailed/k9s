@@ -4,10 +4,14 @@
 package dao
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,6 +31,8 @@ type LogOptions struct {
 	MultiPods        bool
 	ShowTimestamp    bool
 	AllContainers    bool
+	DecodeJson       bool
+	Json             JsonOptions
 }
 
 // Info returns the option pod and container info.
@@ -52,6 +58,8 @@ func (o *LogOptions) Clone() *LogOptions {
 		SinceTime:        o.SinceTime,
 		SinceSeconds:     o.SinceSeconds,
 		AllContainers:    o.AllContainers,
+		DecodeJson:       o.DecodeJson,
+		Json:             o.Json,
 	}
 }
 
@@ -109,6 +117,38 @@ func (o *LogOptions) ToPodLogOptions() *v1.PodLogOptions {
 	}
 
 	return &opts
+}
+
+// HandleJson if JSON decoding is turned on, processes JSON templates with JQ
+func (o *LogOptions) HandleJson(bb []byte) []byte {
+	if !o.DecodeJson {
+		return bb
+	}
+
+	var b bytes.Buffer
+	orgLine := string(bb)
+	result, _ := o.Json.GetCompiledJsonQuery().Run(orgLine).Next()
+	err := PrintJsonResult(result, &b)
+	if err != nil {
+		log.Trace().AnErr("Error", err).Msg("Error printing JQ result")
+		fmt.Fprintf(&b, "%s: %s\n", "JQ", err)
+		fmt.Fprintf(&b, "Original line: %s", orgLine)
+	}
+	if b.Bytes()[b.Len()-1] != '\n' {
+		b.WriteByte('\n')
+	}
+	return b.Bytes()
+}
+
+func PrintJsonResult(value any, outStream io.Writer) error {
+	if err, ok := value.(error); ok {
+		return err
+	}
+	if s, ok := value.(string); ok {
+		_, err := outStream.Write([]byte(s))
+		return err
+	}
+	return errors.New("JQ result not a string")
 }
 
 // ToLogItem add a log header to display po/co information along with the log message.

@@ -4,6 +4,12 @@ k9s:
   logger:
     tail: 200
     buffer: 2000
+    decodeJson: false
+    json:
+      debug: false
+      globalExpressions: ""
+      defaultTemplate: ""
+      templates: []
   currentContext: minikube
   currentCluster: minikube
   clusters:
