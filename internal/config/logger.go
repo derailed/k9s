@@ -21,6 +21,7 @@ type Logger struct {
 	SinceSeconds int64 `json:"sinceSeconds" yaml:"sinceSeconds"`
 	TextWrap     bool  `json:"textWrap" yaml:"textWrap"`
 	ShowTime     bool  `json:"showTime" yaml:"showTime"`
+  ShowJSON     bool  `json:"showJSON" yaml:"showJSON"`
 }
 
 // NewLogger returns a new instance.
