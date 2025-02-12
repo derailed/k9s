@@ -340,8 +340,8 @@ func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual, wid
 		namespace: t.namespace,
 		header:    t.header.Customize(cols, wide),
 	}
-	ids := t.header.MapIndices(cols, wide)
-	cdata.rowEvents = t.rowEvents.Customize(ids)
+	ids, extractionInfoBag := t.header.MapIndices(cols, wide)
+	cdata.rowEvents = t.rowEvents.Customize(ids, extractionInfoBag)
 	if manual || vs == nil {
 		return &cdata, sc
 	}
