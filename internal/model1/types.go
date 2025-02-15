@@ -4,6 +4,7 @@
 package model1
 
 import (
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -46,6 +47,8 @@ type Renderer interface {
 
 	// ColorerFunc returns a row colorer function.
 	ColorerFunc() ColorerFunc
+
+	SetViewSetting(vs *config.ViewSetting)
 }
 
 // Generic represents a generic resource.

@@ -16,8 +16,9 @@ import (
 type NonResource struct {
 	Factory
 
-	gvr client.GVR
-	mx  sync.RWMutex
+	gvr        client.GVR
+	mx         sync.RWMutex
+	includeObj bool
 }
 
 // Init initializes the resource.
@@ -27,6 +28,10 @@ func (n *NonResource) Init(f Factory, gvr client.GVR) {
 		n.Factory, n.gvr = f, gvr
 	}
 	n.mx.Unlock()
+}
+
+func (n *NonResource) SetIncludeObject(f bool) {
+	n.includeObj = f
 }
 
 func (n *NonResource) gvrStr() string {

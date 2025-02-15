@@ -12,6 +12,9 @@ type DeltaRow []string
 func NewDeltaRow(o, n Row, h Header) DeltaRow {
 	deltas := make(DeltaRow, len(o.Fields))
 	for i, old := range o.Fields {
+		if i >= len(n.Fields) {
+			continue
+		}
 		if old != "" && old != n.Fields[i] && !h.IsTimeCol(i) {
 			deltas[i] = old
 		}

@@ -21,28 +21,52 @@ type CustomResourceDefinition struct {
 	Base
 }
 
+// Header returns a header row.
+func (c CustomResourceDefinition) Header(_ string) model1.Header {
+	return c.doHeader(c.defaultHeader())
+}
+
 // Header returns a header rbw.
-func (CustomResourceDefinition) Header(string) model1.Header {
+func (CustomResourceDefinition) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "GROUP"},
 		model1.HeaderColumn{Name: "KIND"},
 		model1.HeaderColumn{Name: "VERSIONS"},
 		model1.HeaderColumn{Name: "SCOPE"},
-		model1.HeaderColumn{Name: "ALIASES", Wide: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "ALIASES", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (c CustomResourceDefinition) Render(o interface{}, ns string, r *model1.Row) error {
+func (c CustomResourceDefinition) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected CustomResourceDefinition, but got %T", o)
 	}
 
+	if err := c.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if c.specs.isEmpty() {
+		return nil
+	}
+
+	// !BOZO!! Call header 2 times
+	cols, err := c.specs.realize(raw, c.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var crd v1.CustomResourceDefinition
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &crd)
 	if err != nil {
@@ -113,20 +137,4 @@ func (c CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefin
 	}
 
 	return errors.New(strings.Join(errs, " - "))
-}
-
-func extractMetaField(m map[string]interface{}, field string) string {
-	f, ok := m[field]
-	if !ok {
-		log.Error().Err(fmt.Errorf("failed to extract field from meta %s", field))
-		return NAValue
-	}
-
-	fs, ok := f.(string)
-	if !ok {
-		log.Error().Err(fmt.Errorf("failed to extract string from field %s", field))
-		return NAValue
-	}
-
-	return fs
 }

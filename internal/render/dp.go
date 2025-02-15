@@ -42,27 +42,49 @@ func (d Deployment) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Deployment) Header(ns string) model1.Header {
+func (d Deployment) Header(_ string) model1.Header {
+	return d.doHeader(d.defaultHeader())
+}
+
+func (Deployment) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
-		model1.HeaderColumn{Name: "READY", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "UP-TO-DATE", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+		model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "UP-TO-DATE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (d Deployment) Render(o interface{}, ns string, r *model1.Row) error {
+func (d Deployment) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Deployment, but got %T", o)
 	}
+	if err := d.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if d.specs.isEmpty() {
+		return nil
+	}
 
+	// !BOZO!! Call header 2 times
+	cols, err := d.specs.realize(raw, d.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var dp appsv1.Deployment
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &dp)
 	if err != nil {

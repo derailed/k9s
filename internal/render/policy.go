@@ -24,7 +24,7 @@ func rbacVerbHeader() model1.Header {
 		model1.HeaderColumn{Name: "UPDATE"},
 		model1.HeaderColumn{Name: "DELETE"},
 		model1.HeaderColumn{Name: "DEL-LIST "},
-		model1.HeaderColumn{Name: "EXTRAS", Wide: true},
+		model1.HeaderColumn{Name: "EXTRAS", Attrs: model1.Attrs{Wide: true}},
 	}
 }
 
@@ -49,7 +49,7 @@ func (Policy) Header(ns string) model1.Header {
 		model1.HeaderColumn{Name: "BINDING"},
 	}
 	h = append(h, rbacVerbHeader()...)
-	h = append(h, model1.HeaderColumn{Name: "VALID", Wide: true})
+	h = append(h, model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}})
 
 	return h
 }

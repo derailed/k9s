@@ -4,6 +4,7 @@
 package data
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -47,7 +48,7 @@ func (n *Namespace) merge(old *Namespace) {
 		return
 	}
 	for _, fav := range old.Favorites {
-		if InList(n.Favorites, fav) {
+		if slices.Contains(n.Favorites, fav) {
 			continue
 		}
 		n.Favorites = append(n.Favorites, fav)
@@ -100,7 +101,7 @@ func (n *Namespace) isAllNamespaces() bool {
 }
 
 func (n *Namespace) addFavNS(ns string) {
-	if InList(n.Favorites, ns) {
+	if slices.Contains(n.Favorites, ns) {
 		return
 	}
 

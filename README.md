@@ -627,7 +627,25 @@ The annotation value must specify a container to forward to as well as a local p
 
 You can change which columns shows up for a given resource via custom views. To surface this feature, you will need to create a new configuration file, namely `$XDG_CONFIG_HOME/k9s/views.yaml`. This file leverages GVR (Group/Version/Resource) to configure the associated table view columns. If no GVR is found for a view the default rendering will take over (ie what we have now). Going wide will add all the remaining columns that are available on the given resource after your custom columns. To boot, you can edit your views config file and tune your resources views live!
 
-> NOTE: This is experimental and will most likely change as we iron this out!
+📢 🎉 As of `release v0.40.0` you can specify json parse expressions to further customize your resources rendering.
+
+The new column syntax is as follows:
+
+> COLUMN_NAME<:json_parse_expression><|column_attributes>
+
+Where `:json_parse_expression` represents an expression to pull a specific snippet out of the resource manifest.
+Similar to `kubectl -o custom-columns` command. This expression is optional.
+
+Additionally, you can specify column attributes to further tailor the column rendering.
+To use this you will need to add a `|` indicator followed by your rendering bits.
+You can have one or more of the following attributes:
+
+* `T` -> time column indicator
+* `N` -> number column indicator
+* `W` -> turns on wide column aka only shows while in wide mode. Defaults to the standard resource definition when present.
+* `H` -> Hides the column
+* `L` -> Left align (default)
+* `R` -> Right align
 
 Here is a sample views configuration that customize a pods and services views.
 
@@ -637,7 +655,9 @@ views:
   v1/pods:
     columns:
       - AGE
-      - NAMESPACE
+      - NAMESPACE|WR                                     # => 🌚 Specifies the NAMESPACE column to be right aligned and only visible while in wide mode
+      - ZORG:.metadata.labels.fred\.io\.kubernetes\.blee # => 🌚 extract fred.io.kubernetes.blee label into it's own column
+      - BLEE:.metadata.annotations.blee|R                # => 🌚 extract annotation blee into it's own column and right align it
       - NAME
       - IP
       - NODE
@@ -651,6 +671,8 @@ views:
       - TYPE
       - CLUSTER-IP
 ```
+
+> 🩻 NOTE: This is experimental and will most likely change as we iron this out!
 
 ---
 
