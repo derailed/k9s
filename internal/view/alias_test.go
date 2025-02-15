@@ -10,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
@@ -85,25 +86,26 @@ var (
 	_ ui.Suggester = (*mockModel)(nil)
 )
 
-func (t *mockModel) CurrentSuggestion() (string, bool)  { return "", false }
-func (t *mockModel) NextSuggestion() (string, bool)     { return "", false }
-func (t *mockModel) PrevSuggestion() (string, bool)     { return "", false }
-func (t *mockModel) ClearSuggestions()                  {}
-func (t *mockModel) SetInstance(string)                 {}
-func (t *mockModel) SetLabelFilter(string)              {}
-func (t *mockModel) GetLabelFilter() string             { return "" }
-func (t *mockModel) Empty() bool                        { return false }
-func (t *mockModel) RowCount() int                      { return 1 }
-func (t *mockModel) HasMetrics() bool                   { return true }
-func (t *mockModel) Peek() *model1.TableData            { return makeTableData() }
-func (t *mockModel) ClusterWide() bool                  { return false }
-func (t *mockModel) GetNamespace() string               { return "blee" }
-func (t *mockModel) SetNamespace(string)                {}
-func (t *mockModel) ToggleToast()                       {}
-func (t *mockModel) AddListener(model.TableListener)    {}
-func (t *mockModel) RemoveListener(model.TableListener) {}
-func (t *mockModel) Watch(context.Context) error        { return nil }
-func (t *mockModel) Refresh(context.Context) error      { return nil }
+func (t *mockModel) SetViewSetting(context.Context, *config.ViewSetting) {}
+func (t *mockModel) CurrentSuggestion() (string, bool)                   { return "", false }
+func (t *mockModel) NextSuggestion() (string, bool)                      { return "", false }
+func (t *mockModel) PrevSuggestion() (string, bool)                      { return "", false }
+func (t *mockModel) ClearSuggestions()                                   {}
+func (t *mockModel) SetInstance(string)                                  {}
+func (t *mockModel) SetLabelFilter(string)                               {}
+func (t *mockModel) GetLabelFilter() string                              { return "" }
+func (t *mockModel) Empty() bool                                         { return false }
+func (t *mockModel) RowCount() int                                       { return 1 }
+func (t *mockModel) HasMetrics() bool                                    { return true }
+func (t *mockModel) Peek() *model1.TableData                             { return makeTableData() }
+func (t *mockModel) ClusterWide() bool                                   { return false }
+func (t *mockModel) GetNamespace() string                                { return "blee" }
+func (t *mockModel) SetNamespace(string)                                 {}
+func (t *mockModel) ToggleToast()                                        {}
+func (t *mockModel) AddListener(model.TableListener)                     {}
+func (t *mockModel) RemoveListener(model.TableListener)                  {}
+func (t *mockModel) Watch(context.Context) error                         { return nil }
+func (t *mockModel) Refresh(context.Context) error                       { return nil }
 func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }

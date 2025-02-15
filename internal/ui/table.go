@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
@@ -37,12 +38,12 @@ type (
 
 // Table represents tabular data.
 type Table struct {
-	gvr        client.GVR
-	sortCol    model1.SortColumn
-	manualSort bool
-	Path       string
-	Extras     string
 	*SelectTable
+	gvr         client.GVR
+	sortCol     model1.SortColumn
+	manualSort  bool
+	Path        string
+	Extras      string
 	actions     *KeyActions
 	cmdBuff     *model.FishBuff
 	styles      *config.Styles
@@ -64,6 +65,7 @@ func NewTable(gvr client.GVR) *Table {
 			model: model.NewTable(gvr),
 			marks: make(map[string]struct{}),
 		},
+		ctx:     context.Background(),
 		gvr:     gvr,
 		actions: NewKeyActions(),
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
@@ -106,19 +108,20 @@ func (t *Table) getMSort() bool {
 	return t.manualSort
 }
 
-func (t *Table) setVs(vs *config.ViewSetting) bool {
+func (t *Table) setViewSetting(vs *config.ViewSetting) bool {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
 	if !t.viewSetting.Equals(vs) {
 		t.viewSetting = vs
+		t.model.SetViewSetting(t.ctx, vs)
 		return true
 	}
 
 	return false
 }
 
-func (t *Table) getVs() *config.ViewSetting {
+func (t *Table) getViewSetting() *config.ViewSetting {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
@@ -143,9 +146,6 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetBackgroundColor(tcell.ColorDefault)
 	t.Select(1, 0)
-	if cfg, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView); ok && cfg != nil {
-		cfg.AddListener(t.GVR().String(), t)
-	}
 	t.styles = mustExtractStyles(ctx)
 	t.StylesChanged(t.styles)
 }
@@ -154,8 +154,11 @@ func (t *Table) Init(ctx context.Context) {
 func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
-func (t *Table) ViewSettingsChanged(vs config.ViewSetting) {
-	if t.setVs(&vs) {
+func (t *Table) ViewSettingsChanged(vs *config.ViewSetting) {
+	if t.setViewSetting(vs) {
+		if vs == nil {
+			t.setSortCol(model1.SortColumn{})
+		}
 		t.setMSort(false)
 		t.Refresh()
 	}
@@ -274,7 +277,7 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	cdata, sortCol := data.Customize(t.getVs(), t.getSortCol(), t.getMSort(), true)
+	cdata, sortCol := data.Customize(t.getViewSetting(), t.getSortCol(), t.getMSort())
 	t.setSortCol(sortCol)
 
 	return cdata
@@ -285,12 +288,17 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	fg := t.styles.Table().Header.FgColor.Color()
 	bg := t.styles.Table().Header.BgColor.Color()
 
+	var isNamespaced bool
+	if m, err := dao.MetaAccess.MetaFor(t.GVR()); err == nil {
+		isNamespaced = m.Namespaced
+	}
+
 	var col int
 	for _, h := range cdata.Header() {
-		if !t.wide && h.Wide {
+		if h.Hide || (!t.wide && h.Wide) {
 			continue
 		}
-		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
+		if h.Name == "NAMESPACE" && (!t.GetModel().ClusterWide() || !isNamespaced) {
 			continue
 		}
 		if h.MX && !t.hasMetrics {
@@ -316,7 +324,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 			log.Error().Msgf("unable to find original re: %q", re.Row.ID)
 			return true
 		}
-		t.buildRow(row+1, re, ore, cdata.Header(), pads)
+		t.buildRow(row+1, re, ore, cdata.Header(), pads, isNamespaced)
 
 		return true
 	})
@@ -325,7 +333,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.UpdateTitle()
 }
 
-func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad) {
+func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad, isNamespaced bool) {
 	color := model1.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn
@@ -339,11 +347,11 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 			log.Error().Msgf("field/header overflow detected for %q -- %d::%d. Check your mappings!", t.GVR(), c, len(h))
 			continue
 		}
-		if !t.wide && h[c].Wide {
+		if h[c].Hide || (!t.wide && h[c].Wide) {
 			continue
 		}
 
-		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
+		if h[c].Name == "NAMESPACE" && (!t.GetModel().ClusterWide() || !isNamespaced) {
 			continue
 		}
 		if h[c].MX && !t.hasMetrics {
@@ -354,7 +362,14 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 		}
 
 		if !re.Deltas.IsBlank() && !h.IsTimeCol(c) {
-			field += Deltas(re.Deltas[c], field)
+			var old string
+			if c < len(ore.Deltas) {
+				old = ore.Deltas[c]
+			}
+			if c < len(re.Deltas) {
+				old = re.Deltas[c]
+			}
+			field += Deltas(old, field)
 		}
 
 		if h[c].Decorator != nil {
