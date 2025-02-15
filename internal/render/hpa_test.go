@@ -18,10 +18,10 @@ func TestHorizontalPodAutoscalerColorer(t *testing.T) {
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "REFERENCE"},
 		model1.HeaderColumn{Name: "TARGETS%"},
-		model1.HeaderColumn{Name: "MINPODS", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "MAXPODS", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "REPLICAS", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "MINPODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "MAXPODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "REPLICAS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 
 	uu := map[string]struct {

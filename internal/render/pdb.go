@@ -22,28 +22,49 @@ type PodDisruptionBudget struct {
 }
 
 // Header returns a header row.
-func (PodDisruptionBudget) Header(ns string) model1.Header {
+func (p PodDisruptionBudget) Header(_ string) model1.Header {
+	return p.doHeader(p.defaultHeader())
+}
+
+func (PodDisruptionBudget) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "MIN AVAILABLE", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "MAX UNAVAILABLE", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "ALLOWED DISRUPTIONS", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "EXPECTED", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "MIN-AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "MAX-UNAVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "ALLOWED-DISRUPTIONS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "EXPECTED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (p PodDisruptionBudget) Render(o interface{}, ns string, r *model1.Row) error {
+func (p PodDisruptionBudget) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected PodDisruptionBudget, but got %T", o)
 	}
+	if err := p.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if p.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := p.specs.realize(raw, p.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var pdb v1.PodDisruptionBudget
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pdb)
 	if err != nil {

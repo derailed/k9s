@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"helm.sh/helm/v3/pkg/release"
@@ -24,6 +25,8 @@ func (Chart) IsGeneric() bool {
 	return false
 }
 
+func (Chart) SetViewSetting(*config.ViewSetting) {}
+
 // ColorerFunc colors a resource row.
 func (Chart) ColorerFunc() model1.ColorerFunc {
 	return model1.DefaultColorer
@@ -38,8 +41,8 @@ func (Chart) Header(_ string) model1.Header {
 		model1.HeaderColumn{Name: "STATUS"},
 		model1.HeaderColumn{Name: "CHART"},
 		model1.HeaderColumn{Name: "APP VERSION"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 

@@ -47,30 +47,52 @@ func (p PersistentVolume) ColorerFunc() model1.ColorerFunc {
 	}
 }
 
-// Header returns a header rbw.
-func (PersistentVolume) Header(string) model1.Header {
+// Header returns a header row.
+func (p PersistentVolume) Header(_ string) model1.Header {
+	return p.doHeader(p.defaultHeader())
+}
+
+func (PersistentVolume) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "CAPACITY", Capacity: true},
+		model1.HeaderColumn{Name: "CAPACITY", Attrs: model1.Attrs{Capacity: true}},
 		model1.HeaderColumn{Name: "ACCESS MODES"},
 		model1.HeaderColumn{Name: "RECLAIM POLICY"},
 		model1.HeaderColumn{Name: "STATUS"},
 		model1.HeaderColumn{Name: "CLAIM"},
 		model1.HeaderColumn{Name: "STORAGECLASS"},
 		model1.HeaderColumn{Name: "REASON"},
-		model1.HeaderColumn{Name: "VOLUMEMODE", Wide: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VOLUMEMODE", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (p PersistentVolume) Render(o interface{}, ns string, r *model1.Row) error {
+func (p PersistentVolume) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected PersistentVolume, but got %T", o)
 	}
+
+	if err := p.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if p.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := p.specs.realize(raw, p.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (p PersistentVolume) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var pv v1.PersistentVolume
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pv)
 	if err != nil {

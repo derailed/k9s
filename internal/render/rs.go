@@ -27,19 +27,23 @@ func (r ReplicaSet) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (ReplicaSet) Header(ns string) model1.Header {
+func (r ReplicaSet) Header(_ string) model1.Header {
+	return r.doHeader(r.defaultHeader())
+}
+
+func (ReplicaSet) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
-		model1.HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "READY", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "CONTAINERS", Wide: true},
-		model1.HeaderColumn{Name: "IMAGES", Wide: true},
-		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+		model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
@@ -50,6 +54,23 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *model1.Row) error {
 		return fmt.Errorf("expected ReplicaSet, but got %T", o)
 	}
 
+	if err := r.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if r.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := r.specs.realize(raw, r.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (r ReplicaSet) defaultRow(raw *unstructured.Unstructured, row *model1.Row) error {
 	var rs appsv1.ReplicaSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &rs)
 	if err != nil {
