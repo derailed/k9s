@@ -79,6 +79,9 @@ type Accessor interface {
 
 	// GVR returns a gvr a string.
 	GVR() string
+
+	// SetIncludeObject toggles object inclusion.
+	SetIncludeObject(bool)
 }
 
 // DrainOptions tracks drain attributes.
