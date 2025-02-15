@@ -173,6 +173,8 @@ type accessor struct {
 
 var _ dao.Accessor = (*accessor)(nil)
 
+func (a *accessor) SetIncludeObject(bool) {}
+
 func (a *accessor) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	return []runtime.Object{&render.PodWithMetrics{Raw: mustLoad("p1")}}, nil
 }

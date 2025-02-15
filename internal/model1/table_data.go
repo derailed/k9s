@@ -322,35 +322,21 @@ func (t *TableData) Labelize(labels []string) *TableData {
 }
 
 // Customize returns a new model with customized column layout.
-func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual, wide bool) (*TableData, SortColumn) {
+func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual bool) (*TableData, SortColumn) {
 	if vs.IsBlank() {
 		if sc.Name != "" {
 			return t, sc
 		}
-		psc, err := t.sortCol(vs)
-		if err == nil {
+		if psc, err := t.sortCol(vs); err == nil {
 			return t, psc
 		}
 		return t, sc
 	}
-
-	cols := vs.Columns
-	cdata := TableData{
-		gvr:       t.gvr,
-		namespace: t.namespace,
-		header:    t.header.Customize(cols, wide),
-	}
-	ids := t.header.MapIndices(cols, wide)
-	cdata.rowEvents = t.rowEvents.Customize(ids)
-	if manual || vs == nil {
-		return &cdata, sc
-	}
-	psc, err := cdata.sortCol(vs)
-	if err != nil {
-		return &cdata, sc
+	if s, asc, err := vs.SortCol(); err == nil {
+		return t, SortColumn{Name: s, ASC: asc}
 	}
 
-	return &cdata, psc
+	return t, sc
 }
 
 func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {
