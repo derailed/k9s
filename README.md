@@ -412,6 +412,8 @@ You can now override the context portForward default address configuration by se
       logoless: false
       # Set to true to hide K9s crumbs. Default false
       crumbsless: false
+      # Set to true to suppress the K9s splash screen on start. Default false.
+      splashless: false
       noIcons: false
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
@@ -974,6 +976,7 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    splashless: false
     noIcons: false
     # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live  Defaults to false.
     reactive: false
