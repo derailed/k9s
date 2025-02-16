@@ -24,6 +24,7 @@
             "headless": {"type": "boolean"},
             "logoless": {"type": "boolean"},
             "crumbsless": {"type": "boolean"},
+            "splashless": {"type": "boolean"},
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
             "skin": {"type": "string"},

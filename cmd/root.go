@@ -218,6 +218,12 @@ func initK9sFlags() {
 		false,
 		"Turn K9s crumbs off",
 	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Splashless,
+		"splashless",
+		false,
+		"Turn K9s splash screen off",
+	)
 	rootCmd.Flags().BoolVarP(
 		k9sFlags.AllNamespaces,
 		"all-namespaces", "A",
