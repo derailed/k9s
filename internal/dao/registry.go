@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -88,8 +89,6 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("helm"):                                              &HelmChart{},
 		client.NewGVR("helm-history"):                                      &HelmHistory{},
 		client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions"): &CustomResourceDefinition{},
-		// !!BOZO!! Popeye
-		//client.NewGVR("popeye"):                 &Popeye{},
 	}
 
 	r, ok := m[gvr]
@@ -138,16 +137,6 @@ func (m *Meta) GVK2GVR(gv schema.GroupVersion, kind string) (client.GVR, bool, b
 	return client.NoGVR, false, false
 }
 
-// IsCRD checks if resource represents a CRD
-func IsCRD(r metav1.APIResource) bool {
-	for _, c := range r.Categories {
-		if c == crdCat {
-			return true
-		}
-	}
-	return false
-}
-
 // MetaFor returns a resource metadata for a given gvr.
 func (m *Meta) MetaFor(gvr client.GVR) (metav1.APIResource, error) {
 	m.mx.RLock()
@@ -158,6 +147,16 @@ func (m *Meta) MetaFor(gvr client.GVR) (metav1.APIResource, error) {
 		return metav1.APIResource{}, fmt.Errorf("no resource meta defined for %q", gvr)
 	}
 	return meta, nil
+}
+
+// IsCRD checks if resource represents a CRD
+func IsCRD(r metav1.APIResource) bool {
+	for _, c := range r.Categories {
+		if c == crdCat {
+			return true
+		}
+	}
+	return false
 }
 
 // IsK8sMeta checks for non resource meta.
@@ -413,11 +412,35 @@ func loadCRDs(f Factory, m ResourceMetas) {
 	}
 
 	for _, o := range oo {
-		meta, errs := extractMeta(o)
-		if len(errs) > 0 {
-			log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
+		var crd apiext.CustomResourceDefinition
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crd)
+		if err != nil {
+			log.Err(err).Msg("boom")
 			continue
 		}
+
+		var meta metav1.APIResource
+		meta.Kind = crd.Spec.Names.Kind
+		meta.Group = crd.Spec.Group
+		// Since CRD names are cluster scoped they need to be unique, however, it is allowed
+		// to have the CRDs with the same names in different groups. Because of that, the
+		// returned `crd.Name` values have the group as a suffix, for example
+		// "ciliumnetworkpolicies.cilium.io".
+		//
+		// `Name` field of `meta/v1/APIResource` is supposed to be the plural name of the
+		// resource, without the group. Because of that we need to trim the group suffix.
+		meta.Name = strings.TrimSuffix(crd.Name, "."+meta.Group)
+
+		meta.SingularName = crd.Spec.Names.Singular
+		meta.ShortNames = crd.Spec.Names.ShortNames
+		meta.Namespaced = crd.Spec.Scope == apiext.NamespaceScoped
+		for _, v := range crd.Spec.Versions {
+			if v.Served && !v.Deprecated {
+				meta.Version = v.Name
+				break
+			}
+		}
+
 		meta.Categories = append(meta.Categories, crdCat)
 		gvr := client.NewGVRFromMeta(meta)
 		m[gvr] = meta

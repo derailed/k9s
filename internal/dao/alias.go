@@ -84,7 +84,7 @@ func (a *Alias) AsGVR(c string) (client.GVR, string, bool) {
 
 // Get fetch a resource.
 func (a *Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
-	return nil, errors.New("NYI!!")
+	return nil, errors.New("nyi")
 }
 
 // Ensure makes sure alias are loaded.

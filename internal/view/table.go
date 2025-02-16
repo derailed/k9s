@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -46,16 +47,18 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	if t.app.Conn() != nil {
 		ctx = context.WithValue(ctx, internal.KeyHasMetrics, t.app.Conn().HasMetrics())
 	}
+	if t.app.CustomView == nil {
+		t.app.CustomView = config.NewCustomView()
+	}
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
+	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
+	t.Table.Init(ctx)
 	if !t.app.Config.K9s.UI.Reactive {
 		if err := t.app.RefreshCustomViews(); err != nil {
 			log.Warn().Err(err).Msg("CustomViews load failed")
 			t.app.Logo().Warn("Views load failed!")
 		}
 	}
-
-	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
-	t.Table.Init(ctx)
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
@@ -82,7 +85,7 @@ func (t *Table) HeaderIndex(colName string) (int, bool) {
 	return 0, false
 }
 
-// SendKey sends an keyboard event (testing only!).
+// SendKey sends a keyboard event (testing only!).
 func (t *Table) SendKey(evt *tcell.EventKey) {
 	t.app.Prompt().SendKey(evt)
 }
@@ -141,12 +144,14 @@ func (t *Table) Start() {
 	t.Stop()
 	t.CmdBuff().AddListener(t)
 	t.Styles().AddListener(t.Table)
+	t.App().CustomView.AddListener(t.Table.GVR().String(), t.Table)
 }
 
 // Stop terminates the component.
 func (t *Table) Stop() {
 	t.CmdBuff().RemoveListener(t)
 	t.Styles().RemoveListener(t.Table)
+	t.App().CustomView.RemoveListener(t.GVR().String())
 }
 
 // SetEnterFn specifies the default enter behavior.

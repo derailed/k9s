@@ -312,7 +312,7 @@ func (x *Xray) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		path = *spec.ParentPath()
 	}
 
-	if err := containerShellin(x.app, x, path, co); err != nil {
+	if err := containerShellIn(x.app, x, path, co); err != nil {
 		x.app.Flash().Err(err)
 	}
 
@@ -476,7 +476,7 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(strings.Split(spec.Path(), "/")) == 1 {
 		return nil
 	}
-	x.app.gotoResource(client.NewGVR(spec.GVR()).R(), spec.Path(), false)
+	x.app.gotoResource(client.NewGVR(spec.GVR()).R(), spec.Path(), false, true)
 
 	return nil
 }

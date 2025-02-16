@@ -24,7 +24,7 @@ Most of the refactors are around K8s resource fetching and viewing as well as na
 
 ## Custom Skins Per Cluster
 
-In this release, we've added support for skins at the cluster level. Do you want K9s to look differently based on which cluster you're connecting to? All you'll need is to name the skin file in the K9s home directory as follows `mycluster_skin.yml`. If no cluster specific skin file is found, the standard `skin.yml` file will be loaded if present. Please checkout the `skins` directory in this repo or PR me if you have cool skins you'd like to share with your fellow K9ers as they will be featured in these release notes and in the project README.
+In this release, we've added support for skins at the cluster level. Do you want K9s to look differently based on which cluster you're connecting to? All you'll need is to name the skin file in the K9s home directory as follows `mycluster_skin.yml`. If no cluster specific skin file is found, the standard `skin.yml` file will be loaded if present. Please checkout the `skins` directory in this repo or PR me if you have cool skins you'd like to share with your fellow K9sers as they will be featured in these release notes and in the project README.
 
 ## Hot(Ness)?
 

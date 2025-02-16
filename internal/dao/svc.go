@@ -32,7 +32,7 @@ func (s *Service) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, er
 	if err != nil {
 		return nil, err
 	}
-	if svc.Spec.Selector == nil || len(svc.Spec.Selector) == 0 {
+	if len(svc.Spec.Selector) == 0 {
 		return nil, fmt.Errorf("no valid selector found on Service %s", opts.Path)
 	}
 

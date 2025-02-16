@@ -22,27 +22,50 @@ type Service struct {
 }
 
 // Header returns a header row.
-func (Service) Header(ns string) model1.Header {
+func (s Service) Header(_ string) model1.Header {
+	return s.doHeader(s.defaultHeader())
+}
+
+// Header returns a header row.
+func (Service) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "TYPE"},
 		model1.HeaderColumn{Name: "CLUSTER-IP"},
 		model1.HeaderColumn{Name: "EXTERNAL-IP"},
-		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
-		model1.HeaderColumn{Name: "PORTS", Wide: false},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "PORTS", Attrs: model1.Attrs{Wide: false}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (s Service) Render(o interface{}, ns string, r *model1.Row) error {
+func (s Service) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Service, but got %T", o)
 	}
+
+	if err := s.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if s.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := s.specs.realize(raw, s.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (s Service) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var svc v1.Service
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &svc)
 	if err != nil {

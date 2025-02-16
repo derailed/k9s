@@ -132,11 +132,6 @@ func loadConfiguration() (*config.Config, error) {
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
 	var errs error
-	conn, err := client.InitConnection(k8sCfg)
-	k9sCfg.SetConnection(conn)
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
 
 	if err := k9sCfg.Load(config.AppConfigFile, false); err != nil {
 		errs = errors.Join(errs, err)
@@ -146,13 +141,23 @@ func loadConfiguration() (*config.Config, error) {
 		log.Error().Err(err).Msgf("config refine failed")
 		errs = errors.Join(errs, err)
 	}
+
+	conn, err := client.InitConnection(k8sCfg)
+
+	if err != nil {
+		errs = errors.Join(errs, err)
+	}
+
 	// Try to access server version if that fail. Connectivity issue?
 	if !conn.CheckConnectivity() {
 		errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
 	}
+
 	if !conn.ConnectionOK() {
 		errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
 	}
+
+	k9sCfg.SetConnection(conn)
 
 	log.Info().Msg("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(false); err != nil {
@@ -192,7 +197,7 @@ func initK9sFlags() {
 		k9sFlags.LogLevel,
 		"logLevel", "l",
 		config.DefaultLogLevel,
-		"Specify a log level (info, warn, debug, trace, error)",
+		"Specify a log level (error, warn, info, debug, trace)",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogFile,

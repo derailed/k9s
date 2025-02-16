@@ -98,7 +98,7 @@ func (m *MetricsServer) checkAccess(ns, gvr, msg string) error {
 		return err
 	}
 	if !auth {
-		return fmt.Errorf(msg)
+		return errors.New(msg)
 	}
 	return nil
 }

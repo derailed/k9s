@@ -31,6 +31,7 @@ k9s:
     buffer: 800
     sinceSeconds: -1
     textWrap: false
+    disableAutoscroll: false
     showTime: false
   thresholds:
     cpu:

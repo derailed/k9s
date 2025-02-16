@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -96,6 +97,8 @@ func k8sEnv(c *client.Config) Env {
 	kcfg := c.Flags().KubeConfig
 	if kcfg != nil && *kcfg != "" {
 		cfg = *kcfg
+	} else {
+		cfg = os.Getenv("KUBECONFIG")
 	}
 
 	return Env{
@@ -153,7 +156,7 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	}
 }
 
-func podCtx(app *App, path, fieldSel string) ContextFunc {
+func podCtx(_ *App, path, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)

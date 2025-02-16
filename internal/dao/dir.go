@@ -37,7 +37,7 @@ var yamlRX = regexp.MustCompile(`.*\.(yml|yaml|json)`)
 func (a *Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	dir, ok := ctx.Value(internal.KeyPath).(string)
 	if !ok {
-		return nil, errors.New("No dir in context")
+		return nil, errors.New("no dir in context")
 	}
 
 	files, err := os.ReadDir(dir)
@@ -61,5 +61,5 @@ func (a *Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 
 // Get fetch a resource.
 func (a *Dir) Get(_ context.Context, _ string) (runtime.Object, error) {
-	return nil, errors.New("NYI!!")
+	return nil, errors.New("nyi")
 }

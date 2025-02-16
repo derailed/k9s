@@ -1,0 +1,86 @@
+# Manage argo-rollouts from PowerShell
+# See https://argoproj.github.io/argo-rollouts/
+# <g> Get rollout details
+# <w> Watch rollout progress
+# <p> (with confirmation) Promote rollout
+# <r> (with confirmation) Restart rollout
+plugins:
+  argo-rollouts-get:
+    shortCut: g
+    confirm: false
+    description: Get details
+    scopes:
+      - rollouts
+    command: powershell
+    background: false
+    args:
+      - kubectl
+      - argo 
+      - rollouts 
+      - get 
+      - rollout 
+      - $NAME 
+      - --context 
+      - $CONTEXT 
+      - -n 
+      - $NAMESPACE;
+      - $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+  argo-rollouts-watch:
+    shortCut: w
+    confirm: false
+    description: Watch progress
+    scopes:
+      - rollouts
+    command: powershell
+    background: false
+    args:
+      - kubectl 
+      - argo 
+      - rollouts 
+      - get 
+      - rollout 
+      - $NAME 
+      - --context 
+      - $CONTEXT 
+      - -n 
+      - $NAMESPACE 
+      - -w;
+      - $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+  argo-rollouts-promote:
+    shortCut: p
+    confirm: true
+    description: Promote
+    scopes:
+      - rollouts
+    command: powershell
+    background: false
+    args:
+      - kubectl 
+      - argo 
+      - rollouts 
+      - promote 
+      - $NAME 
+      - --context 
+      - $CONTEXT 
+      - -n 
+      - $NAMESPACE;
+      - $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+  argo-rollouts-restart:
+    shortCut: r
+    confirm: true
+    description: Restart
+    scopes:
+      - rollouts
+    command: powershell
+    background: false
+    args:
+      - kubectl 
+      - argo 
+      - rollouts 
+      - restart 
+      - $NAME 
+      - --context 
+      - $CONTEXT 
+      - -n 
+      - $NAMESPACE;
+      - $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')

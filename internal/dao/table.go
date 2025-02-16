@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
@@ -66,7 +65,7 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 			LabelSelector:        labelSel,
 			FieldSelector:        fieldSel,
 			ResourceVersion:      "0",
-			ResourceVersionMatch: v1.ResourceVersionMatchNotOlderThan,
+			ResourceVersionMatch: metav1.ResourceVersionMatchNotOlderThan,
 		}, p).
 		Do(ctx).Get()
 	if err != nil {
@@ -102,7 +101,7 @@ func (t *Table) getClient(f serializer.CodecFactory) (*rest.RESTClient, error) {
 
 func (t *Table) codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	var tt metav1.Table
-	opts := metav1.TableOptions{IncludeObject: v1.IncludeObject}
+	opts := metav1.TableOptions{IncludeObject: metav1.IncludeObject}
 	gv := t.gvr.GV()
 	metav1.AddToGroupVersion(genScheme, gv)
 	genScheme.AddKnownTypes(gv, &tt, &opts)

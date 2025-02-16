@@ -82,23 +82,14 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Alias{},
 		Renderer: &render.Alias{},
 	},
-	// !!BOZO!! Popeye
-	//"popeye": {
-	//	DAO:      &dao.Popeye{},
-	//	Renderer: &render.Popeye{},
-	//},
-	//"sanitizer": {
-	//	DAO:          &dao.Popeye{},
-	//	TreeRenderer: &xray.Section{},
-	//},
 
 	// Core...
-	"v1/endpoints": {
-		Renderer: &render.Endpoints{},
-	},
+	// "v1/endpoints": {
+	// 	Renderer: &render.Endpoints{},
+	// },
 	"v1/pods": {
 		DAO:          &dao.Pod{},
-		Renderer:     &render.Pod{},
+		Renderer:     render.NewPod(),
 		TreeRenderer: &xray.Pod{},
 	},
 	"v1/namespaces": {

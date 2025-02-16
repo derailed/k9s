@@ -152,7 +152,7 @@ func (s *StatefulSet) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan
 		return nil, errors.New("expecting StatefulSet resource")
 	}
 	if sts.Spec.Selector == nil || len(sts.Spec.Selector.MatchLabels) == 0 {
-		return nil, fmt.Errorf("No valid selector found on StatefulSet %s", opts.Path)
+		return nil, fmt.Errorf("no valid selector found on statefulset: %s", opts.Path)
 	}
 
 	return podLogs(ctx, sts.Spec.Selector.MatchLabels, opts)

@@ -48,9 +48,9 @@ func TestTableNew(t *testing.T) {
 		client.NewGVR("test"),
 		model1.Header{
 			model1.HeaderColumn{Name: "NAMESPACE"},
-			model1.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
+			model1.HeaderColumn{Name: "NAME", Attrs: model1.Attrs{Align: tview.AlignRight}},
 			model1.HeaderColumn{Name: "FRED"},
-			model1.HeaderColumn{Name: "AGE", Time: true, Decorator: render.AgeDecorator},
+			model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true, Decorator: render.AgeDecorator}},
 		},
 		model1.NewRowEventsWithEvts(
 			model1.RowEvent{
@@ -132,21 +132,22 @@ type mockTableModel struct{}
 
 var _ ui.Tabular = (*mockTableModel)(nil)
 
-func (t *mockTableModel) SetInstance(string)                 {}
-func (t *mockTableModel) SetLabelFilter(string)              {}
-func (t *mockTableModel) GetLabelFilter() string             { return "" }
-func (t *mockTableModel) Empty() bool                        { return false }
-func (t *mockTableModel) RowCount() int                      { return 1 }
-func (t *mockTableModel) HasMetrics() bool                   { return true }
-func (t *mockTableModel) Peek() *model1.TableData            { return makeTableData() }
-func (t *mockTableModel) Refresh(context.Context) error      { return nil }
-func (t *mockTableModel) ClusterWide() bool                  { return false }
-func (t *mockTableModel) GetNamespace() string               { return "blee" }
-func (t *mockTableModel) SetNamespace(string)                {}
-func (t *mockTableModel) ToggleToast()                       {}
-func (t *mockTableModel) AddListener(model.TableListener)    {}
-func (t *mockTableModel) RemoveListener(model.TableListener) {}
-func (t *mockTableModel) Watch(context.Context) error        { return nil }
+func (t *mockTableModel) SetViewSetting(context.Context, *config.ViewSetting) {}
+func (t *mockTableModel) SetInstance(string)                                  {}
+func (t *mockTableModel) SetLabelFilter(string)                               {}
+func (t *mockTableModel) GetLabelFilter() string                              { return "" }
+func (t *mockTableModel) Empty() bool                                         { return false }
+func (t *mockTableModel) RowCount() int                                       { return 1 }
+func (t *mockTableModel) HasMetrics() bool                                    { return true }
+func (t *mockTableModel) Peek() *model1.TableData                             { return makeTableData() }
+func (t *mockTableModel) Refresh(context.Context) error                       { return nil }
+func (t *mockTableModel) ClusterWide() bool                                   { return false }
+func (t *mockTableModel) GetNamespace() string                                { return "blee" }
+func (t *mockTableModel) SetNamespace(string)                                 {}
+func (t *mockTableModel) ToggleToast()                                        {}
+func (t *mockTableModel) AddListener(model.TableListener)                     {}
+func (t *mockTableModel) RemoveListener(model.TableListener)                  {}
+func (t *mockTableModel) Watch(context.Context) error                         { return nil }
 func (t *mockTableModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
@@ -171,9 +172,9 @@ func makeTableData() *model1.TableData {
 		client.NewGVR("test"),
 		model1.Header{
 			model1.HeaderColumn{Name: "NAMESPACE"},
-			model1.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
+			model1.HeaderColumn{Name: "NAME", Attrs: model1.Attrs{Align: tview.AlignRight}},
 			model1.HeaderColumn{Name: "FRED"},
-			model1.HeaderColumn{Name: "AGE", Time: true},
+			model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 		},
 		model1.NewRowEventsWithEvts(
 			model1.RowEvent{
