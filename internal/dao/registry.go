@@ -411,13 +411,15 @@ func loadCRDs(f Factory, m ResourceMetas) {
 			log.Err(err).Msg("boom")
 			continue
 		}
+		gvr, version, ok := newGVRFromCRD(&crd)
+		if !ok {
+			continue
+		}
 
-		if gvr, version, ok := newGVRFromCRD(&crd); ok {
-			if meta, ok := m[gvr]; ok && version.Subresources != nil && version.Subresources.Scale != nil {
-				if !slices.Contains(meta.Categories, scaleCat) {
-					meta.Categories = append(meta.Categories, scaleCat)
-					m[gvr] = meta
-				}
+		if meta, ok := m[gvr]; ok && version.Subresources != nil && version.Subresources.Scale != nil {
+			if !slices.Contains(meta.Categories, scaleCat) {
+				meta.Categories = append(meta.Categories, scaleCat)
+				m[gvr] = meta
 			}
 		}
 	}
@@ -427,13 +429,10 @@ func newGVRFromCRD(crd *apiext.CustomResourceDefinition) (client.GVR, apiext.Cus
 	for _, v := range crd.Spec.Versions {
 		if v.Served && !v.Deprecated {
 			return client.NewGVRFromMeta(metav1.APIResource{
-				Kind:         crd.Spec.Names.Kind,
-				Group:        crd.Spec.Group,
-				Name:         crd.Spec.Names.Plural,
-				Version:      v.Name,
-				ShortNames:   crd.Spec.Names.ShortNames,
-				SingularName: crd.Spec.Names.Plural,
-				Namespaced:   crd.Spec.Scope == apiext.NamespaceScoped,
+				Kind:    crd.Spec.Names.Kind,
+				Group:   crd.Spec.Group,
+				Name:    strings.TrimSuffix(crd.Name, "."+crd.Spec.Group),
+				Version: v.Name,
 			}), v, true
 		}
 	}
