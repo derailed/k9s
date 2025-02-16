@@ -8,14 +8,15 @@ import (
 	"io"
 	"time"
 
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/watch"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
 	restclient "k8s.io/client-go/rest"
+
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/watch"
 )
 
 // ResourceMetas represents a collection of resource metadata.
@@ -122,6 +123,12 @@ type Describer interface {
 type Scalable interface {
 	// Scale scales a resource up or down.
 	Scale(ctx context.Context, path string, replicas int32) error
+}
+
+// ReplicasGetter represents a resource with replicas.
+type ReplicasGetter interface {
+	// Replicas returns the number of replicas for the resource located at the given path.
+	Replicas(ctx context.Context, path string) (int32, error)
 }
 
 // Controller represents a pod controller.
