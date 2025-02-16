@@ -1030,6 +1030,8 @@ k9s:
     # MenuView attributes and styles.
     menu:
       fgColor: darkblue
+      # Style of menu text. Supported options are "dim" (default), "normal", and "bold"
+      fgStyle: dim
       keyColor: cornflowerblue
       # Used for favorite namespaces
       numKeyColor: cadetblue
