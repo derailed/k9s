@@ -25,8 +25,27 @@ func TestNodeRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "minikube", r.ID)
-	e := model1.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "Buildroot 2018.05.3", "4.15.0", "192.168.64.107", "<none>", "0", "10", "20", "0", "0", "4000", "7874"}
-	assert.Equal(t, e, r.Fields[:17])
+	e := model1.Fields{
+		"minikube",            // NAME
+		"Ready",               // STATUS
+		"master",              // ROLE
+		"amd64",               // ARCH
+		"0",                   // TAINTS
+		"",                    // TAINTS-LIST
+		"v1.15.2",             // VERSION
+		"Buildroot 2018.05.3", // OS-IMAGE
+		"4.15.0",              // KERNEL
+		"192.168.64.107",      // INTERNAL-IP
+		"<none>",              // EXTERNAL-IP
+		"0",                   // PODS
+		"10",                  // CPU
+		"20",                  // MEM
+		"0",                   // %CPU
+		"0",                   // %MEM
+		"4000",                // CPU/A
+		"7874",                // MEM/A
+	}
+	assert.Equal(t, e, r.Fields[:18])
 }
 
 func BenchmarkNodeRender(b *testing.B) {

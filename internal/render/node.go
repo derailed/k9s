@@ -41,7 +41,8 @@ func (Node) defaultHeader() model1.Header {
 		model1.HeaderColumn{Name: "STATUS"},
 		model1.HeaderColumn{Name: "ROLE"},
 		model1.HeaderColumn{Name: "ARCH", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "TAINTS"},
+		model1.HeaderColumn{Name: "TAINTS"},                                       // Numeric count
+		model1.HeaderColumn{Name: "TAINTS-LIST", Attrs: model1.Attrs{Wide: true}}, // List format
 		model1.HeaderColumn{Name: "VERSION"},
 		model1.HeaderColumn{Name: "OS-IMAGE", Attrs: model1.Attrs{Wide: true}},
 		model1.HeaderColumn{Name: "KERNEL", Attrs: model1.Attrs{Wide: true}},
@@ -111,7 +112,8 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 		join(statuses, ","),
 		join(roles, ","),
 		no.Status.NodeInfo.Architecture,
-		strconv.Itoa(len(no.Spec.Taints)),
+		strconv.Itoa(len(no.Spec.Taints)), // TAINTS/N - numeric count
+		formatTaints(no.Spec.Taints),      // TAINTS/L - list format
 		no.Status.NodeInfo.KubeletVersion,
 		no.Status.NodeInfo.OSImage,
 		no.Status.NodeInfo.KernelVersion,
@@ -130,6 +132,21 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 	}
 
 	return nil
+}
+
+func formatTaints(taints []v1.Taint) string {
+	if len(taints) == 0 {
+		return ""
+	}
+	var ss []string
+	for _, t := range taints {
+		if t.Value == "" {
+			ss = append(ss, fmt.Sprintf("%s:%s", t.Key, t.Effect))
+		} else {
+			ss = append(ss, fmt.Sprintf("%s=%s:%s", t.Key, t.Value, t.Effect))
+		}
+	}
+	return strings.Join(ss, " ")
 }
 
 func (Node) diagnose(ss []string) error {
