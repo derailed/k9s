@@ -1,6 +1,6 @@
 name: k9s
 base: core22
-version: 'v0.40.0'
+version: 'v0.40.1'
 summary: K9s is a CLI to view and manage your Kubernetes clusters.
 description: |
   K9s is a CLI to view and manage your Kubernetes clusters. By leveraging a terminal UI, you can easily traverse Kubernetes resources and view the state of your clusters in a single powerful session.
