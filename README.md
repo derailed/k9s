@@ -362,6 +362,8 @@ K9s uses aliases to navigate most K8s resources.
 | To view and switch to another Kubernetes context (Pod view)                     | `:`ctx⏎                       |                                                                        |
 | To view and switch directly to another Kubernetes context (Last used view)      | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace                              | `:`ns⏎                        |                                                                        |
+| To switch back to the last active command (like how "cd -" works)               | `-`                           | Navigation that adds breadcrumbs to the bottom are not commands        |
+| To go back and forward through the command history                              | back: `[`, forward: `]`       | Same as above                                                          |
 | To view all saved resources                                                     | `:`screendump or sd⏎          |                                                                        |
 | To delete a resource (TAB and ENTER to confirm)                                 | `ctrl-d`                      |                                                                        |
 | To kill a resource (no confirmation dialog, equivalent to kubectl delete --now) | `ctrl-k`                      |                                                                        |
