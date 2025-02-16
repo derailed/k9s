@@ -17,8 +17,10 @@ import (
 	"k8s.io/client-go/util/jsonpath"
 )
 
+// ColsSpecs represents a collection of column specification ie NAME:spec|flags.
 type ColsSpecs []string
 
+// NewColsSpecs returns a new instance.
 func NewColsSpecs(cols ...string) ColsSpecs {
 	return ColsSpecs(cols)
 }
@@ -40,6 +42,7 @@ func (cc ColsSpecs) parseSpecs() (ColumnSpecs, error) {
 	return specs, nil
 }
 
+// RenderedCols tracks a collection of column header and cust column parse expression.
 type RenderedCols []RenderedCol
 
 func (rr RenderedCols) hydrateRow(row *model1.Row) {
@@ -50,6 +53,7 @@ func (rr RenderedCols) hydrateRow(row *model1.Row) {
 	row.Fields = ff
 }
 
+// HasHeader checks if a given header is present in the collection.
 func (rr RenderedCols) HasHeader(n string) bool {
 	for _, r := range rr {
 		if r.has(n) {
@@ -60,26 +64,31 @@ func (rr RenderedCols) HasHeader(n string) bool {
 	return false
 }
 
+// RenderedCol represents a column header and a column spec.
 type RenderedCol struct {
 	Header model1.HeaderColumn
 	Value  string
 }
 
+// Has checks if the header column match the given name.
 func (r RenderedCol) has(n string) bool {
 	return r.Header.Name == n
 }
 
+// ColumnSpec tracks a header column and an options cust column spec.
 type ColumnSpec struct {
 	Header model1.HeaderColumn
 	Spec   string
 }
 
+// ColumnSpecs tracks a collection of column specs.
 type ColumnSpecs []ColumnSpec
 
 func (c ColumnSpecs) isEmpty() bool {
 	return len(c) == 0
 }
 
+// Header builds a new header that is a super set of custom and/or default header.
 func (cc ColumnSpecs) Header(rh model1.Header) model1.Header {
 	hh := make(model1.Header, 0, len(cc))
 	for _, h := range cc {

@@ -157,9 +157,12 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 func (t *Table) ViewSettingsChanged(vs *config.ViewSetting) {
 	if t.setViewSetting(vs) {
 		if vs == nil {
-			t.setSortCol(model1.SortColumn{})
+			if !t.getMSort() {
+				t.setSortCol(model1.SortColumn{})
+			}
+		} else {
+			t.setMSort(false)
 		}
-		t.setMSort(false)
 		t.Refresh()
 	}
 }

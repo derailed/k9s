@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,8 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"github.com/derailed/k9s/internal/client"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -32,19 +32,19 @@ const (
 // MetaAccess tracks resources metadata.
 var MetaAccess = NewMeta()
 
-var stdGroups = map[string]struct{}{
-	"apps/v1":             {},
-	"autoscaling/v1":      {},
-	"autoscaling/v2":      {},
-	"autoscaling/v2beta1": {},
-	"autoscaling/v2beta2": {},
-	"batch/v1":            {},
-	"batch/v1beta1":       {},
-	"extensions/v1beta1":  {},
-	"policy/v1beta1":      {},
-	"policy/v1":           {},
-	"v1":                  {},
-}
+var stdGroups = sets.New[string](
+	"apps/v1",
+	"autoscaling/v1",
+	"autoscaling/v2",
+	"autoscaling/v2beta1",
+	"autoscaling/v2beta2",
+	"batch/v1",
+	"batch/v1beta1",
+	"extensions/v1beta1",
+	"policy/v1beta1",
+	"policy/v1",
+	"v1",
+)
 
 func (m ResourceMetas) clear() {
 	for k := range m {
@@ -381,20 +381,15 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 }
 
 func isStandardGroup(gv string) bool {
-	if _, ok := stdGroups[gv]; ok {
-		return true
-	}
-
-	return strings.Contains(gv, "k8s.io")
+	return stdGroups.Has(gv) || strings.Contains(gv, "k8s.io")
 }
 
-var deprecatedGVRs = map[client.GVR]struct{}{
-	client.NewGVR("extensions/v1beta1/ingresses"): {},
-}
+var deprecatedGVRs = sets.New[client.GVR](
+	client.NewGVR("extensions/v1beta1/ingresses"),
+)
 
 func isDeprecated(gvr client.GVR) bool {
-	_, ok := deprecatedGVRs[gvr]
-	return ok
+	return deprecatedGVRs.Has(gvr)
 }
 
 // loadCRDs Wait for the cache to synced and then add some additional properties to CRD.

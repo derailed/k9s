@@ -4,7 +4,6 @@ package dao
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -24,12 +23,29 @@ type Dynamic struct {
 	Generic
 }
 
+// Get returns a given resource as a table object.
 func (d *Dynamic) Get(ctx context.Context, path string) (runtime.Object, error) {
-	return nil, errors.New("Not implemented")
+	oo, err := d.toTable(ctx, path)
+	if err != nil || len(oo) == 0 {
+		return nil, err
+	}
+
+	return oo[0], nil
 }
 
+// List returns a collection of resources as one or more table objects.
 func (d *Dynamic) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	return d.toTable(ctx, ns)
+}
+
+func (d *Dynamic) toTable(ctx context.Context, fqn string) ([]runtime.Object, error) {
 	strLabel, _ := ctx.Value(internal.KeyLabels).(string)
+
+	opts := []string{d.gvr.R()}
+	ns, n := client.Namespaced(fqn)
+	if n != "" {
+		opts = append(opts, n)
+	}
 
 	allNS := client.IsAllNamespaces(ns)
 	flags := cmdutil.NewMatchVersionFlags(d.getFactory().Client().Config().Flags())
@@ -40,7 +56,7 @@ func (d *Dynamic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 		LabelSelectorParam(strLabel).
 		FieldSelectorParam("").
 		RequestChunksOf(0).
-		ResourceTypeOrNameArgs(true, d.gvr.R()).
+		ResourceTypeOrNameArgs(true, opts...).
 		ContinueOnError().
 		Latest().
 		Flatten().
