@@ -31,7 +31,7 @@ type K9s struct {
 	ImageScans          ImageScans `json:"imageScans" yaml:"imageScans"`
 	Logger              Logger     `json:"logger" yaml:"logger"`
 	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
-	InitialView         string     `json:"initialView" yaml:"initialView"`
+	DefaultView         string     `json:"defaultView" yaml:"defaultView"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
@@ -95,7 +95,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	}
 
 	k.LiveViewAutoRefresh = k1.LiveViewAutoRefresh
-	k.InitialView = k1.InitialView
+	k.DefaultView = k1.DefaultView
 	k.ScreenDumpDir = k1.ScreenDumpDir
 	k.RefreshRate = k1.RefreshRate
 	k.MaxConnRetry = k1.MaxConnRetry

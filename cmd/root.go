@@ -109,8 +109,8 @@ func run(cmd *cobra.Command, args []string) error {
 		log.Error().Err(err).Msgf("Fail to load global/context configuration")
 	}
 	app := view.NewApp(cfg)
-	if app.Config.K9s.InitialView != "" {
-		app.Config.SetActiveView(app.Config.K9s.InitialView)
+	if app.Config.K9s.DefaultView != "" {
+		app.Config.SetActiveView(app.Config.K9s.DefaultView)
 	}
 
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {

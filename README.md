@@ -390,8 +390,6 @@ You can now override the context portForward default address configuration by se
     maxConnRetry: 5
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
-    # This setting allows users to specify the initial view, but it is not set by default.
-    initialView: ""
     # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
     #UI settings
