@@ -1,0 +1,65 @@
+# Author: Qasim Sarfraz
+# Trace DNS requests for containers, pods, and nodes
+# Requires kubectl version 1.30 or later
+# https://github.com/inspektor-gadget/inspektor-gadget
+# https://www.inspektor-gadget.io/docs/latest/gadgets/trace_dns
+plugins:
+  trace-dns:
+    shortCut: Shift-D
+    description: Trace DNS requests
+    scopes:
+      - containers
+      - pods
+      - nodes
+    command: bash
+    confirm: false
+    background: false
+    args:
+      - -c
+      - |
+        IG_VERSION=v0.34.0
+        IG_IMAGE=ghcr.io/inspektor-gadget/ig:$IG_VERSION
+        IG_FIELD=k8s.podName,src,dst,qr,qtype,name,rcode,latency_ns
+        
+        GREEN='\033[0;32m'
+        RED='\033[0;31m'
+        BLUE='\033[0;34m'
+        NC='\033[0m' # No Color
+        
+        # Ensure kubectl version is 1.30 or later
+        KUBECTL_VERSION=$(kubectl version --client | awk '/Client Version:/{print $3}')
+        if [[ "$(echo "$KUBECTL_VERSION" | cut -d. -f2)" -lt 30 ]]; then
+          echo -e "${RED}kubectl version 1.30 or later is required${NC}"
+          sleep 3
+          exit
+        fi
+        
+        clear
+
+        # Handle containers
+        if [[ -n "$POD" ]]; then
+          echo -e "${GREEN}Tracing DNS requests for container ${BLUE}${NAME}${GREEN} in pod ${BLUE}${POD}${GREEN} in namespace ${BLUE}${NAMESPACE}${NC}"
+          IG_NODE=$(kubectl get pod "$POD" -n "$NAMESPACE" -o jsonpath='{.spec.nodeName}')
+          kubectl debug --kubeconfig=$KUBECONFIG  --context=$CONTEXT -q \
+            --profile=sysadmin "node/$IG_NODE" -it --image="$IG_IMAGE" -- \
+            ig run trace_dns:$IG_VERSION -F "k8s.podName==$POD" -F "k8s.containerName=$NAME" \
+            --fields "$IG_FIELD"
+            exit
+        fi
+        
+        # Handle pods
+        if [[ -n "$NAMESPACE" ]]; then
+          echo -e "${GREEN}Tracing DNS requests for pod ${BLUE}${NAME}${GREEN} in namespace ${BLUE}${NAMESPACE}${NC}"
+          IG_NODE=$(kubectl get pod "$NAME" -n "$NAMESPACE" -o jsonpath='{.spec.nodeName}')
+          kubectl debug --kubeconfig=$KUBECONFIG  --context=$CONTEXT -q \
+            --profile=sysadmin  -it --image="$IG_IMAGE" "node/$IG_NODE" -- \
+            ig run trace_dns:$IG_VERSION -F "k8s.podName==$NAME" \
+            --fields "$IG_FIELD"
+            exit
+        fi
+        
+        # Handle nodes
+        echo -e "${GREEN}Tracing DNS requests for node ${BLUE}${NAME}${NC}"
+        kubectl debug --kubeconfig=$KUBECONFIG  --context=$CONTEXT -q \
+          --profile=sysadmin -it --image="$IG_IMAGE" "node/$NAME" -- \
+          ig run trace_dns:$IG_VERSION --fields "$IG_FIELD"

@@ -26,7 +26,7 @@ Provided your K8s services are head(Full), you can now navigate to the pods that
 
 ### Moving Forward!
 
-In this drop, we've added support for port-forwarding that allows you to exercise your container from your local machine. To setup a port-forward, from the Pod view drill down to a selected Pod's containers, select the container that exposes the port of interest and hit `Ctrl-F`. A dialog will popup allowing you to configure a localhost port to forward to. Once set up, K9s will take you to you to the new PortForward view aka `pf`. Pending your terminal feature and container setup, you should be able to pop the forwarded URL directly into your browse. On iTerm2 me think `command+click` does the trick?
+In this drop, we've added support for port-forwarding that allows you to exercise your container from your local machine. To setup a port-forward, from the Pod view drill down to a selected Pod's containers, select the container that exposes the port of interest and hit `Ctrl-F`. A dialog will popup allowing you to configure a localhost port to forward to. Once set up, K9s will take you to the new PortForward view aka `pf`. Pending your terminal feature and container setup, you should be able to pop the forwarded URL directly into your browse. On iTerm2 me think `command+click` does the trick?
 
 Big thanks and ATTABOY! in full effect all week to [Brent](https://github.com/brentco) for filing this initial issue. Please keep in mind, these port-forward babies are a bit expensive to run, so make sure you choose wisely and delete any superfluous PFs!!
 

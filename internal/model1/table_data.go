@@ -171,7 +171,7 @@ func (t *TableData) rxFilter(q string, inverse bool) (*RowEvents, error) {
 	if _, ok := t.header.IndexOf("NAMESPACE", true); ok && client.IsNamespaced(t.namespace) {
 		startIndex = 1
 	}
-	rr := NewRowEvents(50)
+	rr := NewRowEvents(t.RowCount() / 2)
 	ageIndex, _ := t.header.IndexOf("AGE", true)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
 		ff := re.Row.Fields[startIndex:]
@@ -212,12 +212,11 @@ func (t *TableData) fuzzyFilter(q string) *RowEvents {
 }
 
 func (t *TableData) filterToast() *RowEvents {
+	rr := NewRowEvents(10)
 	idx, ok := t.header.IndexOf("VALID", true)
 	if !ok {
-		return nil
+		return rr
 	}
-
-	rr := NewRowEvents(10)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
 		if re.Row.Fields[idx] != "" {
 			rr.Add(re)
@@ -323,35 +322,21 @@ func (t *TableData) Labelize(labels []string) *TableData {
 }
 
 // Customize returns a new model with customized column layout.
-func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual, wide bool) (*TableData, SortColumn) {
+func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual bool) (*TableData, SortColumn) {
 	if vs.IsBlank() {
 		if sc.Name != "" {
 			return t, sc
 		}
-		psc, err := t.sortCol(vs)
-		if err == nil {
+		if psc, err := t.sortCol(vs); err == nil {
 			return t, psc
 		}
 		return t, sc
 	}
-
-	cols := vs.Columns
-	cdata := TableData{
-		gvr:       t.gvr,
-		namespace: t.namespace,
-		header:    t.header.Customize(cols, wide),
-	}
-	ids := t.header.MapIndices(cols, wide)
-	cdata.rowEvents = t.rowEvents.Customize(ids)
-	if manual || vs == nil {
-		return &cdata, sc
-	}
-	psc, err := cdata.sortCol(vs)
-	if err != nil {
-		return &cdata, sc
+	if s, asc, err := vs.SortCol(); err == nil {
+		return t, SortColumn{Name: s, ASC: asc}
 	}
 
-	return &cdata, psc
+	return t, sc
 }
 
 func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {

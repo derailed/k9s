@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -105,6 +107,8 @@ func (m mockKubeSettings) ContextNames() (map[string]struct{}, error) {
 
 	return mm, nil
 }
+
+func (m mockKubeSettings) SetProxy(proxy func(*http.Request) (*url.URL, error)) {}
 
 type mockConnection struct {
 	ct string

@@ -62,7 +62,7 @@ func (p Plugins) Load(path string) error {
 		errs = errors.Join(errs, err)
 	}
 
-	for _, dataDir := range xdg.DataDirs {
+	for _, dataDir := range append(xdg.DataDirs, xdg.DataHome, xdg.ConfigHome) {
 		if err := p.loadPluginDir(filepath.Join(dataDir, k9sPluginsDir)); err != nil {
 			errs = errors.Join(errs, err)
 		}
@@ -88,9 +88,9 @@ func (p Plugins) loadPluginDir(dir string) error {
 			errs = errors.Join(errs, err)
 		}
 		var plugin Plugin
-		if err = yaml.Unmarshal(fileContent, &plugin); err != nil {
+		if err = yaml.UnmarshalStrict(fileContent, &plugin); err != nil {
 			var plugins Plugins
-			if err = yaml.Unmarshal(fileContent, &plugins); err != nil {
+			if err = yaml.UnmarshalStrict(fileContent, &plugins); err != nil {
 				return fmt.Errorf("cannot parse %s into either a single plugin nor plugins: %w", fileName, err)
 			}
 			for name, plugin := range plugins.Plugins {

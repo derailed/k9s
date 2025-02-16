@@ -20,15 +20,16 @@ type DrainFunc func(v ResourceViewer, sels []string, opts dao.DrainOptions)
 
 // ShowDrain pops a node drain dialog.
 func ShowDrain(view ResourceViewer, sels []string, opts dao.DrainOptions, okFn DrainFunc) {
-	styles := view.App().Styles
+	styles := view.App().Styles.Dialog()
 
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(styles.BgColor()).
-		SetButtonTextColor(styles.FgColor()).
-		SetLabelColor(styles.K9s.Info.FgColor.Color()).
-		SetFieldTextColor(styles.K9s.Info.SectionColor.Color())
+	f := tview.NewForm().
+		SetItemPadding(0).
+		SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color()).
+		SetFieldBackgroundColor(styles.BgColor.Color())
 
 	f.AddInputField("GracePeriod:", strconv.Itoa(opts.GracePeriodSeconds), 0, nil, func(v string) {
 		a, err := asIntOpt(v)
@@ -51,11 +52,14 @@ func ShowDrain(view ResourceViewer, sels []string, opts dao.DrainOptions, okFn D
 	f.AddCheckbox("Ignore DaemonSets:", opts.IgnoreAllDaemonSets, func(_ string, v bool) {
 		opts.IgnoreAllDaemonSets = v
 	})
-	f.AddCheckbox("Delete Local Data:", opts.DeleteEmptyDirData, func(_ string, v bool) {
+	f.AddCheckbox("Delete EmptyDir Data:", opts.DeleteEmptyDirData, func(_ string, v bool) {
 		opts.DeleteEmptyDirData = v
 	})
 	f.AddCheckbox("Force:", opts.Force, func(_ string, v bool) {
 		opts.Force = v
+	})
+	f.AddCheckbox("Disable Eviction:", opts.DisableEviction, func(_ string, v bool) {
+		opts.DisableEviction = v
 	})
 
 	pages := view.App().Content.Pages

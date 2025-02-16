@@ -75,6 +75,26 @@ func Test_contextMerge(t *testing.T) {
 			c2: &Context{},
 			e:  NewContext(),
 		},
+		"too-many-favs": {
+			c1: &Context{
+				Namespace: &Namespace{
+					Active:    "ns1",
+					Favorites: []string{"ns1", "ns2", "ns3", "ns4", "ns5", "ns6", "ns7", "ns8", "ns9"},
+				},
+			},
+			c2: &Context{
+				Namespace: &Namespace{
+					Active:    "ns10",
+					Favorites: []string{"ns10", "ns11", "ns12"},
+				},
+			},
+			e: &Context{
+				Namespace: &Namespace{
+					Active:    "ns1",
+					Favorites: []string{"ns1", "ns2", "ns3", "ns4", "ns5", "ns6", "ns7", "ns8", "ns9"},
+				},
+			},
+		},
 	}
 
 	for k, u := range uu {

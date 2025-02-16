@@ -31,44 +31,61 @@ type Node struct {
 }
 
 // Header returns a header row.
-func (Node) Header(string) model1.Header {
+func (n Node) Header(_ string) model1.Header {
+	return n.doHeader(n.defaultHeader())
+}
+
+func (Node) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "STATUS"},
 		model1.HeaderColumn{Name: "ROLE"},
-		model1.HeaderColumn{Name: "ARCH", Wide: true},
+		model1.HeaderColumn{Name: "ARCH", Attrs: model1.Attrs{Wide: true}},
 		model1.HeaderColumn{Name: "TAINTS"},
 		model1.HeaderColumn{Name: "VERSION"},
-		model1.HeaderColumn{Name: "OS-IMAGE", Wide: true},
-		model1.HeaderColumn{Name: "KERNEL", Wide: true},
-		model1.HeaderColumn{Name: "INTERNAL-IP", Wide: true},
-		model1.HeaderColumn{Name: "EXTERNAL-IP", Wide: true},
-		model1.HeaderColumn{Name: "PODS", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "CPU/A", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "OS-IMAGE", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "KERNEL", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "INTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "EXTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "PODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "CPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "MEM/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n Node) Render(o interface{}, ns string, r *model1.Row) error {
-	oo, ok := o.(*NodeWithMetrics)
+func (n Node) Render(o interface{}, ns string, row *model1.Row) error {
+	nwm, ok := o.(*NodeWithMetrics)
 	if !ok {
-		return fmt.Errorf("expected *NodeAndMetrics, but got %T", o)
+		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
 	}
-	meta, ok := oo.Raw.Object["metadata"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("unable to extract meta")
+	if err := n.defaultRow(nwm, row); err != nil {
+		return err
 	}
-	na := extractMetaField(meta, "name")
+	if n.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := n.specs.realize(nwm.Raw, n.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 	var no v1.Node
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(oo.Raw.Object, &no)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(nwm.Raw.Object, &no)
 	if err != nil {
 		return err
 	}
@@ -76,7 +93,7 @@ func (n Node) Render(o interface{}, ns string, r *model1.Row) error {
 	iIP, eIP := getIPs(no.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	c, a := gatherNodeMX(&no, oo.MX)
+	c, a := gatherNodeMX(&no, nwm.MX)
 	statuses := make(sort.StringSlice, 10)
 	status(no.Status.Conditions, no.Spec.Unschedulable, statuses)
 	sort.Sort(statuses)
@@ -84,11 +101,11 @@ func (n Node) Render(o interface{}, ns string, r *model1.Row) error {
 	nodeRoles(&no, roles)
 	sort.Sort(roles)
 
-	podCount := strconv.Itoa(oo.PodCount)
-	if pc := oo.PodCount; pc == -1 {
+	podCount := strconv.Itoa(nwm.PodCount)
+	if pc := nwm.PodCount; pc == -1 {
 		podCount = NAValue
 	}
-	r.ID = client.FQN("", na)
+	r.ID = client.FQN("", no.Name)
 	r.Fields = model1.Fields{
 		no.Name,
 		join(statuses, ","),

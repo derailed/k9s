@@ -4,6 +4,7 @@
 package data
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -47,11 +48,13 @@ func (n *Namespace) merge(old *Namespace) {
 		return
 	}
 	for _, fav := range old.Favorites {
-		if InList(n.Favorites, fav) {
+		if slices.Contains(n.Favorites, fav) {
 			continue
 		}
 		n.Favorites = append(n.Favorites, fav)
 	}
+
+	n.trimFavNs()
 }
 
 // Validate validates a namespace is setup correctly.
@@ -69,12 +72,7 @@ func (n *Namespace) Validate(c client.Connection) {
 		}
 	}
 
-	if len(n.Favorites) > MaxFavoritesNS {
-		log.Debug().Msgf("[Namespace] Number of favorite exceeds hard limit of %v. Trimming.", MaxFavoritesNS)
-		for _, ns := range n.Favorites[MaxFavoritesNS:] {
-			n.rmFavNS(ns)
-		}
-	}
+	n.trimFavNs()
 }
 
 // SetActive set the active namespace.
@@ -103,7 +101,7 @@ func (n *Namespace) isAllNamespaces() bool {
 }
 
 func (n *Namespace) addFavNS(ns string) {
-	if InList(n.Favorites, ns) {
+	if slices.Contains(n.Favorites, ns) {
 		return
 	}
 
@@ -134,4 +132,11 @@ func (n *Namespace) rmFavNS(ns string) {
 	}
 
 	n.Favorites = append(n.Favorites[:victim], n.Favorites[victim+1:]...)
+}
+
+func (n *Namespace) trimFavNs() {
+	if len(n.Favorites) > MaxFavoritesNS {
+		log.Debug().Msgf("[Namespace] Number of favorite exceeds hard limit of %v. Trimming.", MaxFavoritesNS)
+		n.Favorites = n.Favorites[:MaxFavoritesNS]
+	}
 }

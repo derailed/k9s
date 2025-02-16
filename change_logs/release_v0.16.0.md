@@ -39,7 +39,7 @@ NOTE: Pulses are very much experimental and could totally bomb on your clusters!
 
 ## BReaking Bad!
 
-In this drop I've broken a few things (that I know off...), here is the list as I can recall...
+In this drop I've broken a few things (that I know of...), here is the list as I can recall...
 
 1. Toggle header aka `my red headed step child`. Key moved (again!) now `Ctrl-e`
 2. Skin yaml layout CHANGED! Moved table and xray sections under views and added charts section.

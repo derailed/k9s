@@ -107,7 +107,7 @@ func (v *OwnerExtender) jumpOwner(ns string, owner metav1.OwnerReference) error 
 		ownerFQN = owner.Name
 	}
 
-	v.App().gotoResource(gvr.String(), ownerFQN, false)
+	v.App().gotoResource(gvr.String(), ownerFQN, false, true)
 	return nil
 }
 

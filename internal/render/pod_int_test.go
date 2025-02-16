@@ -4,12 +4,15 @@
 package render
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	res "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -354,6 +357,81 @@ func Test_filterSidecarCO(t *testing.T) {
 	}
 }
 
+func Test_lastRestart(t *testing.T) {
+	uu := map[string]struct {
+		containerStatuses []v1.ContainerStatus
+		expected          metav1.Time
+	}{
+		"no-restarts": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name:                 "c1",
+					LastTerminationState: v1.ContainerState{},
+				},
+			},
+			expected: metav1.Time{},
+		},
+		"single-container-restart": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name: "c1",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+		"multiple-container-restarts": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name: "c1",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime().Add(-1 * time.Hour)},
+						},
+					},
+				},
+				{
+					Name: "c2",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+		"mixed-termination-states": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name:                 "c1",
+					LastTerminationState: v1.ContainerState{},
+				},
+				{
+					Name: "c2",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+	}
+
+	var p Pod
+	for name, u := range uu {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, u.expected, p.lastRestart(u.containerStatuses))
+		})
+	}
+}
+
 func Test_gatherPodMx(t *testing.T) {
 	uu := map[string]struct {
 		spec *v1.PodSpec
@@ -545,4 +623,12 @@ func makeCoMX(n string, c, m string) mv1beta1.ContainerMetrics {
 		Name:  n,
 		Usage: makeRes(c, m),
 	}
+}
+
+func testTime() time.Time {
+	t, err := time.Parse(time.RFC3339, "2018-12-14T10:36:43.326972-07:00")
+	if err != nil {
+		fmt.Println("TestTime Failed", err)
+	}
+	return t
 }

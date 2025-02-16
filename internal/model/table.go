@@ -13,6 +13,7 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/rs/zerolog/log"
@@ -41,6 +42,7 @@ type Table struct {
 	instance    string
 	labelFilter string
 	mx          sync.RWMutex
+	vs          *config.ViewSetting
 }
 
 // NewTable returns a new table model.
@@ -49,6 +51,20 @@ func NewTable(gvr client.GVR) *Table {
 		gvr:         gvr,
 		data:        model1.NewTableData(gvr),
 		refreshRate: 2 * time.Second,
+	}
+}
+
+func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
+	t.mx.Lock()
+	{
+		t.vs = vs
+	}
+	t.mx.Unlock()
+
+	if ctx != context.Background() {
+		if err := t.reconcile(ctx); err != nil {
+			log.Err(err).Msgf("refresh failed for gvr: %s", t.gvr)
+		}
 	}
 }
 
@@ -192,7 +208,11 @@ func (t *Table) updater(ctx context.Context) {
 		case <-time.After(rate):
 			rate = t.refreshRate
 			err := backoff.Retry(func() error {
-				return t.refresh(ctx)
+				if err := t.refresh(ctx); err != nil {
+					log.Err(err).Msgf("refresh failed for gvr: %s", t.gvr)
+					return err
+				}
+				return nil
 			}, backoff.WithContext(bf, ctx))
 			if err != nil {
 				log.Warn().Err(err).Msgf("reconciler exited")
@@ -247,6 +267,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 		err error
 	)
 	meta := resourceMeta(t.gvr)
+	meta.DAO.SetIncludeObject(true)
 	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	if t.instance == "" {
 		oo, err = t.list(ctx, meta.DAO)
@@ -257,6 +278,8 @@ func (t *Table) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	r := meta.Renderer
+	r.SetViewSetting(t.vs)
 
 	return t.data.Reconcile(ctx, meta.Renderer, oo)
 }

@@ -79,6 +79,7 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 		Timeout:             o.Timeout,
 		DeleteEmptyDirData:  o.DeleteEmptyDirData,
 		IgnoreAllDaemonSets: o.IgnoreAllDaemonSets,
+		DisableEviction:     o.DisableEviction,
 		Out:                 w,
 		ErrOut:              w,
 		Force:               o.Force,
@@ -256,7 +257,7 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	o, err := f.Get("v1/nodes", client.FQN(client.ClusterScope, path), false, labels.Everything())
+	o, err := f.Get("v1/nodes", client.FQN(client.ClusterScope, path), true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

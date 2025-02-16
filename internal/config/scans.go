@@ -61,7 +61,7 @@ func NewImageScans() ImageScans {
 	}
 }
 
-// ShouldExclude checks if scan should be excluder given ns/labels
+// ShouldExclude checks if scan should be excluded given ns/labels
 func (i ImageScans) ShouldExclude(ns string, ll map[string]string) bool {
 	if !i.Enable {
 		return false

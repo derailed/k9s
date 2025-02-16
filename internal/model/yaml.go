@@ -15,7 +15,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -207,30 +206,4 @@ func (y *YAML) ToYAML(ctx context.Context, gvr client.GVR, path string, showMana
 	}
 
 	return desc.ToYAML(path, showManaged)
-}
-
-func getMeta(ctx context.Context, gvr client.GVR) (ResourceMeta, error) {
-	meta := resourceMeta(gvr)
-	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
-	if !ok {
-		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
-	}
-	meta.DAO.Init(factory, gvr)
-
-	return meta, nil
-}
-
-func resourceMeta(gvr client.GVR) ResourceMeta {
-	meta, ok := Registry[gvr.String()]
-	if !ok {
-		meta = ResourceMeta{
-			DAO:      &dao.Table{},
-			Renderer: &render.Generic{},
-		}
-	}
-	if meta.DAO == nil {
-		meta.DAO = &dao.Resource{}
-	}
-
-	return meta
 }

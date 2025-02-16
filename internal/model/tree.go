@@ -241,7 +241,7 @@ func (t *Tree) resourceMeta() ResourceMeta {
 	if !ok {
 		meta = ResourceMeta{
 			DAO:      &dao.Table{},
-			Renderer: &render.Generic{},
+			Renderer: &render.Table{},
 		}
 	}
 	if meta.DAO == nil {

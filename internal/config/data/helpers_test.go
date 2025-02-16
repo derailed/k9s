@@ -6,6 +6,7 @@ package data_test
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config/data"
@@ -57,13 +58,13 @@ func TestHelperInList(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		assert.Equal(t, u.expected, data.InList(u.list, u.item))
+		assert.Equal(t, u.expected, slices.Contains(u.list, u.item))
 	}
 }
 
 func TestEnsureDirPathNone(t *testing.T) {
 	var mod os.FileMode = 0744
-	dir := filepath.Join("/tmp", "fred")
+	dir := filepath.Join("/tmp", "k9s-test")
 	os.Remove(dir)
 
 	path := filepath.Join(dir, "duh.yaml")

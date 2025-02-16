@@ -79,6 +79,9 @@ type Accessor interface {
 
 	// GVR returns a gvr a string.
 	GVR() string
+
+	// SetIncludeObject toggles object inclusion.
+	SetIncludeObject(bool)
 }
 
 // DrainOptions tracks drain attributes.
@@ -88,6 +91,7 @@ type DrainOptions struct {
 	IgnoreAllDaemonSets bool
 	DeleteEmptyDirData  bool
 	Force               bool
+	DisableEviction     bool
 }
 
 // NodeMaintainer performs node maintenance operations.

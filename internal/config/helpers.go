@@ -8,12 +8,11 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/derailed/k9s/internal/config/data"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
 )
 
-func isBoolSet(b *bool) bool {
+// IsBoolSet checks if a bool ptr is set.
+func IsBoolSet(b *bool) bool {
 	return b != nil && *b
 }
 
@@ -43,17 +42,6 @@ func UserTmpDir() (string, error) {
 	return dir, nil
 }
 
-// InNSList check if ns is in an ns collection.
-func InNSList(nn []interface{}, ns string) bool {
-	ss := make([]string, len(nn))
-	for i, n := range nn {
-		if nsp, ok := n.(v1.Namespace); ok {
-			ss[i] = nsp.Name
-		}
-	}
-	return data.InList(ss, ns)
-}
-
 // MustK9sUser establishes current user identity or fail.
 func MustK9sUser() string {
 	usr, err := user.Current()
@@ -69,9 +57,4 @@ func MustK9sUser() string {
 		log.Fatal().Err(err).Msg("Die on retrieving user info")
 	}
 	return usr.Username
-}
-
-// IsBoolSet checks if a bool prt is set.
-func IsBoolSet(b *bool) bool {
-	return b != nil && *b
 }

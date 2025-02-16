@@ -55,7 +55,7 @@ Please give `Big Thanks!` and `ATTA Girls/Boys!` to all the fine contributors fo
 
 * [PR #1910](https://github.com/derailed/k9s/pull/1910) Replace x86_64 to amd64 build
 * [PR #1877](https://github.com/derailed/k9s/pull/1877) Bug: portforward custom containers not showing
-* [PR #1874](https://github.com/derailed/k9s/pull/1874) Feat: Add noLastestRevCheck config option
+* [PR #1874](https://github.com/derailed/k9s/pull/1874) Feat: Add noLatestRevCheck config option
 * [PR #1872](https://github.com/derailed/k9s/pull/1872) Docs: Add k8s client compatibility matrix
 * [PR #1871](https://github.com/derailed/k9s/pull/1871) Bug: update scanSA calls to account for blank service accounts
 * [PR #1866](https://github.com/derailed/k9s/pull/1866) Bug: Fix order of arguments for CanI function call

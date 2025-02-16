@@ -14,14 +14,14 @@ import (
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
-
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
 // ViewConfigListener represents a view config listener.
 type ViewConfigListener interface {
 	// ViewSettingsChanged notifies listener the view configuration changed.
-	ViewSettingsChanged(ViewSetting)
+	ViewSettingsChanged(*ViewSetting)
 }
 
 // ViewSetting represents a view configuration.
@@ -35,7 +35,7 @@ func (v *ViewSetting) HasCols() bool {
 }
 
 func (v *ViewSetting) IsBlank() bool {
-	return v == nil || len(v.Columns) == 0
+	return v == nil || (len(v.Columns) == 0 && v.SortColumn == "")
 }
 
 func (v *ViewSetting) SortCol() (string, bool, error) {
@@ -52,7 +52,7 @@ func (v *ViewSetting) SortCol() (string, bool, error) {
 
 func (v *ViewSetting) Equals(vs *ViewSetting) bool {
 	if v == nil || vs == nil {
-		return v == nil && vs == nil
+		return false
 	}
 	if c := slices.Compare(v.Columns, vs.Columns); c != 0 {
 		return false
@@ -116,10 +116,11 @@ func (v *CustomView) RemoveListener(gvr string) {
 
 func (v *CustomView) fireConfigChanged() {
 	for gvr, list := range v.listeners {
-		if view, ok := v.Views[gvr]; ok {
-			list.ViewSettingsChanged(view)
+		if vs, ok := v.Views[gvr]; ok {
+			log.Debug().Msgf("Reloading custom view settings for %s", gvr)
+			list.ViewSettingsChanged(&vs)
 		} else {
-			list.ViewSettingsChanged(ViewSetting{})
+			list.ViewSettingsChanged(nil)
 		}
 	}
 }

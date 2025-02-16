@@ -5,13 +5,44 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/sahilm/fuzzy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func getMeta(ctx context.Context, gvr client.GVR) (ResourceMeta, error) {
+	meta := resourceMeta(gvr)
+	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
+	if !ok {
+		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
+	}
+	meta.DAO.Init(factory, gvr)
+
+	return meta, nil
+}
+
+func resourceMeta(gvr client.GVR) ResourceMeta {
+	meta, ok := Registry[gvr.String()]
+	if !ok {
+		meta = ResourceMeta{
+			DAO:      new(dao.Dynamic),
+			Renderer: new(render.Table),
+		}
+	}
+	if meta.DAO == nil {
+		meta.DAO = &dao.Resource{}
+	}
+
+	return meta
+}
 
 // MetaFQN returns a fully qualified resource name.
 func MetaFQN(m metav1.ObjectMeta) string {
