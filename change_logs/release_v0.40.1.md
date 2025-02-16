@@ -21,13 +21,16 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 😳 Aye! Buzz kill on the 0.40.0 aftermath... 🙀 👻
 
+Likely additional `disturbance in the farce` might be observed.
+Thank you all for giving v0.40.0 a rinse and reporting back!! 😍
+
 ---
 
 ## Videos Are In The Can!
 
 Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgjmw) for up coming content...
 
-* [K9s v0.40.0 <Column Blow> Sneak peek](https://youtu.be/iy6RDozAM4A)
+* [K9s v0.40.0 -Column Blow- Sneak peek](https://youtu.be/iy6RDozAM4A)
 * [K9s v0.31.0 Configs+Sneak peek](https://youtu.be/X3444KfjguE)
 * [K9s v0.30.0 Sneak peek](https://youtu.be/mVBc1XneRJ4)
 * [Vulnerability Scans](https://youtu.be/ULkl0MsaidU)
