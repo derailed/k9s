@@ -9,11 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
+
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/ui"
 )
 
 // ScaleExtender adds scaling extensions.
@@ -33,12 +34,21 @@ func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
 	if s.App().Config.K9s.IsReadOnly() {
 		return
 	}
-	aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
-		ui.ActionOpts{
-			Visible:   true,
-			Dangerous: true,
-		},
-	))
+
+	meta, err := dao.MetaAccess.MetaFor(s.GVR())
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to retrieve meta information for %s", s.GVR())
+		return
+	}
+
+	if !dao.IsCRD(meta) || dao.IsScalable(meta) {
+		aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		))
+	}
 }
 
 func (s *ScaleExtender) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -81,18 +91,64 @@ func (s *ScaleExtender) valueOf(col string) (string, error) {
 	return s.GetTable().GetSelectedCell(colIdx), nil
 }
 
+func (s *ScaleExtender) replicasFromReady(_ string) (string, error) {
+	replicas, err := s.valueOf("READY")
+	if err != nil {
+		return "", err
+	}
+
+	tokens := strings.Split(replicas, "/")
+	if len(tokens) < 2 {
+		return "", fmt.Errorf("unable to locate replicas from %s", replicas)
+	}
+
+	return strings.TrimRight(tokens[1], ui.DeltaSign), nil
+}
+
+func (s *ScaleExtender) replicasFromScaleSubresource(sel string) (string, error) {
+	res, err := dao.AccessorFor(s.App().factory, s.GVR())
+	if err != nil {
+		return "", err
+	}
+
+	replicasGetter, ok := res.(dao.ReplicasGetter)
+	if !ok {
+		return "", fmt.Errorf("expecting a replicasGetter resource for %q", s.GVR())
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
+	defer cancel()
+
+	replicas, err := replicasGetter.Replicas(ctx, sel)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.Itoa(int(replicas)), nil
+}
+
 func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 	factor := "0"
 	if len(sels) == 1 {
-		replicas, err := s.valueOf("READY")
-		if err != nil {
-			return nil, err
+		// If the CRD resource supports scaling, then first try to
+		// read the replicas directly from the CRD.
+		if meta, _ := dao.MetaAccess.MetaFor(s.GVR()); dao.IsScalable(meta) {
+			replicas, err := s.replicasFromScaleSubresource(sels[0])
+			if err == nil && len(replicas) != 0 {
+				factor = replicas
+			}
 		}
-		tokens := strings.Split(replicas, "/")
-		if len(tokens) < 2 {
-			return nil, fmt.Errorf("unable to locate replicas from %s", replicas)
+
+		// For built-in resources or cases where we can't get the replicas from the CRD, we can
+		// only try to get the number of copies from the READY field.
+		if factor == "0" {
+			replicas, err := s.replicasFromReady(sels[0])
+			if err != nil {
+				return nil, err
+			}
+
+			factor = replicas
 		}
-		factor = strings.TrimRight(tokens[1], ui.DeltaSign)
 	}
 
 	styles := s.App().Styles.Dialog()
@@ -127,7 +183,7 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 				return
 			}
 		}
-		if len(sels) == 1 {
+		if len(sels) != 1 {
 			s.App().Flash().Infof("[%d] %s scaled successfully", len(sels), singularize(s.GVR().R()))
 		} else {
 			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), sels[0])
