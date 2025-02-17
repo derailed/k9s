@@ -116,9 +116,14 @@ func (a *Alias) load(path string) error {
 			continue
 		}
 
-		a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
-		if meta.SingularName != "" {
-			a.Define(gvrStr, meta.SingularName)
+		a.Define(gvrStr, gvr.AsResourceName())
+
+		// Allow single shot commands for k8s resources only!
+		if isStandardGroup(gvr.String()) {
+			a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
+			if meta.SingularName != "" {
+				a.Define(gvrStr, meta.SingularName)
+			}
 		}
 		if meta.ShortNames != nil {
 			a.Define(gvrStr, meta.ShortNames...)

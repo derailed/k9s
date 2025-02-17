@@ -54,17 +54,18 @@ func TestAliasColorer(t *testing.T) {
 func TestAliasHeader(t *testing.T) {
 	h := model1.Header{
 		model1.HeaderColumn{Name: "RESOURCE"},
+		model1.HeaderColumn{Name: "GROUP"},
+		model1.HeaderColumn{Name: "VERSION"},
 		model1.HeaderColumn{Name: "COMMAND"},
-		model1.HeaderColumn{Name: "API-GROUP"},
 	}
 
 	var a render.Alias
-	assert.Equal(t, h, a.Header("fred"))
+	assert.Equal(t, h, a.Header("ns-1"))
 	assert.Equal(t, h, a.Header(client.NamespaceAll))
 }
 
 func TestAliasRender(t *testing.T) {
-	a := render.Alias{}
+	var a render.Alias
 
 	o := render.AliasRes{
 		GVR:     "fred/v1/blee",
@@ -73,7 +74,10 @@ func TestAliasRender(t *testing.T) {
 
 	var r model1.Row
 	assert.Nil(t, a.Render(o, "fred/v1/blee", &r))
-	assert.Equal(t, model1.Row{ID: "fred/v1/blee", Fields: model1.Fields{"blee", "a,b,c", "fred"}}, r)
+	assert.Equal(t, model1.Row{
+		ID:     "fred/v1/blee",
+		Fields: model1.Fields{"blee", "fred", "v1", "a,b,c"},
+	}, r)
 }
 
 func BenchmarkAlias(b *testing.B) {
