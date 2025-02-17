@@ -12,7 +12,7 @@ import (
 	"k8s.io/kubectl/pkg/cmd/get"
 )
 
-var fullRX = regexp.MustCompile(`\A([\w\s-]+)\:?([^\|]*)\|?([T|N|W|L|R|H]{0,3})\b`)
+var fullRX = regexp.MustCompile(`\A([\w\s%/\-]+)\:?([^\|]*)\|?([T|N|W|L|R|H]{0,3})\b`)
 
 type colAttr byte
 

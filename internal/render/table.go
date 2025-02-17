@@ -92,18 +92,26 @@ func (t *Table) Render(o any, ns string, r *model1.Row) error {
 func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error {
 	th := t.defaultHeader()
 	ons, name := ns, UnknownValue
-	if row.Object.Object != nil {
-		m, _ := meta.Accessor(row.Object.Object)
-		if m != nil {
+	switch {
+	case row.Object.Object != nil:
+		if m, _ := meta.Accessor(row.Object.Object); m != nil {
 			ons, name = m.GetNamespace(), m.GetName()
 		}
-	} else if idx, ok := th.IndexOf("NAME", true); ok && idx >= 0 {
-		name = row.Cells[idx].(string)
-		if idx, ok := th.IndexOf("NAMESPACE", true); ok && idx >= 0 {
-			ons = row.Cells[idx].(string)
+	case row.Object.Raw != nil:
+		var pm metav1.PartialObjectMetadata
+		if err := json.Unmarshal(row.Object.Raw, &pm); err != nil {
+			return err
 		}
-	} else {
+		ons, name = pm.Namespace, pm.Name
+	default:
+		if idx, ok := th.IndexOf("NAME", true); ok && idx >= 0 {
+			name = row.Cells[idx].(string)
+			if idx, ok := th.IndexOf("NAMESPACE", true); ok && idx >= 0 {
+				ons = row.Cells[idx].(string)
+			}
+		}
 	}
+
 	if client.IsClusterWide(ons) {
 		ons = client.ClusterScope
 	}

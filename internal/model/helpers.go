@@ -38,7 +38,7 @@ func resourceMeta(gvr client.GVR) ResourceMeta {
 		}
 	}
 	if meta.DAO == nil {
-		meta.DAO = &dao.Resource{}
+		meta.DAO = new(dao.Resource)
 	}
 
 	return meta
