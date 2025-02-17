@@ -35,7 +35,7 @@ func (d *Dynamic) Get(ctx context.Context, path string) (runtime.Object, error) 
 
 // List returns a collection of resources as one or more table objects.
 func (d *Dynamic) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	return d.toTable(ctx, ns)
+	return d.toTable(ctx, ns+"/")
 }
 
 func (d *Dynamic) toTable(ctx context.Context, fqn string) ([]runtime.Object, error) {

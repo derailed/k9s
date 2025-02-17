@@ -431,7 +431,7 @@ func newGVRFromCRD(crd *apiext.CustomResourceDefinition) (client.GVR, apiext.Cus
 			return client.NewGVRFromMeta(metav1.APIResource{
 				Kind:    crd.Spec.Names.Kind,
 				Group:   crd.Spec.Group,
-				Name:    strings.TrimSuffix(crd.Name, "."+crd.Spec.Group),
+				Name:    crd.Spec.Names.Plural,
 				Version: v.Name,
 			}), v, true
 		}
