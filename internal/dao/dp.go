@@ -123,6 +123,31 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 	return err
 }
 
+func (d *Deployment) TogglePause(ctx context.Context, path string) error {
+	ns, n := client.Namespaced(path)
+	auth, err := d.Client().CanI(ns, d.GVR(), n, []string{client.GetVerb, client.UpdateVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to pause/resume deployments")
+	}
+
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return err
+	}
+	dp, err := dial.AppsV1().Deployments(ns).Get(ctx, n, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	dp.Spec.Paused = !dp.Spec.Paused
+	_, err = dial.AppsV1().Deployments(ns).Update(ctx, dp, metav1.UpdateOptions{})
+
+	return err
+
+}
+
 // TailLogs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	dp, err := d.GetInstance(opts.Path)

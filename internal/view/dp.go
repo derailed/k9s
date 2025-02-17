@@ -27,9 +27,11 @@ func NewDeploy(gvr client.GVR) ResourceViewer {
 		NewVulnerabilityExtender(
 			NewRestartExtender(
 				NewScaleExtender(
-					NewImageExtender(
-						NewOwnerExtender(
-							NewLogsExtender(NewBrowser(gvr), d.logOptions),
+					NewPauseExtender(
+						NewImageExtender(
+							NewOwnerExtender(
+								NewLogsExtender(NewBrowser(gvr), d.logOptions),
+							),
 						),
 					),
 				),
