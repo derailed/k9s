@@ -157,7 +157,7 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 func (t *Table) ViewSettingsChanged(vs *config.ViewSetting) {
 	if t.setViewSetting(vs) {
 		if vs == nil {
-			if !t.getMSort() {
+			if !t.getMSort() && !t.sortCol.IsSet() {
 				t.setSortCol(model1.SortColumn{})
 			}
 		} else {
@@ -280,10 +280,9 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	cdata, sortCol := data.Customize(t.getViewSetting(), t.getSortCol(), t.getMSort())
-	t.setSortCol(sortCol)
+	t.setSortCol(data.ComputeSortCol(t.getViewSetting(), t.getSortCol(), t.getMSort()))
 
-	return cdata
+	return data
 }
 
 func (t *Table) UpdateUI(cdata, data *model1.TableData) {
