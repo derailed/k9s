@@ -119,13 +119,12 @@ func (a *Alias) load(path string) error {
 		a.Define(gvrStr, gvr.AsResourceName())
 
 		// Allow single shot commands for k8s resources only!
-		if isStandardGroup(gvr.String()) {
+		if isStandardGroup(gvr.GVSub()) {
 			a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
-			if meta.SingularName != "" {
-				a.Define(gvrStr, meta.SingularName)
-			}
+			a.Define(gvrStr, meta.SingularName)
+
 		}
-		if meta.ShortNames != nil {
+		if len(meta.ShortNames) > 0 {
 			a.Define(gvrStr, meta.ShortNames...)
 		}
 		a.Define(gvrStr, gvrStr)
@@ -138,10 +137,9 @@ func (a *Alias) load(path string) error {
 		}
 		gvrStr := gvr.String()
 		a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
-		if meta.SingularName != "" {
-			a.Define(gvrStr, meta.SingularName)
-		}
-		if meta.ShortNames != nil {
+		a.Define(gvrStr, meta.SingularName)
+
+		if len(meta.ShortNames) > 0 {
 			a.Define(gvrStr, meta.ShortNames...)
 		}
 		a.Define(gvrStr, gvrStr)

@@ -12,7 +12,7 @@ import (
 	"k8s.io/kubectl/pkg/cmd/get"
 )
 
-var fullRX = regexp.MustCompile(`\A([\w\s%\/-]+)\:?([^\|]*)\|?([T|N|W|L|R|H]{0,3})\b`)
+var fullRX = regexp.MustCompile(`^([\w\s%\/-]+)\:?([\w\d\S\W]*?)\|?([N|T|W|R|L|H]{0,3})$`)
 
 type colAttr byte
 
@@ -68,6 +68,8 @@ type colDef struct {
 	idx  int
 	spec string
 }
+
+// TAG:.spec.containers[0].image|split(":")|.[-1]|TW
 
 func parse(s string) (colDef, error) {
 	mm := fullRX.FindStringSubmatch(s)
