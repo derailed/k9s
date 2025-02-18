@@ -189,8 +189,10 @@ func TestCustCol_parse(t *testing.T) {
 			e: colDef{
 				name: "fred",
 				idx:  -1,
+				spec: "{.||.metadata.name}",
 				colAttrs: colAttrs{
 					align: tview.AlignLeft,
+					wide:  true,
 				},
 			},
 		},
