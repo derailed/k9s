@@ -111,6 +111,15 @@ func (g GVR) GVR() schema.GroupVersionResource {
 	}
 }
 
+// GVSub returns group vervion sub path.
+func (g GVR) GVSub() string {
+	if g.G() == "" {
+		return g.V()
+	}
+
+	return g.G() + "/" + g.V()
+}
+
 // GR returns a full schema representation.
 func (g GVR) GR() *schema.GroupResource {
 	return &schema.GroupResource{

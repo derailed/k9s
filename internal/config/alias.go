@@ -108,7 +108,7 @@ func (a *Aliases) Define(gvr string, aliases ...string) {
 	}
 
 	for _, alias := range aliases {
-		if _, ok := a.Alias[alias]; !ok {
+		if _, ok := a.Alias[alias]; !ok && alias != "" {
 			a.Alias[alias] = gvr
 		}
 	}
