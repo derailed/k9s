@@ -41,7 +41,7 @@ func (d *Dynamic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 func (d *Dynamic) toTable(ctx context.Context, fqn string) ([]runtime.Object, error) {
 	strLabel, _ := ctx.Value(internal.KeyLabels).(string)
 
-	opts := []string{d.gvr.R()}
+	opts := []string{d.gvr.AsResourceName()}
 	ns, n := client.Namespaced(fqn)
 	if n != "" {
 		opts = append(opts, n)

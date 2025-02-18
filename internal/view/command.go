@@ -341,7 +341,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if comp == nil {
 		return fmt.Errorf("no component found for %s", gvr)
 	}
-	c.app.Flash().Infof("Viewing %s...", gvr.R())
+	c.app.Flash().Infof("Viewing %s...", gvr)
 	if clearStack {
 		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
 		c.app.Config.SetActiveView(cmd)

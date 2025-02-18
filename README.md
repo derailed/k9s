@@ -44,6 +44,8 @@ Your donations will go a long way in keeping our servers lights on and beers in 
 
 ## Demo Videos/Recordings
 
+* [K9s v0.40.0 -Column Blow- Sneak peek](https://youtu.be/iy6RDozAM4A)
+* [K9s v0.31.0 Configs+Sneak peek](https://youtu.be/X3444KfjguE)
 * [K9s v0.30.0 Sneak peek](https://youtu.be/mVBc1XneRJ4)
 * [Vulnerability Scans](https://youtu.be/ULkl0MsaidU)
 * [K9s v0.29.0](https://youtu.be/oiU3wmoAkBo)
@@ -639,6 +641,11 @@ The new column syntax is as follows:
 
 Where `:json_parse_expression` represents an expression to pull a specific snippet out of the resource manifest.
 Similar to `kubectl -o custom-columns` command. This expression is optional.
+
+> IMPORTANT! Columns must be valid YAML strings. Thus if your column definition contains non-alpha chars
+> they must figure with either single/double quotes or escaped via `\`
+
+> NOTE! Be sure to watch k9s logs as any issues with the custom views specification are only surfaced in the logs.
 
 Additionally, you can specify column attributes to further tailor the column rendering.
 To use this you will need to add a `|` indicator followed by your rendering bits.

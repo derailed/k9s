@@ -68,6 +68,10 @@ func (g GVR) FQN(n string) string {
 
 // AsResourceName returns a resource . separated descriptor in the shape of kind.version.group.
 func (g GVR) AsResourceName() string {
+	if g.g == "" {
+		return g.r
+	}
+
 	return g.r + "." + g.v + "." + g.g
 }
 
