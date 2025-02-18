@@ -45,7 +45,7 @@ func TestPodColorer(t *testing.T) {
 			re: model1.RowEvent{
 				Kind: model1.EventAdd,
 				Row: model1.Row{
-					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Running, ""},
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", render.Running, "true"},
 				},
 			},
 			e: model1.StdColor,
@@ -115,7 +115,7 @@ func TestPodColorer(t *testing.T) {
 			re: model1.RowEvent{
 				Kind: model1.EventAdd,
 				Row: model1.Row{
-					Fields: model1.Fields{"blee", "fred", "1/1", "0", "blee", ""},
+					Fields: model1.Fields{"blee", "fred", "1/1", "0", "blee", "true"},
 				},
 			},
 			e: model1.AddColor,
