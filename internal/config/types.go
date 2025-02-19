@@ -6,6 +6,7 @@ package config
 const (
 	defaultRefreshRate  = 2
 	defaultMaxConnRetry = 5
+	defaultFlashDelay   = 3
 )
 
 // UI tracks ui specific configs.

@@ -6,16 +6,15 @@ package config
 import (
 	"errors"
 	"fmt"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/rs/zerolog/log"
 	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config/data"
-	"github.com/rs/zerolog/log"
 )
 
 // K9s tracks K9s configuration options.
@@ -24,6 +23,7 @@ type K9s struct {
 	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
 	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
 	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
+	FlashDelay          int        `json:"flashDelay" yaml:"flashDelay"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
 	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
 	UI                  UI         `json:"ui" yaml:"ui"`
@@ -53,6 +53,7 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	return &K9s{
 		RefreshRate:   defaultRefreshRate,
 		MaxConnRetry:  defaultMaxConnRetry,
+		FlashDelay:    defaultFlashDelay,
 		ScreenDumpDir: AppDumpsDir,
 		Logger:        NewLogger(),
 		Thresholds:    NewThreshold(),
@@ -99,6 +100,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.ScreenDumpDir = k1.ScreenDumpDir
 	k.RefreshRate = k1.RefreshRate
 	k.MaxConnRetry = k1.MaxConnRetry
+	k.FlashDelay = k1.FlashDelay
 	k.ReadOnly = k1.ReadOnly
 	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
 	k.UI = k1.UI
@@ -346,6 +348,9 @@ func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	}
 	if k.MaxConnRetry <= 0 {
 		k.MaxConnRetry = defaultMaxConnRetry
+	}
+	if k.FlashDelay <= 0 {
+		k.FlashDelay = defaultFlashDelay
 	}
 
 	if k.getActiveConfig() == nil {

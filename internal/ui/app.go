@@ -6,6 +6,7 @@ package ui
 import (
 	"os"
 	"sync"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -36,7 +37,7 @@ func NewApp(cfg *config.Config, context string) *App {
 		actions:      NewKeyActions(),
 		Configurator: Configurator{Config: cfg, Styles: config.NewStyles()},
 		Main:         NewPages(),
-		flash:        model.NewFlash(model.DefaultFlashDelay),
+		flash:        model.NewFlash(time.Duration(cfg.K9s.FlashDelay) * time.Second),
 		cmdBuff:      model.NewFishBuff(':', model.CommandBuffer),
 	}
 

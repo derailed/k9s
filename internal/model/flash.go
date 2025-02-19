@@ -12,9 +12,6 @@ import (
 )
 
 const (
-	// DefaultFlashDelay sets the flash clear delay.
-	DefaultFlashDelay = 3 * time.Second
-
 	// FlashInfo represents an info message.
 	FlashInfo FlashLevel = iota
 	// FlashWarn represents an warning message.
