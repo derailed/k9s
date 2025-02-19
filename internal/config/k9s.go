@@ -6,15 +6,16 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config/data"
-	"github.com/rs/zerolog/log"
 	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/rs/zerolog/log"
 )
 
 // K9s tracks K9s configuration options.
