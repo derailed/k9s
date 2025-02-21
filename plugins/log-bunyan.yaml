@@ -1,0 +1,40 @@
+# Forwards logs to bunyan cli for formatting
+# Install bunyan package globally in node e.g. node -g i bunyan
+plugins:
+  bunyanlogsp:
+    shortCut: Ctrl-L
+    confirm: false
+    description: "Logs (bunyan)"
+    scopes:
+      - pod
+    command: bash
+    background: false
+    args:
+      - -ic
+      - | 
+        kubectl logs -f $NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
+        exit 0 
+  bunyanlogsd:
+    shortCut: Ctrl-L
+    confirm: false
+    description: "Logs (bunyan)"
+    scopes:
+      - deployment
+    command: sh
+    background: false
+    args:
+      - -c
+      - kubectl logs -f deployment/$NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
+        exit 0
+  bunyanlogss:
+    shortCut: Ctrl-L
+    confirm: false
+    description: "Logs (bunyan)"
+    scopes:
+      - service
+    command: sh
+    background: false
+    args:
+      - -c
+      - kubectl logs -f service/$NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
+        exit 0
