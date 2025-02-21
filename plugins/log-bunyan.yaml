@@ -20,11 +20,12 @@ plugins:
     description: "Logs (bunyan)"
     scopes:
       - deployment
-    command: sh
+    command: bash
     background: false
     args:
-      - -c
-      - kubectl logs -f deployment/$NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
+      - -ic
+      - |
+        kubectl logs -f deployment/$NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
         exit 0
   bunyanlogss:
     shortCut: Ctrl-L
@@ -32,9 +33,10 @@ plugins:
     description: "Logs (bunyan)"
     scopes:
       - service
-    command: sh
+    command: bash
     background: false
     args:
-      - -c
-      - kubectl logs -f service/$NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
+      - -ic
+      - |
+        kubectl logs -f service/$NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
         exit 0
