@@ -1,5 +1,5 @@
 # Forwards logs to bunyan cli for formatting
-# Install bunyan package globally in node e.g. node -g i bunyan
+# Install Bunyan: https://www.npmjs.com/package/bunyan
 plugins:
   bunyanlogsp:
     shortCut: Ctrl-L
