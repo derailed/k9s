@@ -112,6 +112,13 @@ func (p *Pod) bindDangerousKeys(aa *ui.KeyActions) {
 				Visible:   true,
 				Dangerous: true,
 			}),
+		ui.KeyB: ui.NewKeyActionWithOpts(
+			"Browse",
+			p.browseCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
 		ui.KeyZ: ui.NewKeyActionWithOpts(
 			"Sanitize",
 			p.sanitizeCmd,
@@ -347,6 +354,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		Message:    "Download Files",
 		Pod:        fmt.Sprintf("%s/%s:", ns, n),
 		Ack:        ack,
+		Download:   true,
 		Retries:    defaultTxRetries,
 		Cancel:     func() {},
 	}
@@ -355,8 +363,92 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (p *Pod) browseCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	if !podIsRunning(p.App().factory, path) {
+		p.App().Flash().Errf("%s is not in a running state", path)
+		return nil
+	}
+
+	if err := containerListFiles(p.App(), p, path, ""); err != nil {
+		p.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func containerListFiles(a *App, comp model.Component, path, co string) error {
+	dir := ""
+
+	if co != "" {
+		dirRemoteIn(a, comp, path, co, dir)
+		return nil
+	}
+
+	pod, err := fetchPod(a.factory, path)
+	if err != nil {
+		return err
+	}
+	cc := fetchContainers(pod.ObjectMeta, pod.Spec, false)
+	if len(cc) == 1 {
+		dirRemoteIn(a, comp, path, cc[0], dir)
+		return nil
+	}
+
+	/*
+		v := NewLiveView(a, "Browse", nil)
+		if err := a.inject(v, false); err != nil {
+			a.Flash().Err(err)
+		}
+		return err
+	*/
+	picker := NewPicker()
+	picker.populate(cc)
+
+	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
+		dirRemoteIn(a, comp, path, co, dir)
+	})
+
+	return a.inject(picker, false)
+}
+
+func dirRemoteIn(a *App, c model.Component, fqn string, co string, dir string) {
+	c.Stop()
+	defer c.Start()
+
+	os, err := getPodOS(a.factory, fqn)
+	if err != nil {
+		log.Warn().Err(err).Msgf("os detect failed")
+	}
+
+	if dir == "" {
+		dir, err = getCWD(a, fqn, co, os)
+		if err != nil {
+			log.Warn().Err(err).Msgf("dir detect failed")
+			dir = ""
+		} else {
+			dir = strings.TrimSpace(dir)
+		}
+	}
+
+	str, err := listRemoteFiles(a, fqn, co, os, dir)
+	if err != nil {
+		return
+	}
+
+	details := NewDirRemote(fqn, co, os, dir, str)
+	err = a.inject(details, false)
+	if err != nil {
+		a.Flash().Errf("Remote dir failed: %s", err)
+	}
+}
 
 func containerShellIn(a *App, comp model.Component, path, co string) error {
 	if co != "" {
