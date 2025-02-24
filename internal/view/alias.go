@@ -67,7 +67,7 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	gvr := client.NewGVR(path)
-	a.App().gotoResource(gvr.AsResourceName(), "", true, true)
+	a.App().gotoResource(gvr.String(), "", true, true)
 
 	return nil
 }
