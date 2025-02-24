@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -26,6 +27,7 @@ type K9s struct {
 	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
 	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	AllowSuspend        bool       `json:"allowSuspend" yaml:"allowSuspend"`
 	UI                  UI         `json:"ui" yaml:"ui"`
 	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
 	DisablePodCounting  bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
@@ -101,6 +103,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.MaxConnRetry = k1.MaxConnRetry
 	k.ReadOnly = k1.ReadOnly
 	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
+	k.AllowSuspend = k1.AllowSuspend
 	k.UI = k1.UI
 	k.SkipLatestRevCheck = k1.SkipLatestRevCheck
 	k.DisablePodCounting = k1.DisablePodCounting
@@ -360,4 +363,8 @@ func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	if cfg := k.getActiveConfig(); cfg != nil {
 		cfg.Validate(c, ks)
 	}
+}
+
+func (k *K9s) IsSuspendable() bool {
+	return k.AllowSuspend && runtime.GOOS != "windows"
 }
