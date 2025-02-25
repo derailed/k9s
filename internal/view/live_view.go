@@ -22,6 +22,7 @@ import (
 const (
 	liveViewTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
 	yamlAction       = "YAML"
+	describeAction   = "Describe"
 )
 
 // LiveView represents a live text viewer.
@@ -158,7 +159,7 @@ func (v *LiveView) bindKeys() {
 	if v.title == yamlAction {
 		v.actions.Add(ui.KeyM, ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true))
 	}
-	if v.model != nil && v.model.GVR().IsDecodable() {
+	if v.model != nil && v.model.GVR().IsDecodable() && v.title == describeAction {
 		v.actions.Add(ui.KeyX, ui.NewKeyAction("Toggle Decode", v.toggleEncodedDecodedCmd, true))
 	}
 }
