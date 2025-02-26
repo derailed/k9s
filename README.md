@@ -451,6 +451,8 @@ You can now override the context portForward default address configuration by se
         memory: 100Mi
       # Enable TTY
       tty: true
+    # When enabled adds extra input field in which you have to confirm the deletion of a node
+    idiotLight: false
   ```
 
 ---

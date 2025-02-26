@@ -4,6 +4,8 @@
 package dialog
 
 import (
+	"fmt"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -28,7 +30,7 @@ var propagationOptions []string = []string{
 }
 
 // ShowDelete pops a resource deletion dialog.
-func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
+func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc, challenge string) {
 	propagation, force := "", false
 	f := tview.NewForm()
 	f.SetItemPadding(0)
@@ -48,11 +50,25 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 	f.AddCheckbox("Force:", force, func(_ string, checked bool) {
 		force = checked
 	})
+
+	confirmCheck := ""
+	if challenge != "" {
+		f.AddInputField(fmt.Sprintf("Confirm with: \"%s\":", challenge), confirmCheck, 30, nil, func(text string) {
+			confirmCheck = text
+		})
+	}
+
 	f.AddButton("Cancel", func() {
 		dismiss(pages)
 		cancel()
 	})
+
 	f.AddButton("OK", func() {
+		if challenge != "" && confirmCheck != challenge {
+			cancel()
+			return
+		}
+
 		switch propagation {
 		case noDeletePropagation:
 			ok(nil, force)
