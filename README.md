@@ -654,6 +654,7 @@ You can have one or more of the following attributes:
 * `T` -> time column indicator
 * `N` -> number column indicator
 * `W` -> turns on wide column aka only shows while in wide mode. Defaults to the standard resource definition when present.
+* `S` -> Ensures a column is visible and not wide. Overrides `wide` std resource definition if present.
 * `H` -> Hides the column
 * `L` -> Left align (default)
 * `R` -> Right align
@@ -674,6 +675,8 @@ views:
       - NODE
       - STATUS
       - READY
+      - MEM/RL|S                                         # => 🌚 Overrides std resource default wide attribute
+      - '%MEM/R|'                                        # => NOTE! column names with non alpha names need to be quoted as columns must be strings!
   v1/services:
     columns:
       - AGE
