@@ -9,10 +9,11 @@ import (
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
+	"github.com/rs/zerolog/log"
 	"k8s.io/kubectl/pkg/cmd/get"
 )
 
-var fullRX = regexp.MustCompile(`^([\w\s%\/-]+)\:?([\w\d\S\W]*?)\|?([N|T|W|R|L|H]{0,3})$`)
+var fullRX = regexp.MustCompile(`^([\w\s%\/-]+)\:?([\w\d\S\W]*?)\|?([N|T|W|V|R|L|H]{0,3})$`)
 
 type colAttr byte
 
@@ -20,6 +21,7 @@ const (
 	number     colAttr = 'N'
 	age        colAttr = 'T'
 	wide       colAttr = 'W'
+	show       colAttr = 'V'
 	alignLeft  colAttr = 'L'
 	alignRight colAttr = 'R'
 	hide       colAttr = 'H'
@@ -32,6 +34,7 @@ type colAttrs struct {
 	mxm      bool
 	time     bool
 	wide     bool
+	show     bool
 	hide     bool
 	capacity bool
 }
@@ -46,7 +49,9 @@ func newColFlags(flags string) colAttrs {
 		case hide:
 			c.hide = true
 		case wide:
-			c.wide = true
+			c.wide, c.show = true, false
+		case show:
+			c.show, c.wide = true, false
 		case alignLeft:
 			c.align = tview.AlignLeft
 		case alignRight:
@@ -55,6 +60,8 @@ func newColFlags(flags string) colAttrs {
 			c.time = true
 		case number:
 			c.capacity, c.align = true, tview.AlignRight
+		default:
+			log.Warn().Msgf("unknown column attribute: %q", b)
 		}
 	}
 
@@ -68,8 +75,6 @@ type colDef struct {
 	idx  int
 	spec string
 }
-
-// TAG:.spec.containers[0].image|split(":")|.[-1]|TW
 
 func parse(s string) (colDef, error) {
 	mm := fullRX.FindStringSubmatch(s)
@@ -95,6 +100,7 @@ func (c colDef) toHeaderCol() model1.HeaderColumn {
 		Attrs: model1.Attrs{
 			Align:    c.align,
 			Wide:     c.wide,
+			Show:     c.show,
 			Time:     c.time,
 			MX:       c.mx,
 			MXC:      c.mxc,

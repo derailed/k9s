@@ -16,6 +16,7 @@ type Attrs struct {
 	Align     int
 	Decorator DecoratorFunc
 	Wide      bool
+	Show      bool
 	MX        bool
 	MXC, MXM  bool
 	Time      bool
@@ -34,17 +35,19 @@ func (a Attrs) Merge(b Attrs) Attrs {
 	if a.Align == 0 {
 		a.Align = b.Align
 	}
-	if !a.Wide {
+
+	if !a.Hide {
+		a.Hide = b.Hide
+	}
+	if !a.Show && !a.Wide {
 		a.Wide = b.Wide
 	}
+
 	if !a.Time {
 		a.Time = b.Time
 	}
 	if !a.Capacity {
 		a.Capacity = b.Capacity
-	}
-	if !a.Hide {
-		a.Hide = b.Hide
 	}
 
 	return a
