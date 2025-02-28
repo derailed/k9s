@@ -5,6 +5,7 @@ package render
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
@@ -78,14 +79,16 @@ func (Policy) Render(o interface{}, gvr string, r *model1.Row) error {
 // Helpers...
 
 func cleanseResource(r string) string {
-	if r == "" {
+	if r == "" || r[0] == '/' {
 		return r
 	}
-	if r[0] == '/' {
+	tt := strings.Split(r, "/")
+	switch len(tt) {
+	case 2, 3:
+		return strings.TrimPrefix(r, tt[0]+"/")
+	default:
 		return r
 	}
-	_, n := client.Namespaced(r)
-	return n
 }
 
 // PolicyRes represents a rbac policy rule.

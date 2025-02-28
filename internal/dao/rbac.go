@@ -165,6 +165,9 @@ func parseRules(ns, binding string, rules []rbacv1.PolicyRule) render.Policies {
 	pp := make(render.Policies, 0, len(rules))
 	for _, rule := range rules {
 		for _, grp := range rule.APIGroups {
+			if grp == "" {
+				grp = "core"
+			}
 			for _, res := range rule.Resources {
 				for _, na := range rule.ResourceNames {
 					pp = pp.Upsert(render.NewPolicyRes(ns, binding, FQN(res, na), grp, rule.Verbs))
