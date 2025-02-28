@@ -5,6 +5,7 @@ package render
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -36,13 +37,14 @@ func (Alias) Render(o interface{}, ns string, r *model1.Row) error {
 		return fmt.Errorf("expected AliasRes, but got %T", o)
 	}
 
+	slices.Sort(a.Aliases)
 	gvr := client.NewGVR(a.GVR)
 	r.ID = gvr.String()
 	r.Fields = append(r.Fields,
 		gvr.R(),
 		gvr.G(),
 		gvr.V(),
-		strings.Join(a.Aliases, ","),
+		strings.Join(a.Aliases, " "),
 	)
 
 	return nil
