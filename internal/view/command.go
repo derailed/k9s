@@ -84,7 +84,7 @@ func allowedXRay(gvr client.GVR) bool {
 	return ok
 }
 
-func (c *Command) contextCmd(p *cmd.Interpreter) error {
+func (c *Command) contextCmd(p *cmd.Interpreter, pushCmd bool) error {
 	ct, ok := p.ContextArg()
 	if !ok {
 		return fmt.Errorf("invalid command use `context xxx`")
@@ -99,7 +99,7 @@ func (c *Command) contextCmd(p *cmd.Interpreter) error {
 		return err
 	}
 
-	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true, true)
+	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true, pushCmd)
 }
 
 func (c *Command) namespaceCmd(p *cmd.Interpreter) bool {
@@ -115,17 +115,17 @@ func (c *Command) namespaceCmd(p *cmd.Interpreter) bool {
 	return false
 }
 
-func (c *Command) aliasCmd(p *cmd.Interpreter) error {
+func (c *Command) aliasCmd(p *cmd.Interpreter, pushCmd bool) error {
 	filter, _ := p.FilterArg()
 
 	gvr := client.NewGVR("aliases")
 	v := NewAlias(gvr)
 	v.SetFilter(filter)
 
-	return c.exec(p, gvr, v, false, true)
+	return c.exec(p, gvr, v, false, pushCmd)
 }
 
-func (c *Command) xrayCmd(p *cmd.Interpreter) error {
+func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	arg, cns, ok := p.XrayArgs()
 	if !ok {
 		return errors.New("invalid command. use `xray xxx`")
@@ -148,12 +148,12 @@ func (c *Command) xrayCmd(p *cmd.Interpreter) error {
 		return err
 	}
 
-	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true, true)
+	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true, pushCmd)
 }
 
 // Run execs the command by showing associated display.
 func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool, pushCmd bool) error {
-	if c.specialCmd(p) {
+	if c.specialCmd(p, pushCmd) {
 		return nil
 	}
 	gvr, v, err := c.viewMetaFor(p)
@@ -233,7 +233,7 @@ func (c *Command) defaultCmd(isRoot bool) error {
 	return nil
 }
 
-func (c *Command) specialCmd(p *cmd.Interpreter) bool {
+func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 	switch {
 	case p.IsCowCmd():
 		if msg, ok := p.CowArg(); !ok {
@@ -246,11 +246,11 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 	case p.IsHelpCmd():
 		_ = c.app.helpCmd(nil)
 	case p.IsAliasCmd():
-		if err := c.aliasCmd(p); err != nil {
+		if err := c.aliasCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	case p.IsXrayCmd():
-		if err := c.xrayCmd(p); err != nil {
+		if err := c.xrayCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	case p.IsRBACCmd():
@@ -260,7 +260,7 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 			c.app.Flash().Err(err)
 		}
 	case p.IsContextCmd():
-		if err := c.contextCmd(p); err != nil {
+		if err := c.contextCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	case p.IsNamespaceCmd():
@@ -268,7 +268,7 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 	case p.IsDirCmd():
 		if a, ok := p.DirArg(); !ok {
 			c.app.Flash().Errf("Invalid command. Use `dir xxx`")
-		} else if err := c.app.dirCmd(a); err != nil {
+		} else if err := c.app.dirCmd(a, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	default:

@@ -47,8 +47,9 @@ var (
 		"help": {},
 	}
 	aliasCmd = map[string]struct{}{
-		"a":     {},
-		"alias": {},
+		"a":       {},
+		"alias":   {},
+		"aliases": {},
 	}
 	xrayCmd = map[string]struct{}{
 		"x":    {},
