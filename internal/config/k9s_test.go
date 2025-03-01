@@ -88,6 +88,7 @@ func TestK9sMerge(t *testing.T) {
 				LiveViewAutoRefresh: false,
 				ScreenDumpDir:       "",
 				RefreshRate:         0,
+				MetricsCacheExpiry:  0,
 				MaxConnRetry:        0,
 				ReadOnly:            false,
 				NoExitOnCtrlC:       false,
@@ -102,12 +103,14 @@ func TestK9sMerge(t *testing.T) {
 			k2: &config.K9s{
 				LiveViewAutoRefresh: true,
 				MaxConnRetry:        100,
+				MetricsCacheExpiry:  100,
 				ShellPod:            config.NewShellPod(),
 			},
 			ek: &config.K9s{
 				LiveViewAutoRefresh: true,
 				ScreenDumpDir:       "",
 				RefreshRate:         0,
+				MetricsCacheExpiry:  100,
 				MaxConnRetry:        100,
 				ReadOnly:            false,
 				NoExitOnCtrlC:       false,

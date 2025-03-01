@@ -4,8 +4,9 @@
 package config
 
 const (
-	defaultRefreshRate  = 2
-	defaultMaxConnRetry = 5
+	defaultRefreshRate        = 2
+	defaultMetricsCacheExpiry = 60
+	defaultMaxConnRetry       = 5
 )
 
 // UI tracks ui specific configs.

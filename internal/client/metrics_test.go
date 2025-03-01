@@ -5,6 +5,7 @@ package client_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
@@ -72,7 +73,7 @@ func TestPodsMetrics(t *testing.T) {
 		},
 	}
 
-	m := client.NewMetricsServer(nil)
+	m := makeMetricsServer()
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
@@ -91,7 +92,7 @@ func TestPodsMetrics(t *testing.T) {
 }
 
 func BenchmarkPodsMetrics(b *testing.B) {
-	m := client.NewMetricsServer(nil)
+	m := makeMetricsServer()
 
 	metrics := v1beta1.PodMetricsList{
 		Items: []v1beta1.PodMetrics{
@@ -168,7 +169,7 @@ func TestNodesMetrics(t *testing.T) {
 		},
 	}
 
-	m := client.NewMetricsServer(nil)
+	m := makeMetricsServer()
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
@@ -201,7 +202,7 @@ func BenchmarkNodesMetrics(b *testing.B) {
 		},
 	}
 
-	m := client.NewMetricsServer(nil)
+	m := makeMetricsServer()
 	mmx := make(client.NodesMetrics)
 
 	b.ResetTimer()
@@ -261,7 +262,7 @@ func TestClusterLoad(t *testing.T) {
 		},
 	}
 
-	m := client.NewMetricsServer(nil)
+	m := makeMetricsServer()
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
@@ -287,7 +288,7 @@ func BenchmarkClusterLoad(b *testing.B) {
 		},
 	}
 
-	m := client.NewMetricsServer(nil)
+	m := makeMetricsServer()
 	var mx client.ClusterMetrics
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -298,6 +299,10 @@ func BenchmarkClusterLoad(b *testing.B) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func makeMetricsServer() *client.MetricsServer {
+	return client.NewMetricsServer(nil, 1*time.Minute)
+}
 
 func makeMxPod(name, cpu, mem string) *v1beta1.PodMetrics {
 	return &v1beta1.PodMetrics{

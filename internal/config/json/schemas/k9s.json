@@ -10,6 +10,7 @@
         "liveViewAutoRefresh": { "type": "boolean" },
         "screenDumpDir": {"type": "string"},
         "refreshRate": { "type": "integer" },
+        "metricsCacheExpiry": { "type": "integer" },
         "maxConnRetry": { "type": "integer" },
         "readOnly": { "type": "boolean" },
         "noExitOnCtrlC": { "type": "boolean" },

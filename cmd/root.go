@@ -138,7 +138,8 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 
-	conn, err := client.InitConnection(k8sCfg)
+	options := client.NewOptions(k9sCfg.K9s.MetricsCacheExpiry)
+	conn, err := client.InitConnection(k8sCfg, options)
 
 	if err != nil {
 		errs = errors.Join(errs, err)
@@ -376,7 +377,7 @@ func initK8sFlagCompletion() {
 
 	_ = rootCmd.RegisterFlagCompletionFunc("namespace", func(cmd *cobra.Command, args []string, s string) ([]string, cobra.ShellCompDirective) {
 		conn := client.NewConfig(k8sFlags)
-		if c, err := client.InitConnection(conn); err == nil {
+		if c, err := client.InitConnection(conn, client.Options{}); err == nil {
 			if nss, err := c.ValidNamespaceNames(); err == nil {
 				return filterFlagCompletions(nss, s)
 			}

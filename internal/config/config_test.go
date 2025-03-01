@@ -537,6 +537,7 @@ func TestConfigLoad(t *testing.T) {
 
 	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
+	assert.Equal(t, 60, cfg.K9s.MetricsCacheExpiry)
 	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
 	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
 }
@@ -553,6 +554,7 @@ func TestConfigSaveFile(t *testing.T) {
 	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 
 	cfg.K9s.RefreshRate = 100
+	cfg.K9s.MetricsCacheExpiry = 100
 	cfg.K9s.ReadOnly = true
 	cfg.K9s.Logger.TailCount = 500
 	cfg.K9s.Logger.BufferSize = 800

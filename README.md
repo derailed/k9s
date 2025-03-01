@@ -396,6 +396,8 @@ You can now override the context portForward default address configuration by se
     screenDumpDir: /tmp/dumps
     # Represents ui poll intervals. Default 2secs
     refreshRate: 2
+    # How often metrics data will be cached for e.g. CPU and memory usage. Default 60s
+    metricsCacheExpiry: 60
     # Number of retries once the connection to the api-server is lost. Default 15.
     maxConnRetry: 5
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
@@ -966,6 +968,7 @@ k9s:
   liveViewAutoRefresh: false
   screenDumpDir: /tmp/dumps
   refreshRate: 2
+  metricsCacheExpiry: 60
   maxConnRetry: 5
   readOnly: false
   noExitOnCtrlC: false

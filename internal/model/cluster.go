@@ -50,7 +50,7 @@ type (
 func NewCluster(f dao.Factory) *Cluster {
 	return &Cluster{
 		factory: f,
-		mx:      client.DialMetrics(f.Client()),
+		mx:      f.Client().DialMetrics(),
 		cache:   cache.NewLRUExpireCache(clusterCacheSize),
 	}
 }

@@ -102,6 +102,9 @@ type Connection interface {
 	// DialLogs connects to api server for logs.
 	DialLogs() (kubernetes.Interface, error)
 
+	// DialMetrics connects to metrics server.
+	DialMetrics() *MetricsServer
+
 	// SwitchContext switches cluster based on context.
 	SwitchContext(ctx string) error
 
