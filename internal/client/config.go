@@ -14,7 +14,7 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
-	clientcmd "k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -23,6 +23,8 @@ const (
 
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true
+
+	incluster = "incluster"
 )
 
 // Config tracks a kubernetes configuration.
@@ -87,6 +89,10 @@ func (c *Config) SwitchContext(name string) error {
 	if err != nil {
 		return fmt.Errorf("context %q does not exist", name)
 	}
+	if name == incluster && ct.LocationOfOrigin == incluster {
+		return nil
+	}
+
 	// !!BOZO!! Do you need to reset the flags?
 	flags := genericclioptions.NewConfigFlags(UsePersistentConfig)
 	flags.Context, flags.ClusterName = &name, &ct.Cluster
@@ -131,6 +137,9 @@ func (c *Config) CurrentClusterName() (string, error) {
 
 	ct, ok := cfg.Contexts[cfg.CurrentContext]
 	if !ok {
+		if c.isIncluster(cfg) {
+			return incluster, nil
+		}
 		return "", fmt.Errorf("invalid current context specified: %q", cfg.CurrentContext)
 	}
 	if isSet(c.flags.Context) {
@@ -154,6 +163,10 @@ func (c *Config) CurrentContextName() (string, error) {
 		return "", fmt.Errorf("fail to load rawConfig: %w", err)
 	}
 
+	if c.isIncluster(cfg) {
+		return incluster, nil
+	}
+
 	return cfg.CurrentContext, nil
 }
 
@@ -162,6 +175,7 @@ func (c *Config) CurrentContextNamespace() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	context, err := c.GetContext(name)
 	if err != nil {
 		return "", err
@@ -185,8 +199,14 @@ func (c *Config) GetContext(n string) (*api.Context, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if c, ok := cfg.Contexts[n]; ok {
 		return c, nil
+	}
+
+	if n == incluster {
+		nc := c.newInclusterContext()
+		return nc, nil
 	}
 
 	return nil, fmt.Errorf("getcontext - invalid context specified: %q", n)
@@ -206,6 +226,12 @@ func (c *Config) Contexts() (map[string]*api.Context, error) {
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return nil, err
+	}
+
+	if len(cfg.Contexts) == 0 && c.isIncluster(cfg) {
+		return map[string]*api.Context{
+			incluster: c.newInclusterContext(),
+		}, nil
 	}
 
 	return cfg.Contexts, nil
@@ -320,6 +346,9 @@ func (c *Config) CurrentUserName() (string, error) {
 	if ctx, ok := cfg.Contexts[current]; ok {
 		return ctx.AuthInfo, nil
 	}
+	if c.isIncluster(cfg) {
+		return incluster, nil
+	}
 
 	return "", errors.New("unable to locate current user")
 }
@@ -345,6 +374,30 @@ func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 	defer c.mx.RUnlock()
 
 	return c.clientConfig().ConfigAccess(), nil
+}
+
+func (c *Config) newInclusterContext() *api.Context {
+	ns, _, _ := c.clientConfig().Namespace()
+	if ns == "" {
+		ns = "default"
+	}
+	nc := api.NewContext()
+	nc.LocationOfOrigin = incluster
+	nc.Cluster = incluster
+	nc.Namespace = ns
+	nc.AuthInfo = incluster
+	return nc
+}
+
+func (c *Config) isIncluster(cfg api.Config) bool {
+	if (cfg.CurrentContext == "" || cfg.CurrentContext == incluster) &&
+		len(cfg.Contexts) == 0 &&
+		c.flags.KubeConfig != nil && *c.flags.KubeConfig == "" &&
+		c.flags.ClusterName != nil && *c.flags.ClusterName == "" &&
+		c.flags.APIServer != nil && *c.flags.APIServer == "" {
+		return true
+	}
+	return false
 }
 
 // ----------------------------------------------------------------------------
