@@ -26,6 +26,7 @@ func NewConfig(ct *api.Context) *Config {
 	}
 }
 
+// Merge merges configs and updates receiver.
 func (c *Config) Merge(c1 *Config) {
 	if c1 == nil {
 		return

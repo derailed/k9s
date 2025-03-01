@@ -26,6 +26,7 @@ type K9s struct {
 	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
 	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	PortForwardAddress  string     `yaml:"portForwardAddress"`
 	UI                  UI         `json:"ui" yaml:"ui"`
 	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
 	DisablePodCounting  bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
@@ -51,16 +52,17 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	return &K9s{
-		RefreshRate:   defaultRefreshRate,
-		MaxConnRetry:  defaultMaxConnRetry,
-		ScreenDumpDir: AppDumpsDir,
-		Logger:        NewLogger(),
-		Thresholds:    NewThreshold(),
-		ShellPod:      NewShellPod(),
-		ImageScans:    NewImageScans(),
-		dir:           data.NewDir(AppContextsDir),
-		conn:          conn,
-		ks:            ks,
+		RefreshRate:        defaultRefreshRate,
+		MaxConnRetry:       defaultMaxConnRetry,
+		ScreenDumpDir:      AppDumpsDir,
+		Logger:             NewLogger(),
+		Thresholds:         NewThreshold(),
+		PortForwardAddress: defaultPFAddress(),
+		ShellPod:           NewShellPod(),
+		ImageScans:         NewImageScans(),
+		dir:                data.NewDir(AppContextsDir),
+		conn:               conn,
+		ks:                 ks,
 	}
 }
 
@@ -346,6 +348,13 @@ func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	}
 	if k.MaxConnRetry <= 0 {
 		k.MaxConnRetry = defaultMaxConnRetry
+	}
+
+	if a := os.Getenv(envPFAddress); a != "" {
+		k.PortForwardAddress = a
+	}
+	if k.PortForwardAddress == "" {
+		k.PortForwardAddress = defaultPFAddress()
 	}
 
 	if k.getActiveConfig() == nil {

@@ -33,12 +33,6 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 		SetFieldTextColor(styles.FieldFgColor.Color()).
 		SetFieldBackgroundColor(styles.BgColor.Color())
 
-	ct, err := v.App().Config.K9s.ActiveContext()
-	if err != nil {
-		log.Error().Err(err).Msgf("No active context detected")
-		return
-	}
-
 	pf, err := aa.PreferredPorts(ports)
 	if err != nil {
 		log.Warn().Err(err).Msgf("unable to resolve ports on %s", path)
@@ -61,7 +55,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	if loField.GetText() == "" {
 		loField.SetPlaceholder("Enter a local port")
 	}
-	address := ct.PortForwardAddress
+	address := v.App().Config.K9s.PortForwardAddress
 	f.AddInputField("Address:", address, fieldLen, nil, func(h string) {
 		address = h
 	})

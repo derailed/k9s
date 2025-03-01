@@ -91,7 +91,7 @@ func (v *CustomView) Load(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.ViewsSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		log.Warn().Err(err).Msgf("validation failed for: %q. Please update your config and restart!", path)
 	}
 	var in CustomView
 	if err := yaml.Unmarshal(bb, &in); err != nil {

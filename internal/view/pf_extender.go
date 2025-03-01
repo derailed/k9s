@@ -173,10 +173,6 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 }
 
 func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
-	ct, err := v.App().Config.CurrentContext()
-	if err != nil {
-		return err
-	}
 	mm, anns, err := fetchPodPorts(v.App().factory, path)
 	if err != nil {
 		return err
@@ -196,7 +192,7 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 			return err
 		}
 
-		pts, err := pfs.ToTunnels(ct.PortForwardAddress, ports, port.IsPortFree)
+		pts, err := pfs.ToTunnels(v.App().Config.K9s.PortForwardAddress, ports, port.IsPortFree)
 		if err != nil {
 			return err
 		}

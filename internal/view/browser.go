@@ -562,11 +562,11 @@ func (b *Browser) refreshActions() {
 
 	if err := pluginActions(b, b.Actions()); err != nil {
 		log.Warn().Msgf("Plugins load failed: %s", err)
-		b.app.Logo().Warn("Plugins load failed!")
+		b.app.Logo().Warn("Plugins load failed! (see logs)")
 	}
 	if err := hotKeyActions(b, b.Actions()); err != nil {
 		log.Warn().Msgf("Hotkeys load failed: %s", err)
-		b.app.Logo().Warn("HotKeys load failed!")
+		b.app.Logo().Warn("HotKeys load failed! (see logs)")
 	}
 	b.app.Menu().HydrateMenu(b.Hints())
 }

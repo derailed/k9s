@@ -89,7 +89,7 @@ func (d *Dir) loadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 	if err := JSONValidator.Validate(json.ContextSchema, bb); err != nil {
-		return nil, fmt.Errorf("validation failed for %q: %w", path, err)
+		log.Warn().Err(err).Msgf("validation failed for: %q. Please update your config and restart!", path)
 	}
 
 	var cfg Config

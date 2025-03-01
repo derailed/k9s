@@ -11,6 +11,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const (
+	envPFAddress          = "K9S_DEFAULT_PF_ADDRESS"
+	defaultPortFwdAddress = "localhost"
+)
+
 // IsBoolSet checks if a bool ptr is set.
 func IsBoolSet(b *bool) bool {
 	return b != nil && *b
@@ -57,4 +62,12 @@ func MustK9sUser() string {
 		log.Fatal().Err(err).Msg("Die on retrieving user info")
 	}
 	return usr.Username
+}
+
+func defaultPFAddress() string {
+	if a := os.Getenv(envPFAddress); a != "" {
+		return a
+	}
+
+	return defaultPortFwdAddress
 }

@@ -219,7 +219,6 @@ func (l *Log) cancel() {
 	defer l.mx.Unlock()
 	if l.cancelFn != nil {
 		l.cancelFn()
-		log.Debug().Msgf("!!! LOG-MODEL CANCELED !!!")
 		l.cancelFn = nil
 	}
 }
@@ -231,7 +230,7 @@ func (l *Log) load(ctx context.Context) error {
 	}
 	loggable, ok := accessor.(dao.Loggable)
 	if !ok {
-		return fmt.Errorf("Resource %s is not Loggable", l.gvr)
+		return fmt.Errorf("resource %s is not Loggable", l.gvr)
 	}
 
 	l.cancel()
@@ -288,8 +287,6 @@ func (l *Log) ToggleAllContainers(ctx context.Context) {
 }
 
 func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
-	defer log.Debug().Msgf("<<< LOG-MODEL UPDATER DONE %s!!!!", l.logOptions.Info())
-	log.Debug().Msgf(">>> START LOG-MODEL UPDATER %s", l.logOptions.Info())
 	for {
 		select {
 		case item, ok := <-c:

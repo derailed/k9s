@@ -204,7 +204,6 @@ func (l *Log) cancel() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	if l.cancelFn != nil {
-		log.Debug().Msgf("!!! LOG-VIEWER CANCELED !!!")
 		l.cancelFn()
 		l.cancelFn = nil
 	}

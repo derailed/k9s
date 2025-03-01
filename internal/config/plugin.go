@@ -13,6 +13,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
+	"github.com/rs/zerolog/log"
 
 	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v2"
@@ -113,7 +114,7 @@ func (p *Plugins) load(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.PluginsSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		log.Warn().Err(err).Msgf("validation failed for %q. Please update your config and restart!", path)
 	}
 	var pp Plugins
 	if err := yaml.Unmarshal(bb, &pp); err != nil {

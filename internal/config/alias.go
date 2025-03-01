@@ -5,7 +5,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"os"
 	"sync"
@@ -146,7 +145,7 @@ func (a *Aliases) LoadFile(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.AliasesSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		log.Warn().Err(err).Msgf("Aliases validation failed")
 	}
 
 	var aa Aliases

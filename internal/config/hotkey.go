@@ -5,12 +5,12 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"os"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -57,7 +57,7 @@ func (h HotKeys) LoadHotKeys(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.HotkeysSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		log.Warn().Err(err).Msgf("validation failed for %q. Please update your config and restart.", path)
 	}
 
 	var hh HotKeys
