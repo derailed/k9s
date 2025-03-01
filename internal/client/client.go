@@ -46,10 +46,13 @@ type APIClient struct {
 	nsClient          dynamic.NamespaceableResourceInterface
 	mxsClient         *versioned.Clientset
 	cachedClient      *disk.CachedDiscoveryClient
+	metricsServer     *MetricsServer
 	config            *Config
 	mx                sync.RWMutex
 	cache             *cache.LRUExpireCache
 	connOK            bool
+
+	options Options
 }
 
 // NewTestAPIClient for testing ONLY!!
@@ -62,11 +65,12 @@ func NewTestAPIClient() *APIClient {
 
 // InitConnection initialize connection from command line args.
 // Checks for connectivity with the api server.
-func InitConnection(config *Config) (*APIClient, error) {
+func InitConnection(config *Config, options Options) (*APIClient, error) {
 	a := APIClient{
-		config: config,
-		cache:  cache.NewLRUExpireCache(cacheSize),
-		connOK: true,
+		config:  config,
+		cache:   cache.NewLRUExpireCache(cacheSize),
+		connOK:  true,
+		options: options,
 	}
 	err := a.supportsMetricsResources()
 	if err != nil {
@@ -394,6 +398,20 @@ func (a *APIClient) getLogClient() kubernetes.Interface {
 	return a.logClient
 }
 
+func (a *APIClient) getMetricsServer() *MetricsServer {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.metricsServer
+}
+
+func (a *APIClient) setMetricsServer(ms *MetricsServer) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.metricsServer = ms
+}
+
 func (a *APIClient) setClient(k kubernetes.Interface) {
 	a.mx.Lock()
 	defer a.mx.Unlock()
@@ -451,6 +469,18 @@ func (a *APIClient) Dial() (kubernetes.Interface, error) {
 	}
 
 	return a.getClient(), nil
+}
+
+func (a *APIClient) DialMetrics() *MetricsServer {
+	if ms := a.getMetricsServer(); ms != nil {
+		return ms
+	}
+
+	cacheExpiry := time.Duration(a.options.MetricsCacheExpiry) * time.Second
+	ms := NewMetricsServer(a, cacheExpiry)
+	a.setMetricsServer(ms)
+
+	return a.getMetricsServer()
 }
 
 // RestConfig returns a rest api client.
@@ -552,7 +582,6 @@ func (a *APIClient) SwitchContext(name string) error {
 		return err
 	}
 	a.reset()
-	ResetMetrics()
 
 	// Need reload to pick up any kubeconfig changes.
 	a.config = NewConfig(a.config.flags)
@@ -570,6 +599,7 @@ func (a *APIClient) reset() {
 	a.setCachedClient(nil)
 	a.setClient(nil)
 	a.setLogClient(nil)
+	a.setMetricsServer(nil)
 	a.setConnOK(true)
 }
 

@@ -23,6 +23,7 @@ type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
 	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
 	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
+	MetricsCacheExpiry  int        `json:"metricsCacheExpiry" yaml:"metricsCacheExpiry"`
 	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
 	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
@@ -51,16 +52,17 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	return &K9s{
-		RefreshRate:   defaultRefreshRate,
-		MaxConnRetry:  defaultMaxConnRetry,
-		ScreenDumpDir: AppDumpsDir,
-		Logger:        NewLogger(),
-		Thresholds:    NewThreshold(),
-		ShellPod:      NewShellPod(),
-		ImageScans:    NewImageScans(),
-		dir:           data.NewDir(AppContextsDir),
-		conn:          conn,
-		ks:            ks,
+		RefreshRate:        defaultRefreshRate,
+		MetricsCacheExpiry: defaultMetricsCacheExpiry,
+		MaxConnRetry:       defaultMaxConnRetry,
+		ScreenDumpDir:      AppDumpsDir,
+		Logger:             NewLogger(),
+		Thresholds:         NewThreshold(),
+		ShellPod:           NewShellPod(),
+		ImageScans:         NewImageScans(),
+		dir:                data.NewDir(AppContextsDir),
+		conn:               conn,
+		ks:                 ks,
 	}
 }
 
@@ -98,6 +100,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.LiveViewAutoRefresh = k1.LiveViewAutoRefresh
 	k.ScreenDumpDir = k1.ScreenDumpDir
 	k.RefreshRate = k1.RefreshRate
+	k.MetricsCacheExpiry = k1.MetricsCacheExpiry
 	k.MaxConnRetry = k1.MaxConnRetry
 	k.ReadOnly = k1.ReadOnly
 	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
@@ -343,6 +346,9 @@ func (k *K9s) IsReadOnly() bool {
 func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
+	}
+	if k.MetricsCacheExpiry <= 0 {
+		k.MetricsCacheExpiry = defaultMetricsCacheExpiry
 	}
 	if k.MaxConnRetry <= 0 {
 		k.MaxConnRetry = defaultMaxConnRetry
