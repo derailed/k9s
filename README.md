@@ -429,7 +429,7 @@ K9s uses aliases to navigate most K8s resources.
       tty: true
       # Set environment variables
       env:
-        name: HELLO
+      - name: HELLO
         value: world
   ```
 
@@ -485,7 +485,7 @@ You can add environment variables as follows:
 k9s:
   shellPod:
     env:
-      name: HELLO
+    - name: HELLO
       value: world
 ```
 
