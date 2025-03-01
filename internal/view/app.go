@@ -645,7 +645,7 @@ func (a *App) cowCmd(msg string) {
 	dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, msg)
 }
 
-func (a *App) dirCmd(path string) error {
+func (a *App) dirCmd(path string, pushCmd bool) error {
 	log.Debug().Msgf("DIR PATH %q", path)
 	_, err := os.Stat(path)
 	if err != nil {
@@ -657,7 +657,9 @@ func (a *App) dirCmd(path string) error {
 			path = dir
 		}
 	}
-	a.cmdHistory.Push("dir " + path)
+	if pushCmd {
+		a.cmdHistory.Push("dir " + path)
+	}
 
 	return a.inject(NewDir(path), true)
 }
