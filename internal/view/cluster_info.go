@@ -111,9 +111,13 @@ func (c *ClusterInfo) warnCell(s string, w bool) string {
 // ClusterInfoChanged notifies the cluster meta was changed.
 func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 	c.app.QueueUpdateDraw(func() {
+		ic := " ✏️"
+		if c.app.Config.K9s.IsReadOnly() {
+			ic = " 🔒"
+		}
 		c.Clear()
 		c.layout()
-		row := c.setCell(0, curr.Context)
+		row := c.setCell(0, curr.Context+ic)
 		row = c.setCell(row, curr.Cluster)
 		row = c.setCell(row, curr.User)
 		if curr.K9sLatest != "" {
