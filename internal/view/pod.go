@@ -394,7 +394,9 @@ func shellIn(a *App, fqn, co string) {
 	if err != nil {
 		log.Warn().Err(err).Msgf("os detect failed")
 	}
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+
+	flags := a.Conn().Config().Flags()
+	args := computeShellArgs(fqn, co, flags.KubeConfig, flags.Context, flags.BearerToken, os)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	err = runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args})
@@ -438,22 +440,23 @@ func resumeAttachIn(a *App, c model.Component, path, co string) {
 }
 
 func attachIn(a *App, path, co string) {
-	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags().KubeConfig)
+	flags := a.Conn().Config().Flags()
+	args := buildShellArgs("attach", path, co, flags.KubeConfig, flags.Context, flags.BearerToken)
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if err := runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}); err != nil {
 		a.Flash().Errf("Attach exec failed: %s", err)
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string, os string) []string {
-	args := buildShellArgs("exec", path, co, kcfg)
+func computeShellArgs(path, co string, kcfg, ctx, token *string, os string) []string {
+	args := buildShellArgs("exec", path, co, kcfg, ctx, token)
 	if os == windowsOS {
 		return append(args, "--", powerShell)
 	}
 	return append(args, "--", "sh", "-c", shellCheck)
 }
 
-func buildShellArgs(cmd, path, co string, kcfg *string) []string {
+func buildShellArgs(cmd, path, co string, kcfg, ctx, token *string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, cmd, "-it")
 	ns, po := client.Namespaced(path)
@@ -463,6 +466,12 @@ func buildShellArgs(cmd, path, co string, kcfg *string) []string {
 	args = append(args, po)
 	if kcfg != nil && *kcfg != "" {
 		args = append(args, "--kubeconfig", *kcfg)
+	}
+	if ctx != nil && *ctx != "" {
+		args = append(args, "--context", *ctx)
+	}
+	if token != nil && *token != "" {
+		args = append(args, "--token", *token)
 	}
 	if co != "" {
 		args = append(args, "-c", co)
