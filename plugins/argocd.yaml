@@ -13,3 +13,49 @@ plugins:
     - $NAMESPACE
     background: true
     confirm: true
+
+  refresh-apps:
+    shortCut: Shift-R
+    confirm: false
+    scopes:
+      - apps
+    description: Refresh a argocd app hard
+    command: bash
+    background: false
+    args:
+      - -c
+      - "kubectl annotate applications -n argocd $NAME argocd.argoproj.io/refresh=hard"
+
+  disable-auto-sync:
+    shortCut: Shift-J
+    confirm: false
+    scopes:
+      - apps
+    description: Disable argocd sync
+    command: kubectl
+    background: false
+    args:
+      - patch
+      - applications
+      - -n
+      - argocd
+      - $NAME
+      - "--type=json"
+      - '-p=[{"op":"replace", "path": "/spec/syncPolicy", "value": {}}]'
+
+  enable-auto-sync:
+    shortCut: Shift-B
+    confirm: false
+    scopes:
+      - apps
+    description: Enable argocd sync
+    command: kubectl
+    background: false
+    args:
+      - patch
+      - applications
+      - -n
+      - argocd
+      - $NAME
+      - --type=merge
+      - '-p={"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["ApplyOutOfSyncOnly=true","CreateNamespace=true","PruneLast=true","PrunePropagationPolicy=foreground"]}}}'
