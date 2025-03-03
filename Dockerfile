@@ -43,7 +43,7 @@ RUN apt-get update && apt-get upgrade -y \
     #&& echo "https://github.com/argoproj/argo-workflows/releases/download/${ARGO_CLI_VERSION}/argo-${ARGO_CLI_VERSION}-linux-${ARCHITECTURE}.tar.gz" \
     #&& curl -L -o /tmp/argo.tar.gz argo-linux-amd64.gz https://github.com/argoproj/argo-workflows/releases/download/${ARGO_CLI_VERSION}/argo-linux-${ARCHITECTURE}.gz \
     #&& tar xvf argo.tar.gz \
-    #&& mv argo /usr/local/bin/ \    
+    #&& mv argo /usr/local/bin/ \
     # Create a non-root user to use if preferred - see https://aka.ms/vscode-remote/containers/non-root-user.
     && groupadd --gid $USER_GID $USERNAME \
     && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
