@@ -47,7 +47,9 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	if t.app.Conn() != nil {
 		ctx = context.WithValue(ctx, internal.KeyHasMetrics, t.app.Conn().HasMetrics())
 	}
-	t.app.CustomView = config.NewCustomView()
+	if t.app.CustomView == nil {
+		t.app.CustomView = config.NewCustomView()
+	}
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
 	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
 	t.Table.Init(ctx)
@@ -142,12 +144,14 @@ func (t *Table) Start() {
 	t.Stop()
 	t.CmdBuff().AddListener(t)
 	t.Styles().AddListener(t.Table)
+	t.App().CustomView.AddListener(t.Table.GVR().String(), t.Table)
 }
 
 // Stop terminates the component.
 func (t *Table) Stop() {
 	t.CmdBuff().RemoveListener(t)
 	t.Styles().RemoveListener(t.Table)
+	t.App().CustomView.RemoveListener(t.GVR().String())
 }
 
 // SetEnterFn specifies the default enter behavior.

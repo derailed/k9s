@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
@@ -17,9 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
-
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/model1"
 )
 
 const (
@@ -49,7 +48,14 @@ const (
 
 // Pod renders a K8s Pod to screen.
 type Pod struct {
-	Base
+	*Base
+}
+
+// NewPod returns a new instance.
+func NewPod() *Pod {
+	return &Pod{
+		Base: new(Base),
+	}
 }
 
 // ColorerFunc colors a resource row.
@@ -84,33 +90,37 @@ func (p Pod) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (p Pod) Header(ns string) model1.Header {
+func (p Pod) Header(_ string) model1.Header {
+	return p.doHeader(p.defaultHeader())
+}
+
+func (Pod) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
 		model1.HeaderColumn{Name: "PF"},
 		model1.HeaderColumn{Name: "READY"},
 		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "LAST RESTART", Align: tview.AlignRight, Time: true, Wide: true},
-		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight, Wide: true},
-		model1.HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight, Wide: true},
-		model1.HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "LAST RESTART", Attrs: model1.Attrs{Align: tview.AlignRight, Time: true, Wide: true}},
+		model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "CPU/R:L", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
+		model1.HeaderColumn{Name: "MEM/R:L", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
+		model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 		model1.HeaderColumn{Name: "IP"},
 		model1.HeaderColumn{Name: "NODE"},
-		model1.HeaderColumn{Name: "SERVICEACCOUNT", Wide: true},
-		model1.HeaderColumn{Name: "NOMINATED NODE", Wide: true},
-		model1.HeaderColumn{Name: "READINESS GATES", Wide: true},
-		model1.HeaderColumn{Name: "QOS", Wide: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "SERVICE-ACCOUNT", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "NOMINATED NODE", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "READINESS GATES", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "QOS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
@@ -120,7 +130,24 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	if !ok {
 		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
 	}
+	if err := p.defaultRow(pwm, row); err != nil {
+		return err
+	}
+	if p.specs.isEmpty() {
+		return nil
+	}
 
+	// !BOZO!! Call header 2 times
+	cols, err := p.specs.realize(pwm.Raw, p.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (p Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	var po v1.Pod
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object, &po); err != nil {
 		return err

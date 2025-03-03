@@ -59,8 +59,8 @@ func (PortForward) Header(ns string) model1.Header {
 		model1.HeaderColumn{Name: "URL"},
 		model1.HeaderColumn{Name: "C"},
 		model1.HeaderColumn{Name: "N"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 

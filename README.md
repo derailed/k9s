@@ -44,6 +44,8 @@ Your donations will go a long way in keeping our servers lights on and beers in 
 
 ## Demo Videos/Recordings
 
+* [K9s v0.40.0 -Column Blow- Sneak peek](https://youtu.be/iy6RDozAM4A)
+* [K9s v0.31.0 Configs+Sneak peek](https://youtu.be/X3444KfjguE)
 * [K9s v0.30.0 Sneak peek](https://youtu.be/mVBc1XneRJ4)
 * [Vulnerability Scans](https://youtu.be/ULkl0MsaidU)
 * [K9s v0.29.0](https://youtu.be/oiU3wmoAkBo)
@@ -362,6 +364,8 @@ K9s uses aliases to navigate most K8s resources.
 | To view and switch to another Kubernetes context (Pod view)                     | `:`ctx⏎                       |                                                                        |
 | To view and switch directly to another Kubernetes context (Last used view)      | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace                              | `:`ns⏎                        |                                                                        |
+| To switch back to the last active command (like how "cd -" works)               | `-`                           | Navigation that adds breadcrumbs to the bottom are not commands        |
+| To go back and forward through the command history                              | back: `[`, forward: `]`       | Same as above                                                          |
 | To view all saved resources                                                     | `:`screendump or sd⏎          |                                                                        |
 | To delete a resource (TAB and ENTER to confirm)                                 | `ctrl-d`                      |                                                                        |
 | To kill a resource (no confirmation dialog, equivalent to kubectl delete --now) | `ctrl-k`                      |                                                                        |
@@ -431,6 +435,8 @@ You can now override the context portForward default address configuration by se
       sinceSeconds: 300 # => tail the last 5 mins.
       # Toggles log line wrap. Default false
       textWrap: false
+      # Autoscroll in logs will be disabled. Default is false.
+      disableAutoscroll: false
       # Toggles log line timestamp info. Default false
       showTime: false
     # Provide shell pod customization when nodeShell feature gate is enabled!
@@ -627,7 +633,30 @@ The annotation value must specify a container to forward to as well as a local p
 
 You can change which columns shows up for a given resource via custom views. To surface this feature, you will need to create a new configuration file, namely `$XDG_CONFIG_HOME/k9s/views.yaml`. This file leverages GVR (Group/Version/Resource) to configure the associated table view columns. If no GVR is found for a view the default rendering will take over (ie what we have now). Going wide will add all the remaining columns that are available on the given resource after your custom columns. To boot, you can edit your views config file and tune your resources views live!
 
-> NOTE: This is experimental and will most likely change as we iron this out!
+📢 🎉 As of `release v0.40.0` you can specify json parse expressions to further customize your resources rendering.
+
+The new column syntax is as follows:
+
+> COLUMN_NAME<:json_parse_expression><|column_attributes>
+
+Where `:json_parse_expression` represents an expression to pull a specific snippet out of the resource manifest.
+Similar to `kubectl -o custom-columns` command. This expression is optional.
+
+> IMPORTANT! Columns must be valid YAML strings. Thus if your column definition contains non-alpha chars
+> they must figure with either single/double quotes or escaped via `\`
+
+> NOTE! Be sure to watch k9s logs as any issues with the custom views specification are only surfaced in the logs.
+
+Additionally, you can specify column attributes to further tailor the column rendering.
+To use this you will need to add a `|` indicator followed by your rendering bits.
+You can have one or more of the following attributes:
+
+* `T` -> time column indicator
+* `N` -> number column indicator
+* `W` -> turns on wide column aka only shows while in wide mode. Defaults to the standard resource definition when present.
+* `H` -> Hides the column
+* `L` -> Left align (default)
+* `R` -> Right align
 
 Here is a sample views configuration that customize a pods and services views.
 
@@ -637,7 +666,9 @@ views:
   v1/pods:
     columns:
       - AGE
-      - NAMESPACE
+      - NAMESPACE|WR                                     # => 🌚 Specifies the NAMESPACE column to be right aligned and only visible while in wide mode
+      - ZORG:.metadata.labels.fred\.io\.kubernetes\.blee # => 🌚 extract fred.io.kubernetes.blee label into it's own column
+      - BLEE:.metadata.annotations.blee|R                # => 🌚 extract annotation blee into it's own column and right align it
       - NAME
       - IP
       - NODE
@@ -651,6 +682,8 @@ views:
       - TYPE
       - CLUSTER-IP
 ```
+
+> 🩻 NOTE: This is experimental and will most likely change as we iron this out!
 
 ---
 
@@ -965,6 +998,7 @@ k9s:
     buffer: 5000
     sinceSeconds: -1
     textWrap: false
+    disableAutoscroll: false
     showTime: false
   thresholds:
     cpu:
@@ -1003,6 +1037,8 @@ k9s:
     # MenuView attributes and styles.
     menu:
       fgColor: darkblue
+      # Style of menu text. Supported options are "dim" (default), "normal", and "bold"
+      fgStyle: dim
       keyColor: cornflowerblue
       # Used for favorite namespaces
       numKeyColor: cadetblue

@@ -45,8 +45,8 @@ func (Workload) Header(string) model1.Header {
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "STATUS"},
 		model1.HeaderColumn{Name: "READY"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 

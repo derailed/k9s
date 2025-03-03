@@ -105,7 +105,7 @@ func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check,
 	if !ok {
 		meta = ResourceMeta{
 			DAO:      &dao.Table{},
-			Renderer: &render.Generic{},
+			Renderer: &render.Table{},
 		}
 	}
 	if meta.DAO == nil {

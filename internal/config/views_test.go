@@ -23,7 +23,7 @@ func TestViewSetting_Equals(t *testing.T) {
 		v1, v2 *config.ViewSetting
 		equals bool
 	}{
-		{nil, nil, true},
+		{nil, nil, false},
 		{&config.ViewSetting{}, nil, false},
 		{nil, &config.ViewSetting{}, false},
 		{&config.ViewSetting{}, &config.ViewSetting{}, true},

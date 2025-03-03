@@ -4,6 +4,7 @@
 package model1
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/rs/zerolog/log"
@@ -11,16 +12,52 @@ import (
 
 const ageCol = "AGE"
 
-// HeaderColumn represent a table header.
-type HeaderColumn struct {
-	Name      string
+type Attrs struct {
 	Align     int
 	Decorator DecoratorFunc
 	Wide      bool
 	MX        bool
+	MXC, MXM  bool
 	Time      bool
 	Capacity  bool
 	VS        bool
+	Hide      bool
+}
+
+func (a Attrs) Merge(b Attrs) Attrs {
+	a.MX = b.MX
+	a.MXC = b.MXC
+	a.MXM = b.MXM
+	a.Decorator = b.Decorator
+	a.VS = b.VS
+
+	if a.Align == 0 {
+		a.Align = b.Align
+	}
+	if !a.Wide {
+		a.Wide = b.Wide
+	}
+	if !a.Time {
+		a.Time = b.Time
+	}
+	if !a.Capacity {
+		a.Capacity = b.Capacity
+	}
+	if !a.Hide {
+		a.Hide = b.Hide
+	}
+
+	return a
+}
+
+// HeaderColumn represent a table header.
+type HeaderColumn struct {
+	Attrs
+	Name string
+}
+
+func (h HeaderColumn) String() string {
+	return fmt.Sprintf("%s [%d::%t::%t::%t]", h.Name, h.Align, h.Wide, h.MX, h.Time)
 }
 
 // Clone copies a header.
@@ -106,7 +143,6 @@ func (h Header) Customize(cols []string, wide bool) Header {
 		col.Wide = false
 		cc = append(cc, col)
 	}
-
 	if !wide {
 		return cc
 	}

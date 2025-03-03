@@ -104,7 +104,9 @@
             "sinceSeconds": {"type": "integer"},
             "textWrap": {"type": "boolean"},
             "showTime": {"type": "boolean"},
-            "jsonPretty": {"type": "boolean"}
+            "jsonPretty": {"type": "boolean"},
+            "disableAutoscroll": {"type": "boolean"},
+            "showTime": {"type": "boolean"}
           }
         },
         "thresholds": {

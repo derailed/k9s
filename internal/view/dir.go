@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
@@ -173,7 +173,7 @@ func isKustomized(sel string) bool {
 	}
 	kk := []string{kustomizeNoExt, kustomizeYAML, kustomizeYML}
 	for _, f := range ff {
-		if data.InList(kk, f.Name()) {
+		if slices.Contains(kk, f.Name()) {
 			return true
 		}
 	}

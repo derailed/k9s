@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -17,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
+
+	"github.com/derailed/k9s/internal/client"
 )
 
 const (
@@ -47,7 +48,7 @@ func (f *Factory) Start(ns string) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
 
-	log.Debug().Msgf("Factory START with ns `%q", ns)
+	log.Debug().Msgf("Factory START with ns %q", ns)
 	f.stopChan = make(chan struct{})
 	for ns, fac := range f.factories {
 		log.Debug().Msgf("Starting factory in ns %q", ns)

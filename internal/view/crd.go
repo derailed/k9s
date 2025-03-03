@@ -34,5 +34,5 @@ func (s *CRD) bindKeys(aa *ui.KeyActions) {
 
 func (s *CRD) showCRD(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	_, crd := client.Namespaced(path)
-	app.gotoResource(crd, "", false)
+	app.gotoResource(crd, "", false, true)
 }

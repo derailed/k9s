@@ -70,7 +70,12 @@ func (c Container) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Container) Header(ns string) model1.Header {
+func (c Container) Header(_ string) model1.Header {
+	return c.defaultHeader()
+}
+
+// Header returns a header row.
+func (Container) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "IDX"},
 		model1.HeaderColumn{Name: "NAME"},
@@ -78,45 +83,49 @@ func (Container) Header(ns string) model1.Header {
 		model1.HeaderColumn{Name: "IMAGE"},
 		model1.HeaderColumn{Name: "READY"},
 		model1.HeaderColumn{Name: "STATE"},
-		model1.HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
 		model1.HeaderColumn{Name: "PROBES(L:R:S)"},
-		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "CPU/R:L", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "MEM/R:L", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 		model1.HeaderColumn{Name: "PORTS"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (c Container) Render(o interface{}, name string, r *model1.Row) error {
-	co, ok := o.(ContainerRes)
+func (c Container) Render(o interface{}, ns string, row *model1.Row) error {
+	cr, ok := o.(ContainerRes)
 	if !ok {
 		return fmt.Errorf("expected ContainerRes, but got %T", o)
 	}
 
-	cur, res := gatherMetrics(co.Container, co.MX)
+	return c.defaultRow(cr, row)
+}
+
+func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
+	cur, res := gatherMetrics(cr.Container, cr.MX)
 	ready, state, restarts := "false", MissingValue, "0"
-	if co.Status != nil {
-		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
+	if cr.Status != nil {
+		ready, state, restarts = boolToStr(cr.Status.Ready), ToContainerState(cr.Status.State), strconv.Itoa(int(cr.Status.RestartCount))
 	}
 
-	r.ID = co.Container.Name
+	r.ID = cr.Container.Name
 	r.Fields = model1.Fields{
-		co.Idx,
-		co.Container.Name,
+		cr.Idx,
+		cr.Container.Name,
 		"●",
-		co.Container.Image,
+		cr.Container.Image,
 		ready,
 		state,
 		restarts,
-		probe(co.Container.LivenessProbe) + ":" + probe(co.Container.ReadinessProbe) + ":" + probe(co.Container.StartupProbe),
+		probe(cr.Container.LivenessProbe) + ":" + probe(cr.Container.ReadinessProbe) + ":" + probe(cr.Container.StartupProbe),
 		toMc(cur.cpu),
 		toMi(cur.mem),
 		toMc(res.cpu) + ":" + toMc(res.lcpu),
@@ -125,9 +134,9 @@ func (c Container) Render(o interface{}, name string, r *model1.Row) error {
 		client.ToPercentageStr(cur.cpu, res.lcpu),
 		client.ToPercentageStr(cur.mem, res.mem),
 		client.ToPercentageStr(cur.mem, res.lmem),
-		ToContainerPorts(co.Container.Ports),
+		ToContainerPorts(cr.Container.Ports),
 		AsStatus(c.diagnose(state, ready)),
-		ToAge(co.Age),
+		ToAge(cr.Age),
 	}
 
 	return nil

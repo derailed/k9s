@@ -11,11 +11,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -98,7 +99,7 @@ func (c *Command) contextCmd(p *cmd.Interpreter) error {
 		return err
 	}
 
-	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true)
+	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true, true)
 }
 
 func (c *Command) namespaceCmd(p *cmd.Interpreter) bool {
@@ -121,7 +122,7 @@ func (c *Command) aliasCmd(p *cmd.Interpreter) error {
 	v := NewAlias(gvr)
 	v.SetFilter(filter)
 
-	return c.exec(p, gvr, v, false)
+	return c.exec(p, gvr, v, false, true)
 }
 
 func (c *Command) xrayCmd(p *cmd.Interpreter) error {
@@ -147,11 +148,11 @@ func (c *Command) xrayCmd(p *cmd.Interpreter) error {
 		return err
 	}
 
-	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true)
+	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true, true)
 }
 
 // Run execs the command by showing associated display.
-func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
+func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool, pushCmd bool) error {
 	if c.specialCmd(p) {
 		return nil
 	}
@@ -206,12 +207,12 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 		co.SetLabelFilter(ll)
 	}
 
-	return c.exec(p, gvr, co, clearStack)
+	return c.exec(p, gvr, co, clearStack, pushCmd)
 }
 
 func (c *Command) defaultCmd(isRoot bool) error {
 	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
-		return c.run(cmd.NewInterpreter("context"), "", true)
+		return c.run(cmd.NewInterpreter("context"), "", true, true)
 	}
 
 	defCmd := "pod"
@@ -220,13 +221,13 @@ func (c *Command) defaultCmd(isRoot bool) error {
 	}
 	p := cmd.NewInterpreter(c.app.Config.ActiveView())
 	if p.IsBlank() {
-		return c.run(p.Reset(defCmd), "", true)
+		return c.run(p.Reset(defCmd), "", true, true)
 	}
 
-	if err := c.run(p, "", true); err != nil {
+	if err := c.run(p, "", true, true); err != nil {
 		p = p.Reset(defCmd)
 		log.Error().Err(fmt.Errorf("Command failed. Using default command: %s", p.GetLine()))
-		return c.run(p, "", true)
+		return c.run(p, "", true, true)
 	}
 
 	return nil
@@ -293,7 +294,7 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (client.GVR, *MetaViewer, erro
 
 	v := MetaViewer{
 		viewerFn: func(gvr client.GVR) ResourceViewer {
-			return NewOwnerExtender(NewBrowser(gvr))
+			return NewScaleExtender(NewOwnerExtender(NewBrowser(gvr)))
 		},
 	}
 	if mv, ok := customViewers[gvr]; ok {
@@ -319,7 +320,7 @@ func (c *Command) componentFor(gvr client.GVR, fqn string, v *MetaViewer) Resour
 	return view
 }
 
-func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component, clearStack bool) (err error) {
+func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component, clearStack bool, pushCmd bool) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Error().Msgf("Something bad happened! %#v", e)
@@ -328,17 +329,19 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 			log.Error().Msg(string(debug.Stack()))
 
 			p := cmd.NewInterpreter("pod")
-			if cmd := c.app.cmdHistory.Pop(); cmd != "" {
-				p = p.Reset(cmd)
+			cmds := c.app.cmdHistory.List()
+			currentCommand := cmds[c.app.cmdHistory.CurrentIndex()]
+			if currentCommand != "pod" {
+				p = p.Reset(currentCommand)
 			}
-			err = c.run(p, "", true)
+			err = c.run(p, "", true, true)
 		}
 	}()
 
 	if comp == nil {
 		return fmt.Errorf("no component found for %s", gvr)
 	}
-	c.app.Flash().Infof("Viewing %s...", gvr.R())
+	c.app.Flash().Infof("Viewing %s...", gvr)
 	if clearStack {
 		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
 		c.app.Config.SetActiveView(cmd)
@@ -347,7 +350,9 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 		return err
 	}
 
-	c.app.cmdHistory.Push(p.GetLine())
+	if pushCmd {
+		c.app.cmdHistory.Push(p.GetLine())
+	}
 
 	return
 }

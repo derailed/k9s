@@ -20,6 +20,27 @@ type StyleListener interface {
 	StylesChanged(*Styles)
 }
 
+type TextStyle string
+
+const (
+	TextStyleNormal TextStyle = "normal"
+	TextStyleBold   TextStyle = "bold"
+	TextStyleDim    TextStyle = "dim"
+)
+
+func (ts TextStyle) ToShortString() string {
+	switch ts {
+	case TextStyleNormal:
+		return "-"
+	case TextStyleBold:
+		return "b"
+	case TextStyleDim:
+		return "d"
+	default:
+		return "d"
+	}
+}
+
 type (
 	// Styles tracks K9s styling options.
 	Styles struct {
@@ -200,9 +221,10 @@ type (
 
 	// Menu tracks menu styles.
 	Menu struct {
-		FgColor     Color `json:"fgColor" yaml:"fgColor"`
-		KeyColor    Color `json:"keyColor" yaml:"keyColor"`
-		NumKeyColor Color `json:"numKeyColor" yaml:"numKeyColor"`
+		FgColor     Color     `json:"fgColor" yaml:"fgColor"`
+		FgStyle     TextStyle `json:"fgStyle" yaml:"fgStyle"`
+		KeyColor    Color     `json:"keyColor" yaml:"keyColor"`
+		NumKeyColor Color     `json:"numKeyColor" yaml:"numKeyColor"`
 	}
 
 	// Charts tracks charts styles.

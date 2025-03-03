@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 )
@@ -20,6 +21,8 @@ type History struct{}
 func (History) Healthy(ctx context.Context, o interface{}) error {
 	return nil
 }
+
+func (History) SetViewSetting(*config.ViewSetting) {}
 
 // IsGeneric identifies a generic handler.
 func (History) IsGeneric() bool {
@@ -39,7 +42,7 @@ func (History) Header(_ string) model1.Header {
 		model1.HeaderColumn{Name: "CHART"},
 		model1.HeaderColumn{Name: "APP VERSION"},
 		model1.HeaderColumn{Name: "DESCRIPTION"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 	}
 }
 

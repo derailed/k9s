@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,6 +28,8 @@ func (Dir) ColorerFunc() model1.ColorerFunc {
 		return tcell.ColorCadetBlue
 	}
 }
+
+func (Dir) SetViewSetting(*config.ViewSetting) {}
 
 // Header returns a header row.
 func (Dir) Header(ns string) model1.Header {

@@ -32,6 +32,7 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     jsonPretty: true
+    disableAutoscroll: false
     showTime: false
   thresholds:
     cpu:
