@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2025 Robin Schneider <ypid@riseup.net>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+plugins:
+  vector-top:
+    # t hotkey is already used for "transfer" by k9s.
+    # Using h because of health.
+    shortCut: h
+    confirm: false
+    description: "Execute `vector top`"
+    scopes:
+      - pods
+    command: sh
+    background: false
+    args:
+      # Both works. I have not read through https://github.com/derailed/k9s/issues/1852 yet.
+      # - -ic
+      - -c
+      - "kubectl exec --context=$CONTEXT --namespace=$NAMESPACE --stdin --tty $NAME -- vector top"
+
+  vector-top-container:
+    # t hotkey is already used for "transfer" by k9s.
+    shortCut: h
+    confirm: false
+    description: "Execute `vector top`"
+    scopes:
+      - containers
+    command: sh
+    background: false
+    args:
+      - -c
+      - "kubectl exec --context=$CONTEXT --namespace=$NAMESPACE --stdin --tty $POD --container=$NAME -- vector top"
