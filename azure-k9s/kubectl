@@ -1,0 +1,15 @@
+#!/bin/bash
+
+cmd="az aks command invoke -n ${CLUSTER_NAME} -g ${RESOURCE_GROUP} --command \"kubectl "
+
+#echo "${@}"
+
+user_cmd=$( echo "$@" | grep -v kubectl)
+
+#echo "$user_cmd"
+
+final_cmd="$cmd $user_cmd\""
+
+#echo $final_cmd
+
+eval $final_cmd
