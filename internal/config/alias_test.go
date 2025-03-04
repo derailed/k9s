@@ -111,7 +111,7 @@ func TestAliasesLoad(t *testing.T) {
 	a := config.NewAliases()
 
 	assert.Nil(t, a.Load(path.Join(config.AppConfigDir, "plain.yaml")))
-	assert.Equal(t, 54, len(a.Alias))
+	assert.Equal(t, 57, len(a.Alias))
 }
 
 func TestAliasesSave(t *testing.T) {

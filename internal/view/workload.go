@@ -6,16 +6,19 @@ package view
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,11 +32,38 @@ func NewWorkload(gvr client.GVR) ResourceViewer {
 	w := Workload{
 		ResourceViewer: NewBrowser(gvr),
 	}
+	w.SetContextFn(w.workloadContext)
 	w.GetTable().SetEnterFn(w.showRes)
 	w.AddBindKeysFn(w.bindKeys)
 	w.GetTable().SetSortCol("KIND", true)
 
 	return &w
+}
+
+// workloadContext will set the configuration's values of the workloadGVRs in the context to be used in the dao/workload
+func (n *Workload) workloadContext(ctx context.Context) context.Context {
+	var gvrFilenames []string
+
+	// Retrieve workload cluster context config file
+	ctxWorkloadPath := n.App().Config.ContextWorkloadPath()
+
+	// Read config file
+	wkg := config.WorkloadConfig{}
+	configData, err := os.ReadFile(ctxWorkloadPath)
+	if err == nil {
+		if err := yaml.Unmarshal(configData, &wkg); err == nil {
+			gvrFilenames = wkg.GVRFilenames
+		}
+	}
+
+	// Init workload GVRs with default values and from cluster context config
+	wkgvs, err := config.NewWorkloadGVRs(n.App().Config.ContextWorkloadDir(), gvrFilenames)
+	if err != nil {
+		n.App().Flash().Errf("unable to find custom workload GVR: %q", err)
+	}
+
+	// Set in context
+	return context.WithValue(ctx, internal.KeyWorkloadGVRs, wkgvs)
 }
 
 func (w *Workload) bindDangerousKeys(aa *ui.KeyActions) {
@@ -63,6 +93,7 @@ func (w *Workload) bindKeys(aa *ui.KeyActions) {
 		ui.KeyShiftA: ui.NewKeyAction("Sort Age", w.GetTable().SortColCmd(ageCol, true), false),
 		ui.KeyY:      ui.NewKeyAction(yamlAction, w.yamlCmd, true),
 		ui.KeyD:      ui.NewKeyAction("Describe", w.describeCmd, true),
+		ui.KeyG:      ui.NewKeyAction("Custom GVRs", w.workloadGVRView, true),
 	})
 }
 
@@ -164,6 +195,16 @@ func (w *Workload) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	describeResource(w.App(), nil, gvr, fqn)
 
 	return nil
+}
+
+func (a *Workload) workloadGVRView(evt *tcell.EventKey) *tcell.EventKey {
+	co := NewWorkloadGVR(client.NewGVR("workloadgvrs"))
+	if err := a.App().inject(co, false); err != nil {
+		a.App().Flash().Err(err)
+		return nil
+	}
+
+	return evt
 }
 
 func (w *Workload) editCmd(evt *tcell.EventKey) *tcell.EventKey {
