@@ -20,16 +20,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type (
-	// SortFn represent a function that can sort columnar data.
-	SortFn func(rows Rows, sortCol SortColumn)
+// SortFn represent a function that can sort columnar data.
+type SortFn func(rows Rows, sortCol SortColumn)
 
-	// SortColumn represents a sortable column.
-	SortColumn struct {
-		Name string
-		ASC  bool
-	}
-)
+// SortColumn represents a sortable column.
+type SortColumn struct {
+	Name string
+	ASC  bool
+}
+
+// IsSet checks if the sort column is set.
+func (s SortColumn) IsSet() bool {
+	return s.Name != ""
+}
 
 const spacer = " "
 
@@ -174,8 +177,11 @@ func (t *TableData) rxFilter(q string, inverse bool) (*RowEvents, error) {
 	rr := NewRowEvents(t.RowCount() / 2)
 	ageIndex, _ := t.header.IndexOf("AGE", true)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
-		ff := re.Row.Fields[startIndex:]
-		if ageIndex >= 0 && ageIndex+1 <= len(ff) {
+		ff := make([]string, 0, len(re.Row.Fields))
+		for _, r := range re.Row.Fields[startIndex:] {
+			ff = append(ff, r)
+		}
+		if ageIndex >= 0 && startIndex != ageIndex && ageIndex+1 <= len(ff) {
 			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
 		}
 		match := rx.MatchString(strings.Join(ff, spacer))
@@ -321,22 +327,25 @@ func (t *TableData) Labelize(labels []string) *TableData {
 	return &data
 }
 
-// Customize returns a new model with customized column layout.
-func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual bool) (*TableData, SortColumn) {
+// ComputeSortCol computes the best matched sort column.
+func (t *TableData) ComputeSortCol(vs *config.ViewSetting, sc SortColumn, manual bool) SortColumn {
 	if vs.IsBlank() {
 		if sc.Name != "" {
-			return t, sc
+			return sc
 		}
 		if psc, err := t.sortCol(vs); err == nil {
-			return t, psc
+			return psc
 		}
-		return t, sc
+		return sc
+	}
+	if manual && sc.IsSet() {
+		return sc
 	}
 	if s, asc, err := vs.SortCol(); err == nil {
-		return t, SortColumn{Name: s, ASC: asc}
+		return SortColumn{Name: s, ASC: asc}
 	}
 
-	return t, sc
+	return sc
 }
 
 func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {

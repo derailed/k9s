@@ -68,6 +68,10 @@ func (g GVR) FQN(n string) string {
 
 // AsResourceName returns a resource . separated descriptor in the shape of kind.version.group.
 func (g GVR) AsResourceName() string {
+	if g.g == "" {
+		return g.r
+	}
+
 	return g.r + "." + g.v + "." + g.g
 }
 
@@ -105,6 +109,15 @@ func (g GVR) GVR() schema.GroupVersionResource {
 		Version:  g.V(),
 		Resource: g.R(),
 	}
+}
+
+// GVSub returns group vervion sub path.
+func (g GVR) GVSub() string {
+	if g.G() == "" {
+		return g.V()
+	}
+
+	return g.G() + "/" + g.V()
 }
 
 // GR returns a full schema representation.

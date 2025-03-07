@@ -22,8 +22,9 @@ type Alias struct {
 func (Alias) Header(ns string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "RESOURCE"},
+		model1.HeaderColumn{Name: "GROUP"},
+		model1.HeaderColumn{Name: "VERSION"},
 		model1.HeaderColumn{Name: "COMMAND"},
-		model1.HeaderColumn{Name: "API-GROUP"},
 	}
 }
 
@@ -35,13 +36,13 @@ func (Alias) Render(o interface{}, ns string, r *model1.Row) error {
 		return fmt.Errorf("expected AliasRes, but got %T", o)
 	}
 
-	r.ID = a.GVR
 	gvr := client.NewGVR(a.GVR)
-	res, grp := gvr.RG()
+	r.ID = gvr.String()
 	r.Fields = append(r.Fields,
-		res,
+		gvr.R(),
+		gvr.G(),
+		gvr.V(),
 		strings.Join(a.Aliases, ","),
-		grp,
 	)
 
 	return nil

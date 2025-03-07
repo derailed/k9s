@@ -476,10 +476,6 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if client.IsAllNamespace(ns) {
-		b.GetTable().SetSortCol("NAMESPACE", true)
-	}
-
 	if err := b.app.switchNS(ns); err != nil {
 		b.App().Flash().Err(err)
 		return nil

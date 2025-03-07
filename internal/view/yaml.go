@@ -20,6 +20,7 @@ import (
 var (
 	keyValRX = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s(.+)\z`)
 	keyRX    = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s*\z`)
+	searchRX = regexp.MustCompile(`<<<("search_\d+")>>>(.+)<<<"">>>`)
 )
 
 const (
@@ -60,7 +61,7 @@ func colorizeYAML(style config.Yaml, raw string) string {
 }
 
 func enableRegion(str string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(str, "<<<", "["), ">>>", "]")
+	return searchRX.ReplaceAllString(str, `[$1]$2[""]`)
 }
 
 func saveYAML(dir, name, raw string) (string, error) {
