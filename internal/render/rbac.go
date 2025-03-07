@@ -64,7 +64,7 @@ func (r Rbac) Render(o interface{}, ns string, ro *model1.Row) error {
 	ro.ID = p.Resource
 	ro.Fields = make(model1.Fields, 0, len(r.Header(ns)))
 	ro.Fields = append(ro.Fields,
-		cleanseResource(p.Resource),
+		p.Resource,
 		p.Group,
 	)
 	ro.Fields = append(ro.Fields, asVerbs(p.Verbs)...)
