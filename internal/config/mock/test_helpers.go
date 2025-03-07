@@ -136,6 +136,9 @@ func (m mockConnection) Dial() (kubernetes.Interface, error) {
 func (m mockConnection) DialLogs() (kubernetes.Interface, error) {
 	return nil, nil
 }
+func (m mockConnection) DialMetrics() *client.MetricsServer {
+	return nil
+}
 func (m mockConnection) SwitchContext(ctx string) error {
 	return nil
 }

@@ -141,7 +141,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 	var nmx *mv1beta1.NodeMetrics
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
-		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
+		nmx, _ = n.Client().DialMetrics().FetchNodeMetrics(ctx, path)
 	}
 
 	return &render.NodeWithMetrics{Raw: raw, MX: nmx}, nil
@@ -156,7 +156,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 	var nmx client.NodesMetricsMap
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
+		nmx, _ = n.Client().DialMetrics().FetchNodesMetricsMap(ctx)
 	}
 
 	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)

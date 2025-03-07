@@ -63,7 +63,7 @@ func (h *PulseHealth) List(ctx context.Context, ns string) ([]runtime.Object, er
 }
 
 func (h *PulseHealth) checkMetrics(ctx context.Context) (health.Checks, error) {
-	dial := client.DialMetrics(h.factory.Client())
+	dial := h.factory.Client().DialMetrics()
 
 	nn, err := dao.FetchNodes(ctx, h.factory, "")
 	if err != nil {

@@ -61,7 +61,7 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 	var pmx *mv1beta1.PodMetrics
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
-		pmx, _ = client.DialMetrics(p.Client()).FetchPodMetrics(ctx, path)
+		pmx, _ = p.Client().DialMetrics().FetchPodMetrics(ctx, path)
 	}
 
 	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil
@@ -86,7 +86,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 	var pmx client.PodsMetricsMap
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
-		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetricsMap(ctx, ns)
+		pmx, _ = p.Client().DialMetrics().FetchPodsMetricsMap(ctx, ns)
 	}
 	sel, _ := ctx.Value(internal.KeyFields).(string)
 	fsel, err := labels.ConvertSelectorToLabelsMap(sel)

@@ -18,41 +18,25 @@ import (
 )
 
 const (
-	mxCacheSize   = 100
-	mxCacheExpiry = 1 * time.Minute
-	podMXGVR      = "metrics.k8s.io/v1beta1/pods"
-	nodeMXGVR     = "metrics.k8s.io/v1beta1/nodes"
+	mxCacheSize = 100
+	podMXGVR    = "metrics.k8s.io/v1beta1/pods"
+	nodeMXGVR   = "metrics.k8s.io/v1beta1/nodes"
 )
-
-// MetricsDial tracks global metric server handle.
-var MetricsDial *MetricsServer
-
-// DialMetrics dials the metrics server.
-func DialMetrics(c Connection) *MetricsServer {
-	if MetricsDial == nil {
-		MetricsDial = NewMetricsServer(c)
-	}
-
-	return MetricsDial
-}
-
-// ResetMetrics resets the metric server handle.
-func ResetMetrics() {
-	MetricsDial = nil
-}
 
 // MetricsServer serves cluster metrics for nodes and pods.
 type MetricsServer struct {
 	Connection
 
-	cache *cache.LRUExpireCache
+	cache       *cache.LRUExpireCache
+	cacheExpiry time.Duration
 }
 
 // NewMetricsServer return a metric server instance.
-func NewMetricsServer(c Connection) *MetricsServer {
+func NewMetricsServer(c Connection, cacheExpiry time.Duration) *MetricsServer {
 	return &MetricsServer{
-		Connection: c,
-		cache:      cache.NewLRUExpireCache(mxCacheSize),
+		Connection:  c,
+		cache:       cache.NewLRUExpireCache(mxCacheSize),
+		cacheExpiry: cacheExpiry,
 	}
 }
 
@@ -172,7 +156,7 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	if err != nil {
 		return mx, err
 	}
-	m.cache.Add(key, mxList, mxCacheExpiry)
+	m.cache.Add(key, mxList, m.cacheExpiry)
 
 	return mxList, nil
 }
@@ -243,7 +227,7 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	if err != nil {
 		return mx, err
 	}
-	m.cache.Add(key, mxList, mxCacheExpiry)
+	m.cache.Add(key, mxList, m.cacheExpiry)
 
 	return mxList, err
 }
