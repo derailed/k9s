@@ -123,10 +123,12 @@ func (a *App) StylesChanged(s *config.Styles) {
 	a.Main.SetBackgroundColor(s.BgColor())
 	if f, ok := a.Main.GetPrimitive("main").(*tview.Flex); ok {
 		f.SetBackgroundColor(s.BgColor())
-		if h, ok := f.ItemAt(0).(*tview.Flex); ok {
-			h.SetBackgroundColor(s.BgColor())
-		} else {
-			log.Error().Msgf("Header not found")
+		if !a.Config.K9s.IsHeadless() {
+			if h, ok := f.ItemAt(0).(*tview.Flex); ok {
+				h.SetBackgroundColor(s.BgColor())
+			} else {
+				log.Error().Msgf("Header not found")
+			}
 		}
 	} else {
 		log.Error().Msgf("Main not found")
