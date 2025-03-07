@@ -66,12 +66,29 @@ Your donations will go a long way in keeping our servers lights on and beers in 
 
 Please refer to our [K9s documentation](https://k9scli.io) site for installation, usage, customization and tips.
 
+---
+
 ## Slack Channel
 
 Wanna discuss K9s features with your fellow `K9sers` or simply show your support for this tool?
 
 * Channel: [K9sersSlack](https://k9sers.slack.com/)
 * Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
+
+---
+
+## 🥳 A Word From Our Rhodium Sponsors...
+
+Below are organizations that have opted to show their support and sponsor K9s.
+
+<br/>
+<a href="https://panfactum.com"><img src="assets/sponsors/panfactum.png" alt="panfactum"></a>
+<br/>
+<br/>
+
+> NOTE! K9s neither vouches for nor endorses these companies or products.
+
+---
 
 ## Installation
 
@@ -675,15 +692,15 @@ views:
       - NODE
       - STATUS
       - READY
-      - MEM/RL|S                                         # => 🌚 Overrides std resource default wide attribute
+      - MEM/RL|S                                         # => 🌚 Overrides std resource default wide attribute via `S` for `Show`
       - '%MEM/R|'                                        # => NOTE! column names with non alpha names need to be quoted as columns must be strings!
 
-   v1/pods@fred:                                         # => 🌚 New v0.40.6! Customize columns for a given resource and namespace!
+  v1/pods@fred:                                         # => 🌚 New v0.40.6! Customize columns for a given resource and namespace!
     columns:
       - AGE
       - NAMESPACE|WR
 
- v1/services:
+  v1/services:
     columns:
       - AGE
       - NAMESPACE
