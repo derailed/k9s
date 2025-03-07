@@ -37,14 +37,14 @@ func (c *Config) Merge(c1 *Config) {
 }
 
 // Validate ensures config is in norms.
-func (c *Config) Validate(conn client.Connection, ks KubeSettings) {
+func (c *Config) Validate(conn client.Connection, contextName, clusterName string) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
 	if c.Context == nil {
 		c.Context = NewContext()
 	}
-	c.Context.Validate(conn, ks)
+	c.Context.Validate(conn, contextName, clusterName)
 }
 
 // Dump used for debugging.

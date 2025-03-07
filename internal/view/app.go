@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"runtime"
@@ -439,18 +440,16 @@ func (a *App) switchNS(ns string) error {
 }
 
 func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
-	name, ok := ci.HasContext()
-	if !ok || a.Config.ActiveContextName() == name {
-		if !force {
-			return nil
-		}
+	contextName, ok := ci.HasContext()
+	if (!ok || a.Config.ActiveContextName() == contextName) && !force {
+		return nil
 	}
 
 	a.Halt()
 	defer a.Resume()
 	{
 		a.Config.Reset()
-		ct, err := a.Config.K9s.ActivateContext(name)
+		ct, err := a.Config.ActivateContext(contextName)
 		if err != nil {
 			return err
 		}
@@ -482,8 +481,12 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 			return err
 		}
 
-		log.Debug().Msgf("--> Switching Context %q -- %q -- %q", name, ns, a.Config.ActiveView())
-		a.Flash().Infof("Switching context to %q::%q", name, ns)
+		slog.Debug("Switching Context",
+			slogs.Context, contextName,
+			slogs.Namespace, ns,
+			slogs.View, a.Config.ActiveView(),
+		)
+		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		a.clusterModel.Reset(a.factory)
@@ -504,10 +507,6 @@ func (a *App) BailOut() {
 			log.Error().Msgf("Bailing out %v", err)
 		}
 	}()
-
-	if err := a.Config.Save(true); err != nil {
-		log.Error().Err(err).Msg("config save failed!")
-	}
 
 	if err := nukeK9sShell(a); err != nil {
 		log.Error().Err(err).Msgf("nuking k9s shell pod")

@@ -6,14 +6,15 @@ package view
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -103,7 +104,10 @@ func (c *Context) showRenameModal(name string, ok func(form *tview.Form, context
 }
 
 func (c *Context) useCtx(app *App, model ui.Tabular, gvr client.GVR, path string) {
-	log.Debug().Msgf("SWITCH CTX %q--%q", gvr, path)
+	slog.Debug("Using context",
+		slogs.GVR, gvr,
+		slogs.FQN, path,
+	)
 	if err := useContext(app, path); err != nil {
 		app.Flash().Err(err)
 		return
@@ -124,8 +128,17 @@ func useContext(app *App, name string) error {
 	if !ok {
 		return errors.New("expecting a switchable resource")
 	}
+
+	app.Config.K9s.ToggleContextSwitch(true)
+	defer app.Config.K9s.ToggleContextSwitch(false)
+
+	// Save config prior to context switch...
+	if err := app.Config.Save(true); err != nil {
+		slog.Error("Fail to save config to disk", slogs.Subsys, "config", slogs.Error, err)
+	}
+
 	if err := switcher.Switch(name); err != nil {
-		log.Error().Err(err).Msgf("Context switch failed")
+		slog.Error("Context switch failed during use command", slogs.Error, err)
 		return err
 	}
 

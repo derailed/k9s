@@ -126,7 +126,7 @@ func (c *Configurator) SkinsDirWatcher(ctx context.Context, s synchronizer) erro
 	return w.Add(config.AppSkinsDir)
 }
 
-// ConfigWatcher watches for skin settings changes.
+// ConfigWatcher watches for config settings changes.
 func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {

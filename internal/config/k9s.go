@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -47,6 +48,7 @@ type K9s struct {
 	conn                client.Connection
 	ks                  data.KubeSettings
 	mx                  sync.RWMutex
+	contextSwitch       bool
 }
 
 // NewK9s create a new K9s configuration.
@@ -66,6 +68,20 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	}
 }
 
+func (k *K9s) ToggleContextSwitch(b bool) {
+	k.mx.Lock()
+	defer k.mx.Unlock()
+
+	k.contextSwitch = b
+}
+
+func (k *K9s) getContextSwitch() bool {
+	k.mx.Lock()
+	defer k.mx.Unlock()
+
+	return k.contextSwitch
+}
+
 func (k *K9s) resetConnection(conn client.Connection) {
 	k.mx.Lock()
 	defer k.mx.Unlock()
@@ -74,17 +90,14 @@ func (k *K9s) resetConnection(conn client.Connection) {
 }
 
 // Save saves the k9s config to disk.
-func (k *K9s) Save(force bool) error {
-	if k.getActiveConfig() == nil {
-		log.Warn().Msgf("Save failed. no active config detected")
-		return nil
-	}
+func (k *K9s) Save(contextName, clusterName string, force bool) error {
 	path := filepath.Join(
 		AppContextsDir,
-		data.SanitizeContextSubpath(k.activeConfig.Context.GetClusterName(), k.getActiveContextName()),
+		data.SanitizeContextSubpath(clusterName, contextName),
 		data.MainConfigFile,
 	)
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) || force {
+		slog.Debug("[CONFIG] Saving context config to disk", slogs.Path, path, slogs.Cluster, k.getActiveConfig().Context.GetClusterName(), slogs.Context, k.getActiveContextName())
 		return k.dir.Save(path, k.getActiveConfig())
 	}
 
@@ -170,12 +183,9 @@ func (k *K9s) ActiveContext() (*data.Context, error) {
 	if cfg := k.getActiveConfig(); cfg != nil && cfg.Context != nil {
 		return cfg.Context, nil
 	}
-	ct, err := k.ActivateContext(k.getActiveContextName())
-	if err != nil {
-		return nil, err
-	}
+	ct, err := k.ActivateContext(k.ActiveContextName())
 
-	return ct, nil
+	return ct, err
 }
 
 func (k *K9s) setActiveConfig(c *data.Config) {
@@ -207,14 +217,14 @@ func (k *K9s) getActiveContextName() string {
 }
 
 // ActivateContext initializes the active context if not present.
-func (k *K9s) ActivateContext(n string) (*data.Context, error) {
-	k.setActiveContextName(n)
-	ct, err := k.ks.GetContext(n)
+func (k *K9s) ActivateContext(contextName string) (*data.Context, error) {
+	k.setActiveContextName(contextName)
+	ct, err := k.ks.GetContext(contextName)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg, err := k.dir.Load(n, ct)
+	cfg, err := k.dir.Load(contextName, ct)
 	if err != nil {
 		return nil, err
 	}
@@ -236,20 +246,20 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 			})
 
 			if !k.conn.CheckConnectivity() {
-				return nil, fmt.Errorf("unable to connect to context %q", n)
+				return nil, fmt.Errorf("unable to connect to context %q", contextName)
 			}
 		}
 	}
 
-	k.Validate(k.conn, k.ks)
+	k.Validate(k.conn, contextName, ct.Cluster)
 	// If the context specifies a namespace, use it!
 	if ns := ct.Namespace; ns != client.BlankNamespace {
 		k.getActiveConfig().Context.Namespace.Active = ns
-	} else if k.activeConfig.Context.Namespace.Active == "" {
+	} else if k.getActiveConfig().Context.Namespace.Active == "" {
 		k.getActiveConfig().Context.Namespace.Active = client.DefaultNamespace
 	}
 	if k.getActiveConfig().Context == nil {
-		return nil, fmt.Errorf("context activation failed for: %s", n)
+		return nil, fmt.Errorf("context activation failed for: %s", contextName)
 	}
 
 	return k.getActiveConfig().Context, nil
@@ -257,6 +267,10 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 
 // Reload reloads the context config from disk.
 func (k *K9s) Reload() error {
+	// Switching context skipping reload...
+	if k.getContextSwitch() {
+		return nil
+	}
 	ct, err := k.ks.GetContext(k.getActiveContextName())
 	if err != nil {
 		return err
@@ -267,7 +281,7 @@ func (k *K9s) Reload() error {
 		return err
 	}
 	k.setActiveConfig(cfg)
-	k.getActiveConfig().Validate(k.conn, k.ks)
+	k.getActiveConfig().Validate(k.conn, k.getActiveContextName(), ct.Cluster)
 
 	return nil
 }
@@ -342,7 +356,7 @@ func (k *K9s) IsReadOnly() bool {
 }
 
 // Validate the current configuration.
-func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
+func (k *K9s) Validate(c client.Connection, contextName, clusterName string) {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
 	}
@@ -358,15 +372,13 @@ func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	}
 
 	if k.getActiveConfig() == nil {
-		if n, err := ks.CurrentContextName(); err == nil {
-			_, _ = k.ActivateContext(n)
-		}
+		_, _ = k.ActivateContext(contextName)
 	}
 	k.ShellPod = k.ShellPod.Validate()
 	k.Logger = k.Logger.Validate()
 	k.Thresholds = k.Thresholds.Validate()
 
 	if cfg := k.getActiveConfig(); cfg != nil {
-		cfg.Validate(c, ks)
+		cfg.Validate(c, contextName, clusterName)
 	}
 }

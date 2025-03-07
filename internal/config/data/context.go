@@ -69,13 +69,11 @@ func (c *Context) GetClusterName() string {
 }
 
 // Validate ensures a context config is tip top.
-func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
+func (c *Context) Validate(conn client.Connection, contextName, clusterName string) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
-	if cl, err := ks.CurrentClusterName(); err == nil {
-		c.ClusterName = cl
-	}
+	c.ClusterName = clusterName
 	if b := os.Getenv(envFGNodeShell); b != "" {
 		c.FeatureGates.NodeShell = defaultFGNodeShell()
 	}

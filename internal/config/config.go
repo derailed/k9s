@@ -7,11 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
@@ -31,6 +33,16 @@ func NewConfig(ks data.KubeSettings) *Config {
 		settings: ks,
 		K9s:      NewK9s(nil, ks),
 	}
+}
+
+// ActiveClusterName returns the corresponding cluster name.
+func (c *Config) ActiveClusterName(contextName string) (string, error) {
+	ct, err := c.settings.GetContext(contextName)
+	if err != nil {
+		return "", err
+	}
+
+	return ct.Cluster, nil
 }
 
 // ContextHotkeysPath returns a context specific hotkeys file spec.
@@ -113,7 +125,7 @@ func (c *Config) Reset() {
 	c.K9s.Reset()
 }
 
-func (c *Config) SetCurrentContext(n string) (*data.Context, error) {
+func (c *Config) ActivateContext(n string) (*data.Context, error) {
 	ct, err := c.K9s.ActivateContext(n)
 	if err != nil {
 		return nil, fmt.Errorf("set current context failed. %w", err)
@@ -145,7 +157,7 @@ func (c *Config) FavNamespaces() []string {
 	if err != nil {
 		return nil
 	}
-	ct.Validate(c.conn, c.settings)
+	ct.Validate(c.conn, c.K9s.getActiveContextName(), ct.ClusterName)
 
 	return ct.Namespace.Favorites
 }
@@ -251,8 +263,13 @@ func (c *Config) Load(path string, force bool) error {
 
 // Save configuration to disk.
 func (c *Config) Save(force bool) error {
-	c.Validate()
-	if err := c.K9s.Save(force); err != nil {
+	contextName := c.K9s.ActiveContextName()
+	clusterName, err := c.ActiveClusterName(contextName)
+	if err != nil {
+		return fmt.Errorf("unable to locate associated cluster for context %q: %w", contextName, err)
+	}
+	c.Validate(contextName, clusterName)
+	if err := c.K9s.Save(contextName, clusterName, force); err != nil {
 		return err
 	}
 	if _, err := os.Stat(AppConfigFile); errors.Is(err, fs.ErrNotExist) {
@@ -273,15 +290,16 @@ func (c *Config) SaveFile(path string) error {
 		return err
 	}
 
+	slog.Info("[CONFIG] Saving K9s config to disk", slogs.Path, path)
 	return os.WriteFile(path, cfg, data.DefaultFileMod)
 }
 
 // Validate the configuration.
-func (c *Config) Validate() {
+func (c *Config) Validate(contextName, clusterName string) {
 	if c.K9s == nil {
 		c.K9s = NewK9s(c.conn, c.settings)
 	}
-	c.K9s.Validate(c.conn, c.settings)
+	c.K9s.Validate(c.conn, contextName, clusterName)
 }
 
 // Dump for debug...
