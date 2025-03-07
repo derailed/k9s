@@ -6,16 +6,17 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -44,9 +45,9 @@ func NewCronJob(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr client.GVR, path string) {
-	log.Debug().Msgf("Showing Jobs %q:%q -- %q", model.GetNamespace(), gvr, path)
-	o, err := app.factory.Get(gvr.String(), path, true, labels.Everything())
+func (c *CronJob) showJobs(app *App, _ ui.Tabular, gvr client.GVR, fqn string) {
+	slog.Debug("Showing Jobs", slogs.GVR, gvr, slogs.FQN, fqn)
+	o, err := app.factory.Get(gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -59,16 +60,20 @@ func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr client.GVR, path stri
 		return
 	}
 
+	ns, _ := client.Namespaced(fqn)
+	if err := app.Config.SetActiveNamespace(ns); err != nil {
+		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
+	}
 	v := NewJob(client.NewGVR("batch/v1/jobs"))
-	v.SetContextFn(jobCtx(path, string(cj.UID)))
+	v.SetContextFn(jobCtx(fqn, string(cj.UID)))
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func jobCtx(path, uid string) ContextFunc {
+func jobCtx(fqn, uid string) ContextFunc {
 	return func(ctx context.Context) context.Context {
-		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		ctx = context.WithValue(ctx, internal.KeyPath, fqn)
 		return context.WithValue(ctx, internal.KeyUID, uid)
 	}
 }
