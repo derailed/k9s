@@ -48,7 +48,11 @@ func aliasesFor(m v1.APIResource, aa []string) map[string]struct{} {
 }
 
 func clipboardWrite(text string) error {
-	return clipboard.WriteAll(text)
+	if text != "" {
+		return clipboard.WriteAll(text)
+	}
+
+	return nil
 }
 
 func sanitizeEsc(s string) string {

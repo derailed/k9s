@@ -612,7 +612,7 @@ func (a *APIClient) supportsMetricsResources() error {
 
 	dial, err := a.Dial()
 	if err != nil {
-		slog.Warn("Unable to dial discovery API", slogs.Error, err)
+		slog.Warn("Unable to dial API client for metrics", slogs.Error, err)
 		return err
 	}
 	apiGroups, err := dial.Discovery().ServerGroups()

@@ -111,7 +111,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	cfg, err := loadConfiguration()
 	if err != nil {
-		slog.Error("Fail to load global/context configuration", slogs.Error, err)
+		slog.Warn("Fail to load global/context configuration", slogs.Error, err)
 	}
 	app := view.NewApp(cfg)
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
@@ -144,23 +144,20 @@ func loadConfiguration() (*config.Config, error) {
 	}
 
 	conn, err := client.InitConnection(k8sCfg, slog.Default())
-
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
-
 	// Try to access server version if that fail. Connectivity issue?
 	if !conn.CheckConnectivity() {
 		errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
 	}
-
 	if !conn.ConnectionOK() {
+		slog.Warn("💣 Kubernetes connectivity toast!")
 		errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
+	} else {
+		slog.Info("✅ Kubernetes connectivity OK")
 	}
-
 	k9sCfg.SetConnection(conn)
-
-	slog.Info("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(false); err != nil {
 		slog.Error("K9s config save failed", slogs.Error, err)
 		errs = errors.Join(errs, err)
@@ -266,7 +263,7 @@ func initK8sFlags() {
 	rootCmd.Flags().StringVar(
 		k8sFlags.Timeout,
 		"request-timeout",
-		"",
+		"5s",
 		"The length of time to wait before giving up on a single server request",
 	)
 
