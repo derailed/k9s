@@ -152,13 +152,13 @@ func (a *App) bindKeys() {
 }
 
 // BailOut exits the application.
-func (a *App) BailOut() {
+func (a *App) BailOut(exitCode int) {
 	if err := a.Config.Save(true); err != nil {
 		slog.Error("Config save failed!", slogs.Error, err)
 	}
 
 	a.Stop()
-	os.Exit(0)
+	os.Exit(exitCode)
 }
 
 // ResetPrompt reset the prompt model and marks buffer as active.

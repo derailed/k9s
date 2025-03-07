@@ -245,7 +245,7 @@ func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 			c.app.cowCmd(msg)
 		}
 	case p.IsBailCmd():
-		c.app.BailOut()
+		c.app.BailOut(0)
 	case p.IsHelpCmd():
 		_ = c.app.helpCmd(nil)
 	case p.IsAliasCmd():

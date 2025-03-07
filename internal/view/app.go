@@ -216,9 +216,6 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 }
 
 func (a *App) contextNames() ([]string, error) {
-	if !a.Conn().ConnectionOK() {
-		return nil, errors.New("no connection")
-	}
 	contexts, err := a.factory.Client().Config().Contexts()
 	if err != nil {
 		return nil, err
@@ -371,9 +368,9 @@ func (a *App) clusterUpdater(ctx context.Context) {
 			return
 		case <-time.After(delay):
 			if err := a.refreshCluster(ctx); err != nil {
-				slog.Error("Cluster updates failed", slogs.Error, err)
+				slog.Error("Cluster updates failed. Giving up ;(", slogs.Error, err)
 				if delay = bf.NextBackOff(); delay == backoff.Stop {
-					a.BailOut()
+					a.BailOut(1)
 					return
 				}
 			} else {
@@ -409,7 +406,7 @@ func (a *App) refreshCluster(context.Context) error {
 			slogs.MaxRetries, maxConnRetry,
 		)
 		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", count)
-		a.BailOut()
+		a.BailOut(1)
 	}
 	if count > 0 {
 		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d/%d]", count, maxConnRetry))
@@ -505,7 +502,7 @@ func (a *App) initFactory(ns string) {
 }
 
 // BailOut exists the application.
-func (a *App) BailOut() {
+func (a *App) BailOut(exitCode int) {
 	defer func() {
 		if err := recover(); err != nil {
 			slog.Error("Bailout failed", slogs.Error, err)
@@ -518,7 +515,7 @@ func (a *App) BailOut() {
 
 	a.stopImgScanner()
 	a.factory.Terminate()
-	a.App.BailOut()
+	a.App.BailOut(exitCode)
 }
 
 // Run starts the application loop.
@@ -673,7 +670,7 @@ func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if !a.Config.K9s.NoExitOnCtrlC {
-		a.BailOut()
+		a.BailOut(0)
 	}
 
 	// overwrite the default ctrl-c behavior of tview
