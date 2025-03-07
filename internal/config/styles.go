@@ -84,13 +84,14 @@ type (
 
 	// Body tracks body styles.
 	Body struct {
-		FgColor        Color `json:"fgColor" yaml:"fgColor"`
-		BgColor        Color `json:"bgColor" yaml:"bgColor"`
-		LogoColor      Color `json:"logoColor" yaml:"logoColor"`
-		LogoColorMsg   Color `json:"logoColorMsg" yaml:"logoColorMsg"`
-		LogoColorInfo  Color `json:"logoColorInfo" yaml:"logoColorInfo"`
-		LogoColorWarn  Color `json:"logoColorWarn" yaml:"logoColorWarn"`
-		LogoColorError Color `json:"logoColorError" yaml:"logoColorError"`
+		FgColor        Color   `json:"fgColor" yaml:"fgColor"`
+		BgColor        Color   `json:"bgColor" yaml:"bgColor"`
+		LogoColor      Color   `json:"logoColor" yaml:"logoColor"`
+		LogoColorMsg   Color   `json:"logoColorMsg" yaml:"logoColorMsg"`
+		LogoColorInfo  Color   `json:"logoColorInfo" yaml:"logoColorInfo"`
+		LogoColorWarn  Color   `json:"logoColorWarn" yaml:"logoColorWarn"`
+		LogoColorError Color   `json:"logoColorError" yaml:"logoColorError"`
+		Logo           []string `json:"logo" yaml:"logo"` // Change to slice of strings
 	}
 
 	// Dialog tracks dialog styles.
@@ -329,6 +330,14 @@ func newBody() Body {
 		LogoColorInfo:  "green",
 		LogoColorWarn:  "mediumvioletred",
 		LogoColorError: "red",
+		Logo:           []string{
+            ` ____  __ ________       `,
+            `|    |/  /   __   \______`,
+            `|       /\____    /  ___/`,
+            `|    \   \  /    /\___  \`,
+            `|____|\__ \/____//____  /`,
+            `         \/           \/ `,
+        },
 	}
 }
 
@@ -590,4 +599,19 @@ func (s *Styles) Update() {
 func (s *Styles) Dump() {
 	bb, _ := yaml.Marshal(s)
 	fmt.Println(string(bb))
+}
+
+// Add a method to the Styles struct to retrieve the logo
+func (s *Styles) Logo() []string {
+    logo := s.Body().Logo
+    if len(logo) == 0 {
+        return newBody().Logo
+    }
+    return logo
+}
+
+// Add a method to the Styles struct to reset the logo to the default LogoSmall
+func (s *Styles) ResetLogo() {
+
+	s.K9s.Body = newBody()
 }

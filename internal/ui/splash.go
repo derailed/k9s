@@ -11,16 +11,6 @@ import (
 	"github.com/derailed/tview"
 )
 
-// LogoSmall K9s small log.
-var LogoSmall = []string{
-	` ____  __ ________       `,
-	`|    |/  /   __   \______`,
-	`|       /\____    /  ___/`,
-	`|    \   \  /    /\___  \`,
-	`|____|\__ \/____//____  /`,
-	`         \/           \/ `,
-}
-
 // LogoBig K9s big logo for splash page.
 var LogoBig = []string{
 	` ____  __ ________        _______  ____     ___ `,
