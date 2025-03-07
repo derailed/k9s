@@ -8,11 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -37,16 +38,23 @@ type Node struct {
 }
 
 // ToggleCordon toggles cordon/uncordon a node.
-func (n *Node) ToggleCordon(path string, cordon bool) error {
-	log.Debug().Msgf("CORDON %q::%t -- %q", path, cordon, n.gvr.GVK())
-	o, err := FetchNode(context.Background(), n.Factory, path)
+func (n *Node) ToggleCordon(fqn string, cordon bool) error {
+	slog.Debug("Toggle cordon on node",
+		slogs.GVR, n.GVR(),
+		slogs.FQN, fqn,
+		slogs.Bool, cordon,
+	)
+	o, err := FetchNode(context.Background(), n.Factory, fqn)
 	if err != nil {
 		return err
 	}
 
 	h, err := drain.NewCordonHelperFromRuntimeObject(o, scheme.Scheme, n.gvr.GVK())
 	if err != nil {
-		log.Debug().Msgf("BOOM %v", err)
+		slog.Debug("Fail to toggle cordon on node",
+			slogs.FQN, fqn,
+			slogs.Error, err,
+		)
 		return err
 	}
 
@@ -174,7 +182,10 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		if shouldCountPods {
 			podCount, err = n.CountPods(name)
 			if err != nil {
-				log.Error().Err(err).Msgf("unable to get pods count for %s", name)
+				slog.Error("Unable to get pods count",
+					slogs.ResName, name,
+					slogs.Error, err,
+				)
 			}
 		}
 		res = append(res, &render.NodeWithMetrics{

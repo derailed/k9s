@@ -5,16 +5,17 @@ package render
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	"github.com/mattn/go-runewidth"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	v1 "k8s.io/api/core/v1"
@@ -72,7 +73,7 @@ func AsStatus(err error) string {
 func asSelector(s *metav1.LabelSelector) string {
 	sel, err := metav1.LabelSelectorAsSelector(s)
 	if err != nil {
-		log.Error().Err(err).Msg("Selector conversion failed")
+		slog.Error("Selector conversion failed", slogs.Error, err)
 		return NAValue
 	}
 

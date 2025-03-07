@@ -5,14 +5,15 @@ package view
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/port"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const portForwardKey = "portforward"
@@ -35,7 +36,10 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 
 	pf, err := aa.PreferredPorts(ports)
 	if err != nil {
-		log.Warn().Err(err).Msgf("unable to resolve ports on %s", path)
+		slog.Warn("Unable to resolve preferred ports",
+			slogs.FQN, path,
+			slogs.Error, err,
+		)
 	}
 
 	p1, p2 := pf.ToPortSpec(ports)

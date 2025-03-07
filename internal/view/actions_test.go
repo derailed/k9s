@@ -4,14 +4,14 @@
 package view
 
 import (
+	"log/slog"
 	"testing"
 
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.Disabled)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestHasAll(t *testing.T) {

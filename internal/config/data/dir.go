@@ -7,12 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/derailed/k9s/internal/config/json"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -43,7 +44,7 @@ func (d *Dir) Load(contextName string, ct *api.Context) (*Config, error) {
 		return nil, err
 	}
 	if errors.Is(err, fs.ErrNotExist) || (f != nil && f.Size() == 0) {
-		log.Debug().Msgf("Context config not found! Generating... %q", path)
+		slog.Debug("Context config not found! Generating..", slogs.Path, path)
 		return d.genConfig(path, ct)
 	}
 	if err != nil {
@@ -90,7 +91,10 @@ func (d *Dir) loadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 	if err := JSONValidator.Validate(json.ContextSchema, bb); err != nil {
-		log.Warn().Err(err).Msgf("validation failed for: %q. Please update your config and restart!", path)
+		slog.Warn("Validation failed. Please update your config and restart!",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 	}
 
 	var cfg Config

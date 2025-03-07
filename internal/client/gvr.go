@@ -5,11 +5,12 @@ package client
 
 import (
 	"fmt"
+	"log/slog"
 	"path"
 	"strings"
 
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/fvbommel/sortorder"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -40,7 +41,7 @@ func NewGVR(gvr string) GVR {
 	case 1:
 		r = tokens[0]
 	default:
-		log.Error().Err(fmt.Errorf("can't parse GVR %q", gvr)).Msg("GVR init failed!")
+		slog.Error("GVR init failed!", slogs.Error, fmt.Errorf("can't parse GVR %q", gvr))
 	}
 
 	return GVR{raw: gvr, g: g, v: v, r: r, sr: sr}
@@ -186,7 +187,7 @@ func Can(verbs []string, v string) bool {
 	for _, verb := range verbs {
 		candidates, err := mapVerb(v)
 		if err != nil {
-			log.Error().Err(err).Msgf("verb mapping failed")
+			slog.Error("Access verb mapping failed", slogs.Error, err)
 			return false
 		}
 		for _, c := range candidates {

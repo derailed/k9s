@@ -4,11 +4,12 @@
 package data
 
 import (
+	"log/slog"
 	"slices"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -67,7 +68,10 @@ func (n *Namespace) Validate(c client.Connection) {
 	}
 	for _, ns := range n.Favorites {
 		if !c.IsValidNamespace(ns) {
-			log.Debug().Msgf("[Namespace] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
+			slog.Debug("Invalid favorite found",
+				slogs.Namespace, ns,
+				slogs.AllNS, n.isAllNamespaces(),
+			)
 			n.rmFavNS(ns)
 		}
 	}
@@ -136,7 +140,7 @@ func (n *Namespace) rmFavNS(ns string) {
 
 func (n *Namespace) trimFavNs() {
 	if len(n.Favorites) > MaxFavoritesNS {
-		log.Debug().Msgf("[Namespace] Number of favorite exceeds hard limit of %v. Trimming.", MaxFavoritesNS)
+		slog.Debug("Number of favorite exceeds hard limit. Trimming.", slogs.Max, MaxFavoritesNS)
 		n.Favorites = n.Favorites[:MaxFavoritesNS]
 	}
 }

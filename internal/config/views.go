@@ -26,7 +26,7 @@ type ViewConfigListener interface {
 	// ViewSettingsChanged notifies listener the view configuration changed.
 	ViewSettingsChanged(*ViewSetting)
 
-	// GetNamespace returrn the view namespace
+	// GetNamespace return the view namespace
 	GetNamespace() string
 }
 

@@ -6,11 +6,12 @@ package dao
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render/helm"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -163,6 +164,9 @@ func ensureHelmConfig(flags *genericclioptions.ConfigFlags, ns string) (*action.
 	return cfg, err
 }
 
-func helmLogger(fmt string, args ...interface{}) {
-	log.Debug().Msgf("[Helm] "+fmt, args...)
+func helmLogger(fmat string, args ...interface{}) {
+	slog.Debug("Log",
+		slogs.Log, fmt.Sprintf(fmat, args...),
+		slogs.Subsys, "helm",
+	)
 }

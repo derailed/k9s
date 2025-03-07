@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -27,7 +28,7 @@ import (
 	"github.com/anchore/grype/grype/vex"
 	"github.com/anchore/syft/syft"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,13 +48,15 @@ type imageScanner struct {
 	mx          sync.RWMutex
 	initialized bool
 	config      config.ImageScans
+	log         *slog.Logger
 }
 
 // NewImageScanner returns a new instance.
-func NewImageScanner(cfg config.ImageScans) *imageScanner {
+func NewImageScanner(cfg config.ImageScans, l *slog.Logger) *imageScanner {
 	return &imageScanner{
 		scans:  make(Scans),
 		config: cfg,
+		log:    l.With(slogs.Subsys, "vul"),
 	}
 }
 
@@ -93,12 +96,12 @@ func (s *imageScanner) Init(name, version string) {
 		s.opts.DB.AutoUpdate,
 	)
 	if err != nil {
-		log.Error().Err(err).Msgf("VulDb load failed")
+		s.log.Error("VulDb load failed", slogs.Error, err)
 		return
 	}
 
 	if err := validateDBLoad(err, s.dbStatus); err != nil {
-		log.Error().Err(err).Msgf("VulDb validate failed")
+		s.log.Error("VulDb validate failed", slogs.Error, err)
 		return
 	}
 
@@ -150,19 +153,25 @@ func (s *imageScanner) Enqueue(ctx context.Context, images ...string) {
 }
 
 func (s *imageScanner) scanWorker(ctx context.Context, img string) {
-	defer log.Debug().Msgf("ScanWorker bailing out!")
+	defer s.log.Debug("ScanWorker bailing out!")
 
-	log.Debug().Msgf("ScanWorker processing: %q", img)
+	s.log.Debug("ScanWorker processing image", slogs.Image, img)
 	sc := newScan(img)
 	s.setScan(img, sc)
 	if err := s.scan(ctx, img, sc); err != nil {
-		log.Warn().Err(err).Msgf("Scan failed for img %s --", img)
+		s.log.Warn("Scan failed for image",
+			slogs.Image, img,
+			slogs.Error, err,
+		)
 	}
 }
 
 func (s *imageScanner) scan(_ context.Context, img string, sc *Scan) error {
 	defer func(t time.Time) {
-		log.Debug().Msgf("ScanTime %q: %v", img, time.Since(t))
+		s.log.Debug("Time to run vulscan",
+			slogs.Image, img,
+			slogs.Elapsed, time.Since(t),
+		)
 	}(time.Now())
 
 	var errs error

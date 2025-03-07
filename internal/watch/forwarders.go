@@ -4,11 +4,13 @@
 package watch
 
 import (
+	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/port"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/client-go/tools/portforward"
 )
 
@@ -83,7 +85,7 @@ func (ff Forwarders) IsContainerForwarded(fqn, co string) bool {
 // DeleteAll stops and delete all port-forwards.
 func (ff Forwarders) DeleteAll() {
 	for k, f := range ff {
-		log.Debug().Msgf("Deleting forwarder %s", f.ID())
+		slog.Debug("Deleting forwarder", slogs.ID, f.ID())
 		f.Stop()
 		delete(ff, k)
 	}
@@ -101,7 +103,7 @@ func (ff Forwarders) Kill(path string) int {
 	for k, f := range ff {
 		if k == path || strings.HasPrefix(k, prefix) {
 			stats++
-			log.Debug().Msgf("Stop + Delete port-forward %s", k)
+			slog.Debug("Stop and delete port-forward", slogs.Name, k)
 			f.Stop()
 			delete(ff, k)
 		}
@@ -112,8 +114,8 @@ func (ff Forwarders) Kill(path string) int {
 
 // Dump for debug!
 func (ff Forwarders) Dump() {
-	log.Debug().Msgf("----------- PORT-FORWARDS --------------")
+	slog.Debug("----------- PORT-FORWARDS --------------")
 	for k, f := range ff {
-		log.Debug().Msgf("  %s -- %s", k, f)
+		slog.Debug(fmt.Sprintf("  %s -- %s", k, f))
 	}
 }

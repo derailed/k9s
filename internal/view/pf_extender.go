@@ -6,16 +6,17 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/port"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -159,7 +160,10 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 		if err != nil {
 			return err
 		}
-		log.Debug().Msgf(">>> Starting port forward %q -- %#v", pf.ID(), pt)
+		slog.Debug(">>> Starting port forward",
+			slogs.PFID, pf.ID(),
+			slogs.PFTunnel, pt,
+		)
 		go runForward(v, pf, fwd)
 		tt = append(tt, pt.LocalPort)
 	}
@@ -206,7 +210,7 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 }
 
 func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort, map[string]string, error) {
-	log.Debug().Msgf("Fetching ports on pod %q", path)
+	slog.Debug("Fetching ports on pod", slogs.FQN, path)
 	o, err := f.Get("v1/pods", path, true, labels.Everything())
 	if err != nil {
 		return nil, nil, err

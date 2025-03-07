@@ -5,10 +5,11 @@ package dao
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -53,7 +54,7 @@ func (c *Context) List(_ context.Context, _ string) ([]runtime.Object, error) {
 func (c *Context) MustCurrentContextName() string {
 	cl, err := c.config().CurrentContextName()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Fetching current context")
+		slog.Error("Fetching current context", slogs.Error, err)
 	}
 	return cl
 }

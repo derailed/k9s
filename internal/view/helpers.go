@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -19,11 +20,11 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -149,7 +150,7 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
-		log.Error().Err(err).Msg("Config NS set failed!")
+		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
 	}
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)

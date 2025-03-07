@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"sync"
@@ -14,7 +15,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -155,7 +156,7 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 	if err == nil {
 		td.rowEvents = rr
 	} else {
-		log.Error().Err(err).Msg("rx filter failed")
+		slog.Error("RX filter failed", slogs.Error, err)
 	}
 
 	return td
@@ -206,12 +207,11 @@ func (t *TableData) fuzzyFilter(q string) *RowEvents {
 	mm := fuzzy.Find(q, ss)
 	rr := NewRowEvents(t.RowCount() / 2)
 	for _, m := range mm {
-		re, ok := t.rowEvents.At(m.Index)
-		if !ok {
-			log.Error().Msgf("unable to find event for index in fuzzfilter: %d", m.Index)
-			continue
+		if re, ok := t.rowEvents.At(m.Index); !ok {
+			slog.Error("Unable to find event for index in fuzzfilter", slogs.Index, m.Index)
+		} else {
+			rr.Add(re)
 		}
-		rr.Add(re)
 	}
 
 	return rr
@@ -474,7 +474,10 @@ func (t *TableData) Delete(newKeys map[string]struct{}) {
 		})
 		for _, id := range victims {
 			if err := t.rowEvents.Delete(id); err != nil {
-				log.Error().Err(err).Msgf("table delete failed: %q", id)
+				slog.Error("Table delete failed",
+					slogs.Error, err,
+					slogs.Message, id,
+				)
 			}
 		}
 	}

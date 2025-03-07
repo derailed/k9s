@@ -16,7 +16,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 // K9s tracks K9s configuration options.
@@ -96,6 +96,7 @@ func (k *K9s) Save(contextName, clusterName string, force bool) error {
 		data.SanitizeContextSubpath(clusterName, contextName),
 		data.MainConfigFile,
 	)
+
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) || force {
 		slog.Debug("[CONFIG] Saving context config to disk", slogs.Path, path, slogs.Cluster, k.getActiveConfig().Context.GetClusterName(), slogs.Context, k.getActiveContextName())
 		return k.dir.Save(path, k.getActiveConfig())
@@ -232,7 +233,7 @@ func (k *K9s) ActivateContext(contextName string) (*data.Context, error) {
 
 	if cfg.Context.Proxy != nil {
 		k.ks.SetProxy(func(*http.Request) (*url.URL, error) {
-			log.Debug().Msgf("[Proxy]: %s", cfg.Context.Proxy.Address)
+			slog.Debug("Using proxy address", slogs.Address, cfg.Context.Proxy.Address)
 			return url.Parse(cfg.Context.Proxy.Address)
 		})
 
@@ -241,7 +242,7 @@ func (k *K9s) ActivateContext(contextName string) (*data.Context, error) {
 			// already has an API connection object so we just set the proxy to
 			// avoid recreation using client.InitConnection
 			k.conn.Config().SetProxy(func(*http.Request) (*url.URL, error) {
-				log.Debug().Msgf("[Proxy]: %s", cfg.Context.Proxy.Address)
+				slog.Debug("Setting proxy address", slogs.Address, cfg.Context.Proxy.Address)
 				return url.Parse(cfg.Context.Proxy.Address)
 			})
 

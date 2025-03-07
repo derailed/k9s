@@ -15,7 +15,6 @@ import (
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -94,7 +93,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 			return fmt.Errorf("unable to activate context %q: %w", n, err)
 		}
 	}
-	log.Debug().Msgf("Active Context %q", c.K9s.ActiveContextName())
+	slog.Debug("Using active context", slogs.Context, c.K9s.ActiveContextName())
 
 	var ns string
 	switch {
@@ -144,7 +143,7 @@ func (c *Config) CurrentContext() (*data.Context, error) {
 func (c *Config) ActiveNamespace() string {
 	ns, err := c.K9s.ActiveContextNamespace()
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to assert active namespace. Using default")
+		slog.Error("Unable to assert active namespace. Using default", slogs.Error, err)
 		ns = client.DefaultNamespace
 	}
 
@@ -165,7 +164,7 @@ func (c *Config) FavNamespaces() []string {
 // SetActiveNamespace set the active namespace in the current context.
 func (c *Config) SetActiveNamespace(ns string) error {
 	if ns == client.NotNamespaced {
-		log.Debug().Msgf("[SetNS] No namespace given. skipping!")
+		slog.Debug("No namespace given. skipping!", slogs.Namespace, ns)
 		return nil
 	}
 	ct, err := c.K9s.ActiveContext()
@@ -284,9 +283,10 @@ func (c *Config) SaveFile(path string) error {
 	if err := data.EnsureDirPath(path, data.DefaultDirMod); err != nil {
 		return err
 	}
+
 	cfg, err := yaml.Marshal(c)
 	if err != nil {
-		log.Error().Msgf("[Config] Unable to save K9s config file: %v", err)
+		slog.Error("Unable to save K9s config file", slogs.Error, err)
 		return err
 	}
 

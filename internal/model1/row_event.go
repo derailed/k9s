@@ -273,7 +273,7 @@ func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity,
 	r.reindex()
 }
 
-// For debguging...
+// For debugging...
 func (re RowEvents) Dump(msg string) {
 	slog.Debug("[DEBUG] RowEvents" + msg)
 	for _, r := range re.events {

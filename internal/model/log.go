@@ -6,6 +6,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 // LogsListener represents a log model listener.
@@ -164,7 +165,7 @@ func (l *Log) Restart(ctx context.Context) {
 // Start starts logging.
 func (l *Log) Start(ctx context.Context) {
 	if err := l.load(ctx); err != nil {
-		log.Error().Err(err).Msgf("Tail logs failed!")
+		slog.Error("Tail logs failed!", slogs.Error, err)
 		l.fireLogError(err)
 	}
 }
@@ -239,7 +240,7 @@ func (l *Log) load(ctx context.Context) error {
 
 	cc, err := loggable.TailLogs(ctx, l.logOptions)
 	if err != nil {
-		log.Error().Err(err).Msgf("Tail logs failed")
+		slog.Error("Tail logs failed", slogs.Error, err)
 		l.cancel()
 		l.fireLogError(err)
 	}

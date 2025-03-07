@@ -8,13 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -206,12 +207,18 @@ func isReady(s string) bool {
 	}
 	r, err := strconv.Atoi(tt[0])
 	if err != nil {
-		log.Error().Msgf("invalid ready count: %q", tt[0])
+		slog.Error("Invalid ready count",
+			slogs.Error, err,
+			slogs.Count, tt[0],
+		)
 		return false
 	}
 	c, err := strconv.Atoi(tt[1])
 	if err != nil {
-		log.Error().Msgf("invalid expected count: %q", tt[1])
+		slog.Error("invalid expected count: %q",
+			slogs.Error, err,
+			slogs.Count, tt[1],
+		)
 		return false
 	}
 

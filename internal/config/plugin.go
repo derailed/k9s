@@ -7,15 +7,15 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/adrg/xdg"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
-	"github.com/rs/zerolog/log"
-
-	"github.com/adrg/xdg"
+	"github.com/derailed/k9s/internal/slogs"
 	"gopkg.in/yaml.v2"
 )
 
@@ -114,7 +114,10 @@ func (p *Plugins) load(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.PluginsSchema, bb); err != nil {
-		log.Warn().Err(err).Msgf("validation failed for %q. Please update your config and restart!", path)
+		slog.Warn("Validation failed. Please update your config and restart!",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 	}
 	var pp Plugins
 	if err := yaml.Unmarshal(bb, &pp); err != nil {

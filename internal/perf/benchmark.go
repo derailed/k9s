@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,11 +17,11 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/rakyll/hey/requester"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -59,7 +60,7 @@ func (b *Benchmark) init(base, version string) error {
 		req.SetBasicAuth(b.config.Auth.User, b.config.Auth.Password)
 	}
 	req.Header = b.config.HTTP.Headers
-	log.Debug().Msgf("Benchmarking Request %s", req.URL.String())
+	slog.Debug("Benchmarking Request", slogs.URL, req.URL.String())
 
 	ua := req.UserAgent()
 	if ua == "" {
@@ -73,8 +74,7 @@ func (b *Benchmark) init(base, version string) error {
 	}
 	req.Header.Set("User-Agent", ua)
 
-	log.Debug().Msgf("Using bench config N:%d--C:%d", b.config.N, b.config.C)
-
+	slog.Debug(fmt.Sprintf("Using bench config N:%d--C:%d", b.config.N, b.config.C))
 	b.worker = &requester.Work{
 		Request:     req,
 		RequestBody: []byte(b.config.HTTP.Body),
@@ -108,7 +108,10 @@ func (b *Benchmark) Canceled() bool {
 
 // Run starts a benchmark.
 func (b *Benchmark) Run(cluster, context string, done func()) {
-	log.Debug().Msgf("Running benchmark on context %s", cluster)
+	slog.Debug("Running benchmark",
+		slogs.Cluster, cluster,
+		slogs.Context, context,
+	)
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
 	// this call will block until the benchmark is complete or times out.
@@ -116,7 +119,7 @@ func (b *Benchmark) Run(cluster, context string, done func()) {
 	b.worker.Stop()
 	if buff.Len() > 0 {
 		if err := b.save(cluster, context, buff); err != nil {
-			log.Error().Err(err).Msg("Saving Benchmark")
+			slog.Error("Saving Benchmark", slogs.Error, err)
 		}
 	}
 	done()
@@ -141,7 +144,10 @@ func (b *Benchmark) save(cluster, context string, r io.Reader) error {
 	}
 	defer func() {
 		if e := f.Close(); e != nil {
-			log.Error().Err(e).Msgf("Benchmark file close failed: %q", bf)
+			slog.Error("Benchmark file close failed",
+				slogs.Error, e,
+				slogs.Path, bf,
+			)
 		}
 	}()
 	if _, err = io.Copy(f, r); err != nil {

@@ -4,7 +4,6 @@
 package config_test
 
 import (
-	"io"
 	"log/slog"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 )
 
 func init() {
-	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestCustomViewLoad(t *testing.T) {

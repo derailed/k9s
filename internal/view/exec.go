@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -17,13 +18,13 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/fatih/color"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -85,7 +86,7 @@ func runK(a *App, opts shellOpts) error {
 		return fmt.Errorf("unable to run command")
 	}
 	for v := range stChan {
-		log.Debug().Msgf("  - %s", v)
+		slog.Debug("stdout", slogs.Line, v)
 	}
 	var errs error
 	for e := range errChan {
@@ -183,19 +184,19 @@ func execute(opts shellOpts, statusChan chan<- string) error {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func(cancel context.CancelFunc) {
-		defer log.Debug().Msgf("SIGNAL_GOR - BAILED!!")
+		defer slog.Debug("Got signal canceled")
 		select {
 		case sig := <-sigChan:
-			log.Debug().Msgf("Command canceled with signal! %#v", sig)
+			slog.Debug("Command canceled with signal", slogs.Sig, sig)
 			cancel()
 		case <-ctx.Done():
-			log.Debug().Msgf("SIGNAL Context CANCELED!")
+			slog.Debug("Signal context canceled!")
 		}
 	}(cancel)
 
 	cmds := make([]*exec.Cmd, 0, 1)
 	cmd := exec.CommandContext(ctx, opts.binary, opts.args...)
-	log.Debug().Msgf("RUNNING> %s", opts)
+	slog.Debug("Exec command", slogs.Command, opts)
 
 	if env := os.Getenv("K9S_EDITOR"); env != "" {
 		// There may be situations where the user sets the editor as the binary
@@ -218,14 +219,17 @@ func execute(opts shellOpts, statusChan chan<- string) error {
 			continue
 		}
 		cmd := exec.CommandContext(ctx, tokens[0], tokens[1:]...)
-		log.Debug().Msgf("\t| %s", cmd)
+		slog.Debug("Exec command", slogs.Command, cmd)
 		cmds = append(cmds, cmd)
 	}
 
 	var o, e bytes.Buffer
 	err := pipe(ctx, opts, statusChan, &o, &e, cmds...)
 	if err != nil {
-		log.Err(err).Msgf("Command failed")
+		slog.Error("Exec failed",
+			slogs.Error, err,
+			slogs.Command, cmds,
+		)
 		return errors.Join(err, fmt.Errorf("%s", e.String()))
 	}
 
@@ -235,11 +239,11 @@ func execute(opts shellOpts, statusChan chan<- string) error {
 func runKu(a *App, opts shellOpts) (string, error) {
 	bin, err := exec.LookPath("kubectl")
 	if errors.Is(err, exec.ErrDot) {
-		log.Error().Err(err).Msgf("kubectl command must not be in the current working directory")
+		slog.Error("Kubectl exec can not reside in current working directory", slogs.Error, err)
 		return "", err
 	}
 	if err != nil {
-		log.Error().Err(err).Msgf("kubectl command is not in your path")
+		slog.Error("Kubectl exec not found", slogs.Error, err)
 		return "", err
 	}
 	var args []string
@@ -266,7 +270,10 @@ func oneShoot(opts shellOpts) (string, error) {
 		clearScreen()
 	}
 
-	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
+	slog.Debug("Executing command",
+		slogs.Bin, opts.binary,
+		slogs.Args, strings.Join(opts.args, " "),
+	)
 	cmd := exec.Command(opts.binary, opts.args...)
 
 	var err error
@@ -348,7 +355,7 @@ func sshIn(a *App, fqn, co string) error {
 		}
 		args = append(args, "sh", "-c", shellCheck)
 	}
-	log.Debug().Msgf("ARGS %#v", args)
+	slog.Debug("Running command with args", slogs.Args, args)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	err = runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args})
@@ -416,7 +423,10 @@ func launchShellPod(ctx context.Context, a *App, node string) error {
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
 			return err
 		}
-		log.Debug().Msgf("Checking shell pod [%d] %v", i, pod.Status.Phase)
+		slog.Debug("Checking k9s shell pod retries",
+			slogs.Retry, i,
+			slogs.PodPhase, pod.Status.Phase,
+		)
 		if pod.Status.Phase == v1.PodRunning {
 			return nil
 		}
@@ -439,7 +449,7 @@ func k9sShellPod(node string, cfg config.ShellPod) *v1.Pod {
 	var grace int64
 	var priv bool = true
 
-	log.Debug().Msgf("Shell Config %#v", cfg)
+	slog.Debug("Shell pod config", slogs.ShellPodCfg, cfg)
 	c := v1.Container{
 		Name:            k9sShell,
 		Image:           cfg.Image,
@@ -518,7 +528,7 @@ func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e *byt
 			go func() {
 				cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, w, e
 				if err := cmd.Run(); err != nil {
-					log.Error().Err(err).Msgf("Command failed: %s", err)
+					slog.Error("Command exec failed", slogs.Error, err)
 				} else {
 					for _, l := range strings.Split(w.String(), "\n") {
 						if l != "" {
@@ -526,7 +536,7 @@ func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e *byt
 						}
 					}
 					statusChan <- fmt.Sprintf("Command completed successfully: %q", render.Truncate(cmd.String(), 20))
-					log.Info().Msgf("Command completed successfully: %q", cmd.String())
+					slog.Info("Command ran successfully", slogs.Command, cmd.String())
 				}
 				close(statusChan)
 			}()
@@ -535,9 +545,9 @@ func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e *byt
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		_, _ = cmd.Stdout.Write([]byte(opts.banner))
 
-		log.Debug().Msgf("Running Start")
+		slog.Debug("Exec started")
 		err := cmd.Run()
-		log.Debug().Msgf("Running Done: %v", err)
+		slog.Debug("Running exec done", slogs.Error, err)
 		if err == nil {
 			statusChan <- fmt.Sprintf("Command completed successfully: %q", cmd.String())
 		}
@@ -557,7 +567,7 @@ func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e *byt
 	cmds[last].Stdout = os.Stdout
 
 	for _, cmd := range cmds {
-		log.Debug().Msgf("Starting CMD %s", cmd)
+		slog.Debug("Starting command", slogs.Command, cmd)
 		if err := cmd.Start(); err != nil {
 			return err
 		}

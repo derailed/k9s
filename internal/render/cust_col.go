@@ -5,11 +5,12 @@ package render
 
 import (
 	"fmt"
+	"log/slog"
 	"regexp"
 
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	"k8s.io/kubectl/pkg/cmd/get"
 )
 
@@ -61,7 +62,7 @@ func newColFlags(flags string) colAttrs {
 		case number:
 			c.capacity, c.align = true, tview.AlignRight
 		default:
-			log.Warn().Msgf("unknown column attribute: %q", b)
+			slog.Warn("Unknown column attribute", slogs.Attr, b)
 		}
 	}
 

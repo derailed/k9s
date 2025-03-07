@@ -4,11 +4,12 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -59,7 +60,8 @@ func MustK9sUser() string {
 		if envUsr != "" {
 			return envUsr
 		}
-		log.Fatal().Err(err).Msg("Die on retrieving user info")
+		slog.Error("Die on retrieving user info", slogs.Error, err)
+		os.Exit(1)
 	}
 	return usr.Username
 }
