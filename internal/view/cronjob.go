@@ -82,12 +82,14 @@ func (c *CronJob) bindKeys(aa *ui.KeyActions) {
 }
 
 func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
-	fqn := c.GetTable().GetSelectedItem()
-	if fqn == "" {
+	fqns := c.GetTable().GetSelectedItems()
+	if len(fqns) == 0 {
 		return evt
 	}
-
-	msg := fmt.Sprintf("Trigger Cronjob %s?", fqn)
+	msg := fmt.Sprintf("Trigger CronJob: %s?", fqns[0])
+	if len(fqns) > 1 {
+		msg = fmt.Sprintf("Trigger %d CronJobs?", len(fqns))
+	}
 	dialog.ShowConfirm(c.App().Styles.Dialog(), c.App().Content.Pages, "Confirm Job Trigger", msg, func() {
 		res, err := dao.AccessorFor(c.App().factory, c.GVR())
 		if err != nil {
@@ -100,11 +102,13 @@ func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
 			return
 		}
 
-		if err := runner.Run(fqn); err != nil {
-			c.App().Flash().Errf("Cronjob trigger failed %v", err)
-			return
+		for _, fqn := range fqns {
+			if err := runner.Run(fqn); err != nil {
+				c.App().Flash().Errf("CronJob trigger failed for %s: %v", fqn, err)
+			} else {
+				c.App().Flash().Infof("Triggered Job %s %s", c.GVR(), fqn)
+			}
 		}
-		c.App().Flash().Infof("Triggering Job %s %s", c.GVR(), fqn)
 	}, func() {})
 
 	return nil
