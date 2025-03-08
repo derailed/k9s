@@ -337,7 +337,8 @@ func sshIn(a *App, fqn, co string) error {
 		return fmt.Errorf("os detect failed: %w", err)
 	}
 
-	args := buildShellArgs("exec", fqn, co, a.Conn().Config().Flags().KubeConfig)
+	flags := a.Conn().Config().Flags()
+	args := buildShellArgs("exec", fqn, co, flags.KubeConfig, flags.Context, flags.BearerToken)
 	args = append(args, "--")
 	if len(cfg.Command) > 0 {
 		args = append(args, cfg.Command...)
