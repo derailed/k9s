@@ -8,7 +8,7 @@
       "additionalProperties": false,
       "properties": {
         "liveViewAutoRefresh": { "type": "boolean" },
-        "screenDumpDir": {"type": "string"},
+        "screenDumpDir": { "type": "string" },
         "refreshRate": { "type": "integer" },
         "maxConnRetry": { "type": "integer" },
         "readOnly": { "type": "boolean" },
@@ -19,14 +19,63 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "enableMouse": {"type": "boolean"},
-            "headless": {"type": "boolean"},
-            "logoless": {"type": "boolean"},
-            "crumbsless": {"type": "boolean"},
-            "noIcons": {"type": "boolean"},
-            "reactive": {"type": "boolean"},
-            "skin": {"type": "string"},
-            "defaultsToFullScreen": {"type": "boolean"}
+            "enableMouse": {"type": "boolean" },
+            "headless": { "type": "boolean" },
+            "logoless": { "type": "boolean" },
+            "crumbsless": { "type": "boolean" },
+            "noIcons": { "type": "boolean" },
+            "reactive": { "type": "boolean" },
+            "skin": { "type": "string" },
+            "defaultsToFullScreen": { "type": "boolean" },
+            "emoji": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "startUp": { "type": "string" },
+                "commandLine": { "type": "string" },
+                "filterLine": { "type": "string" },
+                "happy": { "type": "string" },
+                "warn": { "type": "string" },
+                "angry": { "type": "string" },
+                "file": { "type": "string" },
+                "folder": { "type": "string" },
+                "checkMark": { "type": "string" },
+                "logStreamCancelled": { "type": "string" },
+                "newVersion": { "type": "string" },
+                "xray": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "namespaces": { "type": "string" },
+                    "defaultGvr": { "type": "string" },
+                    "nodes": { "type": "string" },
+                    "pods": { "type": "string" },
+                    "services": { "type": "string" },
+                    "serviceAccounts": { "type": "string" },
+                    "persistentVolumes": { "type": "string" },
+                    "persistentVolumeClaims": { "type": "string" },
+                    "secrets": { "type": "string" },
+                    "horizontalPodAutoscalers": { "type": "string" },
+                    "configMaps": { "type": "string" },
+                    "deployments": { "type": "string" },
+                    "statefulSets": { "type": "string" },
+                    "daemonSets": { "type": "string" },
+                    "replicaSets": { "type": "string" },
+                    "clusterRoles": { "type": "string" },
+                    "roles": { "type": "string" },
+                    "networkPolices": { "type": "string" },
+                    "podDisruptionBudgets": { "type": "string" },
+                    "podSecurityPolicies": { "type": "string" },
+                    "containers": { "type": "string" },
+                    "report": { "type": "string" },
+                    "issue0": { "type": "string" },
+                    "issue1": { "type": "string" },
+                    "issue2": { "type": "string" },
+                    "issue3": { "type": "string" }
+                  }
+                }
+              }
+            }
           }
         },
         "shellPod": {

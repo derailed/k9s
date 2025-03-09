@@ -34,4 +34,7 @@ type UI struct {
 
 	// DefaultsToFullScreen toggles fullscreen on views like logs, yaml, details.
 	DefaultsToFullScreen bool `json:"defaultsToFullScreen" yaml:"defaultsToFullScreen"`
+
+	// Emoji contains all emoji
+	Emoji Emoji `json:"emoji" yaml:"emoji,omitempty"`
 }

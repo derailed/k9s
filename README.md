@@ -419,6 +419,20 @@ You can now override the context portForward default address configuration by se
       skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
+      # Customize emojis used in the UI
+      emoji:
+        # General UI emojis
+        startUp: "🐶"
+        commandLine: "🐶"
+        filterLine: "🐩"
+        happy: "😎"
+        warn: "😗"
+        angry: "😡"
+        # XRay view emojis
+        xray:
+          pods: "🚛"
+          deployments: "🪂"
+          # ... more resource emoji can be customized (see internal/config/json/schemas/k9s.json)
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
@@ -914,6 +928,47 @@ roleRef:
   kind: Role
   name: k9s
   apiGroup: rbac.authorization.k8s.io
+```
+
+---
+
+## Custom Emoji
+
+You can customize emoji displayed in K9s by configuring the `emoji` section in your K9s configuration. This allows you to personalize various icons used throughout the application.
+
+```yaml
+# $XDG_CONFIG_HOME/k9s/config.yaml
+k9s:
+  ui:
+    emoji:
+      # Main UI emoji
+      startUp: "🐶"
+      commandLine: "🐶"
+      filterLine: "🐩"
+      happy: "😎"
+      warn: "😗"
+      angry: "😡"
+      file: "🦄"
+      folder: "📁"
+      checkMark: "✅"
+      logStreamCancelled: "🏁"
+      newVersion: "⚡️"
+      # XRay view emojis
+      xray:
+        namespaces: "🗂"
+        defaultGvr: "📎"
+        nodes: "🖥"
+        pods: "🚛"
+        services: "💁‍♀️"
+        # Many more XRay icons available... (see internal/config/json/schemas/k9s.json)
+```
+
+To disable all emojis, you can use the `noIcons` option instead:
+
+```yaml
+k9s:
+  ui:
+    noIcons: true
 ```
 
 ---
