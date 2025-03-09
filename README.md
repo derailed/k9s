@@ -627,7 +627,7 @@ The annotation value must specify a container to forward to as well as a local p
 
 ---
 
-## Resource Custom Columns
+## Custom Views
 
 [SneakCast v0.17.0 on The Beach! - Yup! sound is sucking but what a setting!](https://youtu.be/7S33CNLAofk)
 
@@ -677,7 +677,13 @@ views:
       - READY
       - MEM/RL|S                                         # => 🌚 Overrides std resource default wide attribute
       - '%MEM/R|'                                        # => NOTE! column names with non alpha names need to be quoted as columns must be strings!
-  v1/services:
+
+   v1/pods@fred:                                         # => 🌚 New v0.40.6! Customize columns for a given resource and namespace!
+    columns:
+      - AGE
+      - NAMESPACE|WR
+
+ v1/services:
     columns:
       - AGE
       - NAMESPACE
