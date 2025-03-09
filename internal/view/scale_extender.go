@@ -6,14 +6,15 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 )
 
@@ -37,7 +38,10 @@ func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
 
 	meta, err := dao.MetaAccess.MetaFor(s.GVR())
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to retrieve meta information for %s", s.GVR())
+		slog.Error("No meta information found",
+			slogs.GVR, s.GVR(),
+			slogs.Error, err,
+		)
 		return
 	}
 
@@ -127,13 +131,13 @@ func (s *ScaleExtender) replicasFromScaleSubresource(sel string) (string, error)
 	return strconv.Itoa(int(replicas)), nil
 }
 
-func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
+func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 	factor := "0"
-	if len(sels) == 1 {
+	if len(fqns) == 1 {
 		// If the CRD resource supports scaling, then first try to
 		// read the replicas directly from the CRD.
 		if meta, _ := dao.MetaAccess.MetaFor(s.GVR()); dao.IsScalable(meta) {
-			replicas, err := s.replicasFromScaleSubresource(sels[0])
+			replicas, err := s.replicasFromScaleSubresource(fqns[0])
 			if err == nil && len(replicas) != 0 {
 				factor = replicas
 			}
@@ -142,7 +146,7 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 		// For built-in resources or cases where we can't get the replicas from the CRD, we can
 		// only try to get the number of copies from the READY field.
 		if factor == "0" {
-			replicas, err := s.replicasFromReady(sels[0])
+			replicas, err := s.replicasFromReady(fqns[0])
 			if err != nil {
 				return nil, err
 			}
@@ -176,17 +180,17 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 		defer cancel()
-		for _, sel := range sels {
-			if err := s.scale(ctx, sel, count); err != nil {
-				log.Error().Err(err).Msgf("DP %s scaling failed", sel)
+		for _, fqn := range fqns {
+			if err := s.scale(ctx, fqn, count); err != nil {
+				slog.Error("Unable to scale resource", slogs.FQN, fqn)
 				s.App().Flash().Err(err)
 				return
 			}
 		}
-		if len(sels) != 1 {
-			s.App().Flash().Infof("[%d] %s scaled successfully", len(sels), singularize(s.GVR().R()))
+		if len(fqns) != 1 {
+			s.App().Flash().Infof("[%d] %s scaled successfully", len(fqns), singularize(s.GVR().R()))
 		} else {
-			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), sels[0])
+			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), fqns[0])
 		}
 	})
 	f.AddButton("Cancel", func() {

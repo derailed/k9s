@@ -4,9 +4,11 @@
 package render
 
 import (
+	"log/slog"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 // DecoratorFunc decorates a string.
@@ -48,7 +50,7 @@ func (b *Base) SetViewSetting(vs *config.ViewSetting) {
 	}
 	specs, err := NewColsSpecs(cols...).parseSpecs()
 	if err != nil {
-		log.Error().Err(err).Msg("unable to grok custom columns")
+		slog.Error("Unable to grok custom columns", slogs.Error, err)
 		return
 	}
 	b.specs = specs

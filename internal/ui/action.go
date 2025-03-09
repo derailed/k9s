@@ -4,12 +4,13 @@
 package ui
 
 import (
+	"log/slog"
 	"sort"
 	"sync"
 
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -213,7 +214,7 @@ func (a *KeyActions) Hints() model.MenuHints {
 				},
 			)
 		} else {
-			log.Error().Msgf("Unable to locate KeyName for %#v", k)
+			slog.Error("Unable to locate key name", slogs.Key, k)
 		}
 	}
 

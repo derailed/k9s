@@ -6,13 +6,14 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/health"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -72,7 +73,7 @@ func (h *PulseHealth) checkMetrics(ctx context.Context) (health.Checks, error) {
 
 	nmx, err := dial.FetchNodesMetrics(ctx)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching metrics")
+		slog.Error("Fetching metrics", slogs.Error, err)
 		return nil, err
 	}
 

@@ -13,4 +13,3 @@ k9s:
   fred: blee
   featureGates:
     nodeShell: false
-  portForwardAddress: localhost

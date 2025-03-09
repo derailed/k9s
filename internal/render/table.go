@@ -7,11 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -132,7 +132,7 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 	if d, ok := age.(string); ok {
 		r.Fields = append(r.Fields, d)
 	} else if t.ageIndex > 0 {
-		log.Warn().Msgf("No Duration detected on age field")
+		slog.Warn("No Duration detected on age field")
 		r.Fields = append(r.Fields, NAValue)
 	}
 

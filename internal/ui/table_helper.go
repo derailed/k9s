@@ -6,11 +6,13 @@ package ui
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -39,7 +41,8 @@ const (
 func mustExtractStyles(ctx context.Context) *config.Styles {
 	styles, ok := ctx.Value(internal.KeyStyles).(*config.Styles)
 	if !ok {
-		log.Fatal().Msg("Expecting valid styles")
+		slog.Error("Expecting valid styles. Exiting!")
+		os.Exit(1)
 	}
 	return styles
 }
@@ -48,7 +51,7 @@ func mustExtractStyles(ctx context.Context) *config.Styles {
 func TrimCell(tv *SelectTable, row, col int) string {
 	c := tv.GetCell(row, col)
 	if c == nil {
-		log.Error().Err(fmt.Errorf("No cell at location [%d:%d]", row, col)).Msg("Trim cell failed!")
+		slog.Error("Trim cell failed", slogs.Error, fmt.Errorf("no cell at [%d:%d]", row, col))
 		return ""
 	}
 	return strings.TrimSpace(c.Text)

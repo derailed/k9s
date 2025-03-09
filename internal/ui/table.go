@@ -6,6 +6,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/derailed/k9s/internal"
@@ -15,12 +16,10 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 const maxTruncate = 50
@@ -270,6 +269,14 @@ func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableDat
 	return t.doUpdate(t.filtered(data))
 }
 
+func (t *Table) GetNamespace() string {
+	if t.GetModel() != nil {
+		return t.GetModel().GetNamespace()
+	}
+
+	return client.NamespaceAll
+}
+
 func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	if client.IsAllNamespaces(data.GetNamespace()) {
 		t.actions.Add(
@@ -323,7 +330,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	cdata.RowsRange(func(row int, re model1.RowEvent) bool {
 		ore, ok := data.FindRow(re.Row.ID)
 		if !ok {
-			log.Error().Msgf("unable to find original re: %q", re.Row.ID)
+			slog.Error("Unable to find original row event", slogs.RowID, re.Row.ID)
 			return true
 		}
 		t.buildRow(row+1, re, ore, cdata.Header(), pads, isNamespaced)
@@ -346,7 +353,11 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 	ns := t.GetModel().GetNamespace()
 	for c, field := range re.Row.Fields {
 		if c >= len(h) {
-			log.Error().Msgf("field/header overflow detected for %q -- %d::%d. Check your mappings!", t.GVR(), c, len(h))
+			slog.Error("Field/header overflow detected. Check your mappings!",
+				slogs.GVR, t.GVR(),
+				slogs.Cell, c,
+				slogs.HeaderSize, len(h),
+			)
 			continue
 		}
 		if h[c].Hide || (!t.wide && h[c].Wide) {
@@ -505,7 +516,6 @@ func (t *Table) styleTitle() string {
 		rc--
 	}
 
-	base := cases.Title(language.Und, cases.NoLower).String(t.gvr.R())
 	ns := t.GetModel().GetNamespace()
 	if client.IsClusterWide(ns) || ns == client.NotNamespaced {
 		ns = client.NamespaceAll
@@ -524,9 +534,9 @@ func (t *Table) styleTitle() string {
 	}
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, base, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, t.gvr, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
 	}
 
 	buff := t.cmdBuff.GetText()

@@ -5,14 +5,14 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"sync"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"gopkg.in/yaml.v2"
 )
 
@@ -120,7 +120,7 @@ func (a *Aliases) Load(path string) error {
 
 	f, err := EnsureAliasesCfgFile()
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to gen config aliases")
+		slog.Error("Unable to gen config aliases", slogs.Error, err)
 	}
 
 	// load global alias file
@@ -146,7 +146,7 @@ func (a *Aliases) LoadFile(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.AliasesSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		slog.Warn("Aliases validation failed", slogs.Error, err)
 	}
 
 	var aa Aliases
@@ -193,7 +193,7 @@ func (a *Aliases) loadDefaultAliases() {
 
 // Save alias to disk.
 func (a *Aliases) Save() error {
-	log.Debug().Msg("[Config] Saving Aliases...")
+	slog.Debug("Saving Aliases...")
 	return a.SaveAliases(AppAliasesFile)
 }
 

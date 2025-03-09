@@ -5,6 +5,7 @@ package view
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
@@ -14,9 +15,9 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // Table represents a table viewer.
@@ -55,7 +56,7 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	t.Table.Init(ctx)
 	if !t.app.Config.K9s.UI.Reactive {
 		if err := t.app.RefreshCustomViews(); err != nil {
-			log.Warn().Err(err).Msg("CustomViews load failed")
+			slog.Warn("CustomViews load failed", slogs.Error, err)
 			t.app.Logo().Warn("Views load failed!")
 		}
 	}

@@ -6,6 +6,7 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,10 +19,10 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -60,6 +61,7 @@ func (b *Browser) getUpdating() bool {
 // Init watches all running pods in given namespace.
 func (b *Browser) Init(ctx context.Context) error {
 	var err error
+
 	b.meta, err = dao.MetaAccess.MetaFor(b.GVR())
 	if err != nil {
 		return err
@@ -151,7 +153,7 @@ func (b *Browser) Start() {
 		ns = n
 	}
 	if err := b.app.switchNS(ns); err != nil {
-		log.Error().Err(err).Msgf("ns switch failed")
+		slog.Error("Unable to switch namespace", slogs.Error, err)
 	}
 
 	b.Stop()
@@ -205,7 +207,10 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 		return
 	}
 	if err := b.GetModel().Refresh(b.GetContext()); err != nil {
-		log.Error().Err(err).Msgf("Refresh failed for %s", b.GVR())
+		slog.Error("Model refresh failed",
+			slogs.GVR, b.GVR(),
+			slogs.Error, err,
+		)
 	}
 	data := b.GetModel().Peek()
 	cdata := b.Update(data, b.App().Conn().HasMetrics())
@@ -462,7 +467,7 @@ func editRes(app *App, gvr client.GVR, path string) error {
 func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	i, err := strconv.Atoi(string(evt.Rune()))
 	if err != nil {
-		log.Error().Err(err).Msgf("Fail to switch namespace")
+		slog.Error("Unable to convert keystroke", slogs.Error, err)
 		return nil
 	}
 	ns := b.namespaces[i]
@@ -487,7 +492,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.SelectRow(1, 0, true)
 	b.app.CmdBuff().Reset()
 	if err := b.app.Config.SetActiveNamespace(b.GetModel().GetNamespace()); err != nil {
-		log.Error().Err(err).Msg("Config save NS failed!")
+		slog.Error("Unable to set active namespace during ns switch", slogs.Error, err)
 	}
 
 	return nil
@@ -561,11 +566,11 @@ func (b *Browser) refreshActions() {
 	b.Actions().Merge(aa)
 
 	if err := pluginActions(b, b.Actions()); err != nil {
-		log.Warn().Msgf("Plugins load failed: %s", err)
+		slog.Warn("Plugins load failed", slogs.Error, err)
 		b.app.Logo().Warn("Plugins load failed!")
 	}
 	if err := hotKeyActions(b, b.Actions()); err != nil {
-		log.Warn().Msgf("Hotkeys load failed: %s", err)
+		slog.Warn("Hotkeys load failed", slogs.Error, err)
 		b.app.Logo().Warn("HotKeys load failed!")
 	}
 	b.app.Menu().HydrateMenu(b.Hints())
@@ -591,7 +596,11 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 			b.namespaces[index] = ns
 			index++
 		} else {
-			log.Warn().Msgf("No number key available for favorite namespace %s (%d of %d). Skipping...", ns, index, len(favNamespaces))
+			slog.Warn("No number key available for favorite namespace. Skipping...",
+				slogs.Namespace, ns,
+				slogs.Index, index,
+				slogs.Max, len(favNamespaces),
+			)
 			break
 		}
 	}

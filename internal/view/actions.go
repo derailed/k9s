@@ -6,13 +6,14 @@ package view
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // AllScopes represents actions available for all views.
@@ -80,12 +81,15 @@ func hotKeyActions(r Runner, aa *ui.KeyActions) error {
 				errs = errors.Join(errs, fmt.Errorf("duplicate hotkey found for %q in %q", hk.ShortCut, k))
 				continue
 			}
-			log.Debug().Msgf("Action %q has been overridden by hotkey in %q", hk.ShortCut, k)
+			slog.Debug("Action has been overridden by hotkey",
+				slogs.Action, hk.ShortCut,
+				slogs.Key, k,
+			)
 		}
 
 		command, err := r.EnvFn()().Substitute(hk.Command)
 		if err != nil {
-			log.Warn().Err(err).Msg("Invalid shortcut command")
+			slog.Warn("Invalid shortcut command", slogs.Error, err)
 			continue
 		}
 
@@ -144,7 +148,10 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", plugin.ShortCut, k))
 				continue
 			}
-			log.Debug().Msgf("Action %q has been overridden by plugin in %q", plugin.ShortCut, k)
+			slog.Debug("Action has been overridden by plugin action",
+				slogs.Action, plugin.ShortCut,
+				slogs.Key, k,
+			)
 		}
 
 		if plugin.Dangerous && ro {
@@ -178,7 +185,7 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 		for i, a := range p.Args {
 			arg, err := r.EnvFn()().Substitute(a)
 			if err != nil {
-				log.Error().Err(err).Msg("Plugin Args match failed")
+				slog.Error("Plugin Args match failed", slogs.Error, err)
 				return nil
 			}
 			args[i] = arg

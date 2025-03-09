@@ -6,11 +6,12 @@ package dao
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -121,9 +122,9 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 	return asRuntimeObjects(parseRules(client.ClusterScope, "-", role.Rules)), nil
 }
 
-func (r *Rbac) loadClusterRole(path string) ([]runtime.Object, error) {
-	log.Debug().Msgf("LOAD-CR %q", path)
-	o, err := r.getFactory().Get(crGVR, path, true, labels.Everything())
+func (r *Rbac) loadClusterRole(fqn string) ([]runtime.Object, error) {
+	slog.Debug("LOAD-CR", slogs.FQN, fqn)
+	o, err := r.getFactory().Get(crGVR, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -165,6 +166,9 @@ func parseRules(ns, binding string, rules []rbacv1.PolicyRule) render.Policies {
 	pp := make(render.Policies, 0, len(rules))
 	for _, rule := range rules {
 		for _, grp := range rule.APIGroups {
+			if grp == "" {
+				grp = "core"
+			}
 			for _, res := range rule.Resources {
 				for _, na := range rule.ResourceNames {
 					pp = pp.Upsert(render.NewPolicyRes(ns, binding, FQN(res, na), grp, rule.Verbs))

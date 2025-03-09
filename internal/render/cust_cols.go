@@ -5,12 +5,13 @@ package render
 
 import (
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/model1"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -150,7 +151,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 					Header: cc[idx].Header,
 					Value:  NAValue,
 				}
-				log.Warn().Msgf("unable to find column %s", cc[idx].Header.Name)
+				slog.Warn("Unable to find column %s", slogs.Name, cc[idx].Header.Name)
 				continue
 			}
 			var v string

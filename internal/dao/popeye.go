@@ -22,7 +22,6 @@ package dao
 // 	"github.com/derailed/popeye/pkg"
 // 	"github.com/derailed/popeye/pkg/config"
 // 	"github.com/derailed/popeye/types"
-// 	"github.com/rs/zerolog/log"
 // 	"k8s.io/apimachinery/pkg/runtime"
 // )
 

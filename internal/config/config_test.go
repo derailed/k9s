@@ -6,6 +6,7 @@ package config_test
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,13 +17,12 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/mock"
 	m "github.com/petergtz/pegomock"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestConfigSave(t *testing.T) {
@@ -324,7 +324,7 @@ Invalid type. Expected: boolean, given: string`,
 	}
 }
 
-func TestConfigSetCurrentContext(t *testing.T) {
+func TestConfigActivateContext(t *testing.T) {
 	uu := map[string]struct {
 		cl, ct string
 		err    string
@@ -344,7 +344,7 @@ func TestConfigSetCurrentContext(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			cfg := mock.NewMockConfig()
-			ct, err := cfg.SetCurrentContext(u.ct)
+			ct, err := cfg.ActivateContext(u.ct)
 			if err != nil {
 				assert.Equal(t, u.err, err.Error())
 				return
@@ -529,7 +529,7 @@ func TestConfigValidate(t *testing.T) {
 	cfg.SetConnection(mock.NewMockConnection())
 
 	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
-	cfg.Validate()
+	cfg.Validate("ct-1-1", "cl-1")
 }
 
 func TestConfigLoad(t *testing.T) {
@@ -556,7 +556,7 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.ReadOnly = true
 	cfg.K9s.Logger.TailCount = 500
 	cfg.K9s.Logger.BufferSize = 800
-	cfg.Validate()
+	cfg.Validate("ct-1-1", "cl-1")
 
 	path := filepath.Join("/tmp", "k9s.yaml")
 	assert.NoError(t, cfg.SaveFile(path))
@@ -571,7 +571,7 @@ func TestConfigReset(t *testing.T) {
 	cfg := mock.NewMockConfig()
 	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	cfg.Reset()
-	cfg.Validate()
+	cfg.Validate("ct-1-1", "cl-1")
 
 	path := filepath.Join("/tmp", "k9s.yaml")
 	assert.NoError(t, cfg.SaveFile(path))

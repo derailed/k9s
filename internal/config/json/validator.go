@@ -8,9 +8,10 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
 )
@@ -89,9 +90,15 @@ func NewValidator() *Validator {
 func (v *Validator) register() {
 	v.loader = gojsonschema.NewSchemaLoader()
 	v.loader.Validate = true
+
+	clog := slog.With(slogs.Subsys, "schema")
+
 	for k, s := range v.schemas {
 		if err := v.loader.AddSchema(k, s); err != nil {
-			log.Error().Err(err).Msgf("schema initialization failed: %q", k)
+			clog.Error("Schema initialization failed",
+				slogs.SchemaFile, k,
+				slogs.Error, err,
+			)
 		}
 	}
 }

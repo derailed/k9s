@@ -5,9 +5,8 @@ package model1
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
-
-	"github.com/rs/zerolog/log"
 )
 
 type ReRangeFn func(int, RowEvent) bool
@@ -274,11 +273,11 @@ func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity,
 	r.reindex()
 }
 
-// For debguging...
+// For debugging...
 func (re RowEvents) Dump(msg string) {
-	log.Debug().Msg(msg)
+	slog.Debug("[DEBUG] RowEvents" + msg)
 	for _, r := range re.events {
-		log.Debug().Msgf("!!YO!! %#v", r)
+		slog.Debug(fmt.Sprintf("   %#v", r))
 	}
 }
 

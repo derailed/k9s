@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -17,11 +18,11 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/fatih/color"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -392,7 +393,7 @@ func resumeShellIn(a *App, c model.Component, path, co string) {
 func shellIn(a *App, fqn, co string) {
 	os, err := getPodOS(a.factory, fqn)
 	if err != nil {
-		log.Warn().Err(err).Msgf("os detect failed")
+		slog.Warn("OS detect failed", slogs.Error, err)
 	}
 	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
 
@@ -513,10 +514,13 @@ func fetchPod(f dao.Factory, path string) (*v1.Pod, error) {
 	return &pod, nil
 }
 
-func podIsRunning(f dao.Factory, path string) bool {
-	po, err := fetchPod(f, path)
+func podIsRunning(f dao.Factory, fqn string) bool {
+	po, err := fetchPod(f, fqn)
 	if err != nil {
-		log.Error().Err(err).Msg("unable to fetch pod")
+		slog.Error("Unable to fetch pod",
+			slogs.FQN, fqn,
+			slogs.Error, err,
+		)
 		return false
 	}
 

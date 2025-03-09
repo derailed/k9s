@@ -6,6 +6,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"sync/atomic"
@@ -15,8 +16,8 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/xray"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -162,7 +163,7 @@ func (t *Tree) ToYAML(ctx context.Context, gvr, path string) (string, error) {
 }
 
 func (t *Tree) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Tree-model canceled -- %q", t.gvr)
+	defer slog.Debug("Tree-model canceled", slogs.GVR, t.gvr)
 
 	rate := initTreeRefreshRate
 	for {
@@ -179,13 +180,13 @@ func (t *Tree) updater(ctx context.Context) {
 
 func (t *Tree) refresh(ctx context.Context) {
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)
 
 	if err := t.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msg("Reconcile failed")
+		slog.Error("Reconcile failed", slogs.Error, err)
 		t.fireTreeLoadFailed(err)
 		return
 	}

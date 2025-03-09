@@ -6,15 +6,16 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -68,7 +69,7 @@ func (n *Node) bindDangerousKeys(aa *ui.KeyActions) {
 	})
 	ct, err := n.App().Config.K9s.ActiveContext()
 	if err != nil {
-		log.Error().Err(err).Msgf("No active context located")
+		slog.Error("No active context located", slogs.Error, err)
 		return
 	}
 	if ct.FeatureGates.NodeShell {

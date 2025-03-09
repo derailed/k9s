@@ -13,24 +13,22 @@ import (
 
 // Context tracks K9s context configuration.
 type Context struct {
-	ClusterName        string       `yaml:"cluster,omitempty"`
-	ReadOnly           *bool        `yaml:"readOnly,omitempty"`
-	Skin               string       `yaml:"skin,omitempty"`
-	Namespace          *Namespace   `yaml:"namespace"`
-	View               *View        `yaml:"view"`
-	FeatureGates       FeatureGates `yaml:"featureGates"`
-	PortForwardAddress string       `yaml:"portForwardAddress"`
-	Proxy              *Proxy       `yaml:"proxy"`
-	mx                 sync.RWMutex
+	ClusterName  string       `yaml:"cluster,omitempty"`
+	ReadOnly     *bool        `yaml:"readOnly,omitempty"`
+	Skin         string       `yaml:"skin,omitempty"`
+	Namespace    *Namespace   `yaml:"namespace"`
+	View         *View        `yaml:"view"`
+	FeatureGates FeatureGates `yaml:"featureGates"`
+	Proxy        *Proxy       `yaml:"proxy"`
+	mx           sync.RWMutex
 }
 
 // NewContext creates a new cluster configuration.
 func NewContext() *Context {
 	return &Context{
-		Namespace:          NewNamespace(),
-		View:               NewView(),
-		PortForwardAddress: defaultPFAddress(),
-		FeatureGates:       NewFeatureGates(),
+		Namespace:    NewNamespace(),
+		View:         NewView(),
+		FeatureGates: NewFeatureGates(),
 	}
 }
 
@@ -71,19 +69,11 @@ func (c *Context) GetClusterName() string {
 }
 
 // Validate ensures a context config is tip top.
-func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
+func (c *Context) Validate(conn client.Connection, contextName, clusterName string) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
-	if a := os.Getenv(envPFAddress); a != "" {
-		c.PortForwardAddress = a
-	}
-	if c.PortForwardAddress == "" {
-		c.PortForwardAddress = defaultPFAddress()
-	}
-	if cl, err := ks.CurrentClusterName(); err == nil {
-		c.ClusterName = cl
-	}
+	c.ClusterName = clusterName
 	if b := os.Getenv(envFGNodeShell); b != "" {
 		c.FeatureGates.NodeShell = defaultFGNodeShell()
 	}

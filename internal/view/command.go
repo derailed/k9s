@@ -6,16 +6,16 @@ package view
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"runtime/debug"
 	"strings"
 	"sync"
 
-	"github.com/rs/zerolog/log"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view/cmd"
 )
 
@@ -47,7 +47,7 @@ func (c *Command) AliasesFor(s string) []string {
 func (c *Command) Init(path string) error {
 	c.alias = dao.NewAlias(c.app.factory)
 	if _, err := c.alias.Ensure(path); err != nil {
-		log.Error().Err(err).Msgf("Alias ensure failed!")
+		slog.Error("Ensure aliases failed", slogs.Error, err)
 		return err
 	}
 	customViewers = loadCustomViewers()
@@ -164,9 +164,9 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool, pushCmd b
 	if context, ok := p.HasContext(); ok {
 		if context != c.app.Config.ActiveContextName() {
 			if err := c.app.Config.Save(true); err != nil {
-				log.Error().Err(err).Msg("config save failed!")
+				slog.Error("Config save failed during command exec", slogs.Error, err)
 			} else {
-				log.Debug().Msgf("Saved context config for: %q", context)
+				slog.Debug("Successfully saved config", slogs.Context, context)
 			}
 		}
 		res, err := dao.AccessorFor(c.app.factory, client.NewGVR("contexts"))
@@ -178,7 +178,7 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool, pushCmd b
 			return errors.New("expecting a switchable resource")
 		}
 		if err := switcher.Switch(context); err != nil {
-			log.Error().Err(err).Msgf("Context switch failed")
+			slog.Error("Unable to switch context", slogs.Error, err)
 			return err
 		}
 		if err := c.app.switchContext(p, false); err != nil {
@@ -226,7 +226,10 @@ func (c *Command) defaultCmd(isRoot bool) error {
 
 	if err := c.run(p, "", true, true); err != nil {
 		p = p.Reset(defCmd)
-		log.Error().Err(fmt.Errorf("Command failed. Using default command: %s", p.GetLine()))
+		slog.Error("Command exec failed. Using default command",
+			slogs.Command, p.GetLine(),
+			slogs.Error, err,
+		)
 		return c.run(p, "", true, true)
 	}
 
@@ -242,7 +245,7 @@ func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 			c.app.cowCmd(msg)
 		}
 	case p.IsBailCmd():
-		c.app.BailOut()
+		c.app.BailOut(0)
 	case p.IsHelpCmd():
 		_ = c.app.helpCmd(nil)
 	case p.IsAliasCmd():
@@ -323,10 +326,10 @@ func (c *Command) componentFor(gvr client.GVR, fqn string, v *MetaViewer) Resour
 func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component, clearStack bool, pushCmd bool) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
-			log.Error().Msgf("Something bad happened! %#v", e)
+			slog.Error("Failure detected during command exec", slogs.Error, e)
 			c.app.Content.Dump()
-			log.Debug().Msgf("History %v", c.app.cmdHistory.List())
-			log.Error().Msg(string(debug.Stack()))
+			slog.Debug("Dumping history buffer", slogs.CmdHist, c.app.cmdHistory.List())
+			slog.Error("Dumping stack", slogs.Stack, debug.Stack())
 
 			p := cmd.NewInterpreter("pod")
 			cmds := c.app.cmdHistory.List()

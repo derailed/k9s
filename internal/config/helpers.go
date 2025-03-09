@@ -4,11 +4,17 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
+)
+
+const (
+	envPFAddress          = "K9S_DEFAULT_PF_ADDRESS"
+	defaultPortFwdAddress = "localhost"
 )
 
 // IsBoolSet checks if a bool ptr is set.
@@ -54,7 +60,16 @@ func MustK9sUser() string {
 		if envUsr != "" {
 			return envUsr
 		}
-		log.Fatal().Err(err).Msg("Die on retrieving user info")
+		slog.Error("Die on retrieving user info", slogs.Error, err)
+		os.Exit(1)
 	}
 	return usr.Username
+}
+
+func defaultPFAddress() string {
+	if a := os.Getenv(envPFAddress); a != "" {
+		return a
+	}
+
+	return defaultPortFwdAddress
 }

@@ -5,6 +5,7 @@ package model
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -48,7 +49,7 @@ func getHelmHistDao() *dao.HelmHistory {
 func getRevValues(path, rev string) []string {
 	vals, err := getHelmHistDao().GetValues(path, true)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to get Helm values")
+		slog.Error("Failed to get Helm values", slogs.Error, err)
 	}
 	return strings.Split(string(vals), "\n")
 }
@@ -133,7 +134,7 @@ func (v *RevValues) Watch(ctx context.Context) error {
 }
 
 func (v *RevValues) updater(ctx context.Context) {
-	defer log.Debug().Msgf("YAML canceled -- %q", v.gvr)
+	defer slog.Debug("YAML canceled", slogs.GVR, v.gvr)
 
 	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
 	delay := defaultReaderRefreshRate
@@ -145,7 +146,7 @@ func (v *RevValues) updater(ctx context.Context) {
 			if err := v.refresh(ctx); err != nil {
 				v.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("giving up retrieving chart values")
+					slog.Error("Giving up retrieving chart values", slogs.Error, err)
 					return
 				}
 			} else {
@@ -158,7 +159,7 @@ func (v *RevValues) updater(ctx context.Context) {
 
 func (v *RevValues) refresh(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&v.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return nil
 	}
 	defer atomic.StoreInt32(&v.inUpdate, 0)

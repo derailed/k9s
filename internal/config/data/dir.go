@@ -7,12 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/derailed/k9s/internal/config/json"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -31,18 +32,19 @@ func NewDir(root string) *Dir {
 }
 
 // Load loads context configuration.
-func (d *Dir) Load(n string, ct *api.Context) (*Config, error) {
+func (d *Dir) Load(contextName string, ct *api.Context) (*Config, error) {
 	if ct == nil {
 		return nil, errors.New("api.Context must not be nil")
 	}
-	var path = filepath.Join(d.root, SanitizeContextSubpath(ct.Cluster, n), MainConfigFile)
 
+	path := filepath.Join(d.root, SanitizeContextSubpath(ct.Cluster, contextName), MainConfigFile)
+	slog.Debug("[CONFIG] Loading context config from disk", slogs.Path, path, slogs.Cluster, ct.Cluster, slogs.Context, contextName)
 	f, err := os.Stat(path)
 	if errors.Is(err, fs.ErrPermission) {
 		return nil, err
 	}
 	if errors.Is(err, fs.ErrNotExist) || (f != nil && f.Size() == 0) {
-		log.Debug().Msgf("Context config not found! Generating... %q", path)
+		slog.Debug("Context config not found! Generating..", slogs.Path, path)
 		return d.genConfig(path, ct)
 	}
 	if err != nil {
@@ -89,7 +91,10 @@ func (d *Dir) loadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 	if err := JSONValidator.Validate(json.ContextSchema, bb); err != nil {
-		return nil, fmt.Errorf("validation failed for %q: %w", path, err)
+		slog.Warn("Validation failed. Please update your config and restart!",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 	}
 
 	var cfg Config

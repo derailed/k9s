@@ -5,12 +5,13 @@ package view
 
 import (
 	"fmt"
+	"log/slog"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 // Env represent K9s and K8s available environment variables.
@@ -50,7 +51,10 @@ func (e Env) Substitute(arg string) (string, error) {
 		key, inverse := keyFromSubmatch(m)
 		v, ok := e[strings.ToUpper(key)]
 		if !ok {
-			log.Warn().Msgf("no k9s environment matching key %q:%q", m[0], key)
+			slog.Warn("No k9s environment matching key",
+				slogs.Matches, matches,
+				slogs.Key, key,
+			)
 			continue
 		}
 		if b, err := strconv.ParseBool(v); err == nil {

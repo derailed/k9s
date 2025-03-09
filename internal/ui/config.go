@@ -7,15 +7,16 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/fsnotify/fsnotify"
-	"github.com/rs/zerolog/log"
 )
 
 // Synchronizer manages ui event queue.
@@ -55,17 +56,17 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 				if evt.Name == config.AppViewsFile && evt.Op != fsnotify.Chmod {
 					s.QueueUpdateDraw(func() {
 						if err := c.RefreshCustomViews(); err != nil {
-							log.Warn().Err(err).Msgf("Custom views refresh failed")
+							slog.Warn("Custom views refresh failed", slogs.Error, err)
 						}
 					})
 				}
 			case err := <-w.Errors:
-				log.Warn().Err(err).Msg("CustomView watcher failed")
+				slog.Warn("CustomView watcher failed", slogs.Error, err)
 				return
 			case <-ctx.Done():
-				log.Debug().Msgf("CustomViewWatcher CANCELED `%s!!", config.AppViewsFile)
+				slog.Debug("CustomViewWatcher canceled", slogs.FileName, config.AppViewsFile)
 				if err := w.Close(); err != nil {
-					log.Error().Err(err).Msg("Closing CustomView watcher")
+					slog.Error("Closing CustomView watcher", slogs.Error, err)
 				}
 				return
 			}
@@ -104,29 +105,29 @@ func (c *Configurator) SkinsDirWatcher(ctx context.Context, s synchronizer) erro
 			select {
 			case evt := <-w.Events:
 				if evt.Op != fsnotify.Chmod && filepath.Base(evt.Name) == filepath.Base(c.skinFile) {
-					log.Debug().Msgf("Skin changed: %s", c.skinFile)
+					slog.Debug("Skin file changed detected", slogs.FileName, c.skinFile)
 					s.QueueUpdateDraw(func() {
 						c.RefreshStyles(s)
 					})
 				}
 			case err := <-w.Errors:
-				log.Info().Err(err).Msg("Skin watcher failed")
+				slog.Warn("Skin watcher failed", slogs.Error, err)
 				return
 			case <-ctx.Done():
-				log.Debug().Msgf("SkinWatcher CANCELED `%s!!", c.skinFile)
+				slog.Debug("SkinWatcher canceled", slogs.FileName, c.skinFile)
 				if err := w.Close(); err != nil {
-					log.Error().Err(err).Msg("Closing Skin watcher")
+					slog.Error("Closing Skin watcher", slogs.Error, err)
 				}
 				return
 			}
 		}
 	}()
 
-	log.Debug().Msgf("SkinWatcher watching %q", config.AppSkinsDir)
+	slog.Debug("SkinWatcher initialized", slogs.Dir, config.AppSkinsDir)
 	return w.Add(config.AppSkinsDir)
 }
 
-// ConfigWatcher watches for skin settings changes.
+// ConfigWatcher watches for config settings changes.
 func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -138,16 +139,16 @@ func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error 
 			select {
 			case evt := <-w.Events:
 				if evt.Has(fsnotify.Create) || evt.Has(fsnotify.Write) {
-					log.Debug().Msgf("ConfigWatcher file changed: %s", evt.Name)
+					slog.Debug("ConfigWatcher file changed", slogs.FileName, evt.Name)
 					if evt.Name == config.AppConfigFile {
 						if err := c.Config.Load(evt.Name, false); err != nil {
-							log.Error().Err(err).Msgf("k9s config reload failed")
+							slog.Error("K9s config reload failed", slogs.Error, err)
 							s.Flash().Warn("k9s config reload failed. Check k9s logs!")
 							s.Logo().Warn("K9s config reload failed!")
 						}
 					} else {
 						if err := c.Config.K9s.Reload(); err != nil {
-							log.Error().Err(err).Msgf("k9s context config reload failed")
+							slog.Error("K9s context config reload failed", slogs.Error, err)
 							s.Flash().Warn("Context config reload failed. Check k9s logs!")
 							s.Logo().Warn("Context config reload failed!")
 						}
@@ -157,19 +158,19 @@ func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error 
 					})
 				}
 			case err := <-w.Errors:
-				log.Info().Err(err).Msg("ConfigWatcher failed")
+				slog.Warn("ConfigWatcher failed", slogs.Error, err)
 				return
 			case <-ctx.Done():
-				log.Debug().Msg("ConfigWatcher CANCELED")
+				slog.Debug("ConfigWatcher canceled")
 				if err := w.Close(); err != nil {
-					log.Error().Err(err).Msg("Canceling ConfigWatcher")
+					slog.Error("Canceling ConfigWatcher", slogs.Error, err)
 				}
 				return
 			}
 		}
 	}()
 
-	log.Debug().Msgf("ConfigWatcher watching: %q", config.AppConfigFile)
+	slog.Debug("ConfigWatcher watching", slogs.FileName, config.AppConfigFile)
 	if err := w.Add(config.AppConfigFile); err != nil {
 		return err
 	}
@@ -179,7 +180,7 @@ func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error 
 		return nil
 	}
 	ctConfigFile := filepath.Join(config.AppContextConfig(cl, ct))
-	log.Debug().Msgf("ConfigWatcher watching: %q", ctConfigFile)
+	slog.Debug("ConfigWatcher watching", slogs.FileName, ctConfigFile)
 
 	return w.Add(ctConfigFile)
 }
@@ -193,14 +194,17 @@ func (c *Configurator) activeSkin() (string, bool) {
 	if ct, err := c.Config.K9s.ActiveContext(); err == nil && ct.Skin != "" {
 		if _, err := os.Stat(config.SkinFileFromName(ct.Skin)); err == nil {
 			skin = ct.Skin
-			log.Debug().Msgf("[Skin] Loading context skin (%q) from %q", skin, c.Config.K9s.ActiveContextName())
+			slog.Debug("Loading context skin",
+				slogs.Skin, skin,
+				slogs.Context, c.Config.K9s.ActiveContextName(),
+			)
 		}
 	}
 
 	if sk := c.Config.K9s.UI.Skin; skin == "" && sk != "" {
 		if _, err := os.Stat(config.SkinFileFromName(sk)); err == nil {
 			skin = sk
-			log.Debug().Msgf("[Skin] Loading global skin (%q)", skin)
+			slog.Debug("Loading global skin", slogs.Skin, skin)
 		}
 	}
 
@@ -237,7 +241,11 @@ func (c *Configurator) RefreshStyles(s synchronizer) {
 	}
 	// !!BOZO!! Lame move out!
 	if bc, err := config.EnsureBenchmarksCfgFile(cl, ct); err != nil {
-		log.Warn().Err(err).Msgf("No benchmark config file found: %q@%q", cl, ct)
+		slog.Warn("No benchmark config file found",
+			slogs.Cluster, cl,
+			slogs.Context, ct,
+			slogs.Error, err,
+		)
 	} else {
 		c.BenchFile = bc
 	}
@@ -246,19 +254,26 @@ func (c *Configurator) RefreshStyles(s synchronizer) {
 func (c *Configurator) loadSkinFile(s synchronizer) {
 	skin, ok := c.activeSkin()
 	if !ok {
-		log.Debug().Msgf("No custom skin found. Using stock skin")
+		slog.Debug("No custom skin found. Using stock skin")
 		c.updateStyles("")
 		return
 	}
 
 	skinFile := config.SkinFileFromName(skin)
-	log.Debug().Msgf("Loading skin file: %q", skinFile)
+	slog.Debug("Loading skin file", slogs.Skin, skinFile)
 	if err := c.Styles.Load(skinFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			log.Warn().Msgf("Skin file %q not found in skins dir: %s", filepath.Base(skinFile), config.AppSkinsDir)
+			slog.Warn("Skin file not found in skins dir",
+				slogs.Skin, filepath.Base(skinFile),
+				slogs.Dir, config.AppSkinsDir,
+				slogs.Error, err,
+			)
 			c.updateStyles("")
 		} else {
-			log.Error().Msgf("Failed to parse skin file -- %s: %s.", filepath.Base(skinFile), err)
+			slog.Error("Failed to parse skin file",
+				slogs.Path, filepath.Base(skinFile),
+				slogs.Error, err,
+			)
 			c.updateStyles(skinFile)
 		}
 	} else {
