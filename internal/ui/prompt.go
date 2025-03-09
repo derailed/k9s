@@ -6,6 +6,7 @@ package ui
 import (
 	"fmt"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -264,7 +265,7 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 		p.SetBorder(true)
 		p.SetTextColor(p.styles.FgColor())
 		p.SetBorderColor(p.colorFor(kind))
-		p.icon = p.iconFor(kind)
+		p.icon = p.iconFor(kind, p.app.Config.K9s.UI.Emoji)
 		p.activate()
 		return
 	}
@@ -275,7 +276,7 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	p.Clear()
 }
 
-func (p *Prompt) iconFor(k model.BufferKind) rune {
+func (p *Prompt) iconFor(k model.BufferKind, emojiConfig config.Emoji) rune {
 	if p.noIcons {
 		return ' '
 	}
@@ -283,9 +284,11 @@ func (p *Prompt) iconFor(k model.BufferKind) rune {
 	// nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
-		return '🐶'
+		r, _ := utf8.DecodeRuneInString(emojiConfig.CommandLineEmoji())
+		return r
 	default:
-		return '🐩'
+		r, _ := utf8.DecodeRuneInString(emojiConfig.FilterLineEmoji())
+		return r
 	}
 }
 

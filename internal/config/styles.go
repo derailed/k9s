@@ -280,11 +280,11 @@ func newCharts() Charts {
 		BgColor:            "black",
 		DialBgColor:        "black",
 		ChartBgColor:       "black",
-		DefaultDialColors:  Colors{Color("palegreen"), Color("orangered")},
-		DefaultChartColors: Colors{Color("palegreen"), Color("orangered")},
+		DefaultDialColors:  Colors{"palegreen", "orangered"},
+		DefaultChartColors: Colors{"palegreen", "orangered"},
 		ResourceColors: map[string]Colors{
-			"cpu": {Color("dodgerblue"), Color("darkslateblue")},
-			"mem": {Color("yellow"), Color("goldenrod")},
+			"cpu": {"dodgerblue", "darkslateblue"},
+			"mem": {"yellow", "goldenrod"},
 		},
 	}
 }

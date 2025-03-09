@@ -123,8 +123,6 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func loadConfiguration() (*config.Config, error) {
-	log.Info().Msg("🐶 K9s starting up...")
-
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
 	var errs error
@@ -137,6 +135,8 @@ func loadConfiguration() (*config.Config, error) {
 		log.Error().Err(err).Msgf("config refine failed")
 		errs = errors.Join(errs, err)
 	}
+
+	log.Info().Msg(k9sCfg.K9s.UI.Emoji.StartUpEmoji() + " K9s starting up...")
 
 	conn, err := client.InitConnection(k8sCfg)
 
@@ -155,7 +155,7 @@ func loadConfiguration() (*config.Config, error) {
 
 	k9sCfg.SetConnection(conn)
 
-	log.Info().Msg("✅ Kubernetes connectivity")
+	log.Info().Msg(k9sCfg.K9s.UI.Emoji.CheckMarkEmoji() + " Kubernetes connectivity")
 	if err := k9sCfg.Save(false); err != nil {
 		log.Error().Err(err).Msg("Config save")
 		errs = errors.Join(errs, err)

@@ -41,7 +41,7 @@ func TestCmdUpdate(t *testing.T) {
 
 func TestCmdMode(t *testing.T) {
 	model := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v := ui.NewPrompt(makeEmptyUIApp(), true, config.NewStyles())
 	v.SetModel(model)
 	model.AddListener(v)
 
@@ -53,7 +53,7 @@ func TestCmdMode(t *testing.T) {
 
 func TestPrompt_Deactivate(t *testing.T) {
 	model := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v := ui.NewPrompt(makeEmptyUIApp(), true, config.NewStyles())
 	v.SetModel(model)
 	model.AddListener(v)
 
@@ -67,7 +67,6 @@ func TestPrompt_Deactivate(t *testing.T) {
 // Tests that, when active, the prompt has the appropriate color
 func TestPromptColor(t *testing.T) {
 	styles := config.NewStyles()
-	app := ui.App{}
 
 	// Make sure to have different values to be sure that the prompt color actually changes depending on its type
 	assert.NotEqual(t,
@@ -94,7 +93,7 @@ func TestPromptColor(t *testing.T) {
 
 	for _, testCase := range testCases {
 		model := model.NewFishBuff(':', testCase.kind)
-		prompt := ui.NewPrompt(&app, true, styles)
+		prompt := ui.NewPrompt(makeEmptyUIApp(), true, styles)
 
 		prompt.SetModel(model)
 		model.AddListener(prompt)
@@ -106,7 +105,6 @@ func TestPromptColor(t *testing.T) {
 
 // Tests that, when a change of style occurs, the prompt will have the appropriate color when active
 func TestPromptStyleChanged(t *testing.T) {
-	app := ui.App{}
 	styles := config.NewStyles()
 	newStyles := config.NewStyles()
 	newStyles.K9s.Prompt.Border = config.PromptBorder{
@@ -137,7 +135,7 @@ func TestPromptStyleChanged(t *testing.T) {
 
 	for _, testCase := range testCases {
 		model := model.NewFishBuff(':', testCase.kind)
-		prompt := ui.NewPrompt(&app, true, styles)
+		prompt := ui.NewPrompt(makeEmptyUIApp(), true, styles)
 
 		model.SetActive(true)
 
@@ -149,4 +147,8 @@ func TestPromptStyleChanged(t *testing.T) {
 		model.SetActive(true)
 		assert.Equal(t, prompt.GetBorderColor(), testCase.expectedColor)
 	}
+}
+
+func makeEmptyUIApp() *ui.App {
+	return &ui.App{Configurator: ui.Configurator{Config: &config.Config{K9s: &config.K9s{}}}}
 }

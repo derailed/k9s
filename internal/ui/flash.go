@@ -13,12 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	emoHappy = "😎"
-	emoDoh   = "😗"
-	emoRed   = "😡"
-)
-
 // Flash represents a flash message indicator.
 type Flash struct {
 	*tview.TextView
@@ -74,7 +68,7 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 			return
 		}
 		f.SetTextColor(flashColor(m.Level))
-		f.SetText(f.flashEmoji(m.Level) + " " + m.Text)
+		f.SetText(f.flashEmoji(m.Level, f.app.Config.K9s.UI.Emoji) + " " + m.Text)
 	}
 
 	if f.testMode {
@@ -84,18 +78,18 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 	}
 }
 
-func (f *Flash) flashEmoji(l model.FlashLevel) string {
+func (f *Flash) flashEmoji(l model.FlashLevel, emojiConfig config.Emoji) string {
 	if f.app.Config.K9s.UI.NoIcons {
 		return ""
 	}
 	// nolint:exhaustive
 	switch l {
 	case model.FlashWarn:
-		return emoDoh
+		return emojiConfig.WarningStatusEmoji()
 	case model.FlashErr:
-		return emoRed
+		return emojiConfig.ErrorStatusEmoji()
 	default:
-		return emoHappy
+		return emojiConfig.InfoStatusEmoji()
 	}
 }
 
