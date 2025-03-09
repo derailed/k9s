@@ -78,6 +78,9 @@ Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgj
 * [#3176](https://github.com/derailed/k9s/issues/3176) Trigger all marked cronjobs
 * [#3162](https://github.com/derailed/k9s/issues/3162) Context configs: context directory created under wrong cluster after context switch
 * [#3161](https://github.com/derailed/k9s/issues/3161) Force wide-only columns to appear outside of wide view
+* [#3147](https://github.com/derailed/k9s/issues/3147) Prompt style is overriden by body
+* [#3139](https://github.com/derailed/k9s/issues/3139) CPU/R:L and MEM/R:L columns invalid in views.yaml
+* [#3138](https://github.com/derailed/k9s/issues/3138) Subresources are not shown correctly in the RBAC view
 
 ---
 
