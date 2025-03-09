@@ -17,6 +17,7 @@ type ShellPod struct {
 	Image            string                    `json:"image" yaml:"image"`
 	Command          []string                  `json:"command,omitempty" yaml:"command,omitempty"`
 	Args             []string                  `json:"args,omitempty" yaml:"args,omitempty"`
+	Env              []v1.EnvVar               `json:"env,omitempty" yaml:"env,omitempty"`
 	Namespace        string                    `json:"namespace" yaml:"namespace"`
 	Limits           Limits                    `json:"limits,omitempty" yaml:"limits,omitempty"`
 	Labels           map[string]string         `json:"labels,omitempty" yaml:"labels,omitempty"`
