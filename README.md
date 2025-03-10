@@ -695,10 +695,16 @@ views:
       - MEM/RL|S                                         # => 🌚 Overrides std resource default wide attribute via `S` for `Show`
       - '%MEM/R|'                                        # => NOTE! column names with non alpha names need to be quoted as columns must be strings!
 
-  v1/pods@fred:                                         # => 🌚 New v0.40.6! Customize columns for a given resource and namespace!
+  v1/pods@fred:                                          # => 🌚 New v0.40.6! Customize columns for a given resource and namespace!
     columns:
       - AGE
       - NAMESPACE|WR
+
+  v1/pods@kube*:                                         # => 🌚 New v0.40.6! You can also specify a namespace using a regular expression.
+    columns:
+      - AGE
+      - NAMESPACE|WR
+
 
   v1/services:
     columns:
