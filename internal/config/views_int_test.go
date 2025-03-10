@@ -43,6 +43,9 @@ func TestCustomView_getVS(t *testing.T) {
 		"toast-no-ns": {
 			gvr: "v1/pods",
 			ns:  "zorg",
+			e: &ViewSetting{
+				Columns: []string{"NAMESPACE", "NAME", "AGE", "IP"},
+			},
 		},
 
 		"toast-no-res": {

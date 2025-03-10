@@ -142,28 +142,33 @@ func (v *CustomView) fireConfigChanged() {
 
 func (v *CustomView) getVS(gvr, ns string) *ViewSetting {
 	k := gvr
-	if ns != "" {
-		k += "@" + ns
-	}
-
-	for key := range maps.Keys(v.Views) {
+	kk := slices.Collect(maps.Keys(v.Views))
+	slices.SortFunc(kk, func(s1, s2 string) int {
+		return strings.Compare(s1, s2)
+	})
+	slices.Reverse(kk)
+	for _, key := range kk {
 		if !strings.HasPrefix(key, gvr) {
 			continue
 		}
 
 		switch {
-		case key == k:
-			vs := v.Views[key]
-			return &vs
 		case strings.Contains(key, "@"):
 			tt := strings.Split(key, "@")
 			if len(tt) != 2 {
 				break
 			}
-			if rx, err := regexp.Compile(tt[1]); err == nil && rx.MatchString(k) {
+			nsk := gvr
+			if ns != "" {
+				nsk += "@" + ns
+			}
+			if rx, err := regexp.Compile(tt[1]); err == nil && rx.MatchString(nsk) {
 				vs := v.Views[key]
 				return &vs
 			}
+		case key == k:
+			vs := v.Views[key]
+			return &vs
 		}
 	}
 

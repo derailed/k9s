@@ -53,7 +53,7 @@ func (w *Workload) bindDangerousKeys(aa *ui.KeyActions) {
 }
 
 func (w *Workload) bindKeys(aa *ui.KeyActions) {
-	if !w.App().Config.K9s.IsReadOnly() {
+	if !w.App().Config.IsReadOnly() {
 		w.bindDangerousKeys(aa)
 	}
 

@@ -153,7 +153,7 @@ func (v *LiveView) bindKeys() {
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", v.eraseCmd, false),
 	})
 
-	if !v.app.Config.K9s.IsReadOnly() {
+	if !v.app.Config.IsReadOnly() {
 		v.actions.Add(ui.KeyE, ui.NewKeyAction("Edit", v.editCmd, true))
 	}
 	if v.title == yamlAction {

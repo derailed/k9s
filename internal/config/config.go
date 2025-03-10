@@ -34,6 +34,11 @@ func NewConfig(ks data.KubeSettings) *Config {
 	}
 }
 
+// IsReadOnly returns true if K9s is running in read-only mode.
+func (c *Config) IsReadOnly() bool {
+	return c.K9s.IsReadOnly()
+}
+
 // ActiveClusterName returns the corresponding cluster name.
 func (c *Config) ActiveClusterName(contextName string) (string, error) {
 	ct, err := c.settings.GetContext(contextName)

@@ -84,6 +84,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	if b.App().IsRunning() {
 		b.app.CmdBuff().Reset()
 	}
+	b.Table.SetReadOnly(b.app.Config.IsReadOnly())
 
 	b.bindKeys(b.Actions())
 	for _, f := range b.bindKeysFn {
@@ -537,7 +538,7 @@ func (b *Browser) refreshActions() {
 
 	if b.app.ConOK() {
 		b.namespaceActions(aa)
-		if !b.app.Config.K9s.IsReadOnly() {
+		if !b.app.Config.IsReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
 				aa.Add(ui.KeyE, ui.NewKeyActionWithOpts("Edit", b.editCmd,
 					ui.ActionOpts{

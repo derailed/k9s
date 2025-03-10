@@ -419,9 +419,9 @@ func (s *Sanitizer) styleTitle() string {
 
 	var title string
 	if ns == client.ClusterScope {
-		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, render.AsThousands(int64(s.Count))), s.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, ui.ROIndicator(s.app.Config.IsReadOnly()), base, render.AsThousands(int64(s.Count))), s.app.Styles.Frame())
 	} else {
-		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, render.AsThousands(int64(s.Count))), s.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, ui.ROIndicator(s.app.Config.IsReadOnly()), base, ns, render.AsThousands(int64(s.Count))), s.app.Styles.Frame())
 	}
 
 	buff := s.CmdBuff().GetText()

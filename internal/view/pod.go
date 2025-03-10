@@ -124,7 +124,7 @@ func (p *Pod) bindDangerousKeys(aa *ui.KeyActions) {
 }
 
 func (p *Pod) bindKeys(aa *ui.KeyActions) {
-	if !p.App().Config.K9s.IsReadOnly() {
+	if !p.App().Config.IsReadOnly() {
 		p.bindDangerousKeys(aa)
 	}
 
