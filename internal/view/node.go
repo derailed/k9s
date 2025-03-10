@@ -78,7 +78,7 @@ func (n *Node) bindDangerousKeys(aa *ui.KeyActions) {
 }
 
 func (n *Node) bindKeys(aa *ui.KeyActions) {
-	if !n.App().Config.K9s.IsReadOnly() {
+	if !n.App().Config.IsReadOnly() {
 		n.bindDangerousKeys(aa)
 	}
 

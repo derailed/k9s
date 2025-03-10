@@ -12,7 +12,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
@@ -54,6 +53,7 @@ type Table struct {
 	hasMetrics  bool
 	ctx         context.Context
 	mx          sync.RWMutex
+	readOnly    bool
 }
 
 // NewTable returns a new table view.
@@ -70,6 +70,13 @@ func NewTable(gvr client.GVR) *Table {
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: model1.SortColumn{ASC: true},
 	}
+}
+
+func (t *Table) SetReadOnly(ro bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.readOnly = ro
 }
 
 func (t *Table) setSortCol(sc model1.SortColumn) {
@@ -297,17 +304,12 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	fg := t.styles.Table().Header.FgColor.Color()
 	bg := t.styles.Table().Header.BgColor.Color()
 
-	var isNamespaced bool
-	if m, err := dao.MetaAccess.MetaFor(t.GVR()); err == nil {
-		isNamespaced = m.Namespaced
-	}
-
 	var col int
 	for _, h := range cdata.Header() {
 		if h.Hide || (!t.wide && h.Wide) {
 			continue
 		}
-		if h.Name == "NAMESPACE" && (!t.GetModel().ClusterWide() || !isNamespaced) {
+		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
 		if h.MX && !t.hasMetrics {
@@ -333,7 +335,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 			slog.Error("Unable to find original row event", slogs.RowID, re.Row.ID)
 			return true
 		}
-		t.buildRow(row+1, re, ore, cdata.Header(), pads, isNamespaced)
+		t.buildRow(row+1, re, ore, cdata.Header(), pads)
 
 		return true
 	})
@@ -342,7 +344,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.UpdateTitle()
 }
 
-func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad, isNamespaced bool) {
+func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad) {
 	color := model1.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn
@@ -364,7 +366,7 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 			continue
 		}
 
-		if h[c].Name == "NAMESPACE" && (!t.GetModel().ClusterWide() || !isNamespaced) {
+		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
 		if h[c].MX && !t.hasMetrics {
@@ -532,11 +534,12 @@ func (t *Table) styleTitle() string {
 	if t.Extras != "" {
 		ns = t.Extras
 	}
+
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, t.gvr, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, ROIndicator(t.readOnly), t.gvr, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, ROIndicator(t.readOnly), t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
 	}
 
 	buff := t.cmdBuff.GetText()
@@ -551,4 +554,13 @@ func (t *Table) styleTitle() string {
 	}
 
 	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())
+}
+
+// ROIndicator returns an icon showing whether the session is in readonly mode or not.
+func ROIndicator(ro bool) string {
+	if ro {
+		return LockedIC
+	}
+
+	return UnlockedIC
 }

@@ -15,6 +15,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const (
+	// UnlockedIC represents an unlocked icon.
+	UnlockedIC = "🔓"
+
+	// LockedIC represents a locked icon.
+	LockedIC = "🔒"
+)
+
 // Namespaceable represents a namespaceable model.
 type Namespaceable interface {
 	// ClusterWide returns true if the model represents resource in all namespaces.

@@ -58,7 +58,7 @@ func NewImageExtender(r ResourceViewer) ResourceViewer {
 }
 
 func (s *ImageExtender) bindKeys(aa *ui.KeyActions) {
-	if s.App().Config.K9s.IsReadOnly() {
+	if s.App().Config.IsReadOnly() {
 		return
 	}
 	aa.Add(ui.KeyI, ui.NewKeyAction("Set Image", s.setImageCmd, false))

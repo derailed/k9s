@@ -132,7 +132,7 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 	var (
 		errs    error
 		aliases = r.Aliases()
-		ro      = r.App().Config.K9s.IsReadOnly()
+		ro      = r.App().Config.IsReadOnly()
 	)
 	for k, plugin := range pp.Plugins {
 		if !inScope(plugin.Scopes, aliases) {
