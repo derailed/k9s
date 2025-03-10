@@ -50,7 +50,7 @@ func IsValid(ns string, h Header, r Row) bool {
 		return true
 	}
 
-	return strings.TrimSpace(r.Fields[idx]) == ""
+	return strings.TrimSpace(r.Fields[idx]) == "" || strings.ToLower(strings.TrimSpace(r.Fields[idx])) == "true"
 }
 
 func sortLabels(m map[string]string) (keys, vals []string) {
