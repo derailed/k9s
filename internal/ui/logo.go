@@ -35,7 +35,6 @@ func NewLogo(styles *config.Styles) *Logo {
 	l.refreshLogo(styles.Body().LogoColor)
 	l.SetBackgroundColor(styles.BgColor())
 	styles.AddListener(&l)
-
 	return &l
 }
 
@@ -104,9 +103,10 @@ func (l *Logo) refreshLogo(c config.Color) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	l.logo.Clear()
-	for i, s := range LogoSmall {
+	logo := l.styles.Body().Logo
+	for i, s := range logo {
 		fmt.Fprintf(l.logo, "[%s::b]%s", c, s)
-		if i+1 < len(LogoSmall) {
+		if i+1 < len(logo) {
 			fmt.Fprintf(l.logo, "\n")
 		}
 	}
