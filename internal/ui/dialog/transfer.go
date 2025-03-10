@@ -26,6 +26,8 @@ type TransferDialogOpts struct {
 	Containers     []string
 	Pod            string
 	Title, Message string
+	File           string
+	Download       bool
 	Retries        int
 	Ack            TransferFn
 	Cancel         cancelFunc
@@ -47,11 +49,15 @@ func ShowUploads(styles config.Dialog, pages *ui.Pages, opts TransferDialogOpts)
 	modal := tview.NewModalForm("<"+opts.Title+">", f)
 
 	args := TransferArgs{
-		From:    opts.Pod,
-		Retries: opts.Retries,
+		Download: opts.Download,
+		Retries:  opts.Retries,
+	}
+	if opts.Download {
+		args.From, args.To = opts.Pod, opts.File
+	} else {
+		args.From, args.To = opts.File, opts.Pod
 	}
 	var fromField, toField *tview.InputField
-	args.Download = true
 	f.AddCheckbox("Download:", args.Download, func(_ string, flag bool) {
 		if flag {
 			modal.SetText(strings.Replace(opts.Message, "Upload", "Download", 1))
