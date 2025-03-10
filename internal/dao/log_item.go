@@ -5,6 +5,8 @@ package dao
 
 import (
 	"bytes"
+	"encoding/json"
+	"github.com/derailed/k9s/internal/prettyjson"
 )
 
 // LogChan represents a channel for logs.
@@ -67,7 +69,7 @@ func (l *LogItem) Size() int {
 }
 
 // Render returns a log line as string.
-func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+func (l *LogItem) Render(paint string, showTime bool, jsonPretty bool, c *prettyjson.ColorEncoder, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if showTime && index > 0 {
 		bb.WriteString("[gray::b]")
@@ -92,9 +94,35 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 		bb.WriteString("[-::] ")
 	}
 
+	if jsonPretty {
+		renderPrettyJsonLine(index, l, bb, c)
+		return
+	}
+
 	if index > 0 {
 		bb.Write(l.Bytes[index+1:])
 	} else {
 		bb.Write(l.Bytes)
+	}
+}
+
+func renderPrettyJsonLine(index int, l *LogItem, bb *bytes.Buffer, c *prettyjson.ColorEncoder) {
+	var object interface{}
+	var line []byte
+	if index > 0 {
+		line = l.Bytes[index+1:]
+	} else {
+		line = l.Bytes
+	}
+	err := json.Unmarshal(line, &object)
+	if err != nil {
+		bb.Write(line)
+	} else {
+		p, err := c.Encode(line)
+		if err != nil {
+			bb.Write([]byte("No encoding possible\n"))
+		}
+		bb.Write(p)
+		bb.Write([]byte("\n"))
 	}
 }
