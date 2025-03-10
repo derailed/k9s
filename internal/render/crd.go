@@ -6,11 +6,12 @@ package render
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -84,7 +85,7 @@ func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *
 		}
 	}
 	if len(versions) == 0 {
-		log.Warn().Msgf("unable to assert CRD versions for %s", crd.Name)
+		slog.Warn("Unable to assert CRD versions", slogs.FQN, crd.Name)
 	}
 
 	r.ID = client.MetaFQN(crd.ObjectMeta)

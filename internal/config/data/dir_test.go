@@ -4,20 +4,20 @@
 package data_test
 
 import (
+	"log/slog"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/mock"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestDirLoad(t *testing.T) {

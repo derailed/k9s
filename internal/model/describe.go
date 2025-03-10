@@ -6,6 +6,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -15,7 +16,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -113,7 +114,7 @@ func (d *Describe) Watch(ctx context.Context) error {
 }
 
 func (d *Describe) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Describe canceled -- %q", d.gvr)
+	defer slog.Debug("Describe canceled", slogs.GVR, d.gvr)
 
 	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
 	delay := defaultReaderRefreshRate
@@ -125,7 +126,7 @@ func (d *Describe) updater(ctx context.Context) {
 			if err := d.refresh(ctx); err != nil {
 				d.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("Describe gave up!")
+					slog.Error("Describe gave up!", slogs.Error, err)
 					return
 				}
 			} else {
@@ -138,13 +139,16 @@ func (d *Describe) updater(ctx context.Context) {
 
 func (d *Describe) refresh(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&d.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return nil
 	}
 	defer atomic.StoreInt32(&d.inUpdate, 0)
 
 	if err := d.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msgf("reconcile failed %q", d.gvr)
+		slog.Error("reconcile failed",
+			slogs.GVR, d.gvr,
+			slogs.Error, err,
+		)
 		d.fireResourceFailed(err)
 		return err
 	}
@@ -170,7 +174,7 @@ func (d *Describe) reconcile(ctx context.Context) error {
 // Describe describes a given resource.
 func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (string, error) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("Describe model elapsed: %v", time.Since(t))
+		slog.Debug("Describe model elapsed", slogs.Elapsed, time.Since(t))
 	}(time.Now())
 
 	meta, err := getMeta(ctx, gvr)

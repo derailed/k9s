@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultCallTimeoutDuration time.Duration = 15 * time.Second
+	defaultCallTimeoutDuration time.Duration = 10 * time.Second
 
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true

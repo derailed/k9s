@@ -36,6 +36,9 @@ func EnsureDir(d string) error {
 }
 
 func NewMockConfig() *config.Config {
+	if _, err := os.Stat("/tmp/test"); errors.Is(err, os.ErrExist) {
+		os.RemoveAll("/tmp/test")
+	}
 	config.AppContextsDir = "/tmp/test"
 	cl, ct := "cl-1", "ct-1-1"
 	flags := genericclioptions.ConfigFlags{

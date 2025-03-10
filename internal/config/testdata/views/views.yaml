@@ -5,3 +5,15 @@ views:
       - NAME
       - AGE
       - IP
+
+  v1/pods@default:
+    columns:
+      - NAME
+      - IP
+      - AGE
+
+  v1/pods@ns*:
+    columns:
+      - AGE
+      - NAME
+      - IP

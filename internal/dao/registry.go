@@ -5,13 +5,14 @@ package dao
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -97,7 +98,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	r, ok := m[gvr]
 	if !ok {
 		r = new(Scaler)
-		log.Debug().Msgf("No DAO registry entry for %q. Using generics!", gvr)
+		slog.Debug("No DAO registry entry. Using generics!", slogs.GVR, gvr)
 	}
 	r.Init(f, gvr)
 
@@ -348,7 +349,7 @@ func loadRBAC(m ResourceMetas) {
 
 func loadPreferred(f Factory, m ResourceMetas) error {
 	if f.Client() == nil || !f.Client().ConnectionOK() {
-		log.Error().Msgf("Load cluster resources - No API server connection")
+		slog.Error("Load cluster resources - No API server connection")
 		return nil
 	}
 
@@ -358,7 +359,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	}
 	rr, err := dial.ServerPreferredResources()
 	if err != nil {
-		log.Debug().Err(err).Msgf("Failed to load preferred resources")
+		slog.Debug("Failed to load preferred resources", slogs.Error, err)
 	}
 	for _, r := range rr {
 		for _, res := range r.APIResources {
@@ -400,7 +401,7 @@ func loadCRDs(f Factory, m ResourceMetas) {
 
 	oo, err := f.List(crdGVR, client.ClusterScope, true, labels.Everything())
 	if err != nil {
-		log.Warn().Err(err).Msgf("Fail CRDs load")
+		slog.Warn("CRDs load Fail", slogs.Error, err)
 		return
 	}
 
@@ -408,7 +409,7 @@ func loadCRDs(f Factory, m ResourceMetas) {
 		var crd apiext.CustomResourceDefinition
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crd)
 		if err != nil {
-			log.Err(err).Msg("boom")
+			slog.Error("CRD conversion failed", slogs.Error, err)
 			continue
 		}
 		gvr, version, ok := newGVRFromCRD(&crd)

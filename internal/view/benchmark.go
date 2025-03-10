@@ -5,6 +5,7 @@ package view
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,9 +14,10 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // Benchmark represents a service benchmark results view.
@@ -71,8 +73,10 @@ func fileToSubject(path string) string {
 func benchDir(cfg *config.Config) string {
 	ct, err := cfg.K9s.ActiveContext()
 	if err != nil {
-		log.Error().Err(err).Msgf("no active context located")
+		slog.Error("No active context located", slogs.Error, err)
+		return render.MissingValue
 	}
+
 	return filepath.Join(
 		config.AppBenchmarksDir,
 		data.SanitizeFileName(ct.ClusterName),

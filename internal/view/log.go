@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,10 +20,10 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -113,13 +114,13 @@ func (l *Log) InCmdMode() bool {
 
 // LogCanceled indicates no more logs are coming.
 func (l *Log) LogCanceled() {
-	log.Debug().Msgf("LOGS_CANCELED!!!")
+	slog.Debug("Logs watcher canceled!")
 	l.Flush([][]byte{[]byte("\n🏁 [red::b]Stream exited! No more logs...")})
 }
 
 // LogStop disables log flushes.
 func (l *Log) LogStop() {
-	log.Debug().Msgf("LOG_STOP!!!")
+	slog.Debug("Logs watcher stopped!")
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
@@ -149,7 +150,7 @@ func (l *Log) LogFailed(err error) {
 			l.logs.Clear()
 		}
 		if _, err = l.ansiWriter.Write([]byte(tview.Escape(color.Colorize(err.Error(), color.Red)))); err != nil {
-			log.Error().Err(err).Msgf("Writing log error")
+			slog.Error("Log line write failed", slogs.Error, err)
 		}
 	})
 }
@@ -204,7 +205,6 @@ func (l *Log) cancel() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	if l.cancelFn != nil {
-		log.Debug().Msgf("!!! LOG-VIEWER CANCELED !!!")
 		l.cancelFn()
 		l.cancelFn = nil
 	}
@@ -430,12 +430,18 @@ func saveData(dir, fqn, logs string) (string, error) {
 	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0600)
 	if err != nil {
-		log.Error().Err(err).Msgf("Log file save failed: %q", path)
+		slog.Error("Unable to save log file",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 		return "", nil
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Error().Err(err).Msg("Closing Log file")
+			slog.Error("Closing Log file failed",
+				slogs.Path, path,
+				slogs.Error, err,
+			)
 		}
 	}()
 	if _, err := file.WriteString(logs); err != nil {

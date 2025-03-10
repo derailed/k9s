@@ -5,6 +5,7 @@ package ui_test
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
@@ -12,12 +13,11 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestNewCrumbs(t *testing.T) {

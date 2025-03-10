@@ -6,6 +6,7 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
@@ -13,11 +14,11 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,7 +83,7 @@ func (s *Sanitizer) Init(ctx context.Context) error {
 	s.SetChangedFunc(func(n *tview.TreeNode) {
 		spec, ok := n.GetReference().(xray.NodeSpec)
 		if !ok {
-			log.Error().Msgf("No ref found on node %s", n.GetText())
+			slog.Error("No ref field found on node", slogs.FQN, n.GetText())
 			return
 		}
 		s.SetSelectedItem(spec.AsPath())
@@ -141,7 +142,7 @@ func (s *Sanitizer) selectedSpec() *xray.NodeSpec {
 
 	ref, ok := node.GetReference().(xray.NodeSpec)
 	if !ok {
-		log.Error().Msgf("Expecting a NodeSpec!")
+		slog.Error("Expecting a NodeSpec", slogs.RefType, fmt.Sprintf("%T", node.GetReference()))
 		return nil
 	}
 
@@ -290,7 +291,7 @@ func (s *Sanitizer) update(node *xray.TreeNode) {
 		root.Walk(func(node, parent *tview.TreeNode) bool {
 			spec, ok := node.GetReference().(xray.NodeSpec)
 			if !ok {
-				log.Error().Msgf("Expecting a NodeSpec but got %T", node.GetReference())
+				slog.Error("Expecting a NodeSpec", slogs.RefType, fmt.Sprintf("%T", node.GetReference()))
 				return false
 			}
 			// BOZO!! Figure this out expand/collapse but the root

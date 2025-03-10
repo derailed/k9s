@@ -6,13 +6,14 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -94,8 +95,8 @@ func (s *ImageExtender) showImageDialog(path string) error {
 	return nil
 }
 
-func (s *ImageExtender) makeSetImageForm(sel string) (*tview.Form, error) {
-	podSpec, err := s.getPodSpec(sel)
+func (s *ImageExtender) makeSetImageForm(fqn string) (*tview.Form, error) {
+	podSpec, err := s.getPodSpec(fqn)
 	if err != nil {
 		return nil, err
 	}
@@ -126,12 +127,15 @@ func (s *ImageExtender) makeSetImageForm(sel string) (*tview.Form, error) {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 			defer cancel()
-			if err := s.setImages(ctx, sel, imageSpecsModified); err != nil {
-				log.Error().Err(err).Msgf("PodSpec %s image update failed", sel)
+			if err := s.setImages(ctx, fqn, imageSpecsModified); err != nil {
+				slog.Error("Unable to set image name",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				s.App().Flash().Err(err)
 				return
 			}
-			s.App().Flash().Infof("Resource %s:%s image updated successfully", s.GVR(), sel)
+			s.App().Flash().Infof("Resource %s:%s image updated successfully", s.GVR(), fqn)
 		}).
 		AddButton("Cancel", func() {
 			s.dismissDialog()

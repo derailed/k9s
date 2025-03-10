@@ -4,15 +4,16 @@
 package ui
 
 import (
+	"log/slog"
 	"os"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 // App represents an application.
@@ -127,11 +128,11 @@ func (a *App) StylesChanged(s *config.Styles) {
 			if h, ok := f.ItemAt(0).(*tview.Flex); ok {
 				h.SetBackgroundColor(s.BgColor())
 			} else {
-				log.Error().Msgf("Header not found")
+				slog.Warn("Header not found", slogs.Subsys, "styles", slogs.Component, "app")
 			}
 		}
 	} else {
-		log.Error().Msgf("Main not found")
+		slog.Error("Main panel not found", slogs.Subsys, "styles", slogs.Component, "app")
 	}
 }
 
@@ -151,13 +152,13 @@ func (a *App) bindKeys() {
 }
 
 // BailOut exits the application.
-func (a *App) BailOut() {
+func (a *App) BailOut(exitCode int) {
 	if err := a.Config.Save(true); err != nil {
-		log.Error().Err(err).Msg("config save failed!")
+		slog.Error("Config save failed!", slogs.Error, err)
 	}
 
 	a.Stop()
-	os.Exit(0)
+	os.Exit(exitCode)
 }
 
 // ResetPrompt reset the prompt model and marks buffer as active.

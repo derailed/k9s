@@ -5,13 +5,14 @@ package view
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // ValueExtender adds values actions to a given viewer.
@@ -61,7 +62,7 @@ func showValues(ctx context.Context, app *App, path string, gvr client.GVR) {
 		}
 
 		if err := vm.Refresh(ctx); err != nil {
-			log.Error().Err(err).Msgf("values refresh failed")
+			slog.Error("Values viewer refresh failed", slogs.Error, err)
 			return nil
 		}
 

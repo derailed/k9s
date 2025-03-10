@@ -8,13 +8,16 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
+	"maps"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,6 +25,9 @@ import (
 type ViewConfigListener interface {
 	// ViewSettingsChanged notifies listener the view configuration changed.
 	ViewSettingsChanged(*ViewSetting)
+
+	// GetNamespace return the view namespace
+	GetNamespace() string
 }
 
 // ViewSetting represents a view configuration.
@@ -50,13 +56,19 @@ func (v *ViewSetting) SortCol() (string, bool, error) {
 	return tt[0], tt[1] == "asc", nil
 }
 
+// Equals checks if two view settings are equal.
 func (v *ViewSetting) Equals(vs *ViewSetting) bool {
+	if v == nil && vs == nil {
+		return true
+	}
 	if v == nil || vs == nil {
 		return false
 	}
+
 	if c := slices.Compare(v.Columns, vs.Columns); c != 0 {
 		return false
 	}
+
 	return cmp.Compare(v.SortColumn, vs.SortColumn) == 0
 }
 
@@ -91,7 +103,10 @@ func (v *CustomView) Load(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.ViewsSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		slog.Warn("Validation failed. Please update your config and restart!",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 	}
 	var in CustomView
 	if err := yaml.Unmarshal(bb, &in); err != nil {
@@ -116,11 +131,41 @@ func (v *CustomView) RemoveListener(gvr string) {
 
 func (v *CustomView) fireConfigChanged() {
 	for gvr, list := range v.listeners {
-		if vs, ok := v.Views[gvr]; ok {
-			log.Debug().Msgf("Reloading custom view settings for %s", gvr)
-			list.ViewSettingsChanged(&vs)
-		} else {
+		if vs := v.getVS(gvr, list.GetNamespace()); vs == nil {
 			list.ViewSettingsChanged(nil)
+		} else {
+			slog.Debug("Reloading custom view settings", slogs.GVR, gvr)
+			list.ViewSettingsChanged(vs)
 		}
 	}
+}
+
+func (v *CustomView) getVS(gvr, ns string) *ViewSetting {
+	k := gvr
+	if ns != "" {
+		k += "@" + ns
+	}
+
+	for key := range maps.Keys(v.Views) {
+		if !strings.HasPrefix(key, gvr) {
+			continue
+		}
+
+		switch {
+		case key == k:
+			vs := v.Views[key]
+			return &vs
+		case strings.Contains(key, "@"):
+			tt := strings.Split(key, "@")
+			if len(tt) != 2 {
+				break
+			}
+			if rx, err := regexp.Compile(tt[1]); err == nil && rx.MatchString(k) {
+				vs := v.Views[key]
+				return &vs
+			}
+		}
+	}
+
+	return nil
 }

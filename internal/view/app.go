@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"runtime"
@@ -21,6 +22,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/view/cmd"
@@ -28,7 +30,6 @@ import (
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -146,10 +147,10 @@ func (a *App) stopImgScanner() {
 
 func (a *App) initImgScanner(version string) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("Scanner init time %s", time.Since(t))
+		slog.Debug("Scanner init time", slogs.Elapsed, time.Since(t))
 	}(time.Now())
 
-	vul.ImgScanner = vul.NewImageScanner(a.Config.K9s.ImageScans)
+	vul.ImgScanner = vul.NewImageScanner(a.Config.K9s.ImageScans, slog.Default())
 	go vul.ImgScanner.Init("k9s", version)
 }
 
@@ -183,7 +184,7 @@ func (a *App) initSignals() {
 func (a *App) suggestCommand() model.SuggestionFunc {
 	contextNames, err := a.contextNames()
 	if err != nil {
-		log.Error().Err(err).Msg("failed to list contexts")
+		slog.Error("Failed to list contexts", slogs.Error, err)
 	}
 
 	return func(s string) (entries sort.StringSlice) {
@@ -203,7 +204,7 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 
 		namespaceNames, err := a.factory.Client().ValidNamespaceNames()
 		if err != nil {
-			log.Error().Err(err).Msg("failed to list namespaces")
+			slog.Error("Failed to obtain list of namespaces", slogs.Error, err)
 		}
 		entries = append(entries, cmd.SuggestSubCommand(s, namespaceNames, contextNames)...)
 		if len(entries) == 0 {
@@ -215,9 +216,6 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 }
 
 func (a *App) contextNames() ([]string, error) {
-	if !a.Conn().ConnectionOK() {
-		return nil, errors.New("no connection")
-	}
 	contexts, err := a.factory.Client().Config().Contexts()
 	if err != nil {
 		return nil, err
@@ -254,10 +252,11 @@ func (a *App) bindKeys() {
 }
 
 func (a *App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("GOR %d", runtime.NumGoroutine())
-	// bb := make([]byte, 5_000_000)
-	// runtime.Stack(bb, true)
-	// log.Debug().Msgf("GOR\n%s", string(bb))
+	slog.Debug("GOR", slogs.GOR, runtime.NumGoroutine())
+	bb := make([]byte, 5_000_000)
+	runtime.Stack(bb, true)
+	slog.Debug("GOR stack", slogs.Stack, string(bb))
+
 	return evt
 }
 
@@ -270,7 +269,8 @@ func (a *App) toggleHeader(header, logo bool) {
 	a.showHeader, a.showLogo = header, logo
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
-		log.Fatal().Msg("Expecting valid flex view")
+		slog.Error("Expecting flex view main panel. Exiting!")
+		os.Exit(1)
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
@@ -285,7 +285,8 @@ func (a *App) toggleCrumbs(flag bool) {
 	a.showCrumbs = flag
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
-		log.Fatal().Msg("Expecting valid flex view")
+		slog.Error("Expecting valid flex view main panel. Exiting!")
+		os.Exit(1)
 	}
 	if a.showCrumbs {
 		if _, ok := flex.ItemAt(2).(*ui.Crumbs); !ok {
@@ -341,20 +342,20 @@ func (a *App) Resume() {
 
 	if a.Config.K9s.UI.Reactive {
 		if err := a.ConfigWatcher(ctx, a); err != nil {
-			log.Warn().Err(err).Msgf("ConfigWatcher failed")
+			slog.Warn("ConfigWatcher failed", slogs.Error, err)
 		}
 		if err := a.SkinsDirWatcher(ctx, a); err != nil {
-			log.Warn().Err(err).Msgf("SkinsWatcher failed")
+			slog.Warn("SkinsWatcher failed", slogs.Error, err)
 		}
 		if err := a.CustomViewsWatcher(ctx, a); err != nil {
-			log.Warn().Err(err).Msgf("CustomView watcher failed")
+			slog.Warn("CustomView watcher failed", slogs.Error, err)
 		}
 	}
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
 	if err := a.refreshCluster(ctx); err != nil {
-		log.Error().Err(err).Msgf("Cluster updater failed!")
+		slog.Error("Cluster updater failed!", slogs.Error, err)
 		return
 	}
 
@@ -363,13 +364,13 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debug().Msg("ClusterInfo updater canceled!")
+			slog.Debug("ClusterInfo updater canceled!")
 			return
 		case <-time.After(delay):
 			if err := a.refreshCluster(ctx); err != nil {
-				log.Error().Err(err).Msgf("ClusterUpdater failed")
+				slog.Error("Cluster updates failed. Giving up ;(", slogs.Error, err)
 				if delay = bf.NextBackOff(); delay == backoff.Stop {
-					a.BailOut()
+					a.BailOut(1)
 					return
 				}
 			} else {
@@ -400,9 +401,12 @@ func (a *App) refreshCluster(context.Context) error {
 
 	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), int32(a.Config.K9s.MaxConnRetry)
 	if count >= maxConnRetry {
-		log.Error().Msgf("Conn check failed (%d/%d). Bailing out!", count, maxConnRetry)
+		slog.Error("Conn check failed. Bailing out!",
+			slogs.Retry, count,
+			slogs.MaxRetries, maxConnRetry,
+		)
 		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", count)
-		a.BailOut()
+		a.BailOut(1)
 	}
 	if count > 0 {
 		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d/%d]", count, maxConnRetry))
@@ -412,7 +416,7 @@ func (a *App) refreshCluster(context.Context) error {
 	// Reload alias
 	go func() {
 		if err := a.command.Reset(a.Config.ContextAliasesPath(), false); err != nil {
-			log.Warn().Err(err).Msgf("Command reset failed")
+			slog.Warn("Command reset failed", slogs.Error, err)
 			a.QueueUpdateDraw(func() {
 				a.Logo().Warn("Aliases load failed!")
 			})
@@ -439,18 +443,16 @@ func (a *App) switchNS(ns string) error {
 }
 
 func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
-	name, ok := ci.HasContext()
-	if !ok || a.Config.ActiveContextName() == name {
-		if !force {
-			return nil
-		}
+	contextName, ok := ci.HasContext()
+	if (!ok || a.Config.ActiveContextName() == contextName) && !force {
+		return nil
 	}
 
 	a.Halt()
 	defer a.Resume()
 	{
 		a.Config.Reset()
-		ct, err := a.Config.K9s.ActivateContext(name)
+		ct, err := a.Config.ActivateContext(contextName)
 		if err != nil {
 			return err
 		}
@@ -465,7 +467,7 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		}
 		ns := a.Config.ActiveNamespace()
 		if !a.Conn().IsValidNamespace(ns) {
-			log.Warn().Msgf("Unable to validate namespace: %q. Using %q as active namespace", ns, ns)
+			slog.Warn("Unable to validate namespace", slogs.Namespace, ns)
 			if err := a.Config.SetActiveNamespace(ns); err != nil {
 				return err
 			}
@@ -473,17 +475,19 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		a.Flash().Infof("Using %q namespace", ns)
 
 		if err := a.Config.Save(true); err != nil {
-			log.Error().Err(err).Msg("config save failed!")
-		} else {
-			log.Debug().Msgf("Saved context config for: %q", name)
+			slog.Error("Fail to save config to disk", slogs.Subsys, "config", slogs.Error, err)
 		}
 		a.initFactory(ns)
 		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
 			return err
 		}
 
-		log.Debug().Msgf("--> Switching Context %q -- %q -- %q", name, ns, a.Config.ActiveView())
-		a.Flash().Infof("Switching context to %q::%q", name, ns)
+		slog.Debug("Switching Context",
+			slogs.Context, contextName,
+			slogs.Namespace, ns,
+			slogs.View, a.Config.ActiveView(),
+		)
+		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		a.clusterModel.Reset(a.factory)
@@ -498,24 +502,20 @@ func (a *App) initFactory(ns string) {
 }
 
 // BailOut exists the application.
-func (a *App) BailOut() {
+func (a *App) BailOut(exitCode int) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error().Msgf("Bailing out %v", err)
+			slog.Error("Bailout failed", slogs.Error, err)
 		}
 	}()
 
-	if err := a.Config.Save(true); err != nil {
-		log.Error().Err(err).Msg("config save failed!")
-	}
-
 	if err := nukeK9sShell(a); err != nil {
-		log.Error().Err(err).Msgf("nuking k9s shell pod")
+		slog.Error("Unable to nuke k9s shell pod", slogs.Error, err)
 	}
 
 	a.stopImgScanner()
 	a.factory.Terminate()
-	a.App.BailOut()
+	a.App.BailOut(exitCode)
 }
 
 // Run starts the application loop.
@@ -646,7 +646,7 @@ func (a *App) cowCmd(msg string) {
 }
 
 func (a *App) dirCmd(path string, pushCmd bool) error {
-	log.Debug().Msgf("DIR PATH %q", path)
+	slog.Debug("Exec Dir command", slogs.Path, path)
 	_, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -670,7 +670,7 @@ func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if !a.Config.K9s.NoExitOnCtrlC {
-		a.BailOut()
+		a.BailOut(0)
 	}
 
 	// overwrite the default ctrl-c behavior of tview
@@ -765,7 +765,10 @@ func (a *App) gotoResource(c, path string, clearStack bool, pushCmd bool) {
 func (a *App) inject(c model.Component, clearStack bool) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
-		log.Error().Err(err).Msgf("Component init failed for %q", c.Name())
+		slog.Error("Component init failed",
+			slogs.Error, err,
+			slogs.CompName, c.Name(),
+		)
 		return err
 	}
 	if clearStack {

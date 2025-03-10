@@ -5,11 +5,11 @@ package watch
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/informers"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -48,10 +49,10 @@ func (f *Factory) Start(ns string) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
 
-	log.Debug().Msgf("Factory START with ns %q", ns)
+	slog.Debug("Factory started", slogs.Namespace, ns)
 	f.stopChan = make(chan struct{})
 	for ns, fac := range f.factories {
-		log.Debug().Msgf("Starting factory in ns %q", ns)
+		slog.Debug("Starting factory for ns", slogs.Namespace, ns)
 		fac.Start(f.stopChan)
 	}
 }
@@ -163,7 +164,11 @@ func (f *Factory) WaitForCacheSync() {
 	for ns, fac := range f.factories {
 		m := fac.WaitForCacheSync(f.stopChan)
 		for k, v := range m {
-			log.Debug().Msgf("CACHE `%q Loaded %t:%s", ns, v, k)
+			slog.Debug("CACHE `%q Loaded %t:%s",
+				slogs.Namespace, ns,
+				slogs.ResGrpVersion, v,
+				slogs.ResKind, k,
+			)
 		}
 	}
 }
@@ -216,7 +221,10 @@ func (f *Factory) ForResource(ns, gvr string) (informers.GenericInformer, error)
 	}
 	inf := fact.ForResource(toGVR(gvr))
 	if inf == nil {
-		log.Error().Err(fmt.Errorf("MEOW! No informer for %q:%q", ns, gvr))
+		slog.Error("No informer found",
+			slogs.GVR, gvr,
+			slogs.Namespace, ns,
+		)
 		return inf, nil
 	}
 
@@ -262,7 +270,10 @@ func (f *Factory) AddForwarder(pf Forwarder) {
 // DeleteForwarder deletes portforward for a given container.
 func (f *Factory) DeleteForwarder(path string) {
 	count := f.forwarders.Kill(path)
-	log.Warn().Msgf("Deleted (%d) portforward for %q", count, path)
+	slog.Warn("Deleted portforward",
+		slogs.Count, count,
+		slogs.GVR, path,
+	)
 }
 
 // Forwarders returns all portforwards.
@@ -289,12 +300,12 @@ func (f *Factory) ValidatePortForwards() {
 	for k, fwd := range f.forwarders {
 		tokens := strings.Split(k, ":")
 		if len(tokens) != 2 {
-			log.Error().Msgf("Invalid fwd keys %q", k)
+			slog.Error("Invalid port-forward key", slogs.Key, k)
 			return
 		}
 		paths := strings.Split(tokens[0], "|")
 		if len(paths) < 1 {
-			log.Error().Msgf("Invalid path %q", tokens[0])
+			slog.Error("Invalid port-forward path", slogs.Path, tokens[0])
 		}
 		o, err := f.Get("v1/pods", paths[0], false, labels.Everything())
 		if err != nil {

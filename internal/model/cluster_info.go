@@ -8,15 +8,16 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/slogs"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/util/cache"
 )
 
@@ -107,7 +108,7 @@ func (c *ClusterInfo) fetchK9sLatestRev() string {
 
 	latestRev, err := fetchLatestRev()
 	if err != nil {
-		log.Warn().Msgf("k9s latest rev fetch failed %s", err)
+		slog.Warn("k9s latest rev fetch failed", slogs.Error, err)
 	} else {
 		c.cache.Add(k9sLatestRevKey, latestRev, cacheExpiry)
 	}
@@ -206,7 +207,7 @@ func (c *ClusterInfo) fireNoMetaChanged(data ClusterMeta) {
 // Helpers...
 
 func fetchLatestRev() (string, error) {
-	log.Debug().Msgf("Fetching latest k9s rev...")
+	slog.Debug("Fetching latest k9s rev...")
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -234,7 +235,7 @@ func fetchLatestRev() (string, error) {
 	}
 
 	if v, ok := m["name"]; ok {
-		log.Debug().Msgf("K9s latest rev: %q", v.(string))
+		slog.Debug("K9s latest rev", slogs.Revision, v.(string))
 		return v.(string), nil
 	}
 

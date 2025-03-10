@@ -6,12 +6,13 @@ package xray
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -95,7 +96,10 @@ func validate(f dao.Factory, n *TreeNode, optional *bool) {
 	res, err := f.Get(n.GVR, n.ID, true, labels.Everything())
 	if err != nil || res == nil {
 		if optional == nil || !*optional {
-			log.Warn().Err(err).Msgf("Missing ref %q::%q", n.GVR, n.ID)
+			slog.Warn("Missing ref",
+				slogs.GVR, n.GVR,
+				slogs.ID, n.ID,
+			)
 			n.Extras[StatusKey] = MissingRefStatus
 		}
 		return

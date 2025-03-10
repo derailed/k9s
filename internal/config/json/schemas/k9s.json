@@ -16,6 +16,7 @@
         "skipLatestRevCheck": { "type": "boolean" },
         "disablePodCounting": { "type": "boolean" },
         "defaultView": { "type": "string" },
+        "portForwardAddress": { "type": "string" },
         "ui": {
           "type": "object",
           "additionalProperties": false,

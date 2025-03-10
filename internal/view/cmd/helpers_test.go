@@ -4,14 +4,14 @@
 package cmd
 
 import (
+	"log/slog"
 	"testing"
 
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func Test_toLabels(t *testing.T) {

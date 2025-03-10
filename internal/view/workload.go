@@ -6,16 +6,17 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -69,7 +70,7 @@ func (w *Workload) bindKeys(aa *ui.KeyActions) {
 func parsePath(path string) (client.GVR, string, bool) {
 	tt := strings.Split(path, "|")
 	if len(tt) != 3 {
-		log.Error().Msgf("unable to parse path: %q", path)
+		slog.Error("Unable to parse workload path", slogs.Path, path)
 		return client.NewGVR(""), client.FQN("", ""), false
 	}
 
