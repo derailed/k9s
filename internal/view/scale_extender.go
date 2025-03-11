@@ -32,7 +32,7 @@ func NewScaleExtender(r ResourceViewer) ResourceViewer {
 }
 
 func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
-	if s.App().Config.K9s.IsReadOnly() {
+	if s.App().Config.IsReadOnly() {
 		return
 	}
 

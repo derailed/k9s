@@ -40,7 +40,13 @@ func newArgs(p *Interpreter, aa []string) args {
 			}
 
 		case strings.Index(a, filterFlag) == 0:
-			args[filterKey] = strings.ToLower(a[1:])
+			if p.IsDirCmd() {
+				if _, ok := args[topicKey]; !ok {
+					args[topicKey] = a
+				}
+			} else {
+				args[filterKey] = strings.ToLower(a[1:])
+			}
 
 		case strings.Contains(a, labelFlag):
 			if ll := ToLabels(a); len(ll) != 0 {

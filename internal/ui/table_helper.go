@@ -23,10 +23,10 @@ const (
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
 	// NSTitleFmt represents a namespaced view title.
-	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
+	NSTitleFmt = " %s [fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	// TitleFmt represents a standard view title.
-	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
+	TitleFmt = " %s [fg:bg:b]%s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	descIndicator = "↓"
 	ascIndicator  = "↑"

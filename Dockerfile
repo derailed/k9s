@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # The base image for building the k9s binary
 
-FROM golang:1.24.0-alpine3.21 AS build
+FROM golang:1.24.1-alpine3.21 AS build
 
 WORKDIR /k9s
 COPY go.mod go.sum main.go Makefile ./

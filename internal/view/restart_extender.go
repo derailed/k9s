@@ -30,7 +30,7 @@ func NewRestartExtender(v ResourceViewer) ResourceViewer {
 
 // BindKeys creates additional menu actions.
 func (r *RestartExtender) bindKeys(aa *ui.KeyActions) {
-	if r.App().Config.K9s.IsReadOnly() {
+	if r.App().Config.IsReadOnly() {
 		return
 	}
 	aa.Add(ui.KeyR, ui.NewKeyActionWithOpts("Restart", r.restartCmd,
