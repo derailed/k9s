@@ -210,7 +210,7 @@ func TestCustCol_parse(t *testing.T) {
 		},
 
 		"toast-no-name": {
-			s: ":.metadata.name.fred|TW",
+			s:   ":.metadata.name.fred|TW",
 			err: errors.New(`invalid column definition ":.metadata.name.fred|TW"`),
 		},
 
