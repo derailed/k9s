@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -55,8 +56,10 @@ func clipboardWrite(text string) error {
 	return nil
 }
 
+var bracketRX = regexp.MustCompile(`\[(.+)\[\]`)
+
 func sanitizeEsc(s string) string {
-	return strings.ReplaceAll(s, "[]", "]")
+	return bracketRX.ReplaceAllString(s, `[$1]`)
 }
 
 func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {
