@@ -344,6 +344,8 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if comp == nil {
 		return fmt.Errorf("no component found for %s", gvr)
 	}
+	comp.SetCommand(p)
+
 	c.app.Flash().Infof("Viewing %s...", gvr)
 	if clearStack {
 		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
@@ -352,7 +354,6 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if err := c.app.inject(comp, clearStack); err != nil {
 		return err
 	}
-
 	if pushCmd {
 		c.app.cmdHistory.Push(p.GetLine())
 	}

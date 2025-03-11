@@ -20,6 +20,7 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -54,6 +55,7 @@ func NewXray(gvr client.GVR) ResourceViewer {
 	}
 }
 
+func (x *Xray) SetCommand(*cmd.Interpreter)      {}
 func (x *Xray) SetFilter(string)                 {}
 func (x *Xray) SetLabelFilter(map[string]string) {}
 

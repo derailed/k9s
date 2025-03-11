@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 )
 
 const (
@@ -95,6 +96,9 @@ type ResourceViewer interface {
 
 	// SetInstance sets a parent FQN
 	SetInstance(string)
+
+	// SetCommand sets the current command.
+	SetCommand(*cmd.Interpreter)
 }
 
 // LogViewer represents a log viewer.

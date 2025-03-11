@@ -21,6 +21,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/tchart"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 )
 
 // Graphable represents a graphic component.
@@ -77,6 +78,7 @@ func NewPulse(gvr client.GVR) ResourceViewer {
 	}
 }
 
+func (p *Pulse) SetCommand(*cmd.Interpreter)      {}
 func (p *Pulse) SetFilter(string)                 {}
 func (p *Pulse) SetLabelFilter(map[string]string) {}
 

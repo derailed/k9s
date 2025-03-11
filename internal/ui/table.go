@@ -124,7 +124,8 @@ func (t *Table) getMSort() bool {
 	return t.manualSort
 }
 
-func (t *Table) setViewSetting(vs *config.ViewSetting) bool {
+// SetViewSetting sets custom view config is present.
+func (t *Table) SetViewSetting(vs *config.ViewSetting) bool {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
@@ -137,7 +138,8 @@ func (t *Table) setViewSetting(vs *config.ViewSetting) bool {
 	return false
 }
 
-func (t *Table) getViewSetting() *config.ViewSetting {
+// GetViewSetting return current view settings if any.
+func (t *Table) GetViewSetting() *config.ViewSetting {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
@@ -171,7 +173,7 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
 func (t *Table) ViewSettingsChanged(vs *config.ViewSetting) {
-	if t.setViewSetting(vs) {
+	if t.SetViewSetting(vs) {
 		if vs == nil {
 			if !t.getMSort() && !t.sortCol.IsSet() {
 				t.setSortCol(model1.SortColumn{})
@@ -304,7 +306,7 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	t.setSortCol(data.ComputeSortCol(t.getViewSetting(), t.getSortCol(), t.getMSort()))
+	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
 
 	return data
 }

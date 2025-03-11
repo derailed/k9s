@@ -22,6 +22,7 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -56,6 +57,12 @@ func (b *Browser) getUpdating() bool {
 	b.mx.RLock()
 	defer b.mx.RUnlock()
 	return b.updating
+}
+
+// SetCommand sets the current command.
+func (b *Browser) SetCommand(cmd *cmd.Interpreter) {
+	b.GetTable().SetCommand(cmd)
+	//b.Table.SetViewSetting(b.app.CustomView().VSFor(cmd)
 }
 
 // Init watches all running pods in given namespace.
