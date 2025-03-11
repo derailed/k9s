@@ -59,15 +59,15 @@ func (n *Namespace) merge(old *Namespace) {
 }
 
 // Validate validates a namespace is setup correctly.
-func (n *Namespace) Validate(c client.Connection) {
+func (n *Namespace) Validate(conn client.Connection) {
 	n.mx.RLock()
 	defer n.mx.RUnlock()
 
-	if c == nil || !c.IsValidNamespace(n.Active) {
+	if conn == nil || !conn.IsValidNamespace(n.Active) {
 		return
 	}
 	for _, ns := range n.Favorites {
-		if !c.IsValidNamespace(ns) {
+		if !conn.IsValidNamespace(ns) {
 			slog.Debug("Invalid favorite found",
 				slogs.Namespace, ns,
 				slogs.AllNS, n.isAllNamespaces(),
