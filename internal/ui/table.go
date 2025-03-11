@@ -54,6 +54,7 @@ type Table struct {
 	ctx         context.Context
 	mx          sync.RWMutex
 	readOnly    bool
+	noIcon      bool
 }
 
 // NewTable returns a new table view.
@@ -72,6 +73,15 @@ func NewTable(gvr client.GVR) *Table {
 	}
 }
 
+// SetNoIcon toggles no icon mode.
+func (t *Table) SetNoIcon(b bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.noIcon = b
+}
+
+// SetReadOnly toggles read-only mode.
 func (t *Table) SetReadOnly(ro bool) {
 	t.mx.Lock()
 	defer t.mx.Unlock()
@@ -537,9 +547,12 @@ func (t *Table) styleTitle() string {
 
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, ROIndicator(t.readOnly), t.gvr, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, t.gvr, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, ROIndicator(t.readOnly), t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
+	}
+	if ic := ROIndicator(t.readOnly, t.noIcon); ic != "" {
+		title = " " + ic + title
 	}
 
 	buff := t.cmdBuff.GetText()
@@ -557,10 +570,14 @@ func (t *Table) styleTitle() string {
 }
 
 // ROIndicator returns an icon showing whether the session is in readonly mode or not.
-func ROIndicator(ro bool) string {
-	if ro {
-		return LockedIC
+func ROIndicator(ro, noIC bool) string {
+	if noIC {
+		return ""
 	}
 
-	return UnlockedIC
+	if ro {
+		return lockedIC
+	}
+
+	return unlockedIC
 }

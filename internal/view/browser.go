@@ -85,6 +85,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		b.app.CmdBuff().Reset()
 	}
 	b.Table.SetReadOnly(b.app.Config.IsReadOnly())
+	b.Table.SetNoIcon(b.app.Config.K9s.UI.NoIcons)
 
 	b.bindKeys(b.Actions())
 	for _, f := range b.bindKeysFn {

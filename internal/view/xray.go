@@ -671,9 +671,12 @@ func (x *Xray) styleTitle() string {
 
 	var title string
 	if ns == client.ClusterScope {
-		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, ui.ROIndicator(x.app.Config.IsReadOnly()), base, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	} else {
-		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, ui.ROIndicator(x.app.Config.IsReadOnly()), base, ns, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
+	}
+	if ic := ui.ROIndicator(x.app.Config.IsReadOnly(), x.app.Config.K9s.UI.NoIcons); ic != "" {
+		title = " " + ic + title
 	}
 
 	buff := x.CmdBuff().GetText()
