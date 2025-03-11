@@ -14,7 +14,7 @@ import (
 	"k8s.io/kubectl/pkg/cmd/get"
 )
 
-var fullRX = regexp.MustCompile(`^([\w\s%\/-]+)\:?([\w\d\S\W]*?)\|?([N|T|W|V|R|L|H]{0,3})$`)
+var fullRX = regexp.MustCompile(`^([\w\s%\/-]+)\:?([\w\d\S\W]*?)\|?([N|T|W|S|L|R|H]{0,3})$`)
 
 type colAttr byte
 
@@ -22,7 +22,7 @@ const (
 	number     colAttr = 'N'
 	age        colAttr = 'T'
 	wide       colAttr = 'W'
-	show       colAttr = 'V'
+	show       colAttr = 'S'
 	alignLeft  colAttr = 'L'
 	alignRight colAttr = 'R'
 	hide       colAttr = 'H'
