@@ -5,12 +5,12 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"sigs.k8s.io/yaml"
 )
 
 // Secret presents a secret viewer.
@@ -57,7 +57,7 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	raw, err := yaml.Marshal(d)
+	raw, err := data.WriteYAML(d)
 	if err != nil {
 		s.App().Flash().Errf("Error decoding secret %s", err)
 		return nil

@@ -4,6 +4,7 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -16,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/k9s/internal/slogs"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const k9sPluginsDir = "k9s/plugins"
@@ -88,10 +89,14 @@ func (p Plugins) loadPluginDir(dir string) error {
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
+
+		d := yaml.NewDecoder(bytes.NewReader(fileContent))
+		d.KnownFields(true)
+
 		var plugin Plugin
-		if err = yaml.UnmarshalStrict(fileContent, &plugin); err != nil {
+		if err = d.Decode(&plugin); err != nil {
 			var plugins Plugins
-			if err = yaml.UnmarshalStrict(fileContent, &plugins); err != nil {
+			if err = d.Decode(&plugins); err != nil {
 				return fmt.Errorf("cannot parse %s into either a single plugin nor plugins: %w", fileName, err)
 			}
 			for name, plugin := range plugins.Plugins {
