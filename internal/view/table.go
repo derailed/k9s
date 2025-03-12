@@ -12,11 +12,11 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 )
 
@@ -28,6 +28,7 @@ type Table struct {
 	enterFn    EnterFunc
 	envFn      EnvFunc
 	bindKeysFn []BindKeysFunc
+	command    *cmd.Interpreter
 }
 
 // NewTable returns a new viewer.
@@ -48,11 +49,8 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	if t.app.Conn() != nil {
 		ctx = context.WithValue(ctx, internal.KeyHasMetrics, t.app.Conn().HasMetrics())
 	}
-	if t.app.CustomView == nil {
-		t.app.CustomView = config.NewCustomView()
-	}
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
-	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
+	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView())
 	t.Table.Init(ctx)
 	if !t.app.Config.K9s.UI.Reactive {
 		if err := t.app.RefreshCustomViews(); err != nil {
@@ -66,6 +64,11 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	t.CmdBuff().AddListener(t)
 
 	return nil
+}
+
+// SetCommand sets the current command.
+func (t *Table) SetCommand(cmd *cmd.Interpreter) {
+	t.command = cmd
 }
 
 // HeaderIndex returns index of a given column or false if not found.
@@ -145,14 +148,18 @@ func (t *Table) Start() {
 	t.Stop()
 	t.CmdBuff().AddListener(t)
 	t.Styles().AddListener(t.Table)
-	t.App().CustomView.AddListener(t.Table.GVR().String(), t.Table)
+	cmds := []string{t.Table.GVR().String()}
+	if t.command != nil {
+		cmds = append(cmds, t.command.GetLine())
+	}
+	t.App().CustomView().AddListeners(t.Table, cmds...)
 }
 
 // Stop terminates the component.
 func (t *Table) Stop() {
 	t.CmdBuff().RemoveListener(t)
 	t.Styles().RemoveListener(t.Table)
-	t.App().CustomView.RemoveListener(t.GVR().String())
+	t.App().CustomView().RemoveListener(t.Table)
 }
 
 // SetEnterFn specifies the default enter behavior.

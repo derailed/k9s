@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 )
@@ -27,6 +28,7 @@ func NewPicker() *Picker {
 	}
 }
 
+func (p *Picker) SetCommand(*cmd.Interpreter)      {}
 func (p *Picker) SetFilter(string)                 {}
 func (p *Picker) SetLabelFilter(map[string]string) {}
 

@@ -22,6 +22,7 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -58,6 +59,12 @@ func (b *Browser) getUpdating() bool {
 	return b.updating
 }
 
+// SetCommand sets the current command.
+func (b *Browser) SetCommand(cmd *cmd.Interpreter) {
+	b.GetTable().SetCommand(cmd)
+	//b.Table.SetViewSetting(b.app.CustomView().VSFor(cmd)
+}
+
 // Init watches all running pods in given namespace.
 func (b *Browser) Init(ctx context.Context) error {
 	var err error
@@ -85,6 +92,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		b.app.CmdBuff().Reset()
 	}
 	b.Table.SetReadOnly(b.app.Config.IsReadOnly())
+	b.Table.SetNoIcon(b.app.Config.K9s.UI.NoIcons)
 
 	b.bindKeys(b.Actions())
 	for _, f := range b.bindKeysFn {

@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func infoCmd() *cobra.Command {

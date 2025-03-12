@@ -15,10 +15,11 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/k9s/internal/slogs"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // ViewConfigListener represents a view config listener.
@@ -118,29 +119,65 @@ func (v *CustomView) Load(path string) error {
 	return nil
 }
 
+// AddListeners registers a new listener for various commands.
+func (v *CustomView) AddListeners(l ViewConfigListener, cmds ...string) {
+	for _, cmd := range cmds {
+		if cmd != "" {
+			v.listeners[cmd] = l
+		}
+	}
+	v.fireConfigChanged()
+}
+
 // AddListener registers a new listener.
-func (v *CustomView) AddListener(gvr string, l ViewConfigListener) {
-	v.listeners[gvr] = l
+func (v *CustomView) AddListener(cmd string, l ViewConfigListener) {
+	v.listeners[cmd] = l
 	v.fireConfigChanged()
 }
 
 // RemoveListener unregister a listener.
-func (v *CustomView) RemoveListener(gvr string) {
-	delete(v.listeners, gvr)
-}
-
-func (v *CustomView) fireConfigChanged() {
-	for gvr, list := range v.listeners {
-		if vs := v.getVS(gvr, list.GetNamespace()); vs == nil {
-			list.ViewSettingsChanged(nil)
-		} else {
-			slog.Debug("Reloading custom view settings", slogs.GVR, gvr)
-			list.ViewSettingsChanged(vs)
+func (v *CustomView) RemoveListener(l ViewConfigListener) {
+	for k, list := range v.listeners {
+		if list == l {
+			delete(v.listeners, k)
 		}
 	}
 }
 
+func (v *CustomView) fireConfigChanged() {
+	cmds := slices.Collect(maps.Keys(v.listeners))
+	slices.SortFunc(cmds, func(a, b string) int {
+		switch {
+		case strings.Contains(a, "/") && !strings.Contains(b, "/"):
+			return 1
+		case !strings.Contains(a, "/") && strings.Contains(b, "/"):
+			return -1
+		default:
+			return strings.Compare(a, b)
+		}
+	})
+	type tuple struct {
+		cmd string
+		vs  *ViewSetting
+	}
+	var victim tuple
+	for _, cmd := range cmds {
+		if vs := v.getVS(cmd, v.listeners[cmd].GetNamespace()); vs != nil {
+			slog.Debug("Reloading custom view settings", slogs.Command, cmd)
+			victim = tuple{cmd, vs}
+			break
+		}
+		victim = tuple{cmd, nil}
+	}
+	if victim.cmd != "" {
+		v.listeners[victim.cmd].ViewSettingsChanged(victim.vs)
+	}
+}
+
 func (v *CustomView) getVS(gvr, ns string) *ViewSetting {
+	if client.IsAllNamespaces(ns) {
+		ns = client.NamespaceAll
+	}
 	k := gvr
 	kk := slices.Collect(maps.Keys(v.Views))
 	slices.SortFunc(kk, func(s1, s2 string) int {

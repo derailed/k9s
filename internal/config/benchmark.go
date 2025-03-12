@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // K9sBench the name of the benchmarks config file.

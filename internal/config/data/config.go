@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
