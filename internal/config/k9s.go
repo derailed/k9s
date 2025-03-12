@@ -39,6 +39,7 @@ type K9s struct {
 	manualHeadless      *bool
 	manualLogoless      *bool
 	manualCrumbsless    *bool
+	manualSplashless    *bool
 	manualReadOnly      *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
@@ -296,6 +297,7 @@ func (k *K9s) Override(k9sFlags *Flags) {
 	k.manualHeadless = k9sFlags.Headless
 	k.manualLogoless = k9sFlags.Logoless
 	k.manualCrumbsless = k9sFlags.Crumbsless
+	k.manualSplashless = k9sFlags.Splashless
 	if k9sFlags.ReadOnly != nil && *k9sFlags.ReadOnly {
 		k.manualReadOnly = k9sFlags.ReadOnly
 	}
@@ -332,6 +334,15 @@ func (k *K9s) IsCrumbsless() bool {
 	}
 
 	return k.UI.Crumbsless
+}
+
+// IsSplashless returns splashless setting.
+func (k *K9s) IsSplashless() bool {
+	if IsBoolSet(k.manualSplashless) {
+		return true
+	}
+
+	return k.UI.Splashless
 }
 
 // GetRefreshRate returns the current refresh rate.
