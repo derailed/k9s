@@ -263,6 +263,8 @@ func (c *Configurator) loadSkinFile(s synchronizer) {
 		return
 	}
 
+	c.Styles.ResetLogo()
+
 	skinFile := config.SkinFileFromName(skin)
 	slog.Debug("Loading skin file", slogs.Skin, skinFile)
 	if err := c.Styles.Load(skinFile); err != nil {

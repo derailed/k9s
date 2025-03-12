@@ -11,7 +11,6 @@ import (
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/slogs"
-	"github.com/derailed/k9s/internal/ui"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -47,7 +46,9 @@ func printInfo(cmd *cobra.Command, args []string) error {
 }
 
 func printLogo(c color.Paint) {
-	for _, l := range ui.LogoSmall {
+	styles := config.NewStyles()
+	logo := styles.Body().Logo
+	for _, l := range logo {
 		fmt.Fprintln(out, color.Colorize(l, c))
 	}
 	fmt.Fprintln(out)
