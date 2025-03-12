@@ -11,7 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // StyleListener represents a skin's listener.

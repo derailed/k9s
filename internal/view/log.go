@@ -22,6 +22,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 )
@@ -63,8 +64,9 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 	return &l
 }
 
-func (l *Log) SetFilter(string)                 {}
-func (l *Log) SetLabelFilter(map[string]string) {}
+func (*Log) SetCommand(*cmd.Interpreter)      {}
+func (*Log) SetFilter(string)                 {}
+func (*Log) SetLabelFilter(map[string]string) {}
 
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {

@@ -17,6 +17,10 @@ func TestCustomView_getVS(t *testing.T) {
 	}{
 		"empty": {},
 
+		"miss": {
+			gvr: "zorg",
+		},
+
 		"gvr": {
 			gvr: "v1/pods",
 			e: &ViewSetting{
@@ -37,6 +41,13 @@ func TestCustomView_getVS(t *testing.T) {
 			ns:  "ns-fred",
 			e: &ViewSetting{
 				Columns: []string{"AGE", "NAME", "IP"},
+			},
+		},
+
+		"alias": {
+			gvr: "bozo",
+			e: &ViewSetting{
+				Columns: []string{"DUH", "BLAH", "BLEE"},
 			},
 		},
 

@@ -42,6 +42,7 @@ func (b *Base) doHeader(dh model1.Header) model1.Header {
 	return b.specs.Header(dh)
 }
 
+// SetViewSetting sets custom view settings if any.
 func (b *Base) SetViewSetting(vs *config.ViewSetting) {
 	var cols []string
 	b.vs = vs

@@ -48,6 +48,7 @@ type Renderer interface {
 	// ColorerFunc returns a row colorer function.
 	ColorerFunc() ColorerFunc
 
+	// SetViewSetting sets custom view settings if any.
 	SetViewSetting(vs *config.ViewSetting)
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 )
@@ -43,8 +44,9 @@ func NewHelp(app *App) *Help {
 	}
 }
 
-func (h *Help) SetFilter(string)                 {}
-func (h *Help) SetLabelFilter(map[string]string) {}
+func (*Help) SetCommand(*cmd.Interpreter)      {}
+func (*Help) SetFilter(string)                 {}
+func (*Help) SetLabelFilter(map[string]string) {}
 
 // Init initializes the component.
 func (h *Help) Init(ctx context.Context) error {

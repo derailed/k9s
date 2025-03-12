@@ -15,6 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
@@ -61,6 +62,7 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 	return &v
 }
 
+func (v *LiveView) SetCommand(*cmd.Interpreter)      {}
 func (v *LiveView) SetFilter(string)                 {}
 func (v *LiveView) SetLabelFilter(map[string]string) {}
 

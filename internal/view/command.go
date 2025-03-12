@@ -329,7 +329,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 			slog.Error("Failure detected during command exec", slogs.Error, e)
 			c.app.Content.Dump()
 			slog.Debug("Dumping history buffer", slogs.CmdHist, c.app.cmdHistory.List())
-			slog.Error("Dumping stack", slogs.Stack, debug.Stack())
+			slog.Error("Dumping stack", slogs.Stack, string(debug.Stack()))
 
 			p := cmd.NewInterpreter("pod")
 			cmds := c.app.cmdHistory.List()
@@ -344,6 +344,8 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if comp == nil {
 		return fmt.Errorf("no component found for %s", gvr)
 	}
+	comp.SetCommand(p)
+
 	c.app.Flash().Infof("Viewing %s...", gvr)
 	if clearStack {
 		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
@@ -352,10 +354,10 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if err := c.app.inject(comp, clearStack); err != nil {
 		return err
 	}
-
 	if pushCmd {
 		c.app.cmdHistory.Push(p.GetLine())
 	}
+	slog.Debug("History", slogs.Stack, c.app.cmdHistory.List())
 
 	return
 }

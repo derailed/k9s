@@ -16,11 +16,8 @@ import (
 )
 
 const (
-	// UnlockedIC represents an unlocked icon.
-	UnlockedIC = "🔓"
-
-	// LockedIC represents a locked icon.
-	LockedIC = "🔒"
+	unlockedIC = "🔓"
+	lockedIC   = "🔒"
 )
 
 // Namespaceable represents a namespaceable model.

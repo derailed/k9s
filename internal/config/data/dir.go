@@ -14,7 +14,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/k9s/internal/slogs"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -74,12 +74,8 @@ func (d *Dir) Save(path string, c *Config) error {
 	if err := EnsureDirPath(path, DefaultDirMod); err != nil {
 		return err
 	}
-	cfg, err := yaml.Marshal(c)
-	if err != nil {
-		return err
-	}
 
-	return os.WriteFile(path, cfg, DefaultFileMod)
+	return SaveYAML(path, c)
 }
 
 func (d *Dir) loadConfig(path string) (*Config, error) {
