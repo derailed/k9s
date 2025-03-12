@@ -32,6 +32,7 @@ k9s:
     buffer: 800
     sinceSeconds: -1
     textWrap: false
+    jsonPretty: false
     disableAutoscroll: false
     showTime: false
   thresholds:

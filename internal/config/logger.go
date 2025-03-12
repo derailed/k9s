@@ -21,15 +21,17 @@ type Logger struct {
 	SinceSeconds      int64 `json:"sinceSeconds" yaml:"sinceSeconds"`
 	TextWrap          bool  `json:"textWrap" yaml:"textWrap"`
 	DisableAutoscroll bool  `json:"disableAutoscroll" yaml:"disableAutoscroll"`
+  JsonPrettifier    bool `json:"jsonPretty" yaml:"jsonPretty"`
 	ShowTime          bool  `json:"showTime" yaml:"showTime"`
 }
 
 // NewLogger returns a new instance.
 func NewLogger() Logger {
 	return Logger{
-		TailCount:    DefaultLoggerTailCount,
-		BufferSize:   MaxLogThreshold,
-		SinceSeconds: DefaultSinceSeconds,
+		TailCount:      DefaultLoggerTailCount,
+		BufferSize:     MaxLogThreshold,
+		SinceSeconds:   DefaultSinceSeconds,
+		JsonPrettifier: true,
 	}
 }
 
