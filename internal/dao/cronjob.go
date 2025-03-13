@@ -7,10 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -200,7 +201,10 @@ func (c *CronJob) Scan(ctx context.Context, gvr client.GVR, fqn string, wait boo
 		case SecGVR:
 			found, err := hasSecret(c.Factory, &cj.Spec.JobTemplate.Spec.Template.Spec, cj.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				slog.Warn("Failed to locate secret",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {

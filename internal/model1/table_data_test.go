@@ -4,16 +4,16 @@
 package model1
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestTableDataComputeSortCol(t *testing.T) {

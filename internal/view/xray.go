@@ -6,6 +6,7 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -16,12 +17,13 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -53,6 +55,7 @@ func NewXray(gvr client.GVR) ResourceViewer {
 	}
 }
 
+func (x *Xray) SetCommand(*cmd.Interpreter)      {}
 func (x *Xray) SetFilter(string)                 {}
 func (x *Xray) SetLabelFilter(map[string]string) {}
 
@@ -89,7 +92,7 @@ func (x *Xray) Init(ctx context.Context) error {
 	x.SetChangedFunc(func(n *tview.TreeNode) {
 		spec, ok := n.GetReference().(xray.NodeSpec)
 		if !ok {
-			log.Error().Msgf("No ref found on node %s", n.GetText())
+			slog.Error("No ref found on node", slogs.FQN, n.GetText())
 			return
 		}
 		x.SetSelectedItem(spec.AsPath())
@@ -134,10 +137,10 @@ func (x *Xray) refreshActions() {
 
 	defer func() {
 		if err := pluginActions(x, aa); err != nil {
-			log.Warn().Err(err).Msg("Plugins load failed")
+			slog.Warn("Plugins load failed", slogs.Error, err)
 		}
 		if err := hotKeyActions(x, aa); err != nil {
-			log.Warn().Err(err).Msg("HotKeys load failed")
+			slog.Warn("HotKeys load failed", slogs.Error, err)
 		}
 
 		x.Actions().Merge(aa)
@@ -157,7 +160,10 @@ func (x *Xray) refreshActions() {
 	var err error
 	x.meta, err = dao.MetaAccess.MetaFor(client.NewGVR(gvr))
 	if err != nil {
-		log.Warn().Msgf("NO meta for %q -- %s", gvr, err)
+		slog.Warn("No meta found!",
+			slogs.GVR, gvr,
+			slogs.Error, err,
+		)
 		return
 	}
 
@@ -212,7 +218,10 @@ func (x *Xray) selectedSpec() *xray.NodeSpec {
 
 	ref, ok := node.GetReference().(xray.NodeSpec)
 	if !ok {
-		log.Error().Msgf("Expecting a NodeSpec!")
+		slog.Error("Expecting a NodeSpec",
+			slogs.Path, node.GetText(),
+			slogs.RefType, fmt.Sprintf("%T", node.GetReference()),
+		)
 		return nil
 	}
 
@@ -375,7 +384,10 @@ func (x *Xray) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		gvr := client.NewGVR(spec.GVR())
 		meta, err := dao.MetaAccess.MetaFor(gvr)
 		if err != nil {
-			log.Warn().Msgf("NO meta for %q -- %s", spec.GVR(), err)
+			slog.Warn("No meta found!",
+				slogs.GVR, spec.GVR(),
+				slogs.Error, err,
+			)
 			return nil
 		}
 		x.resourceDelete(gvr, spec, fmt.Sprintf("Delete %s %s?", meta.SingularName, spec.Path()))
@@ -535,7 +547,10 @@ func (x *Xray) update(node *xray.TreeNode) {
 		root.Walk(func(node, parent *tview.TreeNode) bool {
 			spec, ok := node.GetReference().(xray.NodeSpec)
 			if !ok {
-				log.Error().Msgf("Expecting a NodeSpec but got %T", node.GetReference())
+				slog.Error("Expecting a NodeSpec",
+					slogs.FQN, node.GetText(),
+					slogs.RefType, fmt.Sprintf("%T", node.GetReference()),
+				)
 				return false
 			}
 			// BOZO!! Figure this out expand/collapse but the root
@@ -662,6 +677,9 @@ func (x *Xray) styleTitle() string {
 	} else {
 		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	}
+	if ic := ui.ROIndicator(x.app.Config.IsReadOnly(), x.app.Config.K9s.UI.NoIcons); ic != "" {
+		title = " " + ic + title
+	}
 
 	buff := x.CmdBuff().GetText()
 	if buff == "" {
@@ -679,7 +697,10 @@ func (x *Xray) resourceDelete(gvr client.GVR, spec *xray.NodeSpec, msg string) {
 		x.app.Flash().Infof("Delete resource %s %s", spec.GVR(), spec.Path())
 		accessor, err := dao.AccessorFor(x.app.factory, gvr)
 		if err != nil {
-			log.Error().Err(err).Msgf("No accessor")
+			slog.Error("No accessor found",
+				slogs.GVR, gvr,
+				slogs.Error, err,
+			)
 			return
 		}
 

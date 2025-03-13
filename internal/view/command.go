@@ -6,16 +6,16 @@ package view
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"runtime/debug"
 	"strings"
 	"sync"
 
-	"github.com/rs/zerolog/log"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view/cmd"
 )
 
@@ -47,7 +47,7 @@ func (c *Command) AliasesFor(s string) []string {
 func (c *Command) Init(path string) error {
 	c.alias = dao.NewAlias(c.app.factory)
 	if _, err := c.alias.Ensure(path); err != nil {
-		log.Error().Err(err).Msgf("Alias ensure failed!")
+		slog.Error("Ensure aliases failed", slogs.Error, err)
 		return err
 	}
 	customViewers = loadCustomViewers()
@@ -84,7 +84,7 @@ func allowedXRay(gvr client.GVR) bool {
 	return ok
 }
 
-func (c *Command) contextCmd(p *cmd.Interpreter) error {
+func (c *Command) contextCmd(p *cmd.Interpreter, pushCmd bool) error {
 	ct, ok := p.ContextArg()
 	if !ok {
 		return fmt.Errorf("invalid command use `context xxx`")
@@ -99,7 +99,7 @@ func (c *Command) contextCmd(p *cmd.Interpreter) error {
 		return err
 	}
 
-	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true, true)
+	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true, pushCmd)
 }
 
 func (c *Command) namespaceCmd(p *cmd.Interpreter) bool {
@@ -115,17 +115,17 @@ func (c *Command) namespaceCmd(p *cmd.Interpreter) bool {
 	return false
 }
 
-func (c *Command) aliasCmd(p *cmd.Interpreter) error {
+func (c *Command) aliasCmd(p *cmd.Interpreter, pushCmd bool) error {
 	filter, _ := p.FilterArg()
 
 	gvr := client.NewGVR("aliases")
 	v := NewAlias(gvr)
 	v.SetFilter(filter)
 
-	return c.exec(p, gvr, v, false, true)
+	return c.exec(p, gvr, v, false, pushCmd)
 }
 
-func (c *Command) xrayCmd(p *cmd.Interpreter) error {
+func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	arg, cns, ok := p.XrayArgs()
 	if !ok {
 		return errors.New("invalid command. use `xray xxx`")
@@ -148,12 +148,12 @@ func (c *Command) xrayCmd(p *cmd.Interpreter) error {
 		return err
 	}
 
-	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true, true)
+	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true, pushCmd)
 }
 
 // Run execs the command by showing associated display.
 func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool, pushCmd bool) error {
-	if c.specialCmd(p) {
+	if c.specialCmd(p, pushCmd) {
 		return nil
 	}
 	gvr, v, err := c.viewMetaFor(p)
@@ -164,9 +164,9 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool, pushCmd b
 	if context, ok := p.HasContext(); ok {
 		if context != c.app.Config.ActiveContextName() {
 			if err := c.app.Config.Save(true); err != nil {
-				log.Error().Err(err).Msg("config save failed!")
+				slog.Error("Config save failed during command exec", slogs.Error, err)
 			} else {
-				log.Debug().Msgf("Saved context config for: %q", context)
+				slog.Debug("Successfully saved config", slogs.Context, context)
 			}
 		}
 		res, err := dao.AccessorFor(c.app.factory, client.NewGVR("contexts"))
@@ -178,7 +178,7 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool, pushCmd b
 			return errors.New("expecting a switchable resource")
 		}
 		if err := switcher.Switch(context); err != nil {
-			log.Error().Err(err).Msgf("Context switch failed")
+			slog.Error("Unable to switch context", slogs.Error, err)
 			return err
 		}
 		if err := c.app.switchContext(p, false); err != nil {
@@ -226,14 +226,17 @@ func (c *Command) defaultCmd(isRoot bool) error {
 
 	if err := c.run(p, "", true, true); err != nil {
 		p = p.Reset(defCmd)
-		log.Error().Err(fmt.Errorf("Command failed. Using default command: %s", p.GetLine()))
+		slog.Error("Command exec failed. Using default command",
+			slogs.Command, p.GetLine(),
+			slogs.Error, err,
+		)
 		return c.run(p, "", true, true)
 	}
 
 	return nil
 }
 
-func (c *Command) specialCmd(p *cmd.Interpreter) bool {
+func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 	switch {
 	case p.IsCowCmd():
 		if msg, ok := p.CowArg(); !ok {
@@ -242,15 +245,15 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 			c.app.cowCmd(msg)
 		}
 	case p.IsBailCmd():
-		c.app.BailOut()
+		c.app.BailOut(0)
 	case p.IsHelpCmd():
 		_ = c.app.helpCmd(nil)
 	case p.IsAliasCmd():
-		if err := c.aliasCmd(p); err != nil {
+		if err := c.aliasCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	case p.IsXrayCmd():
-		if err := c.xrayCmd(p); err != nil {
+		if err := c.xrayCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	case p.IsRBACCmd():
@@ -260,7 +263,7 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 			c.app.Flash().Err(err)
 		}
 	case p.IsContextCmd():
-		if err := c.contextCmd(p); err != nil {
+		if err := c.contextCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	case p.IsNamespaceCmd():
@@ -268,7 +271,7 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 	case p.IsDirCmd():
 		if a, ok := p.DirArg(); !ok {
 			c.app.Flash().Errf("Invalid command. Use `dir xxx`")
-		} else if err := c.app.dirCmd(a); err != nil {
+		} else if err := c.app.dirCmd(a, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	default:
@@ -323,10 +326,10 @@ func (c *Command) componentFor(gvr client.GVR, fqn string, v *MetaViewer) Resour
 func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component, clearStack bool, pushCmd bool) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
-			log.Error().Msgf("Something bad happened! %#v", e)
+			slog.Error("Failure detected during command exec", slogs.Error, e)
 			c.app.Content.Dump()
-			log.Debug().Msgf("History %v", c.app.cmdHistory.List())
-			log.Error().Msg(string(debug.Stack()))
+			slog.Debug("Dumping history buffer", slogs.CmdHist, c.app.cmdHistory.List())
+			slog.Error("Dumping stack", slogs.Stack, string(debug.Stack()))
 
 			p := cmd.NewInterpreter("pod")
 			cmds := c.app.cmdHistory.List()
@@ -341,6 +344,8 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if comp == nil {
 		return fmt.Errorf("no component found for %s", gvr)
 	}
+	comp.SetCommand(p)
+
 	c.app.Flash().Infof("Viewing %s...", gvr)
 	if clearStack {
 		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
@@ -349,10 +354,10 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if err := c.app.inject(comp, clearStack); err != nil {
 		return err
 	}
-
 	if pushCmd {
 		c.app.cmdHistory.Push(p.GetLine())
 	}
+	slog.Debug("History", slogs.Stack, c.app.cmdHistory.List())
 
 	return
 }

@@ -5,13 +5,14 @@ package view
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // ScreenDump presents a directory listing viewer.
@@ -45,7 +46,7 @@ func (s *ScreenDump) dirContext(ctx context.Context) context.Context {
 }
 
 func (s *ScreenDump) edit(app *App, _ ui.Tabular, _ client.GVR, path string) {
-	log.Debug().Msgf("ScreenDump selection is %q", path)
+	slog.Debug("ScreenDump selection", slogs.FQN, path)
 
 	s.Stop()
 	defer s.Start()

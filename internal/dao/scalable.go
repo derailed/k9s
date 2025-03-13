@@ -5,14 +5,14 @@ package dao
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/scale"
-
-	"github.com/derailed/k9s/internal/client"
 )
 
 var _ Scalable = (*Scaler)(nil)
@@ -59,7 +59,10 @@ func (s *Scaler) Scale(ctx context.Context, path string, replicas int32) error {
 		return err
 	}
 
-	log.Debug().Msgf("%s scaled to %d", path, updatedScale.Spec.Replicas)
+	slog.Debug("Scaled resource",
+		slogs.FQN, path,
+		slogs.Replicas, updatedScale.Spec.Replicas,
+	)
 	return nil
 }
 

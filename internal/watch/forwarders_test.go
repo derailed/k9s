@@ -4,18 +4,18 @@
 package watch_test
 
 import (
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/portforward"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestIsPodForwarded(t *testing.T) {

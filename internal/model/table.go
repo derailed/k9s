@@ -6,6 +6,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model1"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -63,7 +64,7 @@ func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
 
 	if ctx != context.Background() {
 		if err := t.reconcile(ctx); err != nil {
-			log.Err(err).Msgf("refresh failed for gvr: %s", t.gvr)
+			slog.Error("Refresh failed", slogs.GVR, t.gvr)
 		}
 	}
 }
@@ -209,13 +210,13 @@ func (t *Table) updater(ctx context.Context) {
 			rate = t.refreshRate
 			err := backoff.Retry(func() error {
 				if err := t.refresh(ctx); err != nil {
-					log.Err(err).Msgf("refresh failed for gvr: %s", t.gvr)
+					slog.Error("Refresh failed", slogs.GVR, t.gvr)
 					return err
 				}
 				return nil
 			}, backoff.WithContext(bf, ctx))
 			if err != nil {
-				log.Warn().Err(err).Msgf("reconciler exited")
+				slog.Warn("Reconciler exited", slogs.Error, err)
 				t.fireTableLoadFailed(err)
 				return
 			}
@@ -224,12 +225,8 @@ func (t *Table) updater(ctx context.Context) {
 }
 
 func (t *Table) refresh(ctx context.Context) error {
-	defer func(ti time.Time) {
-		log.Trace().Msgf("Refresh [%s](%d) %s ", t.gvr, t.data.RowCount(), time.Since(ti))
-	}(time.Now())
-
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return nil
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)

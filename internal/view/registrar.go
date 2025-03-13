@@ -90,9 +90,6 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("pulses")] = MetaViewer{
 		viewerFn: NewPulse,
 	}
-	vv[client.NewGVR("sanitizer")] = MetaViewer{
-		viewerFn: NewSanitizer,
-	}
 }
 
 func appsViewers(vv MetaViewers) {

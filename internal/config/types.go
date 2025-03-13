@@ -34,4 +34,8 @@ type UI struct {
 
 	// DefaultsToFullScreen toggles fullscreen on views like logs, yaml, details.
 	DefaultsToFullScreen bool `json:"defaultsToFullScreen" yaml:"defaultsToFullScreen"`
+
+	manualHeadless   *bool
+	manualLogoless   *bool
+	manualCrumbsless *bool
 }

@@ -7,11 +7,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -159,7 +160,10 @@ func (j *Job) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (
 		case SecGVR:
 			found, err := hasSecret(j.Factory, &job.Spec.Template.Spec, job.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				slog.Warn("Locate secret failed",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {

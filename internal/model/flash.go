@@ -6,9 +6,10 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -86,7 +87,7 @@ func (f *Flash) Infof(fmat string, args ...interface{}) {
 
 // Warn displays a warning flash message.
 func (f *Flash) Warn(msg string) {
-	log.Warn().Msg(msg)
+	slog.Warn(msg)
 	f.SetMessage(FlashWarn, msg)
 }
 
@@ -97,7 +98,7 @@ func (f *Flash) Warnf(fmat string, args ...interface{}) {
 
 // Err displays an error flash message.
 func (f *Flash) Err(err error) {
-	log.Error().Msg(err.Error())
+	slog.Error("Flash failed", slogs.Error, err)
 	f.SetMessage(FlashErr, err.Error())
 }
 
@@ -110,7 +111,10 @@ func (f *Flash) Errf(fmat string, args ...interface{}) {
 			err = e
 		}
 	}
-	log.Error().Err(err).Msgf(fmat, args...)
+	slog.Error("Flashing error",
+		slogs.Error, err,
+		slogs.Message, fmt.Sprintf(fmat, args...),
+	)
 	f.SetMessage(FlashErr, fmt.Sprintf(fmat, args...))
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -93,6 +94,13 @@ type Component interface {
 	Hinter
 	Commander
 	Filterer
+	Viewer
+}
+
+// Viewer represents a resource viewer.
+type Viewer interface {
+	// SetCommand sets the current command.
+	SetCommand(*cmd.Interpreter)
 }
 
 type Filterer interface {

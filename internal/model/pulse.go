@@ -6,13 +6,14 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/health"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -53,7 +54,7 @@ func (p *Pulse) Watch(ctx context.Context) {
 }
 
 func (p *Pulse) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Pulse canceled -- %q", p.gvr)
+	defer slog.Debug("Pulse canceled", slogs.GVR, p.gvr)
 
 	rate := initRefreshRate
 	for {
@@ -77,13 +78,13 @@ func (p *Pulse) Refresh(ctx context.Context) {
 
 func (p *Pulse) refresh(ctx context.Context) {
 	if !atomic.CompareAndSwapInt32(&p.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return
 	}
 	defer atomic.StoreInt32(&p.inUpdate, 0)
 
 	if err := p.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msg("Reconcile failed")
+		slog.Error("Reconcile failed", slogs.Error, err)
 		p.firePulseFailed(err)
 		return
 	}

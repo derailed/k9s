@@ -9,4 +9,3 @@ k9s:
     active: po
   featureGates:
     nodeShell: false
-  portForwardAddress: localhost

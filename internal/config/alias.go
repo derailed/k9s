@@ -5,15 +5,15 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"sync"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
-	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v2"
+	"github.com/derailed/k9s/internal/slogs"
+	"gopkg.in/yaml.v3"
 )
 
 // Alias tracks shortname to GVR mappings.
@@ -120,7 +120,7 @@ func (a *Aliases) Load(path string) error {
 
 	f, err := EnsureAliasesCfgFile()
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to gen config aliases")
+		slog.Error("Unable to gen config aliases", slogs.Error, err)
 	}
 
 	// load global alias file
@@ -146,7 +146,7 @@ func (a *Aliases) LoadFile(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.AliasesSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		slog.Warn("Aliases validation failed", slogs.Error, err)
 	}
 
 	var aa Aliases
@@ -176,8 +176,6 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("help", "h", "?")
 	a.declare("quit", "q", "q!", "qa", "Q")
 	a.declare("aliases", "alias", "a")
-	// !!BOZO!!
-	// a.declare("popeye", "pop")
 	a.declare("helm", "charts", "chart", "hm")
 	a.declare("dir", "d")
 	a.declare("contexts", "context", "ctx")
@@ -193,7 +191,7 @@ func (a *Aliases) loadDefaultAliases() {
 
 // Save alias to disk.
 func (a *Aliases) Save() error {
-	log.Debug().Msg("[Config] Saving Aliases...")
+	slog.Debug("Saving Aliases...")
 	return a.SaveAliases(AppAliasesFile)
 }
 
@@ -202,10 +200,6 @@ func (a *Aliases) SaveAliases(path string) error {
 	if err := data.EnsureDirPath(path, data.DefaultDirMod); err != nil {
 		return err
 	}
-	cfg, err := yaml.Marshal(a)
-	if err != nil {
-		return err
-	}
 
-	return os.WriteFile(path, cfg, data.DefaultFileMod)
+	return data.SaveYAML(path, a)
 }

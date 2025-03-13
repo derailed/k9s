@@ -6,21 +6,19 @@ package ui
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 const maxTruncate = 50
@@ -55,6 +53,8 @@ type Table struct {
 	hasMetrics  bool
 	ctx         context.Context
 	mx          sync.RWMutex
+	readOnly    bool
+	noIcon      bool
 }
 
 // NewTable returns a new table view.
@@ -71,6 +71,22 @@ func NewTable(gvr client.GVR) *Table {
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: model1.SortColumn{ASC: true},
 	}
+}
+
+// SetNoIcon toggles no icon mode.
+func (t *Table) SetNoIcon(b bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.noIcon = b
+}
+
+// SetReadOnly toggles read-only mode.
+func (t *Table) SetReadOnly(ro bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.readOnly = ro
 }
 
 func (t *Table) setSortCol(sc model1.SortColumn) {
@@ -108,7 +124,8 @@ func (t *Table) getMSort() bool {
 	return t.manualSort
 }
 
-func (t *Table) setViewSetting(vs *config.ViewSetting) bool {
+// SetViewSetting sets custom view config is present.
+func (t *Table) SetViewSetting(vs *config.ViewSetting) bool {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
@@ -121,7 +138,8 @@ func (t *Table) setViewSetting(vs *config.ViewSetting) bool {
 	return false
 }
 
-func (t *Table) getViewSetting() *config.ViewSetting {
+// GetViewSetting return current view settings if any.
+func (t *Table) GetViewSetting() *config.ViewSetting {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
@@ -155,7 +173,7 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
 func (t *Table) ViewSettingsChanged(vs *config.ViewSetting) {
-	if t.setViewSetting(vs) {
+	if t.SetViewSetting(vs) {
 		if vs == nil {
 			if !t.getMSort() && !t.sortCol.IsSet() {
 				t.setSortCol(model1.SortColumn{})
@@ -270,6 +288,14 @@ func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableDat
 	return t.doUpdate(t.filtered(data))
 }
 
+func (t *Table) GetNamespace() string {
+	if t.GetModel() != nil {
+		return t.GetModel().GetNamespace()
+	}
+
+	return client.NamespaceAll
+}
+
 func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	if client.IsAllNamespaces(data.GetNamespace()) {
 		t.actions.Add(
@@ -280,7 +306,7 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	t.setSortCol(data.ComputeSortCol(t.getViewSetting(), t.getSortCol(), t.getMSort()))
+	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
 
 	return data
 }
@@ -290,17 +316,12 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	fg := t.styles.Table().Header.FgColor.Color()
 	bg := t.styles.Table().Header.BgColor.Color()
 
-	var isNamespaced bool
-	if m, err := dao.MetaAccess.MetaFor(t.GVR()); err == nil {
-		isNamespaced = m.Namespaced
-	}
-
 	var col int
 	for _, h := range cdata.Header() {
 		if h.Hide || (!t.wide && h.Wide) {
 			continue
 		}
-		if h.Name == "NAMESPACE" && (!t.GetModel().ClusterWide() || !isNamespaced) {
+		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
 		if h.MX && !t.hasMetrics {
@@ -323,10 +344,10 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	cdata.RowsRange(func(row int, re model1.RowEvent) bool {
 		ore, ok := data.FindRow(re.Row.ID)
 		if !ok {
-			log.Error().Msgf("unable to find original re: %q", re.Row.ID)
+			slog.Error("Unable to find original row event", slogs.RowID, re.Row.ID)
 			return true
 		}
-		t.buildRow(row+1, re, ore, cdata.Header(), pads, isNamespaced)
+		t.buildRow(row+1, re, ore, cdata.Header(), pads)
 
 		return true
 	})
@@ -335,7 +356,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.UpdateTitle()
 }
 
-func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad, isNamespaced bool) {
+func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad) {
 	color := model1.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn
@@ -346,14 +367,18 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 	ns := t.GetModel().GetNamespace()
 	for c, field := range re.Row.Fields {
 		if c >= len(h) {
-			log.Error().Msgf("field/header overflow detected for %q -- %d::%d. Check your mappings!", t.GVR(), c, len(h))
+			slog.Error("Field/header overflow detected. Check your mappings!",
+				slogs.GVR, t.GVR(),
+				slogs.Cell, c,
+				slogs.HeaderSize, len(h),
+			)
 			continue
 		}
 		if h[c].Hide || (!t.wide && h[c].Wide) {
 			continue
 		}
 
-		if h[c].Name == "NAMESPACE" && (!t.GetModel().ClusterWide() || !isNamespaced) {
+		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
 		if h[c].MX && !t.hasMetrics {
@@ -505,7 +530,6 @@ func (t *Table) styleTitle() string {
 		rc--
 	}
 
-	base := cases.Title(language.Und, cases.NoLower).String(t.gvr.R())
 	ns := t.GetModel().GetNamespace()
 	if client.IsClusterWide(ns) || ns == client.NotNamespaced {
 		ns = client.NamespaceAll
@@ -522,11 +546,15 @@ func (t *Table) styleTitle() string {
 	if t.Extras != "" {
 		ns = t.Extras
 	}
+
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, base, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, t.gvr, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
+	}
+	if ic := ROIndicator(t.readOnly, t.noIcon); ic != "" {
+		title = " " + ic + title
 	}
 
 	buff := t.cmdBuff.GetText()
@@ -541,4 +569,17 @@ func (t *Table) styleTitle() string {
 	}
 
 	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())
+}
+
+// ROIndicator returns an icon showing whether the session is in readonly mode or not.
+func ROIndicator(ro, noIC bool) string {
+	if noIC {
+		return ""
+	}
+
+	if ro {
+		return lockedIC
+	}
+
+	return unlockedIC
 }

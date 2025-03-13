@@ -10,7 +10,6 @@
         "cluster": { "type": "string" },
         "readOnly": {"type": "boolean"},
         "skin": { "type": "string" },
-        "portForwardAddress": { "type": "string" },
         "proxy": {
           "oneOf": [
             { "type": "null" },

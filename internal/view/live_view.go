@@ -6,16 +6,18 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -60,6 +62,7 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 	return &v
 }
 
+func (v *LiveView) SetCommand(*cmd.Interpreter)      {}
 func (v *LiveView) SetFilter(string)                 {}
 func (v *LiveView) SetLabelFilter(map[string]string) {}
 
@@ -152,7 +155,7 @@ func (v *LiveView) bindKeys() {
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", v.eraseCmd, false),
 	})
 
-	if !v.app.Config.K9s.IsReadOnly() {
+	if !v.app.Config.IsReadOnly() {
 		v.actions.Add(ui.KeyE, ui.NewKeyAction("Edit", v.editCmd, true))
 	}
 	if v.title == yamlAction {
@@ -233,12 +236,12 @@ func (v *LiveView) Start() {
 		ctx, v.cancel = context.WithCancel(v.defaultCtx())
 
 		if err := v.model.Watch(ctx); err != nil {
-			log.Error().Err(err).Msgf("LiveView watcher failed")
+			slog.Error("LiveView watcher failed", slogs.Error, err)
 		}
 		return
 	}
 	if err := v.model.Refresh(v.defaultCtx()); err != nil {
-		log.Error().Err(err).Msgf("refresh failed")
+		slog.Error("LiveView refresh failed", slogs.Error, err)
 	}
 }
 

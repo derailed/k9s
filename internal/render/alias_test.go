@@ -76,7 +76,7 @@ func TestAliasRender(t *testing.T) {
 	assert.Nil(t, a.Render(o, "fred/v1/blee", &r))
 	assert.Equal(t, model1.Row{
 		ID:     "fred/v1/blee",
-		Fields: model1.Fields{"blee", "fred", "v1", "a,b,c"},
+		Fields: model1.Fields{"blee", "fred", "v1", "a b c"},
 	}, r)
 }
 

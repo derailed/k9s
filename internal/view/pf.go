@@ -6,6 +6,7 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"time"
 
@@ -14,10 +15,10 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // PortForward presents active portforward viewer.
@@ -95,7 +96,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	cfg.Name = path
 
 	r, _ := p.GetTable().GetSelection()
-	log.Debug().Msgf("PF NS %q", p.GetTable().GetModel().GetNamespace())
+	slog.Debug("Port forward namespace", slogs.Namespace, p.GetTable().GetModel().GetNamespace())
 	col := 3
 	if client.IsAllNamespaces(p.GetTable().GetModel().GetNamespace()) {
 		col = 4
@@ -112,7 +113,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	p.App().Status(model.FlashWarn, "Benchmark in progress...")
 	go func() {
 		if err := p.runBenchmark(); err != nil {
-			log.Error().Err(err).Msgf("Benchmark run failed")
+			slog.Error("Benchmark run failed", slogs.Error, err)
 		}
 	}()
 
@@ -120,7 +121,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *PortForward) runBenchmark() error {
-	log.Debug().Msg("Bench starting...")
+	slog.Debug("Bench starting...")
 
 	ct, err := p.App().Config.K9s.ActiveContext()
 	if err != nil {
@@ -128,7 +129,7 @@ func (p *PortForward) runBenchmark() error {
 	}
 	name := p.App().Config.K9s.ActiveContextName()
 	p.bench.Run(ct.ClusterName, name, func() {
-		log.Debug().Msgf("Benchmark %q Completed!", name)
+		slog.Debug("Benchmark Completed!", slogs.Name, name)
 		p.App().QueueUpdate(func() {
 			if p.bench.Canceled() {
 				p.App().Status(model.FlashInfo, "Benchmark canceled")

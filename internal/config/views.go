@@ -8,20 +8,27 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
+	"maps"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
-	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v2"
+	"github.com/derailed/k9s/internal/slogs"
+	"gopkg.in/yaml.v3"
 )
 
 // ViewConfigListener represents a view config listener.
 type ViewConfigListener interface {
 	// ViewSettingsChanged notifies listener the view configuration changed.
 	ViewSettingsChanged(*ViewSetting)
+
+	// GetNamespace return the view namespace
+	GetNamespace() string
 }
 
 // ViewSetting represents a view configuration.
@@ -50,13 +57,19 @@ func (v *ViewSetting) SortCol() (string, bool, error) {
 	return tt[0], tt[1] == "asc", nil
 }
 
+// Equals checks if two view settings are equal.
 func (v *ViewSetting) Equals(vs *ViewSetting) bool {
+	if v == nil && vs == nil {
+		return true
+	}
 	if v == nil || vs == nil {
 		return false
 	}
+
 	if c := slices.Compare(v.Columns, vs.Columns); c != 0 {
 		return false
 	}
+
 	return cmp.Compare(v.SortColumn, vs.SortColumn) == 0
 }
 
@@ -91,7 +104,10 @@ func (v *CustomView) Load(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.ViewsSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		slog.Warn("Validation failed. Please update your config and restart!",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 	}
 	var in CustomView
 	if err := yaml.Unmarshal(bb, &in); err != nil {
@@ -103,24 +119,95 @@ func (v *CustomView) Load(path string) error {
 	return nil
 }
 
+// AddListeners registers a new listener for various commands.
+func (v *CustomView) AddListeners(l ViewConfigListener, cmds ...string) {
+	for _, cmd := range cmds {
+		if cmd != "" {
+			v.listeners[cmd] = l
+		}
+	}
+	v.fireConfigChanged()
+}
+
 // AddListener registers a new listener.
-func (v *CustomView) AddListener(gvr string, l ViewConfigListener) {
-	v.listeners[gvr] = l
+func (v *CustomView) AddListener(cmd string, l ViewConfigListener) {
+	v.listeners[cmd] = l
 	v.fireConfigChanged()
 }
 
 // RemoveListener unregister a listener.
-func (v *CustomView) RemoveListener(gvr string) {
-	delete(v.listeners, gvr)
+func (v *CustomView) RemoveListener(l ViewConfigListener) {
+	for k, list := range v.listeners {
+		if list == l {
+			delete(v.listeners, k)
+		}
+	}
 }
 
 func (v *CustomView) fireConfigChanged() {
-	for gvr, list := range v.listeners {
-		if vs, ok := v.Views[gvr]; ok {
-			log.Debug().Msgf("Reloading custom view settings for %s", gvr)
-			list.ViewSettingsChanged(&vs)
-		} else {
-			list.ViewSettingsChanged(nil)
+	cmds := slices.Collect(maps.Keys(v.listeners))
+	slices.SortFunc(cmds, func(a, b string) int {
+		switch {
+		case strings.Contains(a, "/") && !strings.Contains(b, "/"):
+			return 1
+		case !strings.Contains(a, "/") && strings.Contains(b, "/"):
+			return -1
+		default:
+			return strings.Compare(a, b)
+		}
+	})
+	type tuple struct {
+		cmd string
+		vs  *ViewSetting
+	}
+	var victim tuple
+	for _, cmd := range cmds {
+		if vs := v.getVS(cmd, v.listeners[cmd].GetNamespace()); vs != nil {
+			slog.Debug("Reloading custom view settings", slogs.Command, cmd)
+			victim = tuple{cmd, vs}
+			break
+		}
+		victim = tuple{cmd, nil}
+	}
+	if victim.cmd != "" {
+		v.listeners[victim.cmd].ViewSettingsChanged(victim.vs)
+	}
+}
+
+func (v *CustomView) getVS(gvr, ns string) *ViewSetting {
+	if client.IsAllNamespaces(ns) {
+		ns = client.NamespaceAll
+	}
+	k := gvr
+	kk := slices.Collect(maps.Keys(v.Views))
+	slices.SortFunc(kk, func(s1, s2 string) int {
+		return strings.Compare(s1, s2)
+	})
+	slices.Reverse(kk)
+	for _, key := range kk {
+		if !strings.HasPrefix(key, gvr) {
+			continue
+		}
+
+		switch {
+		case strings.Contains(key, "@"):
+			tt := strings.Split(key, "@")
+			if len(tt) != 2 {
+				break
+			}
+			nsk := gvr
+			if ns != "" {
+				nsk += "@" + ns
+			}
+			if rx, err := regexp.Compile(tt[1]); err == nil && rx.MatchString(nsk) {
+				vs := v.Views[key]
+				return &vs
+			}
+		case key == k:
+			vs := v.Views[key]
+			return &vs
 		}
 	}
+
+	return nil
 }

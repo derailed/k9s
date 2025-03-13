@@ -6,11 +6,12 @@ package dao
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -102,7 +103,10 @@ func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
 	rows := make(render.Policies, 0, len(crs))
 	for _, cr := range crs {
 		if rbNs, ok := rbsMap["ClusterRole:"+cr.Name]; ok {
-			log.Debug().Msgf("Loading rules for clusterrole %q:%q", rbNs, cr.Name)
+			slog.Debug("Loading rules for clusterrole",
+				slogs.Namespace, rbNs,
+				slogs.ResName, cr.Name,
+			)
 			rows = append(rows, parseRules(rbNs, "CR:"+cr.Name, cr.Rules)...)
 		}
 	}
@@ -115,7 +119,10 @@ func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
 		if _, ok := rbsMap["Role:"+ro.Name]; !ok {
 			continue
 		}
-		log.Debug().Msgf("Loading rules for role %q:%q", ro.Namespace, ro.Name)
+		slog.Debug("Loading rules for role",
+			slogs.Namespace, ro.Namespace,
+			slogs.ResName, ro.Name,
+		)
 		rows = append(rows, parseRules(ro.Namespace, "RO:"+ro.Name, ro.Rules)...)
 	}
 
