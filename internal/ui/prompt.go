@@ -104,15 +104,13 @@ func NewPrompt(app *App, noIcons bool, styles *config.Styles) *Prompt {
 	p.SetDynamicColors(true)
 	p.SetBorder(true)
 	p.SetBorderPadding(0, 0, 1, 1)
-	p.SetBackgroundColor(styles.K9s.Prompt.BgColor.Color())
-	p.SetTextColor(styles.K9s.Prompt.FgColor.Color())
 	styles.AddListener(&p)
 	p.SetInputCapture(p.keyboard)
 
 	return &p
 }
 
-// SendKey sends an keyboard event (testing only!).
+// SendKey sends a keyboard event (testing only!).
 func (p *Prompt) SendKey(evt *tcell.EventKey) {
 	p.keyboard(evt)
 }
@@ -236,6 +234,7 @@ func (p *Prompt) write(text, suggest string) {
 	if suggest != "" {
 		txt += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
 	}
+	p.StylesChanged(p.styles)
 	fmt.Fprintf(p, defaultPrompt, p.icon, txt)
 }
 

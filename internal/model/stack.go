@@ -4,9 +4,11 @@
 package model
 
 import (
+	"fmt"
+	"log/slog"
 	"sync"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -188,9 +190,9 @@ func (s *Stack) notify(a StackAction, c Component) {
 
 // Dump prints out the stack.
 func (s *Stack) Dump() {
-	log.Debug().Msgf("--- Stack Dump %p---", s)
+	slog.Debug("Stack Dump", slogs.Stack, fmt.Sprintf("%p", s))
 	for i, c := range s.components {
-		log.Debug().Msgf("%d -- %s -- %#v", i, c.Name(), c)
+		slog.Debug(fmt.Sprintf("%d -- %s -- %#v", i, c.Name(), c))
 	}
-	log.Debug().Msg("------------------")
+	slog.Debug("------------------")
 }

@@ -51,7 +51,7 @@ func (Rbac) Header(ns string) model1.Header {
 	)
 	h = append(h, rbacVerbHeader()...)
 
-	return append(h, model1.HeaderColumn{Name: "VALID", Wide: true})
+	return append(h, model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}})
 }
 
 // Render renders a K8s resource to screen.

@@ -15,7 +15,7 @@ import (
 
 // Event renders a K8s Event to screen.
 type Event struct {
-	Generic
+	Table
 }
 
 func (*Event) IsGeneric() bool {
@@ -41,13 +41,15 @@ var ageCols = map[string]struct{}{
 
 var wideCols = map[string]struct{}{
 	"SUBOBJECT":  {},
+	"COUNT":      {},
 	"SOURCE":     {},
 	"FIRST SEEN": {},
 	"NAME":       {},
 	"MESSAGE":    {},
 }
 
-func (e *Event) Header(ns string) model1.Header {
+// Header returns a header row.
+func (e *Event) Header(_ string) model1.Header {
 	if e.table == nil {
 		return model1.Header{}
 	}
@@ -78,9 +80,6 @@ func (e *Event) Render(o interface{}, ns string, r *model1.Row) error {
 		return err
 	}
 
-	if !ok {
-		return fmt.Errorf("expecting row 0 to be a string but got %T", row.Cells[0])
-	}
 	r.ID = client.FQN(nns, name)
 	r.Fields = make(model1.Fields, 0, len(e.Header(ns)))
 	r.Fields = append(r.Fields, nns)

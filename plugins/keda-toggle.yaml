@@ -1,0 +1,26 @@
+plugins:
+  toggle-keda:
+    shortCut: Ctrl-N
+    override: false
+    overwriteOutput: true
+    confirm: false
+    dangerous: true
+    description: Toggle autoscaling on keda scaledobject
+    scopes:
+    - scaledobjects
+    command: bash
+    background: true
+    args:
+    - -c
+    - |
+      ANNOTATION="autoscaling.keda.sh/paused-replicas"
+
+      if kubectl get scaledobject $NAME -n $NAMESPACE -o yaml | grep -q "$ANNOTATION: \"0\""; then
+        # If annotation found, remove it
+        kubectl annotate scaledobject $NAME "$ANNOTATION"- -n $NAMESPACE --context $CONTEXT >/dev/null && echo "Keda autoscaling for $NAME enabled"
+      else
+        # If annotation not found, add it
+        kubectl annotate scaledobject $NAME "$ANNOTATION"=0 -n $NAMESPACE --context $CONTEXT >/dev/null && echo "Keda autoscaling for $NAME disabled"
+      fi
+
+

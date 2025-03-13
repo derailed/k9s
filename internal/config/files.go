@@ -7,13 +7,14 @@ import (
 	_ "embed"
 	"errors"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 
 	"github.com/adrg/xdg"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -126,19 +127,31 @@ func initK9sEnvLocs() error {
 
 	AppDumpsDir = filepath.Join(AppConfigDir, "screen-dumps")
 	if err := data.EnsureFullPath(AppDumpsDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("Unable to create screen-dumps dir: %s", AppDumpsDir)
+		slog.Warn("Unable to create screen-dumps dir",
+			slogs.Dir, AppDumpsDir,
+			slogs.Error, err,
+		)
 	}
 	AppBenchmarksDir = filepath.Join(AppConfigDir, "benchmarks")
 	if err := data.EnsureFullPath(AppBenchmarksDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("Unable to create benchmarks dir: %s", AppBenchmarksDir)
+		slog.Warn("Unable to create benchmarks dir",
+			slogs.Dir, AppBenchmarksDir,
+			slogs.Error, err,
+		)
 	}
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
 	if err := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("Unable to create skins dir: %s", AppSkinsDir)
+		slog.Warn("Unable to create skins dir",
+			slogs.Dir, AppSkinsDir,
+			slogs.Error, err,
+		)
 	}
 	AppContextsDir = filepath.Join(AppConfigDir, "clusters")
 	if err := data.EnsureFullPath(AppContextsDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("Unable to create clusters dir: %s", AppContextsDir)
+		slog.Warn("Unable to create clusters dir",
+			slogs.Dir, AppContextsDir,
+			slogs.Error, err,
+		)
 	}
 
 	AppConfigFile = filepath.Join(AppConfigDir, data.MainConfigFile)
@@ -170,7 +183,7 @@ func initXDGLocs() error {
 
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
 	if err := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("No skins dir detected")
+		slog.Warn("No skins dir detected", slogs.Error, err)
 	}
 
 	AppDumpsDir, err = xdg.StateFile(filepath.Join(AppName, "screen-dumps"))
@@ -180,7 +193,10 @@ func initXDGLocs() error {
 
 	AppBenchmarksDir, err = xdg.StateFile(filepath.Join(AppName, "benchmarks"))
 	if err != nil {
-		log.Warn().Err(err).Msgf("No benchmarks dir detected")
+		slog.Warn("No benchmarks dir detected",
+			slogs.Dir, AppBenchmarksDir,
+			slogs.Error, err,
+		)
 	}
 
 	dataDir, err := xdg.DataFile(AppName)
@@ -189,7 +205,10 @@ func initXDGLocs() error {
 	}
 	AppContextsDir = filepath.Join(dataDir, "clusters")
 	if err := data.EnsureFullPath(AppContextsDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("No context dir detected")
+		slog.Warn("No context dir detected",
+			slogs.Dir, AppContextsDir,
+			slogs.Error, err,
+		)
 	}
 
 	return nil

@@ -6,6 +6,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -13,9 +14,10 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model1"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -41,6 +43,7 @@ type Table struct {
 	instance    string
 	labelFilter string
 	mx          sync.RWMutex
+	vs          *config.ViewSetting
 }
 
 // NewTable returns a new table model.
@@ -49,6 +52,20 @@ func NewTable(gvr client.GVR) *Table {
 		gvr:         gvr,
 		data:        model1.NewTableData(gvr),
 		refreshRate: 2 * time.Second,
+	}
+}
+
+func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
+	t.mx.Lock()
+	{
+		t.vs = vs
+	}
+	t.mx.Unlock()
+
+	if ctx != context.Background() {
+		if err := t.reconcile(ctx); err != nil {
+			slog.Error("Refresh failed", slogs.GVR, t.gvr)
+		}
 	}
 }
 
@@ -192,10 +209,14 @@ func (t *Table) updater(ctx context.Context) {
 		case <-time.After(rate):
 			rate = t.refreshRate
 			err := backoff.Retry(func() error {
-				return t.refresh(ctx)
+				if err := t.refresh(ctx); err != nil {
+					slog.Error("Refresh failed", slogs.GVR, t.gvr)
+					return err
+				}
+				return nil
 			}, backoff.WithContext(bf, ctx))
 			if err != nil {
-				log.Warn().Err(err).Msgf("reconciler exited")
+				slog.Warn("Reconciler exited", slogs.Error, err)
 				t.fireTableLoadFailed(err)
 				return
 			}
@@ -204,12 +225,8 @@ func (t *Table) updater(ctx context.Context) {
 }
 
 func (t *Table) refresh(ctx context.Context) error {
-	defer func(ti time.Time) {
-		log.Trace().Msgf("Refresh [%s](%d) %s ", t.gvr, t.data.RowCount(), time.Since(ti))
-	}(time.Now())
-
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return nil
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)
@@ -247,6 +264,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 		err error
 	)
 	meta := resourceMeta(t.gvr)
+	meta.DAO.SetIncludeObject(true)
 	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	if t.instance == "" {
 		oo, err = t.list(ctx, meta.DAO)
@@ -257,6 +275,8 @@ func (t *Table) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	r := meta.Renderer
+	r.SetViewSetting(t.vs)
 
 	return t.data.Reconcile(ctx, meta.Renderer, oo)
 }

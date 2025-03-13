@@ -21,28 +21,50 @@ type NetworkPolicy struct {
 }
 
 // Header returns a header row.
-func (NetworkPolicy) Header(ns string) model1.Header {
+func (p NetworkPolicy) Header(_ string) model1.Header {
+	return p.doHeader(p.defaultHeader())
+}
+
+func (NetworkPolicy) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "ING-SELECTOR", Wide: true},
-		model1.HeaderColumn{Name: "ING-PORTS"},
-		model1.HeaderColumn{Name: "ING-BLOCK"},
-		model1.HeaderColumn{Name: "EGR-SELECTOR", Wide: true},
-		model1.HeaderColumn{Name: "EGR-PORTS"},
-		model1.HeaderColumn{Name: "EGR-BLOCK"},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "POD-SELECTOR"},
+		model1.HeaderColumn{Name: "ING-SELECTOR", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "ING-PORTS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "ING-BLOCK", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "EGR-SELECTOR", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "EGR-PORTS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "EGR-BLOCK", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n NetworkPolicy) Render(o interface{}, ns string, r *model1.Row) error {
+func (p NetworkPolicy) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected NetworkPolicy, but got %T", o)
 	}
+	if err := p.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if p.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := p.specs.realize(raw, p.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (n NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var np netv1.NetworkPolicy
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &np)
 	if err != nil {
@@ -52,10 +74,18 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *model1.Row) error {
 	ip, is, ib := ingress(np.Spec.Ingress)
 	ep, es, eb := egress(np.Spec.Egress)
 
+	var podSel string
+	if len(np.Spec.PodSelector.MatchLabels) > 0 {
+		podSel = mapToStr(np.Spec.PodSelector.MatchLabels)
+	}
+	if len(np.Spec.PodSelector.MatchExpressions) > 0 {
+		podSel += "::" + expToStr(np.Spec.PodSelector.MatchExpressions)
+	}
 	r.ID = client.MetaFQN(np.ObjectMeta)
 	r.Fields = model1.Fields{
 		np.Namespace,
 		np.Name,
+		podSel,
 		is,
 		ip,
 		ib,

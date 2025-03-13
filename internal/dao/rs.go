@@ -80,7 +80,7 @@ func controllerInfo(rs *appsv1.ReplicaSet) (string, string, string, error) {
 		}
 		return ref.Name, ref.Kind, group, nil
 	}
-	return "", "", "", fmt.Errorf("Unable to find controller for ReplicaSet %s", rs.ObjectMeta.Name)
+	return "", "", "", fmt.Errorf("unable to find controller for replicaset: %s", rs.ObjectMeta.Name)
 }
 
 // Rollback reverses the last deployment.

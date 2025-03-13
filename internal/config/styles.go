@@ -11,13 +11,34 @@ import (
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // StyleListener represents a skin's listener.
 type StyleListener interface {
 	// StylesChanged notifies listener the skin changed.
 	StylesChanged(*Styles)
+}
+
+type TextStyle string
+
+const (
+	TextStyleNormal TextStyle = "normal"
+	TextStyleBold   TextStyle = "bold"
+	TextStyleDim    TextStyle = "dim"
+)
+
+func (ts TextStyle) ToShortString() string {
+	switch ts {
+	case TextStyleNormal:
+		return "-"
+	case TextStyleBold:
+		return "b"
+	case TextStyleDim:
+		return "d"
+	default:
+		return "d"
+	}
 }
 
 type (
@@ -200,9 +221,10 @@ type (
 
 	// Menu tracks menu styles.
 	Menu struct {
-		FgColor     Color `json:"fgColor" yaml:"fgColor"`
-		KeyColor    Color `json:"keyColor" yaml:"keyColor"`
-		NumKeyColor Color `json:"numKeyColor" yaml:"numKeyColor"`
+		FgColor     Color     `json:"fgColor" yaml:"fgColor"`
+		FgStyle     TextStyle `json:"fgStyle" yaml:"fgStyle"`
+		KeyColor    Color     `json:"keyColor" yaml:"keyColor"`
+		NumKeyColor Color     `json:"numKeyColor" yaml:"numKeyColor"`
 	}
 
 	// Charts tracks charts styles.

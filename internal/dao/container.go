@@ -6,6 +6,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -20,6 +21,12 @@ import (
 var (
 	_ Accessor = (*Container)(nil)
 	_ Loggable = (*Container)(nil)
+)
+
+const (
+	initIDX = "I"
+	mainIDX = "M"
+	ephIDX  = "E"
 )
 
 // Container represents a pod's container dao.
@@ -46,12 +53,15 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 	if err != nil {
 		return nil, err
 	}
-	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
-	for _, co := range po.Spec.InitContainers {
-		res = append(res, makeContainerRes(co, po, cmx[co.Name], true))
+	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers)+len(po.Spec.EphemeralContainers))
+	for i, co := range po.Spec.InitContainers {
+		res = append(res, makeContainerRes(initIDX, i, co, po, cmx[co.Name]))
 	}
-	for _, co := range po.Spec.Containers {
-		res = append(res, makeContainerRes(co, po, cmx[co.Name], false))
+	for i, co := range po.Spec.Containers {
+		res = append(res, makeContainerRes(mainIDX, i, co, po, cmx[co.Name]))
+	}
+	for i, co := range po.Spec.EphemeralContainers {
+		res = append(res, makeContainerRes(ephIDX, i, v1.Container(co.EphemeralContainerCommon), po, cmx[co.Name]))
 	}
 
 	return res, nil
@@ -68,25 +78,35 @@ func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeContainerRes(co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics, isInit bool) render.ContainerRes {
+func makeContainerRes(kind string, idx int, co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics) render.ContainerRes {
 	return render.ContainerRes{
+		Idx:       kind + strconv.Itoa(idx+1),
 		Container: &co,
-		Status:    getContainerStatus(co.Name, po.Status),
+		Status:    getContainerStatus(kind, co.Name, po.Status),
 		MX:        cmx,
-		IsInit:    isInit,
 		Age:       po.GetCreationTimestamp(),
 	}
 }
 
-func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
-	for _, c := range status.ContainerStatuses {
-		if c.Name == co {
-			return &c
+func getContainerStatus(kind string, name string, status v1.PodStatus) *v1.ContainerStatus {
+	switch kind {
+	case mainIDX:
+		for _, s := range status.ContainerStatuses {
+			if s.Name == name {
+				return &s
+			}
 		}
-	}
-	for _, c := range status.InitContainerStatuses {
-		if c.Name == co {
-			return &c
+	case initIDX:
+		for _, s := range status.InitContainerStatuses {
+			if s.Name == name {
+				return &s
+			}
+		}
+	case ephIDX:
+		for _, s := range status.EphemeralContainerStatuses {
+			if s.Name == name {
+				return &s
+			}
 		}
 	}
 
@@ -96,7 +116,7 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
 	o, err := c.getFactory().Get("v1/pods", fqn, true, labels.Everything())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to locate pod %q: %w", fqn, err)
 	}
 	var po v1.Pod
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po)

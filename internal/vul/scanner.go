@@ -7,28 +7,28 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
-
-	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog/log"
 
 	"github.com/anchore/clio"
 	"github.com/anchore/grype/cmd/grype/cli/options"
 	"github.com/anchore/grype/grype"
-	"github.com/anchore/grype/grype/db"
-	"github.com/anchore/grype/grype/matcher"
-	"github.com/anchore/grype/grype/matcher/dotnet"
-	"github.com/anchore/grype/grype/matcher/golang"
-	"github.com/anchore/grype/grype/matcher/java"
-	"github.com/anchore/grype/grype/matcher/javascript"
-	"github.com/anchore/grype/grype/matcher/python"
-	"github.com/anchore/grype/grype/matcher/ruby"
-	"github.com/anchore/grype/grype/matcher/stock"
+	"github.com/anchore/grype/grype/db/legacy/distribution"
+	v5 "github.com/anchore/grype/grype/db/v5"
+	"github.com/anchore/grype/grype/db/v5/matcher"
+	"github.com/anchore/grype/grype/db/v5/matcher/dotnet"
+	"github.com/anchore/grype/grype/db/v5/matcher/golang"
+	"github.com/anchore/grype/grype/db/v5/matcher/java"
+	"github.com/anchore/grype/grype/db/v5/matcher/javascript"
+	"github.com/anchore/grype/grype/db/v5/matcher/python"
+	"github.com/anchore/grype/grype/db/v5/matcher/ruby"
+	"github.com/anchore/grype/grype/db/v5/matcher/stock"
 	"github.com/anchore/grype/grype/pkg"
-	"github.com/anchore/grype/grype/store"
 	"github.com/anchore/grype/grype/vex"
 	"github.com/anchore/syft/syft"
+	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,21 +41,22 @@ const (
 )
 
 type imageScanner struct {
-	store       *store.Store
-	dbCloser    *db.Closer
-	dbStatus    *db.Status
+	store       *v5.ProviderStore
+	dbStatus    *distribution.Status
 	opts        *options.Grype
 	scans       Scans
 	mx          sync.RWMutex
 	initialized bool
 	config      config.ImageScans
+	log         *slog.Logger
 }
 
 // NewImageScanner returns a new instance.
-func NewImageScanner(cfg config.ImageScans) *imageScanner {
+func NewImageScanner(cfg config.ImageScans, l *slog.Logger) *imageScanner {
 	return &imageScanner{
 		scans:  make(Scans),
 		config: cfg,
+		log:    l.With(slogs.Subsys, "vul"),
 	}
 }
 
@@ -90,17 +91,17 @@ func (s *imageScanner) Init(name, version string) {
 	s.opts.GenerateMissingCPEs = true
 
 	var err error
-	s.store, s.dbStatus, s.dbCloser, err = grype.LoadVulnerabilityDB(
-		s.opts.DB.ToCuratorConfig(),
+	s.store, s.dbStatus, err = grype.LoadVulnerabilityDB(
+		s.opts.DB.ToLegacyCuratorConfig(),
 		s.opts.DB.AutoUpdate,
 	)
 	if err != nil {
-		log.Error().Err(err).Msgf("VulDb load failed")
+		s.log.Error("VulDb load failed", slogs.Error, err)
 		return
 	}
 
 	if err := validateDBLoad(err, s.dbStatus); err != nil {
-		log.Error().Err(err).Msgf("VulDb validate failed")
+		s.log.Error("VulDb validate failed", slogs.Error, err)
 		return
 	}
 
@@ -112,9 +113,9 @@ func (s *imageScanner) Stop() {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 
-	if s.dbCloser != nil {
-		s.dbCloser.Close()
-		s.dbCloser = nil
+	if s.store != nil {
+		s.store.Close()
+		s.store = nil
 	}
 }
 
@@ -152,19 +153,25 @@ func (s *imageScanner) Enqueue(ctx context.Context, images ...string) {
 }
 
 func (s *imageScanner) scanWorker(ctx context.Context, img string) {
-	defer log.Debug().Msgf("ScanWorker bailing out!")
+	defer s.log.Debug("ScanWorker bailing out!")
 
-	log.Debug().Msgf("ScanWorker processing: %q", img)
+	s.log.Debug("ScanWorker processing image", slogs.Image, img)
 	sc := newScan(img)
 	s.setScan(img, sc)
 	if err := s.scan(ctx, img, sc); err != nil {
-		log.Warn().Err(err).Msgf("Scan failed for img %s --", img)
+		s.log.Warn("Scan failed for image",
+			slogs.Image, img,
+			slogs.Error, err,
+		)
 	}
 }
 
-func (s *imageScanner) scan(ctx context.Context, img string, sc *Scan) error {
+func (s *imageScanner) scan(_ context.Context, img string, sc *Scan) error {
 	defer func(t time.Time) {
-		log.Debug().Msgf("ScanTime %q: %v", img, time.Since(t))
+		s.log.Debug("Time to run vulscan",
+			slogs.Image, img,
+			slogs.Elapsed, time.Since(t),
+		)
 	}(time.Now())
 
 	var errs error
@@ -232,7 +239,7 @@ func getMatchers(opts *options.Grype) []matcher.Matcher {
 	)
 }
 
-func validateDBLoad(loadErr error, status *db.Status) error {
+func validateDBLoad(loadErr error, status *distribution.Status) error {
 	if loadErr != nil {
 		return fmt.Errorf("failed to load vulnerability db: %w", loadErr)
 	}

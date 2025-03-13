@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/popeye/pkg/config"
 )
 
 // Section represents an xray renderer.
@@ -59,15 +58,15 @@ func (*Section) outcomeRefs(parent *TreeNode, section render.Section) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func colorize(s string, l config.Level) string {
+func colorize(s string, l render.Level) string {
 	c := "green"
 	// nolint:exhaustive
 	switch l {
-	case config.ErrorLevel:
+	case render.ErrorLevel:
 		c = "red"
-	case config.WarnLevel:
+	case render.WarnLevel:
 		c = "orange"
-	case config.InfoLevel:
+	case render.InfoLevel:
 		c = "blue"
 	}
 	return fmt.Sprintf("[%s::]%s", c, s)

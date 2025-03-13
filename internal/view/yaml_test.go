@@ -56,6 +56,10 @@ func TestYaml(t *testing.T) {
 			"Message: Pod The node was low on resource: [DiskPressure].",
 			"[#4682b4::b]Message[#ffffff::-]: [#ffefd5::]Pod The node was low on resource: [DiskPressure[].",
 		},
+		{
+			`data: "<<<"`,
+			`[#4682b4::b]data[#ffffff::-]: [#ffefd5::]"<<<"`,
+		},
 	}
 
 	s := config.NewStyles()

@@ -6,6 +6,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/derailed/k9s/internal"
@@ -14,12 +15,10 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 const maxTruncate = 50
@@ -37,12 +36,12 @@ type (
 
 // Table represents tabular data.
 type Table struct {
-	gvr        client.GVR
-	sortCol    model1.SortColumn
-	manualSort bool
-	Path       string
-	Extras     string
 	*SelectTable
+	gvr         client.GVR
+	sortCol     model1.SortColumn
+	manualSort  bool
+	Path        string
+	Extras      string
 	actions     *KeyActions
 	cmdBuff     *model.FishBuff
 	styles      *config.Styles
@@ -54,6 +53,8 @@ type Table struct {
 	hasMetrics  bool
 	ctx         context.Context
 	mx          sync.RWMutex
+	readOnly    bool
+	noIcon      bool
 }
 
 // NewTable returns a new table view.
@@ -64,11 +65,28 @@ func NewTable(gvr client.GVR) *Table {
 			model: model.NewTable(gvr),
 			marks: make(map[string]struct{}),
 		},
+		ctx:     context.Background(),
 		gvr:     gvr,
 		actions: NewKeyActions(),
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: model1.SortColumn{ASC: true},
 	}
+}
+
+// SetNoIcon toggles no icon mode.
+func (t *Table) SetNoIcon(b bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.noIcon = b
+}
+
+// SetReadOnly toggles read-only mode.
+func (t *Table) SetReadOnly(ro bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.readOnly = ro
 }
 
 func (t *Table) setSortCol(sc model1.SortColumn) {
@@ -106,19 +124,22 @@ func (t *Table) getMSort() bool {
 	return t.manualSort
 }
 
-func (t *Table) setVs(vs *config.ViewSetting) bool {
+// SetViewSetting sets custom view config is present.
+func (t *Table) SetViewSetting(vs *config.ViewSetting) bool {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
 	if !t.viewSetting.Equals(vs) {
 		t.viewSetting = vs
+		t.model.SetViewSetting(t.ctx, vs)
 		return true
 	}
 
 	return false
 }
 
-func (t *Table) getVs() *config.ViewSetting {
+// GetViewSetting return current view settings if any.
+func (t *Table) GetViewSetting() *config.ViewSetting {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
@@ -143,9 +164,6 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetBackgroundColor(tcell.ColorDefault)
 	t.Select(1, 0)
-	if cfg, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView); ok && cfg != nil {
-		cfg.AddListener(t.GVR().String(), t)
-	}
 	t.styles = mustExtractStyles(ctx)
 	t.StylesChanged(t.styles)
 }
@@ -154,9 +172,15 @@ func (t *Table) Init(ctx context.Context) {
 func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
-func (t *Table) ViewSettingsChanged(vs config.ViewSetting) {
-	if t.setVs(&vs) {
-		t.setMSort(false)
+func (t *Table) ViewSettingsChanged(vs *config.ViewSetting) {
+	if t.SetViewSetting(vs) {
+		if vs == nil {
+			if !t.getMSort() && !t.sortCol.IsSet() {
+				t.setSortCol(model1.SortColumn{})
+			}
+		} else {
+			t.setMSort(false)
+		}
 		t.Refresh()
 	}
 }
@@ -264,6 +288,14 @@ func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableDat
 	return t.doUpdate(t.filtered(data))
 }
 
+func (t *Table) GetNamespace() string {
+	if t.GetModel() != nil {
+		return t.GetModel().GetNamespace()
+	}
+
+	return client.NamespaceAll
+}
+
 func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	if client.IsAllNamespaces(data.GetNamespace()) {
 		t.actions.Add(
@@ -274,10 +306,9 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	cdata, sortCol := data.Customize(t.getVs(), t.getSortCol(), t.getMSort(), true)
-	t.setSortCol(sortCol)
+	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
 
-	return cdata
+	return data
 }
 
 func (t *Table) UpdateUI(cdata, data *model1.TableData) {
@@ -287,7 +318,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 
 	var col int
 	for _, h := range cdata.Header() {
-		if !t.wide && h.Wide {
+		if h.Hide || (!t.wide && h.Wide) {
 			continue
 		}
 		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
@@ -313,7 +344,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	cdata.RowsRange(func(row int, re model1.RowEvent) bool {
 		ore, ok := data.FindRow(re.Row.ID)
 		if !ok {
-			log.Error().Msgf("unable to find original re: %q", re.Row.ID)
+			slog.Error("Unable to find original row event", slogs.RowID, re.Row.ID)
 			return true
 		}
 		t.buildRow(row+1, re, ore, cdata.Header(), pads)
@@ -336,10 +367,14 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 	ns := t.GetModel().GetNamespace()
 	for c, field := range re.Row.Fields {
 		if c >= len(h) {
-			log.Error().Msgf("field/header overflow detected for %q -- %d::%d. Check your mappings!", t.GVR(), c, len(h))
+			slog.Error("Field/header overflow detected. Check your mappings!",
+				slogs.GVR, t.GVR(),
+				slogs.Cell, c,
+				slogs.HeaderSize, len(h),
+			)
 			continue
 		}
-		if !t.wide && h[c].Wide {
+		if h[c].Hide || (!t.wide && h[c].Wide) {
 			continue
 		}
 
@@ -354,7 +389,14 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 		}
 
 		if !re.Deltas.IsBlank() && !h.IsTimeCol(c) {
-			field += Deltas(re.Deltas[c], field)
+			var old string
+			if c < len(ore.Deltas) {
+				old = ore.Deltas[c]
+			}
+			if c < len(re.Deltas) {
+				old = re.Deltas[c]
+			}
+			field += Deltas(old, field)
 		}
 
 		if h[c].Decorator != nil {
@@ -451,6 +493,7 @@ func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 	sortCol := h.Name == sc.Name
 	c := tview.NewTableCell(sortIndicator(sortCol, sc.ASC, t.styles.Table(), h.Name))
 	c.SetExpansion(1)
+	c.SetSelectable(false)
 	c.SetAlign(h.Align)
 	t.SetCell(0, col, c)
 }
@@ -487,7 +530,6 @@ func (t *Table) styleTitle() string {
 		rc--
 	}
 
-	base := cases.Title(language.Und, cases.NoLower).String(t.gvr.R())
 	ns := t.GetModel().GetNamespace()
 	if client.IsClusterWide(ns) || ns == client.NotNamespaced {
 		ns = client.NamespaceAll
@@ -504,11 +546,15 @@ func (t *Table) styleTitle() string {
 	if t.Extras != "" {
 		ns = t.Extras
 	}
+
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, base, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, t.gvr, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
+	}
+	if ic := ROIndicator(t.readOnly, t.noIcon); ic != "" {
+		title = " " + ic + title
 	}
 
 	buff := t.cmdBuff.GetText()
@@ -523,4 +569,17 @@ func (t *Table) styleTitle() string {
 	}
 
 	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())
+}
+
+// ROIndicator returns an icon showing whether the session is in readonly mode or not.
+func ROIndicator(ro, noIC bool) string {
+	if noIC {
+		return ""
+	}
+
+	if ro {
+		return lockedIC
+	}
+
+	return unlockedIC
 }

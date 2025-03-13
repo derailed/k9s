@@ -5,16 +5,17 @@ package render
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	"github.com/mattn/go-runewidth"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	v1 "k8s.io/api/core/v1"
@@ -72,7 +73,7 @@ func AsStatus(err error) string {
 func asSelector(s *metav1.LabelSelector) string {
 	sel, err := metav1.LabelSelectorAsSelector(s)
 	if err != nil {
-		log.Error().Err(err).Msg("Selector conversion failed")
+		slog.Error("Selector conversion failed", slogs.Error, err)
 		return NAValue
 	}
 
@@ -223,7 +224,7 @@ func mapToStr(m map[string]string) string {
 	for i, k := range kk {
 		bb = append(bb, k+"="+m[k]...)
 		if i < len(kk)-1 {
-			bb = append(bb, ' ')
+			bb = append(bb, ',')
 		}
 	}
 
@@ -292,16 +293,6 @@ func strPtrToStr(s *string) string {
 	return *s
 }
 
-// // Check if string is in a string list.
-// func in(ll []string, s string) bool {
-// 	for _, l := range ll {
-// 		if l == s {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
 // Pad a string up to the given length or truncates if greater than length.
 func Pad(s string, width int) string {
 	if len(s) == width {
@@ -314,30 +305,3 @@ func Pad(s string, width int) string {
 
 	return s + strings.Repeat(" ", width-len(s))
 }
-
-// // Converts labels string to map.
-// func labelize(labels string) map[string]string {
-// 	ll := strings.Split(labels, ",")
-// 	data := make(map[string]string, len(ll))
-
-// 	for _, l := range ll {
-// 		tokens := strings.Split(l, "=")
-// 		if len(tokens) == 2 {
-// 			data[tokens[0]] = tokens[1]
-// 		}
-// 	}
-
-// 	return data
-// }
-
-// func sortLabels(m map[string]string) (keys, vals []string) {
-// 	for k := range m {
-// 		keys = append(keys, k)
-// 	}
-// 	sort.Strings(keys)
-// 	for _, k := range keys {
-// 		vals = append(vals, m[k])
-// 	}
-
-// 	return
-// }

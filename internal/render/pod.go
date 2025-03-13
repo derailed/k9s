@@ -8,17 +8,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
-
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/model1"
 )
 
 const (
@@ -48,7 +48,14 @@ const (
 
 // Pod renders a K8s Pod to screen.
 type Pod struct {
-	Base
+	*Base
+}
+
+// NewPod returns a new instance.
+func NewPod() *Pod {
+	return &Pod{
+		Base: new(Base),
+	}
 }
 
 // ColorerFunc colors a resource row.
@@ -83,31 +90,37 @@ func (p Pod) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (p Pod) Header(ns string) model1.Header {
+func (p Pod) Header(_ string) model1.Header {
+	return p.doHeader(p.defaultHeader())
+}
+
+func (Pod) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
 		model1.HeaderColumn{Name: "PF"},
 		model1.HeaderColumn{Name: "READY"},
 		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight, Wide: true},
-		model1.HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight, Wide: true},
-		model1.HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
-		model1.HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "LAST RESTART", Attrs: model1.Attrs{Align: tview.AlignRight, Time: true, Wide: true}},
+		model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
+		model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
+		model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+		model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 		model1.HeaderColumn{Name: "IP"},
 		model1.HeaderColumn{Name: "NODE"},
-		model1.HeaderColumn{Name: "NOMINATED NODE", Wide: true},
-		model1.HeaderColumn{Name: "READINESS GATES", Wide: true},
-		model1.HeaderColumn{Name: "QOS", Wide: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "SERVICE-ACCOUNT", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "NOMINATED NODE", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "READINESS GATES", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "QOS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
@@ -117,7 +130,24 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	if !ok {
 		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
 	}
+	if err := p.defaultRow(pwm, row); err != nil {
+		return err
+	}
+	if p.specs.isEmpty() {
+		return nil
+	}
 
+	// !BOZO!! Call header 2 times
+	cols, err := p.specs.realize(pwm.Raw, p.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (p Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	var po v1.Pod
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object, &po); err != nil {
 		return err
@@ -127,15 +157,16 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	_, _, irc := p.Statuses(ics)
 	cs := po.Status.ContainerStatuses
 	cr, _, rc := p.Statuses(cs)
+	lr := p.lastRestart(cs)
 
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
 		ccmx = pwm.MX.Containers
 	}
-	c, r := gatherCoMX(po.Spec.Containers, ccmx)
+	c, r := gatherCoMX(&po.Spec, ccmx)
 	phase := p.Phase(&po)
-	row.ID = client.MetaFQN(po.ObjectMeta)
 
+	row.ID = client.MetaFQN(po.ObjectMeta)
 	row.Fields = model1.Fields{
 		po.Namespace,
 		po.Name,
@@ -144,6 +175,7 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
 		phase,
 		strconv.Itoa(rc + irc),
+		ToAge(lr),
 		toMc(c.cpu),
 		toMi(c.mem),
 		toMc(r.cpu) + ":" + toMc(r.lcpu),
@@ -154,6 +186,7 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 		client.ToPercentageStr(c.mem, r.lmem),
 		na(po.Status.PodIP),
 		na(po.Spec.NodeName),
+		na(po.Spec.ServiceAccountName),
 		asNominated(po.Status.NominatedNodeName),
 		asReadinessGate(po),
 		p.mapQOS(po.Status.QOSClass),
@@ -171,6 +204,9 @@ func (p Pod) diagnose(phase string, cr, ct int) error {
 	}
 	if cr != ct || ct == 0 {
 		return fmt.Errorf("container ready check failed: %d of %d", cr, ct)
+	}
+	if phase == Terminating {
+		return fmt.Errorf("pod is terminating")
 	}
 
 	return nil
@@ -191,7 +227,7 @@ func asReadinessGate(pod v1.Pod) string {
 		return MissingValue
 	}
 
-	trueConditions := 0
+	var trueConditions int
 	for _, readinessGate := range pod.Spec.ReadinessGates {
 		conditionType := readinessGate.ConditionType
 		for _, condition := range pod.Status.Conditions {
@@ -223,7 +259,11 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 	return p
 }
 
-func gatherCoMX(cc []v1.Container, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
+func gatherCoMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
+	cc := make([]v1.Container, 0, len(spec.InitContainers)+len(spec.Containers))
+	cc = append(cc, filterSidecarCO(spec.InitContainers)...)
+	cc = append(cc, spec.Containers...)
+
 	rcpu, rmem := cosRequests(cc)
 	r.cpu, r.mem = rcpu.MilliValue(), rmem.Value()
 
@@ -241,7 +281,7 @@ func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	for _, c := range cc {
 		limits := c.Resources.Limits
 		if len(limits) == 0 {
-			return resource.Quantity{}, resource.Quantity{}
+			continue
 		}
 		if limits.Cpu() != nil {
 			cpu.Add(*limits.Cpu())
@@ -250,6 +290,7 @@ func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 			mem.Add(*limits.Memory())
 		}
 	}
+
 	return *cpu, *mem
 }
 
@@ -307,6 +348,20 @@ func (*Pod) Statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 		rc += int(c.RestartCount)
 	}
 
+	return
+}
+
+// lastRestart returns the last container restart time.
+func (*Pod) lastRestart(ss []v1.ContainerStatus) (latest metav1.Time) {
+	for _, c := range ss {
+		if c.LastTerminationState.Terminated == nil {
+			continue
+		}
+		ts := c.LastTerminationState.Terminated.FinishedAt
+		if latest.IsZero() || ts.After(latest.Time) {
+			latest = ts
+		}
+	}
 	return
 }
 
@@ -401,7 +456,7 @@ func checkInitContainerStatus(cs v1.ContainerStatus, count, initCount int, resta
 	return "Init:" + strconv.Itoa(count) + "/" + strconv.Itoa(initCount)
 }
 
-// PosStatus computes pod status.
+// PodStatus computes pod status.
 func PodStatus(pod *v1.Pod) string {
 	reason := string(pod.Status.Phase)
 	if pod.Status.Reason != "" {
@@ -489,4 +544,15 @@ func hasPodReadyCondition(conditions []v1.PodCondition) bool {
 
 func restartableInitCO(p *v1.ContainerRestartPolicy) bool {
 	return p != nil && *p == v1.ContainerRestartPolicyAlways
+}
+
+func filterSidecarCO(cc []v1.Container) []v1.Container {
+	rcc := make([]v1.Container, 0, len(cc))
+	for _, c := range cc {
+		if c.RestartPolicy != nil && *c.RestartPolicy == v1.ContainerRestartPolicyAlways {
+			rcc = append(rcc, c)
+		}
+	}
+
+	return rcc
 }

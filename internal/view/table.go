@@ -5,6 +5,7 @@ package view
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
@@ -13,9 +14,10 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // Table represents a table viewer.
@@ -26,6 +28,7 @@ type Table struct {
 	enterFn    EnterFunc
 	envFn      EnvFunc
 	bindKeysFn []BindKeysFunc
+	command    *cmd.Interpreter
 }
 
 // NewTable returns a new viewer.
@@ -47,21 +50,25 @@ func (t *Table) Init(ctx context.Context) (err error) {
 		ctx = context.WithValue(ctx, internal.KeyHasMetrics, t.app.Conn().HasMetrics())
 	}
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
+	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView())
+	t.Table.Init(ctx)
 	if !t.app.Config.K9s.UI.Reactive {
 		if err := t.app.RefreshCustomViews(); err != nil {
-			log.Warn().Err(err).Msg("CustomViews load failed")
+			slog.Warn("CustomViews load failed", slogs.Error, err)
 			t.app.Logo().Warn("Views load failed!")
 		}
 	}
-
-	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
-	t.Table.Init(ctx)
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
 	t.CmdBuff().AddListener(t)
 
 	return nil
+}
+
+// SetCommand sets the current command.
+func (t *Table) SetCommand(cmd *cmd.Interpreter) {
+	t.command = cmd
 }
 
 // HeaderIndex returns index of a given column or false if not found.
@@ -82,7 +89,7 @@ func (t *Table) HeaderIndex(colName string) (int, bool) {
 	return 0, false
 }
 
-// SendKey sends an keyboard event (testing only!).
+// SendKey sends a keyboard event (testing only!).
 func (t *Table) SendKey(evt *tcell.EventKey) {
 	t.app.Prompt().SendKey(evt)
 }
@@ -141,12 +148,18 @@ func (t *Table) Start() {
 	t.Stop()
 	t.CmdBuff().AddListener(t)
 	t.Styles().AddListener(t.Table)
+	cmds := []string{t.Table.GVR().String()}
+	if t.command != nil {
+		cmds = append(cmds, t.command.GetLine())
+	}
+	t.App().CustomView().AddListeners(t.Table, cmds...)
 }
 
 // Stop terminates the component.
 func (t *Table) Stop() {
 	t.CmdBuff().RemoveListener(t)
 	t.Styles().RemoveListener(t.Table)
+	t.App().CustomView().RemoveListener(t.Table)
 }
 
 // SetEnterFn specifies the default enter behavior.

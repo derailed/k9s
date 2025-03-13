@@ -82,15 +82,6 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Alias{},
 		Renderer: &render.Alias{},
 	},
-	// !!BOZO!! Popeye
-	//"popeye": {
-	//	DAO:      &dao.Popeye{},
-	//	Renderer: &render.Popeye{},
-	//},
-	//"sanitizer": {
-	//	DAO:          &dao.Popeye{},
-	//	TreeRenderer: &xray.Section{},
-	//},
 
 	// Core...
 	"v1/endpoints": {
@@ -98,7 +89,7 @@ var Registry = map[string]ResourceMeta{
 	},
 	"v1/pods": {
 		DAO:          &dao.Pod{},
-		Renderer:     &render.Pod{},
+		Renderer:     render.NewPod(),
 		TreeRenderer: &xray.Pod{},
 	},
 	"v1/namespaces": {
@@ -201,5 +192,15 @@ var Registry = map[string]ResourceMeta{
 	},
 	"rbac.authorization.k8s.io/v1/rolebindings": {
 		Renderer: &render.RoleBinding{},
+	},
+
+	// Autoscaling...
+	"autoscaling/v1/horizontalpodautoscalers": {
+		Renderer: &render.HorizontalPodAutoscaler{},
+		DAO:      &dao.Table{},
+	},
+	"autoscaling/v2/horizontalpodautoscalers": {
+		Renderer: &render.HorizontalPodAutoscaler{},
+		DAO:      &dao.Table{},
 	},
 }

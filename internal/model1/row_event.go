@@ -5,6 +5,7 @@ package model1
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 )
 
@@ -255,7 +256,7 @@ func (r *RowEvents) FindIndex(id string) (int, bool) {
 
 // Sort rows based on column index and order.
 func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, asc bool) {
-	if sortCol == -1 {
+	if sortCol == -1 || r == nil {
 		return
 	}
 
@@ -270,6 +271,14 @@ func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity,
 	}
 	sort.Sort(t)
 	r.reindex()
+}
+
+// For debugging...
+func (re RowEvents) Dump(msg string) {
+	slog.Debug("[DEBUG] RowEvents" + msg)
+	for _, r := range re.events {
+		slog.Debug(fmt.Sprintf("   %#v", r))
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -290,6 +299,7 @@ func (r RowEventSorter) Len() int {
 }
 
 func (r RowEventSorter) Swap(i, j int) {
+
 	r.Events.events[i], r.Events.events[j] = r.Events.events[j], r.Events.events[i]
 }
 

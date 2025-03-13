@@ -84,7 +84,7 @@ func (a *Alias) AsGVR(c string) (client.GVR, string, bool) {
 
 // Get fetch a resource.
 func (a *Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
-	return nil, errors.New("NYI!!")
+	return nil, errors.New("nyi")
 }
 
 // Ensure makes sure alias are loaded.
@@ -116,11 +116,15 @@ func (a *Alias) load(path string) error {
 			continue
 		}
 
-		a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
-		if meta.SingularName != "" {
+		a.Define(gvrStr, gvr.AsResourceName())
+
+		// Allow single shot commands for k8s resources only!
+		if isStandardGroup(gvr.GVSub()) {
+			a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
 			a.Define(gvrStr, meta.SingularName)
+
 		}
-		if meta.ShortNames != nil {
+		if len(meta.ShortNames) > 0 {
 			a.Define(gvrStr, meta.ShortNames...)
 		}
 		a.Define(gvrStr, gvrStr)
@@ -133,10 +137,9 @@ func (a *Alias) load(path string) error {
 		}
 		gvrStr := gvr.String()
 		a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
-		if meta.SingularName != "" {
-			a.Define(gvrStr, meta.SingularName)
-		}
-		if meta.ShortNames != nil {
+		a.Define(gvrStr, meta.SingularName)
+
+		if len(meta.ShortNames) > 0 {
 			a.Define(gvrStr, meta.ShortNames...)
 		}
 		a.Define(gvrStr, gvrStr)

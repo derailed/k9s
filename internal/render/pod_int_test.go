@@ -4,12 +4,15 @@
 package render
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	res "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -295,16 +298,152 @@ func Test_restartableInitCO(t *testing.T) {
 	}
 }
 
+func Test_filterSidecarCO(t *testing.T) {
+	always := v1.ContainerRestartPolicyAlways
+
+	uu := map[string]struct {
+		cc, ecc []v1.Container
+	}{
+		"empty": {
+			cc:  []v1.Container{},
+			ecc: []v1.Container{},
+		},
+		"restartable": {
+			cc: []v1.Container{
+				{
+					Name:          "c1",
+					RestartPolicy: &always,
+				},
+			},
+			ecc: []v1.Container{
+				{
+					Name:          "c1",
+					RestartPolicy: &always,
+				},
+			},
+		},
+		"not-restartable": {
+			cc: []v1.Container{
+				{
+					Name: "c1",
+				},
+			},
+			ecc: []v1.Container{},
+		},
+		"mixed": {
+			cc: []v1.Container{
+				{
+					Name: "c1",
+				},
+				{
+					Name:          "c2",
+					RestartPolicy: &always,
+				},
+			},
+			ecc: []v1.Container{
+				{
+					Name:          "c2",
+					RestartPolicy: &always,
+				},
+			},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.ecc, filterSidecarCO(u.cc))
+		})
+	}
+}
+
+func Test_lastRestart(t *testing.T) {
+	uu := map[string]struct {
+		containerStatuses []v1.ContainerStatus
+		expected          metav1.Time
+	}{
+		"no-restarts": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name:                 "c1",
+					LastTerminationState: v1.ContainerState{},
+				},
+			},
+			expected: metav1.Time{},
+		},
+		"single-container-restart": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name: "c1",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+		"multiple-container-restarts": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name: "c1",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime().Add(-1 * time.Hour)},
+						},
+					},
+				},
+				{
+					Name: "c2",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+		"mixed-termination-states": {
+			containerStatuses: []v1.ContainerStatus{
+				{
+					Name:                 "c1",
+					LastTerminationState: v1.ContainerState{},
+				},
+				{
+					Name: "c2",
+					LastTerminationState: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{
+							FinishedAt: metav1.Time{Time: testTime()},
+						},
+					},
+				},
+			},
+			expected: metav1.Time{Time: testTime()},
+		},
+	}
+
+	var p Pod
+	for name, u := range uu {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, u.expected, p.lastRestart(u.containerStatuses))
+		})
+	}
+}
+
 func Test_gatherPodMx(t *testing.T) {
 	uu := map[string]struct {
-		cc   []v1.Container
+		spec *v1.PodSpec
 		mx   []mv1beta1.ContainerMetrics
 		c, r metric
 		perc string
 	}{
 		"single": {
-			cc: []v1.Container{
-				makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
+			spec: &v1.PodSpec{
+				Containers: []v1.Container{
+					makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
+				},
 			},
 			mx: []mv1beta1.ContainerMetrics{
 				makeCoMX("c1", "1m", "22Mi"),
@@ -322,10 +461,12 @@ func Test_gatherPodMx(t *testing.T) {
 			perc: "10",
 		},
 		"multi": {
-			cc: []v1.Container{
-				makeContainer("c1", false, "11m", "22Mi", "111m", "44Mi"),
-				makeContainer("c2", false, "93m", "1402Mi", "0m", "2804Mi"),
-				makeContainer("c3", false, "11m", "34Mi", "0m", "69Mi"),
+			spec: &v1.PodSpec{
+				Containers: []v1.Container{
+					makeContainer("c1", false, "11m", "22Mi", "111m", "44Mi"),
+					makeContainer("c2", false, "93m", "1402Mi", "0m", "2804Mi"),
+					makeContainer("c3", false, "11m", "34Mi", "0m", "69Mi"),
+				},
 			},
 			r: metric{
 				cpu:  11 + 93 + 11,
@@ -344,12 +485,37 @@ func Test_gatherPodMx(t *testing.T) {
 			},
 			perc: "46",
 		},
+		"sidecar": {
+			spec: &v1.PodSpec{
+				Containers: []v1.Container{
+					makeContainer("c1", false, "11m", "22Mi", "111m", "44Mi"),
+				},
+				InitContainers: []v1.Container{
+					makeContainer("c2", true, "93m", "1402Mi", "0m", "2804Mi"),
+				},
+			},
+			r: metric{
+				cpu:  11 + 93,
+				mem:  (22 + 1402) * client.MegaByte,
+				lcpu: 111 + 0,
+				lmem: (44 + 2804) * client.MegaByte,
+			},
+			mx: []mv1beta1.ContainerMetrics{
+				makeCoMX("c1", "1m", "22Mi"),
+				makeCoMX("c2", "51m", "1275Mi"),
+			},
+			c: metric{
+				cpu: 1 + 51,
+				mem: (22 + 1275) * client.MegaByte,
+			},
+			perc: "50",
+		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, r := gatherCoMX(u.cc, u.mx)
+			c, r := gatherCoMX(u.spec, u.mx)
 			assert.Equal(t, u.c.cpu, c.cpu)
 			assert.Equal(t, u.c.mem, c.mem)
 			assert.Equal(t, u.c.lcpu, c.lcpu)
@@ -427,18 +593,19 @@ func Test_podRequests(t *testing.T) {
 
 // Helpers...
 
-func makeContainer(n string, init bool, rc, rm, lc, lm string) v1.Container {
+func makeContainer(n string, restartable bool, rc, rm, lc, lm string) v1.Container {
+	always := v1.ContainerRestartPolicyAlways
 	var res v1.ResourceRequirements
-	if init {
-		res = v1.ResourceRequirements{}
-	} else {
-		res = v1.ResourceRequirements{
-			Requests: makeRes(rc, rm),
-			Limits:   makeRes(lc, lm),
-		}
+	var rp *v1.ContainerRestartPolicy
+	res = v1.ResourceRequirements{
+		Requests: makeRes(rc, rm),
+		Limits:   makeRes(lc, lm),
+	}
+	if restartable {
+		rp = &always
 	}
 
-	return v1.Container{Name: n, Resources: res}
+	return v1.Container{Name: n, Resources: res, RestartPolicy: rp}
 }
 
 func makeRes(c, m string) v1.ResourceList {
@@ -456,4 +623,12 @@ func makeCoMX(n string, c, m string) mv1beta1.ContainerMetrics {
 		Name:  n,
 		Usage: makeRes(c, m),
 	}
+}
+
+func testTime() time.Time {
+	t, err := time.Parse(time.RFC3339, "2018-12-14T10:36:43.326972-07:00")
+	if err != nil {
+		fmt.Println("TestTime Failed", err)
+	}
+	return t
 }

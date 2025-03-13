@@ -7,11 +7,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -152,7 +153,7 @@ func (s *StatefulSet) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan
 		return nil, errors.New("expecting StatefulSet resource")
 	}
 	if sts.Spec.Selector == nil || len(sts.Spec.Selector.MatchLabels) == 0 {
-		return nil, fmt.Errorf("No valid selector found on StatefulSet %s", opts.Path)
+		return nil, fmt.Errorf("no valid selector found on statefulset: %s", opts.Path)
 	}
 
 	return podLogs(ctx, sts.Spec.Selector.MatchLabels, opts)
@@ -236,7 +237,10 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr client.GVR, fqn string, wait
 		case SecGVR:
 			found, err := hasSecret(s.Factory, &sts.Spec.Template.Spec, sts.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				slog.Warn("Locate secret failed",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {

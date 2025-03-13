@@ -6,16 +6,17 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,7 +53,7 @@ func (w *Workload) bindDangerousKeys(aa *ui.KeyActions) {
 }
 
 func (w *Workload) bindKeys(aa *ui.KeyActions) {
-	if !w.App().Config.K9s.IsReadOnly() {
+	if !w.App().Config.IsReadOnly() {
 		w.bindDangerousKeys(aa)
 	}
 
@@ -69,7 +70,7 @@ func (w *Workload) bindKeys(aa *ui.KeyActions) {
 func parsePath(path string) (client.GVR, string, bool) {
 	tt := strings.Split(path, "|")
 	if len(tt) != 3 {
-		log.Error().Msgf("unable to parse path: %q", path)
+		slog.Error("Unable to parse workload path", slogs.Path, path)
 		return client.NewGVR(""), client.FQN("", ""), false
 	}
 
@@ -79,10 +80,10 @@ func parsePath(path string) (client.GVR, string, bool) {
 func (w *Workload) showRes(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
-		app.Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
+		app.Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return
 	}
-	app.gotoResource(gvr.R(), fqn, false)
+	app.gotoResource(gvr.R(), fqn, false, true)
 }
 
 func (w *Workload) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -130,7 +131,7 @@ func (w *Workload) resourceDelete(selections []string, msg string) {
 		for _, sel := range selections {
 			gvr, fqn, ok := parsePath(sel)
 			if !ok {
-				w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", sel))
+				w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", sel))
 				return
 			}
 
@@ -157,7 +158,7 @@ func (w *Workload) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
-		w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
+		w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return evt
 	}
 
@@ -173,7 +174,7 @@ func (w *Workload) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
-		w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
+		w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return evt
 	}
 
@@ -193,7 +194,7 @@ func (w *Workload) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
-		w.App().Flash().Err(fmt.Errorf("Unable to parse path: %q", path))
+		w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return evt
 	}
 

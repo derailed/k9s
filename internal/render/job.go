@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
@@ -24,27 +23,48 @@ type Job struct {
 }
 
 // Header returns a header row.
-func (Job) Header(ns string) model1.Header {
+func (j Job) Header(_ string) model1.Header {
+	return j.doHeader(j.defaultHeader())
+}
+
+func (Job) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
 		model1.HeaderColumn{Name: "COMPLETIONS"},
 		model1.HeaderColumn{Name: "DURATION"},
-		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
-		model1.HeaderColumn{Name: "CONTAINERS", Wide: true},
-		model1.HeaderColumn{Name: "IMAGES", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (j Job) Render(o interface{}, ns string, r *model1.Row) error {
+func (j Job) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Job, but got %T", o)
 	}
+	if err := j.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if j.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := j.specs.realize(raw, j.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var job batchv1.Job
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &job)
 	if err != nil {
@@ -128,17 +148,9 @@ func toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s string) {
 }
 
 func toDuration(status batchv1.JobStatus) string {
-	if status.StartTime == nil {
+	if status.StartTime == nil || status.CompletionTime == nil {
 		return MissingValue
 	}
 
-	var d time.Duration
-	switch {
-	case status.CompletionTime == nil:
-		d = time.Since(status.StartTime.Time)
-	default:
-		d = status.CompletionTime.Sub(status.StartTime.Time)
-	}
-
-	return duration.HumanDuration(d)
+	return duration.HumanDuration(status.CompletionTime.Sub(status.StartTime.Time))
 }

@@ -5,17 +5,18 @@ package model_test
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestStackClear(t *testing.T) {
@@ -291,14 +292,15 @@ func makeC(n string) c {
 	return c{name: n}
 }
 
-func (c) InCmdMode() bool                                              { return false }
-func (c c) Name() string                                               { return c.name }
-func (c c) Hints() model.MenuHints                                     { return nil }
-func (c c) HasFocus() bool                                             { return false }
-func (c c) ExtraHints() map[string]string                              { return nil }
-func (c c) Draw(tcell.Screen)                                          {}
-func (c c) InputHandler() func(*tcell.EventKey, func(tview.Primitive)) { return nil }
-func (c c) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+func (c) InCmdMode() bool                                            { return false }
+func (c c) Name() string                                             { return c.name }
+func (c) SetCommand(*cmd.Interpreter)                                {}
+func (c) Hints() model.MenuHints                                     { return nil }
+func (c) HasFocus() bool                                             { return false }
+func (c) ExtraHints() map[string]string                              { return nil }
+func (c) Draw(tcell.Screen)                                          {}
+func (c) InputHandler() func(*tcell.EventKey, func(tview.Primitive)) { return nil }
+func (c) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
 	return nil
 }
 func (c c) SetRect(int, int, int, int)       {}

@@ -5,15 +5,16 @@ package view
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 var _ model.ClusterInfoListener = (*ClusterInfo)(nil)
@@ -55,7 +56,7 @@ func (c *ClusterInfo) hasMetrics() bool {
 	if mx {
 		auth, err := c.app.Conn().CanI("", "metrics.k8s.io/v1beta1/nodes", "", client.ListAccess)
 		if err != nil {
-			log.Warn().Err(err).Msgf("No nodes metrics access")
+			slog.Warn("No nodes metrics access", slogs.Error, err)
 		}
 		mx = auth
 	}

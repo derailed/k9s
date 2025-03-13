@@ -2,23 +2,23 @@ name: K9s Lint
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   golangci:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4.1.6
+        uses: actions/checkout@v4.2.2
 
       - name: Install Go
-        uses: actions/setup-go@v5.0.2
+        uses: actions/setup-go@v5.3.0
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6.1.0
+        uses: golangci/golangci-lint-action@v6.5.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-check

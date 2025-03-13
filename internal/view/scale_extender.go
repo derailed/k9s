@@ -6,16 +6,16 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/config"
-
-	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
+
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
+	"github.com/derailed/k9s/internal/ui"
 )
 
 // ScaleExtender adds scaling extensions.
@@ -32,15 +32,27 @@ func NewScaleExtender(r ResourceViewer) ResourceViewer {
 }
 
 func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
-	if s.App().Config.K9s.IsReadOnly() {
+	if s.App().Config.IsReadOnly() {
 		return
 	}
-	aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
-		ui.ActionOpts{
-			Visible:   true,
-			Dangerous: true,
-		},
-	))
+
+	meta, err := dao.MetaAccess.MetaFor(s.GVR())
+	if err != nil {
+		slog.Error("No meta information found",
+			slogs.GVR, s.GVR(),
+			slogs.Error, err,
+		)
+		return
+	}
+
+	if !dao.IsCRD(meta) || dao.IsScalable(meta) {
+		aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		))
+	}
 }
 
 func (s *ScaleExtender) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -83,22 +95,75 @@ func (s *ScaleExtender) valueOf(col string) (string, error) {
 	return s.GetTable().GetSelectedCell(colIdx), nil
 }
 
-func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
-	styles := s.App().Styles.Dialog()
-	f := s.makeStyledForm(styles)
-
-	factor := "0"
-	if len(sels) == 1 {
-		replicas, err := s.valueOf("READY")
-		if err != nil {
-			return nil, err
-		}
-		tokens := strings.Split(replicas, "/")
-		if len(tokens) < 2 {
-			return nil, fmt.Errorf("unable to locate replicas from %s", replicas)
-		}
-		factor = strings.TrimRight(tokens[1], ui.DeltaSign)
+func (s *ScaleExtender) replicasFromReady(_ string) (string, error) {
+	replicas, err := s.valueOf("READY")
+	if err != nil {
+		return "", err
 	}
+
+	tokens := strings.Split(replicas, "/")
+	if len(tokens) < 2 {
+		return "", fmt.Errorf("unable to locate replicas from %s", replicas)
+	}
+
+	return strings.TrimRight(tokens[1], ui.DeltaSign), nil
+}
+
+func (s *ScaleExtender) replicasFromScaleSubresource(sel string) (string, error) {
+	res, err := dao.AccessorFor(s.App().factory, s.GVR())
+	if err != nil {
+		return "", err
+	}
+
+	replicasGetter, ok := res.(dao.ReplicasGetter)
+	if !ok {
+		return "", fmt.Errorf("expecting a replicasGetter resource for %q", s.GVR())
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
+	defer cancel()
+
+	replicas, err := replicasGetter.Replicas(ctx, sel)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.Itoa(int(replicas)), nil
+}
+
+func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
+	factor := "0"
+	if len(fqns) == 1 {
+		// If the CRD resource supports scaling, then first try to
+		// read the replicas directly from the CRD.
+		if meta, _ := dao.MetaAccess.MetaFor(s.GVR()); dao.IsScalable(meta) {
+			replicas, err := s.replicasFromScaleSubresource(fqns[0])
+			if err == nil && len(replicas) != 0 {
+				factor = replicas
+			}
+		}
+
+		// For built-in resources or cases where we can't get the replicas from the CRD, we can
+		// only try to get the number of copies from the READY field.
+		if factor == "0" {
+			replicas, err := s.replicasFromReady(fqns[0])
+			if err != nil {
+				return nil, err
+			}
+
+			factor = replicas
+		}
+	}
+
+	styles := s.App().Styles.Dialog()
+	f := tview.NewForm().
+		SetItemPadding(0).
+		SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
+
 	f.AddInputField("Replicas:", factor, 4, func(textToCheck string, lastChar rune) bool {
 		_, err := strconv.Atoi(textToCheck)
 		return err == nil
@@ -115,17 +180,17 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 		defer cancel()
-		for _, sel := range sels {
-			if err := s.scale(ctx, sel, count); err != nil {
-				log.Error().Err(err).Msgf("DP %s scaling failed", sel)
+		for _, fqn := range fqns {
+			if err := s.scale(ctx, fqn, count); err != nil {
+				slog.Error("Unable to scale resource", slogs.FQN, fqn)
 				s.App().Flash().Err(err)
 				return
 			}
 		}
-		if len(sels) == 1 {
-			s.App().Flash().Infof("[%d] %s scaled successfully", len(sels), singularize(s.GVR().R()))
+		if len(fqns) != 1 {
+			s.App().Flash().Infof("[%d] %s scaled successfully", len(fqns), singularize(s.GVR().R()))
 		} else {
-			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), sels[0])
+			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), fqns[0])
 		}
 	})
 	f.AddButton("Cancel", func() {
@@ -138,23 +203,17 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 		}
 	}
 
+	for i := 0; i < f.GetButtonCount(); i++ {
+		f.GetButton(i).
+			SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color()).
+			SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	}
+
 	return f, nil
 }
 
 func (s *ScaleExtender) dismissDialog() {
 	s.App().Content.RemovePage(scaleDialogKey)
-}
-
-func (s *ScaleExtender) makeStyledForm(styles config.Dialog) *tview.Form {
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
-		SetButtonTextColor(styles.ButtonBgColor.Color()).
-		SetLabelColor(styles.LabelFgColor.Color()).
-		SetFieldTextColor(styles.FieldFgColor.Color())
-
-	return f
 }
 
 func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int) error {

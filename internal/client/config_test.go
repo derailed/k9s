@@ -5,18 +5,18 @@ package client_test
 
 import (
 	"errors"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestCallTimeout(t *testing.T) {
@@ -29,7 +29,7 @@ func TestCallTimeout(t *testing.T) {
 			e: 1 * time.Minute,
 		},
 		"default": {
-			e: 15 * time.Second,
+			e: 10 * time.Second,
 		},
 	}
 

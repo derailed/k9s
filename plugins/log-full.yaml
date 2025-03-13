@@ -1,7 +1,7 @@
 plugins:
   # See https://k9scli.io/topics/plugins/
   raw-logs-follow:
-    shortCut: Ctrl-L
+    shortCut: Ctrl-G
     description: logs -f
     scopes:
     - po
@@ -18,7 +18,7 @@ plugins:
     - --kubeconfig
     - $KUBECONFIG
   log-less:
-    shortCut: Shift-L
+    shortCut: Shift-K
     description: "logs|less"
     scopes:
     - po

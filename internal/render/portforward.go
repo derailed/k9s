@@ -24,8 +24,11 @@ type Forwarder interface {
 	// Container returns a container name.
 	Container() string
 
-	// Ports returns container exposed ports.
+	// Port returns container exposed port.
 	Port() string
+
+	// Address returns the host address.
+	Address() string
 
 	// Active returns forwarder current state.
 	Active() bool
@@ -56,8 +59,8 @@ func (PortForward) Header(ns string) model1.Header {
 		model1.HeaderColumn{Name: "URL"},
 		model1.HeaderColumn{Name: "C"},
 		model1.HeaderColumn{Name: "N"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
@@ -77,7 +80,7 @@ func (f PortForward) Render(o interface{}, gvr string, r *model1.Row) error {
 		trimContainer(n),
 		pf.Container(),
 		pf.Port(),
-		UrlFor(pf.Config.Host, pf.Config.Path, ports[0]),
+		UrlFor(pf.Config.Host, pf.Config.Path, ports[0], pf.Address()),
 		AsThousands(int64(pf.Config.C)),
 		AsThousands(int64(pf.Config.N)),
 		"",
@@ -100,9 +103,9 @@ func trimContainer(n string) string {
 }
 
 // UrlFor computes fq url for a given benchmark configuration.
-func UrlFor(host, path, port string) string {
+func UrlFor(host, path, port, address string) string {
 	if host == "" {
-		host = "localhost"
+		host = address
 	}
 	if path == "" {
 		path = "/"

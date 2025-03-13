@@ -4,12 +4,14 @@
 package client
 
 import (
+	"log/slog"
+	"os"
 	"os/user"
 	"path"
 	"regexp"
 	"strings"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,7 +43,7 @@ func IsAllNamespaces(ns string) bool {
 
 // IsNamespaced returns true if a specific ns is given.
 func IsNamespaced(ns string) bool {
-	return !IsAllNamespaces(ns)
+	return !IsAllNamespaces(ns) && !IsClusterScoped(ns)
 }
 
 // IsClusterScoped returns true if resource is not namespaced.
@@ -81,7 +83,8 @@ func MetaFQN(m metav1.ObjectMeta) string {
 func mustHomeDir() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Die getting user home directory")
+		slog.Error("Die getting user home directory", slogs.Error, err)
+		os.Exit(1)
 	}
 	return usr.HomeDir
 }

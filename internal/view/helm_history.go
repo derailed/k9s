@@ -54,7 +54,7 @@ func (h *History) HistoryContext(ctx context.Context) context.Context {
 }
 
 func (h *History) bindKeys(aa *ui.KeyActions) {
-	if !h.App().Config.K9s.IsReadOnly() {
+	if !h.App().Config.IsReadOnly() {
 		h.bindDangerousKeys(aa)
 	}
 

@@ -6,6 +6,7 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"time"
 
@@ -14,13 +15,11 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
-
-const promptPage = "prompt"
 
 // PortForward presents active portforward viewer.
 type PortForward struct {
@@ -97,7 +96,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	cfg.Name = path
 
 	r, _ := p.GetTable().GetSelection()
-	log.Debug().Msgf("PF NS %q", p.GetTable().GetModel().GetNamespace())
+	slog.Debug("Port forward namespace", slogs.Namespace, p.GetTable().GetModel().GetNamespace())
 	col := 3
 	if client.IsAllNamespaces(p.GetTable().GetModel().GetNamespace()) {
 		col = 4
@@ -114,7 +113,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	p.App().Status(model.FlashWarn, "Benchmark in progress...")
 	go func() {
 		if err := p.runBenchmark(); err != nil {
-			log.Error().Err(err).Msgf("Benchmark run failed")
+			slog.Error("Benchmark run failed", slogs.Error, err)
 		}
 	}()
 
@@ -122,7 +121,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *PortForward) runBenchmark() error {
-	log.Debug().Msg("Bench starting...")
+	slog.Debug("Bench starting...")
 
 	ct, err := p.App().Config.K9s.ActiveContext()
 	if err != nil {
@@ -130,7 +129,7 @@ func (p *PortForward) runBenchmark() error {
 	}
 	name := p.App().Config.K9s.ActiveContextName()
 	p.bench.Run(ct.ClusterName, name, func() {
-		log.Debug().Msgf("Benchmark %q Completed!", name)
+		slog.Debug("Benchmark Completed!", slogs.Name, name)
 		p.App().QueueUpdate(func() {
 			if p.bench.Canceled() {
 				p.App().Status(model.FlashInfo, "Benchmark canceled")
@@ -165,16 +164,14 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	var msg string
 	if len(selections) > 1 {
 		msg = fmt.Sprintf("Delete %d marked %s?", len(selections), p.GVR())
+	} else if h, err := pfToHuman(selections[0]); err == nil {
+		msg = fmt.Sprintf("Delete %s %s?", p.GVR().R(), h)
 	} else {
-		h, err := pfToHuman(selections[0])
-		if err == nil {
-			msg = fmt.Sprintf("Delete %s %s?", p.GVR().R(), h)
-		} else {
-			p.App().Flash().Err(err)
-			return nil
-		}
+		p.App().Flash().Err(err)
+		return nil
 	}
-	showModal(p.App(), msg, func() {
+
+	dialog.ShowConfirm(p.App().Styles.Dialog(), p.App().Content.Pages, "Delete", msg, func() {
 		for _, s := range selections {
 			var pf dao.PortForward
 			pf.Init(p.App().factory, client.NewGVR("portforwards"))
@@ -185,7 +182,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 		p.App().Flash().Infof("Successfully deleted %d PortForward!", len(selections))
 		p.GetTable().Refresh()
-	})
+	}, func() {})
 
 	return nil
 }
@@ -202,27 +199,4 @@ func pfToHuman(s string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s::%s %s->%s", mm[2], mm[3], mm[4], mm[5]), nil
-}
-
-func showModal(a *App, msg string, ok func()) {
-	p := a.Content.Pages
-	styles := a.Styles.Dialog()
-	m := tview.NewModal().
-		AddButtons([]string{"Cancel", "OK"}).
-		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
-		SetTextColor(tcell.ColorFuchsia).
-		SetText(msg).
-		SetDoneFunc(func(_ int, b string) {
-			if b == "OK" {
-				ok()
-			}
-			dismissModal(p)
-		})
-	m.SetTitle("<Delete Benchmark>")
-	p.AddPage(promptPage, m, false, false)
-	p.ShowPage(promptPage)
-}
-
-func dismissModal(p *ui.Pages) {
-	p.RemovePage(promptPage)
 }

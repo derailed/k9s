@@ -7,10 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -130,7 +131,7 @@ func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan,
 		return nil, err
 	}
 	if dp.Spec.Selector == nil || len(dp.Spec.Selector.MatchLabels) == 0 {
-		return nil, fmt.Errorf("No valid selector found on Deployment %s", opts.Path)
+		return nil, fmt.Errorf("no valid selector found on deployment: %s", opts.Path)
 	}
 
 	return podLogs(ctx, dp.Spec.Selector.MatchLabels, opts)
@@ -215,7 +216,10 @@ func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait 
 		case SecGVR:
 			found, err := hasSecret(d.Factory, &dp.Spec.Template.Spec, dp.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("scanning secret %q", fqn)
+				slog.Warn("Fail to locate secret",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {
@@ -301,12 +305,17 @@ func hasPC(spec *v1.PodSpec, name string) bool {
 
 func hasConfigMap(spec *v1.PodSpec, name string) bool {
 	for _, c := range spec.InitContainers {
-		if containerHasConfigMap(c, name) {
+		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
 			return true
 		}
 	}
 	for _, c := range spec.Containers {
-		if containerHasConfigMap(c, name) {
+		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
+			return true
+		}
+	}
+	for _, c := range spec.EphemeralContainers {
+		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
 			return true
 		}
 	}
@@ -321,21 +330,32 @@ func hasConfigMap(spec *v1.PodSpec, name string) bool {
 	return false
 }
 
-// BOZO !! Need to deal with ephemeral containers.
 func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, error) {
 	for _, c := range spec.InitContainers {
-		if containerHasSecret(c, name) {
-			return true, nil
-		}
-	}
-	for _, c := range spec.Containers {
-		if containerHasSecret(c, name) {
+		if containerHasSecret(c.EnvFrom, c.Env, name) {
 			return true, nil
 		}
 	}
 
-	saName := spec.ServiceAccountName
-	if saName != "" {
+	for _, c := range spec.Containers {
+		if containerHasSecret(c.EnvFrom, c.Env, name) {
+			return true, nil
+		}
+	}
+
+	for _, c := range spec.EphemeralContainers {
+		if containerHasSecret(c.EnvFrom, c.Env, name) {
+			return true, nil
+		}
+	}
+
+	for _, s := range spec.ImagePullSecrets {
+		if s.Name == name {
+			return true, nil
+		}
+	}
+
+	if saName := spec.ServiceAccountName; saName != "" {
 		o, err := f.Get("v1/serviceaccounts", client.FQN(ns, saName), wait, labels.Everything())
 		if err != nil {
 			return false, err
@@ -364,13 +384,13 @@ func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, e
 	return false, nil
 }
 
-func containerHasSecret(c v1.Container, name string) bool {
-	for _, e := range c.EnvFrom {
+func containerHasSecret(envFrom []v1.EnvFromSource, env []v1.EnvVar, name string) bool {
+	for _, e := range envFrom {
 		if e.SecretRef != nil && e.SecretRef.Name == name {
 			return true
 		}
 	}
-	for _, e := range c.Env {
+	for _, e := range env {
 		if e.ValueFrom == nil || e.ValueFrom.SecretKeyRef == nil {
 			continue
 		}
@@ -382,13 +402,13 @@ func containerHasSecret(c v1.Container, name string) bool {
 	return false
 }
 
-func containerHasConfigMap(c v1.Container, name string) bool {
-	for _, e := range c.EnvFrom {
+func containerHasConfigMap(envFrom []v1.EnvFromSource, env []v1.EnvVar, name string) bool {
+	for _, e := range envFrom {
 		if e.ConfigMapRef != nil && e.ConfigMapRef.Name == name {
 			return true
 		}
 	}
-	for _, e := range c.Env {
+	for _, e := range env {
 		if e.ValueFrom == nil || e.ValueFrom.ConfigMapKeyRef == nil {
 			continue
 		}

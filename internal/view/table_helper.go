@@ -6,6 +6,7 @@ package view
 import (
 	"encoding/csv"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,8 +15,8 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/rs/zerolog/log"
 )
 
 func computeFilename(dumpPath, ns, title, path string) (string, error) {
@@ -51,7 +52,7 @@ func saveTable(dir, title, path string, data *model1.TableData) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	log.Debug().Msgf("Saving Table to %s", fPath)
+	slog.Debug("Saving table to disk", slogs.FileName, fPath)
 
 	mod := os.O_CREATE | os.O_WRONLY
 	out, err := os.OpenFile(fPath, mod, 0600)
@@ -60,7 +61,10 @@ func saveTable(dir, title, path string, data *model1.TableData) (string, error) 
 	}
 	defer func() {
 		if err := out.Close(); err != nil {
-			log.Error().Err(err).Msg("Closing file")
+			slog.Error("Closing file failed",
+				slogs.Path, fPath,
+				slogs.Error, err,
+			)
 		}
 	}()
 

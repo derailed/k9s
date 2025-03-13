@@ -5,6 +5,8 @@ package cmd
 
 import (
 	"strings"
+
+	"github.com/derailed/k9s/internal/client"
 )
 
 // Interpreter tracks user prompt input.
@@ -72,7 +74,7 @@ func (c *Interpreter) Reset(s string) *Interpreter {
 	return c
 }
 
-// GetLine teturns the prompt.
+// GetLine returns the prompt.
 func (c *Interpreter) GetLine() string {
 	return strings.TrimSpace(c.line)
 }
@@ -218,7 +220,7 @@ func (c *Interpreter) FuzzyArg() (string, bool) {
 func (c *Interpreter) NSArg() (string, bool) {
 	ns, ok := c.args[nsKey]
 
-	return ns, ok && ns != ""
+	return ns, ok && ns != client.BlankNamespace
 }
 
 // HasContext returns the current context if any.

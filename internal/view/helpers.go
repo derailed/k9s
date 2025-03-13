@@ -7,6 +7,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -18,11 +21,11 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -46,11 +49,17 @@ func aliasesFor(m v1.APIResource, aa []string) map[string]struct{} {
 }
 
 func clipboardWrite(text string) error {
-	return clipboard.WriteAll(text)
+	if text != "" {
+		return clipboard.WriteAll(text)
+	}
+
+	return nil
 }
 
+var bracketRX = regexp.MustCompile(`\[(.+)\[\]`)
+
 func sanitizeEsc(s string) string {
-	return strings.ReplaceAll(s, "[]", "]")
+	return bracketRX.ReplaceAllString(s, `[$1]`)
 }
 
 func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {
@@ -96,6 +105,8 @@ func k8sEnv(c *client.Config) Env {
 	kcfg := c.Flags().KubeConfig
 	if kcfg != nil && *kcfg != "" {
 		cfg = *kcfg
+	} else {
+		cfg = os.Getenv("KUBECONFIG")
 	}
 
 	return Env{
@@ -146,14 +157,14 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
-		log.Error().Err(err).Msg("Config NS set failed!")
+		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
 	}
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func podCtx(app *App, path, fieldSel string) ContextFunc {
+func podCtx(_ *App, path, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)

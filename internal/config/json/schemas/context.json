@@ -10,7 +10,19 @@
         "cluster": { "type": "string" },
         "readOnly": {"type": "boolean"},
         "skin": { "type": "string" },
-        "portForwardAddress": { "type": "string" },
+        "proxy": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties":
+              {
+                "address": {"type": "string"}
+              }
+            }
+          ]
+        },
         "namespace": {
           "type": "object",
           "additionalProperties": false,
