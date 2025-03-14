@@ -97,7 +97,14 @@ func (p Plugins) loadPluginDir(dir string) error {
 		if err = d.Decode(&plugin); err != nil {
 			var plugins Plugins
 			if err = d.Decode(&plugins); err != nil {
-				return fmt.Errorf("cannot parse %s into either a single plugin nor plugins: %w", fileName, err)
+				var pluginMap map[string]Plugin
+				if err = yaml.Unmarshal(fileContent, &pluginMap); err != nil {
+					return fmt.Errorf("cannot parse %s into a single plugin, plugins, or a map of plugins: %w", fileName, err)
+				}
+				for name, plugin := range pluginMap {
+					p.Plugins[name] = plugin
+				}
+				continue
 			}
 			for name, plugin := range plugins.Plugins {
 				p.Plugins[name] = plugin
