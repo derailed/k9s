@@ -43,6 +43,24 @@ var test2YmlTestData = Plugin{
 	OverwriteOutput: false,
 }
 
+var test3YmlTestData = Plugin{
+	Scopes:          []string{"po"},
+	Args:            []string{"-c", "echo test3"},
+	ShortCut:        "shift-w",
+	Command:         "bash",
+	Background:      false,
+	OverwriteOutput: false,
+}
+
+var test4YmlTestData = Plugin{
+	Scopes:          []string{"po"},
+	Args:            []string{"-c", "echo test4"},
+	ShortCut:        "shift-q",
+	Command:         "bash",
+	Background:      false,
+	OverwriteOutput: false,
+}
+
 func TestPluginLoad(t *testing.T) {
 	AppPluginsFile = "/tmp/k9s-test/fred.yaml"
 	os.Setenv("XDG_DATA_HOME", "/tmp/k9s-test")
@@ -78,6 +96,8 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 		"blah":  pluginYmlTestData,
 		"test1": test1YmlTestData,
 		"test2": test2YmlTestData,
+		"test3": test3YmlTestData,
+		"test4": test4YmlTestData,
 	}
 
 	assert.Equal(t, len(testPlugins), len(p.Plugins))

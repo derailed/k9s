@@ -1,0 +1,18 @@
+test3:
+  shortCut: Shift-W
+  scopes:
+    - pods
+  command: bash
+  background: false
+  args:
+    - -c
+    - "echo test3"
+test4:
+  shortCut: Shift-Q
+  scopes:
+    - pods
+  command: bash
+  background: false
+  args:
+    - -c
+    - "echo test4"
