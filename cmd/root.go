@@ -60,7 +60,8 @@ func init() {
 	// k9s requires xterm-256color to be set as per the README.md file
 	if term := os.Getenv("TERM"); term != "xterm-256color" {
 		fmt.Printf("WARN: $TERM must be set to 'xterm-256color', got '%s'\n", term)
-		os.Setenv("TERM", "xterm-256color")
+		fmt.Printf("Please see the documentation at https://github.com/derailed/k9s?tab=readme-ov-file#preflight-checks\n")
+		os.Exit(1)
 	}
 
 	rootCmd.SetFlagErrorFunc(func(command *cobra.Command, err error) error {
