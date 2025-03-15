@@ -6,6 +6,7 @@ package config
 import (
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -78,7 +79,7 @@ func TestPluginLoad(t *testing.T) {
 		"toast-invalid": {
 			path: "testdata/plugins/plugins-toast.yaml",
 			ee:   NewPlugins(),
-			err:  "plugin validation failed for /Users/fernand/work/myprojects/K9s/k9s/internal/config/testdata/plugins/plugins-toast.yaml: Additional property scoped is not allowed\nscopes is required\nAdditional property plugins is not allowed\ncommand is required\ndescription is required\nscopes is required\nshortCut is required\nAdditional property blah is not allowed\ncommand is required\ndescription is required\nscopes is required\nshortCut is required",
+			err:  "Additional property scoped is not allowed\nscopes is required\nAdditional property plugins is not allowed\ncommand is required\ndescription is required\nscopes is required\nshortCut is required\nAdditional property blah is not allowed\ncommand is required\ndescription is required\nscopes is required\nshortCut is required",
 		},
 	}
 
@@ -92,7 +93,8 @@ func TestPluginLoad(t *testing.T) {
 			p := NewPlugins()
 			err := p.Load(path.Join(dir, u.path), false)
 			if err != nil {
-				assert.Equal(t, u.err, err.Error())
+				idx := strings.Index(err.Error(), ":")
+				assert.Equal(t, u.err, err.Error()[idx+2:])
 			}
 			assert.Equal(t, u.ee, p)
 		})
