@@ -52,8 +52,8 @@ const (
 	// GOR tracks a gor logger key.
 	GOR = "gor"
 
-	// Action tracks an action logger key.
-	Action = "action"
+	// Shortcut tracks a shortcut logger key.
+	Shortcut = "shortcut"
 
 	// Page tracks a page logger key.
 	Page = "page"
@@ -116,6 +116,9 @@ const (
 
 	// Key tracks a key logger key.
 	Key = "key"
+
+	// Plugin tracks a plugin logger key.
+	Plugin = "plugin"
 
 	// Component tracks a component logger key.
 	Component = "component"

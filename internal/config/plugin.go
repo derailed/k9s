@@ -20,11 +20,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const k9sPluginsDir = "k9s/plugins"
+type plugins map[string]Plugin
 
 // Plugins represents a collection of plugins.
 type Plugins struct {
-	Plugins map[string]Plugin `yaml:"plugins"`
+	Plugins plugins `yaml:"plugins"`
 }
 
 // Plugin describes a K9s plugin.
@@ -54,57 +54,29 @@ func NewPlugins() Plugins {
 }
 
 // Load K9s plugins.
-func (p Plugins) Load(path string) error {
+func (p Plugins) Load(path string, loadExtra bool) error {
 	var errs error
 
+	// Load from global config file
 	if err := p.load(AppPluginsFile); err != nil {
 		errs = errors.Join(errs, err)
 	}
+
+	// Load from cluster/context config
 	if err := p.load(path); err != nil {
 		errs = errors.Join(errs, err)
 	}
 
-	for _, dataDir := range append(xdg.DataDirs, xdg.DataHome, xdg.ConfigHome) {
-		if err := p.loadPluginDir(filepath.Join(dataDir, k9sPluginsDir)); err != nil {
+	if !loadExtra {
+		return errs
+	}
+	// Load from XDG dirs
+	const k9sPluginsDir = "k9s/plugins"
+	for _, dir := range append(xdg.DataDirs, xdg.DataHome, xdg.ConfigHome) {
+		path := filepath.Join(dir, k9sPluginsDir)
+		if err := p.loadDir(path); err != nil {
 			errs = errors.Join(errs, err)
 		}
-	}
-
-	return errs
-}
-
-func (p Plugins) loadPluginDir(dir string) error {
-	pluginFiles, err := os.ReadDir(dir)
-	if err != nil {
-		return nil
-	}
-
-	var errs error
-	for _, file := range pluginFiles {
-		if file.IsDir() || !isYamlFile(file.Name()) {
-			continue
-		}
-		fileName := filepath.Join(dir, file.Name())
-		fileContent, err := os.ReadFile(fileName)
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-
-		d := yaml.NewDecoder(bytes.NewReader(fileContent))
-		d.KnownFields(true)
-
-		var plugin Plugin
-		if err = d.Decode(&plugin); err != nil {
-			var plugins Plugins
-			if err = d.Decode(&plugins); err != nil {
-				return fmt.Errorf("cannot parse %s into either a single plugin nor plugins: %w", fileName, err)
-			}
-			for name, plugin := range plugins.Plugins {
-				p.Plugins[name] = plugin
-			}
-			continue
-		}
-		p.Plugins[strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))] = plugin
 	}
 
 	return errs
@@ -118,19 +90,62 @@ func (p *Plugins) load(path string) error {
 	if err != nil {
 		return err
 	}
-	if err := data.JSONValidator.Validate(json.PluginsSchema, bb); err != nil {
-		slog.Warn("Validation failed. Please update your config and restart!",
+	scheme, err := data.JSONValidator.ValidatePlugins(bb)
+	if err != nil {
+		slog.Warn("Plugin schema validation failed",
 			slogs.Path, path,
 			slogs.Error, err,
 		)
+		return fmt.Errorf("plugin validation failed for %s: %w", path, err)
 	}
-	var pp Plugins
-	if err := yaml.Unmarshal(bb, &pp); err != nil {
-		return err
-	}
-	for k, v := range pp.Plugins {
-		p.Plugins[k] = v
+
+	d := yaml.NewDecoder(bytes.NewReader(bb))
+	d.KnownFields(true)
+
+	switch scheme {
+	case json.PluginSchema:
+		var o Plugin
+		if err := yaml.Unmarshal(bb, &o); err != nil {
+			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
+		}
+		p.Plugins[strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))] = o
+	case json.PluginsSchema:
+		var oo Plugins
+		if err := yaml.Unmarshal(bb, &oo); err != nil {
+			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
+		}
+		for k, v := range oo.Plugins {
+			p.Plugins[k] = v
+		}
+	case json.PluginMultiSchema:
+		var oo plugins
+		if err := yaml.Unmarshal(bb, &oo); err != nil {
+			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
+		}
+		for k, v := range oo {
+			p.Plugins[k] = v
+		}
 	}
 
 	return nil
+}
+
+func (p Plugins) loadDir(dir string) error {
+	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+
+	var errs error
+	errs = errors.Join(errs, filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || !isYamlFile(info.Name()) {
+			return nil
+		}
+		errs = errors.Join(errs, p.load(path))
+		return nil
+	}))
+
+	return errs
 }
