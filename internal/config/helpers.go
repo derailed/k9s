@@ -28,6 +28,7 @@ func isStringSet(s *string) bool {
 
 func isYamlFile(file string) bool {
 	ext := filepath.Ext(file)
+
 	return ext == ".yml" || ext == ".yaml"
 }
 

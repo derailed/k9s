@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s plugin-multi schema",
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "file://internal/config/json/schemas/plugin.json",
+    "additionalProperties": false
+  }
+}
