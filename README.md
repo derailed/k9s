@@ -86,8 +86,6 @@ Below are organizations that have opted to show their support and sponsor K9s.
 <br/>
 <br/>
 
-> NOTE! K9s neither vouches for nor endorses these companies or products.
-
 ---
 
 ## Installation
