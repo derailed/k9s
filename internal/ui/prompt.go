@@ -104,8 +104,8 @@ func NewPrompt(app *App, noIcons bool, styles *config.Styles) *Prompt {
 	p.SetDynamicColors(true)
 	p.SetBorder(true)
 	p.SetBorderPadding(0, 0, 1, 1)
-	p.SetBackgroundColor(styles.K9s.Prompt.BgColor.Color())
-	p.SetTextColor(styles.K9s.Prompt.FgColor.Color())
+	p.SetBackgroundColor(styles.Skin.K9s.Prompt.BgColor.Color())
+	p.SetTextColor(styles.Skin.K9s.Prompt.FgColor.Color())
 	styles.AddListener(&p)
 	p.SetInputCapture(p.keyboard)
 
@@ -189,8 +189,8 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 // StylesChanged notifies skin changed.
 func (p *Prompt) StylesChanged(s *config.Styles) {
 	p.styles = s
-	p.SetBackgroundColor(s.K9s.Prompt.BgColor.Color())
-	p.SetTextColor(s.K9s.Prompt.FgColor.Color())
+	p.SetBackgroundColor(s.Skin.K9s.Prompt.BgColor.Color())
+	p.SetTextColor(s.Skin.K9s.Prompt.FgColor.Color())
 }
 
 // InCmdMode returns true if command is active, false otherwise.
@@ -283,9 +283,9 @@ func (p *Prompt) iconFor(k model.BufferKind) rune {
 	// nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
-		return '🐶'
+		return p.stringToRune(p.app.Styles.Emoji.EmojiFor("prompt.query"))
 	default:
-		return '🐩'
+		return p.stringToRune(p.app.Styles.Emoji.EmojiFor("prompt.filter"))
 	}
 }
 
@@ -300,4 +300,14 @@ func (p *Prompt) colorFor(k model.BufferKind) tcell.Color {
 	default:
 		return p.styles.Prompt().Border.DefaultColor.Color()
 	}
+}
+
+func (p *Prompt) stringToRune(s string) rune {
+	if len(s) == 0 {
+		return 0
+	}
+
+	runes := []rune(s)
+
+	return runes[0]
 }

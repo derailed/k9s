@@ -114,7 +114,8 @@ func (l *Log) InCmdMode() bool {
 // LogCanceled indicates no more logs are coming.
 func (l *Log) LogCanceled() {
 	log.Debug().Msgf("LOGS_CANCELED!!!")
-	l.Flush([][]byte{[]byte("\n🏁 [red::b]Stream exited! No more logs...")})
+	emoji := l.app.Styles.Emoji.EmojiFor("system.log_stream_cancelled")
+	l.Flush([][]byte{[]byte("\n" + emoji + " [red::b]Stream exited! No more logs...")})
 }
 
 // LogStop disables log flushes.

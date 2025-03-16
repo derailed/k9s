@@ -45,6 +45,10 @@ var (
 	//go:embed templates/stock-skin.yaml
 	// stockSkinTpl tracks stock skin template
 	stockSkinTpl []byte
+
+	//go:embed templates/stock-emoji.yaml
+	// emojiTpl tracks emoji template
+	emojiTpl []byte
 )
 
 var (

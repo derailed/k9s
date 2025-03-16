@@ -53,8 +53,8 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 
 // StylesChanged notifies listener the skin changed.
 func (l *LogIndicator) StylesChanged(styles *config.Styles) {
-	l.SetBackgroundColor(styles.K9s.Views.Log.Indicator.BgColor.Color())
-	l.SetTextColor(styles.K9s.Views.Log.Indicator.FgColor.Color())
+	l.SetBackgroundColor(styles.Skin.K9s.Views.Log.Indicator.BgColor.Color())
+	l.SetTextColor(styles.Skin.K9s.Views.Log.Indicator.FgColor.Color())
 	l.Refresh()
 }
 
@@ -122,8 +122,8 @@ func (l *LogIndicator) Refresh() {
 
 	var (
 		toggleFmt    = "[::b]%s:["
-		toggleOnFmt  = toggleFmt + string(l.styles.K9s.Views.Log.Indicator.ToggleOnColor) + "::b]On[-::] %s"
-		toggleOffFmt = toggleFmt + string(l.styles.K9s.Views.Log.Indicator.ToggleOffColor) + "::d]Off[-::]%s"
+		toggleOnFmt  = toggleFmt + string(l.styles.Skin.K9s.Views.Log.Indicator.ToggleOnColor) + "::b]On[-::] %s"
+		toggleOffFmt = toggleFmt + string(l.styles.Skin.K9s.Views.Log.Indicator.ToggleOffColor) + "::d]Off[-::]%s"
 	)
 
 	if l.shouldDisplayAllContainers {

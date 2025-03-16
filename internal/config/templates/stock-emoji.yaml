@@ -1,0 +1,48 @@
+k9s:
+  system:
+    startup: "🐶"
+    log_stream_cancelled: "🏁"
+    new_version: "⚡️"
+    default: "📎"
+
+  files:
+    file: "🦄"
+    folder: "📁"
+
+  prompt:
+    query: "🐶"
+    filter: "🐩"
+
+  status:
+    info: "😎"
+    warn: "😗"
+    error: "😡"
+    check_mark: "✅"
+
+  xray:
+    namespaces: "🗂"
+    default_gvr: "📎"
+    nodes: "🖥"
+    pods: "🚛"
+    services: "💁‍♀️"
+    service_accounts: "💳"
+    persistent_volumes: "📚"
+    persistent_volume_claims: "🎟"
+    secrets: "🔒"
+    horizontal_pod_autoscalers: "♎️"
+    config_maps: "🗺"
+    deployments: "🪂"
+    stateful_sets: "🎎"
+    daemon_sets: "😈"
+    replica_sets: "👯‍♂️"
+    cluster_roles: "👩‍"
+    roles: "👨🏻‍"
+    network_policies: "📕"
+    pod_disruption_budgets: "🏷"
+    pod_security_policies: "👮‍♂️"
+    containers: "🐳"
+    report: "🧼"
+    issue_0: "👍"
+    issue_1: "🔊"
+    issue_2: "☣️"
+    issue_3: "🧨"

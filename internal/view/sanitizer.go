@@ -103,7 +103,7 @@ func (s *Sanitizer) ExtraHints() map[string]string {
 	if s.app.Config.K9s.UI.NoIcons {
 		return nil
 	}
-	return xray.EmojiInfo()
+	return xray.EmojiInfo(s.app.Styles.Emoji.EmojiFor)
 }
 
 // SetInstance sets specific resource instance.
