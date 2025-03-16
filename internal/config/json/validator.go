@@ -8,12 +8,11 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"log/slog"
-	"slices"
-
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
+	"log/slog"
+	"slices"
 )
 
 const (
@@ -43,6 +42,9 @@ const (
 
 	// SkinSchema describes skin config schema.
 	SkinSchema = "skin.json"
+
+	// EmojiSchema describes emoji config schema.
+	EmojiSchema = "emoji.json"
 )
 
 var (
@@ -72,6 +74,9 @@ var (
 
 	//go:embed schemas/skin.json
 	skinSchema string
+
+	//go:embed schemas/emoji.json
+	emojiSchema string
 )
 
 // Validator tracks schemas validation.
@@ -93,6 +98,7 @@ func NewValidator() *Validator {
 			PluginMultiSchema: gojsonschema.NewStringLoader(pluginMultiSchema),
 			HotkeysSchema:     gojsonschema.NewStringLoader(hotkeysSchema),
 			SkinSchema:        gojsonschema.NewStringLoader(skinSchema),
+			EmojiSchema:       gojsonschema.NewStringLoader(emojiSchema),
 		},
 	}
 	v.register()

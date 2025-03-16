@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewSplash(t *testing.T) {
-	s := ui.NewSplash(config.NewStyles(), "bozo")
+	s := ui.NewSplash(config.NewStyles(false), "bozo")
 
 	x, y, w, h := s.GetRect()
 	assert.Equal(t, 0, x)

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultPrompt = "%c> [::b]%s"
+	defaultPrompt = "%s> [::b]%s"
 	defaultSpacer = 4
 )
 
@@ -80,7 +80,7 @@ type Prompt struct {
 
 	app     *App
 	noIcons bool
-	icon    rune
+	icon    string
 	styles  *config.Styles
 	model   PromptModel
 	spacer  int
@@ -187,8 +187,8 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 // StylesChanged notifies skin changed.
 func (p *Prompt) StylesChanged(s *config.Styles) {
 	p.styles = s
-	p.SetBackgroundColor(s.K9s.Prompt.BgColor.Color())
-	p.SetTextColor(s.K9s.Prompt.FgColor.Color())
+	p.SetBackgroundColor(s.Skin.K9s.Prompt.BgColor.Color())
+	p.SetTextColor(s.Skin.K9s.Prompt.FgColor.Color())
 }
 
 // InCmdMode returns true if command is active, false otherwise.
@@ -274,17 +274,17 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	p.Clear()
 }
 
-func (p *Prompt) iconFor(k model.BufferKind) rune {
+func (p *Prompt) iconFor(k model.BufferKind) string {
 	if p.noIcons {
-		return ' '
+		return " "
 	}
 
 	// nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
-		return '🐶'
+		return p.app.Styles.Emoji.EmojiFor("prompt.query")
 	default:
-		return '🐩'
+		return p.app.Styles.Emoji.EmojiFor("prompt.filter")
 	}
 }
 

@@ -54,7 +54,6 @@ type Table struct {
 	ctx         context.Context
 	mx          sync.RWMutex
 	readOnly    bool
-	noIcon      bool
 }
 
 // NewTable returns a new table view.
@@ -71,14 +70,6 @@ func NewTable(gvr client.GVR) *Table {
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: model1.SortColumn{ASC: true},
 	}
-}
-
-// SetNoIcon toggles no icon mode.
-func (t *Table) SetNoIcon(b bool) {
-	t.mx.Lock()
-	defer t.mx.Unlock()
-
-	t.noIcon = b
 }
 
 // SetReadOnly toggles read-only mode.
@@ -553,7 +544,7 @@ func (t *Table) styleTitle() string {
 	} else {
 		title = SkinTitle(fmt.Sprintf(NSTitleFmt, t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
 	}
-	if ic := ROIndicator(t.readOnly, t.noIcon); ic != "" {
+	if ic := ROIndicator(t.readOnly, t.styles.Emoji.EmojiFor); ic != "" {
 		title = " " + ic + title
 	}
 
@@ -572,14 +563,10 @@ func (t *Table) styleTitle() string {
 }
 
 // ROIndicator returns an icon showing whether the session is in readonly mode or not.
-func ROIndicator(ro, noIC bool) string {
-	if noIC {
-		return ""
-	}
-
+func ROIndicator(ro bool, emojiFor func(string) string) string {
 	if ro {
-		return lockedIC
+		return emojiFor("system.locked")
 	}
 
-	return unlockedIC
+	return emojiFor("system.unlocked")
 }

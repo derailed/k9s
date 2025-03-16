@@ -338,8 +338,8 @@ func (t *TreeNode) Find(gvr, id string) *TreeNode {
 }
 
 // Title computes the node title.
-func (t *TreeNode) Title(noIcons bool) string {
-	return t.computeTitle(noIcons)
+func (t *TreeNode) Title(noIcons bool, emojiFor func(string) string) string {
+	return t.computeTitle(noIcons, emojiFor)
 }
 
 // ----------------------------------------------------------------------------
@@ -386,9 +386,9 @@ func category(gvr string) string {
 	return meta.SingularName
 }
 
-func (t TreeNode) computeTitle(noIcons bool) string {
+func (t TreeNode) computeTitle(noIcons bool, emojiFor func(string) string) string {
 	if !noIcons {
-		return t.toEmojiTitle()
+		return t.toEmojiTitle(emojiFor)
 	}
 
 	return t.toTitle()
@@ -439,7 +439,7 @@ func (t TreeNode) toTitle() (title string) {
 
 const colorFmt = "%s [%s::b]%s[::]"
 
-func (t TreeNode) toEmojiTitle() (title string) {
+func (t TreeNode) toEmojiTitle(emojiFor func(string) string) (title string) {
 	_, n := client.Namespaced(t.ID)
 	color, status := "white", "OK"
 	if v, ok := t.Extras[StatusKey]; ok {
@@ -456,7 +456,7 @@ func (t TreeNode) toEmojiTitle() (title string) {
 		}
 	}()
 
-	title = fmt.Sprintf(colorFmt, toEmoji(t.GVR), color, n)
+	title = fmt.Sprintf(colorFmt, toEmoji(t.GVR, emojiFor), color, n)
 	if !t.IsLeaf() {
 		title += fmt.Sprintf("[white::d](%d[-::d])[-::-]", t.CountChildren())
 	}
@@ -470,95 +470,96 @@ func (t TreeNode) toEmojiTitle() (title string) {
 	return
 }
 
-func toEmoji(gvr string) string {
-	if e := v1Emoji(gvr); e != "" {
+func toEmoji(gvr string, emojiFor func(string) string) string {
+	if e := v1Emoji(gvr, emojiFor); e != "" {
 		return e
 	}
-	if e := appsEmoji(gvr); e != "" {
+	if e := appsEmoji(gvr, emojiFor); e != "" {
 		return e
 	}
-	if e := issueEmoji(gvr); e != "" {
+	if e := issueEmoji(gvr, emojiFor); e != "" {
 		return e
 	}
+
 	switch gvr {
 	case "autoscaling/v1/horizontalpodautoscalers":
-		return "♎️"
+		return emojiFor("xray.horizontal_pod_autoscalers")
 	case "rbac.authorization.k8s.io/v1/clusterrolebindings", "rbac.authorization.k8s.io/v1/clusterroles":
-		return "👩‍"
+		return emojiFor("xray.cluster_roles")
 	case "rbac.authorization.k8s.io/v1/rolebindings", "rbac.authorization.k8s.io/v1/roles":
-		return "👨🏻‍"
+		return emojiFor("xray.roles")
 	case "networking.k8s.io/v1/networkpolicies":
-		return "📕"
+		return emojiFor("xray.network_policies")
 	case "policy/v1/poddisruptionbudgets":
-		return "🏷 "
+		return emojiFor("xray.pod_disruption_budgets")
 	case "policy/v1beta1/podsecuritypolicies":
-		return "👮‍♂️"
+		return emojiFor("xray.pod_security_policies")
 	case "containers":
-		return "🐳"
+		return emojiFor("xray.containers")
 	case "report":
-		return "🧼"
+		return emojiFor("xray.report")
 	default:
-		return "📎"
+		return emojiFor("xray.default_gvr")
 	}
 }
 
-func issueEmoji(gvr string) string {
+func issueEmoji(gvr string, emojiFor func(string) string) string {
 	switch gvr {
 	case "issue_0":
-		return "👍"
+		return emojiFor("xray.issue_0")
 	case "issue_1":
-		return "🔊"
+		return emojiFor("xray.issue_1")
 	case "issue_2":
-		return "☣️ "
+		return emojiFor("xray.issue_2")
 	case "issue_3":
-		return "🧨"
+		return emojiFor("xray.issue_3")
 	default:
 		return ""
 	}
 }
 
-func v1Emoji(gvr string) string {
+func v1Emoji(gvr string, emojiFor func(string) string) string {
 	switch gvr {
 	case "v1/namespaces":
-		return "🗂 "
+		return emojiFor("xray.namespaces")
 	case "v1/nodes":
-		return "🖥 "
+		return emojiFor("xray.nodes")
 	case "v1/pods":
-		return "🚛"
+		return emojiFor("xray.pods")
 	case "v1/services":
-		return "💁‍♀️"
+		return emojiFor("xray.services")
 	case "v1/serviceaccounts":
-		return "💳"
+		return emojiFor("xray.service_accounts")
 	case "v1/persistentvolumes":
-		return "📚"
+		return emojiFor("xray.persistent_volumes")
 	case "v1/persistentvolumeclaims":
-		return "🎟 "
+		return emojiFor("xray.persistent_volume_claims")
 	case "v1/secrets":
-		return "🔒"
+		return emojiFor("xray.secrets")
 	case "v1/configmaps":
-		return "🗺 "
+		return emojiFor("xray.config_maps")
 	default:
 		return ""
 	}
 }
 
-func appsEmoji(gvr string) string {
+func appsEmoji(gvr string, emojiFor func(string) string) string {
 	switch gvr {
 	case "apps/v1/deployments":
-		return "🪂"
+		return emojiFor("xray.deployments")
 	case "apps/v1/statefulsets":
-		return "🎎"
+		return emojiFor("xray.stateful_sets")
 	case "apps/v1/daemonsets":
-		return "😈"
+		return emojiFor("xray.daemon_sets")
 	case "apps/v1/replicasets":
-		return "👯‍♂️"
+		return emojiFor("xray.replica_sets")
 	default:
 		return ""
 	}
 }
 
 // EmojiInfo returns emoji help.
-func EmojiInfo() map[string]string {
+func EmojiInfo(emojiFor func(string) string) map[string]string {
 	GVRs := []string{
 		"containers",
 		"v1/namespaces",
@@ -576,7 +577,7 @@ func EmojiInfo() map[string]string {
 
 	m := make(map[string]string, len(GVRs))
 	for _, g := range GVRs {
-		m[client.NewGVR(g).R()] = toEmoji(g)
+		m[client.NewGVR(g).R()] = toEmoji(g, emojiFor)
 	}
 
 	return m

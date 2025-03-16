@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s emoji schema",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "k9s": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system": {
+          "type": "object",
+          "properties": {
+            "log_stream_cancelled": {"type": "string"},
+            "new_version": {"type": "string"},
+            "default": {"type": "string"},
+            "locked": {"type": "string"},
+            "unlocked": {"type": "string"}
+          }
+        },
+        "prompt": {
+          "type": "object",
+          "properties": {
+            "query": {"type": "string"},
+            "filter": {"type": "string"}
+          }
+        },
+        "status": {
+          "type": "object",
+          "properties": {
+            "info": {"type": "string"},
+            "warn": {"type": "string"},
+            "error": {"type": "string"}
+          }
+        },
+        "xray": {
+          "type": "object",
+          "properties": {
+            "namespaces": {"type": "string"},
+            "default_gvr": {"type": "string"},
+            "nodes": {"type": "string"},
+            "pods": {"type": "string"},
+            "services": {"type": "string"},
+            "service_accounts": {"type": "string"},
+            "persistent_volumes": {"type": "string"},
+            "persistent_volume_claims": {"type": "string"},
+            "secrets": {"type": "string"},
+            "horizontal_pod_autoscalers": {"type": "string"},
+            "config_maps": {"type": "string"},
+            "deployments": {"type": "string"},
+            "stateful_sets": {"type": "string"},
+            "daemon_sets": {"type": "string"},
+            "replica_sets": {"type": "string"},
+            "cluster_roles": {"type": "string"},
+            "roles": {"type": "string"},
+            "network_policies": {"type": "string"},
+            "pod_disruption_budgets": {"type": "string"},
+            "pod_security_policies": {"type": "string"},
+            "containers": {"type": "string"},
+            "report": {"type": "string"},
+            "issue_0": {"type": "string"},
+            "issue_1": {"type": "string"},
+            "issue_2": {"type": "string"},
+            "issue_3": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

@@ -22,7 +22,7 @@ func init() {
 }
 
 func TestNewCrumbs(t *testing.T) {
-	v := ui.NewCrumbs(config.NewStyles())
+	v := ui.NewCrumbs(config.NewStyles(false))
 	v.StackPushed(makeComponent("c1"))
 	v.StackPushed(makeComponent("c2"))
 	v.StackPushed(makeComponent("c3"))

@@ -15,11 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const (
-	unlockedIC = "✍️ "
-	lockedIC   = "🔒"
-)
-
 // Namespaceable tracks namespaces.
 type Namespaceable interface {
 	// ClusterWide returns true if the model represents resource in all namespaces.

@@ -46,6 +46,10 @@ var (
 	//go:embed templates/stock-skin.yaml
 	// stockSkinTpl tracks stock skin template
 	stockSkinTpl []byte
+
+	//go:embed templates/stock-emoji.yaml
+	// emojiTpl tracks emoji template
+	emojiTpl []byte
 )
 
 var (
@@ -54,6 +58,9 @@ var (
 
 	// AppSkinsDir tracks skins data directory.
 	AppSkinsDir string
+
+	// AppEmojiDir tracks emoji data directory.
+	AppEmojiDir string
 
 	// AppBenchmarksDir tracks benchmarks results directory.
 	AppBenchmarksDir string
@@ -146,6 +153,13 @@ func initK9sEnvLocs() error {
 			slogs.Error, err,
 		)
 	}
+	AppEmojiDir = filepath.Join(AppSkinsDir, "emoji")
+	if err := data.EnsureFullPath(AppEmojiDir, data.DefaultDirMod); err != nil {
+		slog.Warn("Unable to create emoji dir",
+			slogs.Dir, AppEmojiDir,
+			slogs.Error, err,
+		)
+	}
 	AppContextsDir = filepath.Join(AppConfigDir, "clusters")
 	if err := data.EnsureFullPath(AppContextsDir, data.DefaultDirMod); err != nil {
 		slog.Warn("Unable to create clusters dir",
@@ -184,6 +198,11 @@ func initXDGLocs() error {
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
 	if err := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); err != nil {
 		slog.Warn("No skins dir detected", slogs.Error, err)
+	}
+
+	AppEmojiDir = filepath.Join(AppSkinsDir, "emoji")
+	if err := data.EnsureFullPath(AppEmojiDir, data.DefaultDirMod); err != nil {
+		slog.Warn("No emoji dir detected", slogs.Error, err)
 	}
 
 	AppDumpsDir, err = xdg.StateFile(filepath.Join(AppName, "screen-dumps"))
@@ -292,11 +311,20 @@ func EnsureHotkeysCfgFile() (string, error) {
 	return f, nil
 }
 
-// SkinFileFromName generate skin file path from spec.
+// SkinFileFromName generates skin file path from spec.
 func SkinFileFromName(n string) string {
 	if n == "" {
 		n = "stock"
 	}
 
 	return filepath.Join(AppSkinsDir, n+".yaml")
+}
+
+// EmojiPaletteFileFromName generates emoji file path from spec.
+func EmojiPaletteFileFromName(n string) string {
+	if n == "" {
+		return n
+	}
+
+	return filepath.Join(AppEmojiDir, n+".yaml")
 }

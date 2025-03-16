@@ -82,7 +82,7 @@ func (c *ClusterInfo) sectionCell(t string) *tview.TableCell {
 func (c *ClusterInfo) infoCell(t string) *tview.TableCell {
 	cell := tview.NewTableCell(t)
 	cell.SetExpansion(2)
-	cell.SetTextColor(c.styles.K9s.Info.FgColor.Color())
+	cell.SetTextColor(c.styles.Skin.K9s.Info.FgColor.Color())
 	cell.SetBackgroundColor(c.app.Styles.BgColor())
 
 	return cell
@@ -118,7 +118,8 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 		row = c.setCell(row, curr.Cluster)
 		row = c.setCell(row, curr.User)
 		if curr.K9sLatest != "" {
-			row = c.setCell(row, fmt.Sprintf("%s ⚡️[cadetblue::b]%s", curr.K9sVer, curr.K9sLatest))
+			emoji := c.app.Styles.Emoji.EmojiFor("system.new_version")
+			row = c.setCell(row, fmt.Sprintf("%s "+emoji+"[cadetblue::b]%s", curr.K9sVer, curr.K9sLatest))
 		} else {
 			row = c.setCell(row, curr.K9sVer)
 		}
@@ -156,11 +157,11 @@ func (c *ClusterInfo) setDefCon(cpu, mem int) {
 
 func (c *ClusterInfo) updateStyle() {
 	for row := 0; row < c.GetRowCount(); row++ {
-		c.GetCell(row, 0).SetTextColor(c.styles.K9s.Info.FgColor.Color())
+		c.GetCell(row, 0).SetTextColor(c.styles.Skin.K9s.Info.FgColor.Color())
 		c.GetCell(row, 0).SetBackgroundColor(c.styles.BgColor())
 		var s tcell.Style
 		s = s.Bold(true)
-		s = s.Foreground(c.styles.K9s.Info.SectionColor.Color())
+		s = s.Foreground(c.styles.Skin.K9s.Info.SectionColor.Color())
 		s = s.Background(c.styles.BgColor())
 		c.GetCell(row, 1).SetStyle(s)
 	}

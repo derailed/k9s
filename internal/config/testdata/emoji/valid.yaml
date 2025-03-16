@@ -1,0 +1,14 @@
+k9s:
+  system:
+    startup: "🐕"
+    log_stream_cancelled: "🚩"
+    new_version: "🔄"
+    default: "📝"
+  prompt:
+    query: "🔍"
+    filter: "🔎"
+  status:
+    info: "ℹ️"
+    warn: "⚠️"
+    error: "❌"
+    check_mark: "✓"

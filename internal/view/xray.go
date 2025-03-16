@@ -113,7 +113,7 @@ func (x *Xray) ExtraHints() map[string]string {
 	if x.app.Config.K9s.UI.NoIcons {
 		return nil
 	}
-	return xray.EmojiInfo()
+	return xray.EmojiInfo(x.app.Styles.Emoji.EmojiFor)
 }
 
 // SetInstance sets specific resource instance.
@@ -677,7 +677,7 @@ func (x *Xray) styleTitle() string {
 	} else {
 		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	}
-	if ic := ui.ROIndicator(x.app.Config.IsReadOnly(), x.app.Config.K9s.UI.NoIcons); ic != "" {
+	if ic := ui.ROIndicator(x.app.Config.IsReadOnly(), x.app.Styles.Emoji.EmojiFor); ic != "" {
 		title = " " + ic + title
 	}
 
@@ -761,7 +761,7 @@ func rxInverseFilter(q, path string) bool {
 func makeTreeNode(node *xray.TreeNode, expanded bool, showIcons bool, styles *config.Styles) *tview.TreeNode {
 	n := tview.NewTreeNode("No data...")
 	if node != nil {
-		n.SetText(node.Title(showIcons))
+		n.SetText(node.Title(showIcons, styles.Emoji.EmojiFor))
 		n.SetReference(node.Spec())
 	}
 	n.SetSelectable(true)

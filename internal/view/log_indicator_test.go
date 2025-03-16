@@ -12,7 +12,7 @@ import (
 )
 
 func TestLogIndicatorRefresh(t *testing.T) {
-	defaults := config.NewStyles()
+	defaults := config.NewStyles(false)
 	uu := map[string]struct {
 		li *view.LogIndicator
 		e  string
@@ -35,7 +35,7 @@ func TestLogIndicatorRefresh(t *testing.T) {
 }
 
 func BenchmarkLogIndicatorRefresh(b *testing.B) {
-	defaults := config.NewStyles()
+	defaults := config.NewStyles(false)
 	v := view.NewLogIndicator(config.NewConfig(nil), defaults, true)
 
 	b.ReportAllocs()

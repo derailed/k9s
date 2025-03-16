@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
@@ -44,19 +45,42 @@ func (ts TextStyle) ToShortString() string {
 type (
 	// Styles tracks K9s styling options.
 	Styles struct {
-		K9s       Style `json:"k9s" yaml:"k9s"`
+		Skin  StyleConfig
+		Emoji EmojiConfig
+
 		listeners []StyleListener
+	}
+
+	StyleConfig struct {
+		K9s Style `json:"k9s" yaml:"k9s"`
 	}
 
 	// Style tracks K9s styles.
 	Style struct {
-		Body   Body   `json:"body" yaml:"body"`
-		Prompt Prompt `json:"prompt" yaml:"prompt"`
-		Help   Help   `json:"help" yaml:"help"`
-		Frame  Frame  `json:"frame" yaml:"frame"`
-		Info   Info   `json:"info" yaml:"info"`
-		Views  Views  `json:"views" yaml:"views"`
-		Dialog Dialog `json:"dialog" yaml:"dialog"`
+		Body   Body       `json:"body" yaml:"body"`
+		Prompt Prompt     `json:"prompt" yaml:"prompt"`
+		Help   Help       `json:"help" yaml:"help"`
+		Frame  Frame      `json:"frame" yaml:"frame"`
+		Info   Info       `json:"info" yaml:"info"`
+		Views  Views      `json:"views" yaml:"views"`
+		Dialog Dialog     `json:"dialog" yaml:"dialog"`
+		Emoji  EmojiStyle `json:"emoji" yaml:"emoji"`
+	}
+
+	EmojiStyle struct {
+		Palette string `json:"palette" yaml:"palette"`
+	}
+
+	EmojiConfig struct {
+		K9s     EmojiPalette `json:"k9s" yaml:"k9s"`
+		NoIcons bool
+	}
+
+	EmojiPalette struct {
+		System SystemEmoji `json:"system" yaml:"system"`
+		Prompt PromptEmoji `json:"prompt" yaml:"prompt"`
+		Status StatusEmoji `json:"status" yaml:"status"`
+		Xray   XrayEmoji   `json:"xray" yaml:"xray"`
 	}
 
 	// Prompt tracks command styles
@@ -236,17 +260,134 @@ type (
 		DefaultChartColors Colors            `json:"defaultChartColors" yaml:"defaultChartColors"`
 		ResourceColors     map[string]Colors `json:"resourceColors" yaml:"resourceColors"`
 	}
+
+	SystemEmoji struct {
+		LogStreamCancel string `json:"log_stream_cancelled" yaml:"log_stream_cancelled"`
+		NewVersion      string `json:"new_version" yaml:"new_version"`
+		Default         string `json:"default" yaml:"default"`
+		LockedIC        string `json:"locked" yaml:"locked"`
+		UnlockedIC      string `json:"unlocked" yaml:"unlocked"`
+	}
+
+	PromptEmoji struct {
+		Query  string `json:"query" yaml:"query"`
+		Filter string `json:"filter" yaml:"filter"`
+	}
+
+	StatusEmoji struct {
+		Info  string `json:"info" yaml:"info"`
+		Warn  string `json:"warn" yaml:"warn"`
+		Error string `json:"error" yaml:"error"`
+	}
+
+	XrayEmoji struct {
+		Namespaces               string `json:"namespaces" yaml:"namespaces"`
+		DefaultGVR               string `json:"default_gvr" yaml:"default_gvr"`
+		Nodes                    string `json:"nodes" yaml:"nodes"`
+		Pods                     string `json:"pods" yaml:"pods"`
+		Services                 string `json:"services" yaml:"services"`
+		ServiceAccounts          string `json:"service_accounts" yaml:"service_accounts"`
+		PersistentVolumes        string `json:"persistent_volumes" yaml:"persistent_volumes"`
+		PersistentVolumeClaims   string `json:"persistent_volume_claims" yaml:"persistent_volume_claims"`
+		Secrets                  string `json:"secrets" yaml:"secrets"`
+		HorizontalPodAutoscalers string `json:"horizontal_pod_autoscalers" yaml:"horizontal_pod_autoscalers"`
+		ConfigMaps               string `json:"config_maps" yaml:"config_maps"`
+		Deployments              string `json:"deployments" yaml:"deployments"`
+		StatefulSets             string `json:"stateful_sets" yaml:"stateful_sets"`
+		DaemonSets               string `json:"daemon_sets" yaml:"daemon_sets"`
+		ReplicaSets              string `json:"replica_sets" yaml:"replica_sets"`
+		ClusterRoles             string `json:"cluster_roles" yaml:"cluster_roles"`
+		Roles                    string `json:"roles" yaml:"roles"`
+		NetworkPolicies          string `json:"network_policies" yaml:"network_policies"`
+		PodDisruptionBudgets     string `json:"pod_disruption_budgets" yaml:"pod_disruption_budgets"`
+		PodSecurityPolicies      string `json:"pod_security_policies" yaml:"pod_security_policies"`
+		Containers               string `json:"containers" yaml:"containers"`
+		Report                   string `json:"report" yaml:"report"`
+		Issue0                   string `json:"issue_0" yaml:"issue_0"`
+		Issue1                   string `json:"issue_1" yaml:"issue_1"`
+		Issue2                   string `json:"issue_2" yaml:"issue_2"`
+		Issue3                   string `json:"issue_3" yaml:"issue_3"`
+	}
 )
 
-func newStyle() Style {
-	return Style{
-		Body:   newBody(),
-		Prompt: newPrompt(),
-		Help:   newHelp(),
-		Frame:  newFrame(),
-		Info:   newInfo(),
-		Views:  newViews(),
-		Dialog: newDialog(),
+func newSkin() StyleConfig {
+	return StyleConfig{
+		K9s: Style{
+			Body:   newBody(),
+			Prompt: newPrompt(),
+			Help:   newHelp(),
+			Frame:  newFrame(),
+			Info:   newInfo(),
+			Views:  newViews(),
+			Dialog: newDialog(),
+		},
+	}
+}
+
+func newEmoji() EmojiConfig {
+	return EmojiConfig{
+		K9s: EmojiPalette{
+			System: newSystemEmoji(),
+			Prompt: newPromptEmoji(),
+			Status: newStatusEmoji(),
+			Xray:   newXrayEmoji(),
+		},
+	}
+}
+
+func newSystemEmoji() SystemEmoji {
+	return SystemEmoji{
+		LogStreamCancel: "🏁",
+		NewVersion:      "⚡️",
+		Default:         "📎",
+		LockedIC:        "🔒",
+		UnlockedIC:      "✍️",
+	}
+}
+
+func newPromptEmoji() PromptEmoji {
+	return PromptEmoji{
+		Query:  "🐶",
+		Filter: "🐩",
+	}
+}
+
+func newStatusEmoji() StatusEmoji {
+	return StatusEmoji{
+		Info:  "😎",
+		Warn:  "😗",
+		Error: "😡",
+	}
+}
+
+func newXrayEmoji() XrayEmoji {
+	return XrayEmoji{
+		Namespaces:               "🗂",
+		DefaultGVR:               "📎",
+		Nodes:                    "🖥",
+		Pods:                     "🚛",
+		Services:                 "💁‍♀️",
+		ServiceAccounts:          "💳",
+		PersistentVolumes:        "📚",
+		PersistentVolumeClaims:   "🎟",
+		Secrets:                  "🔒",
+		HorizontalPodAutoscalers: "♎️",
+		ConfigMaps:               "🗺",
+		Deployments:              "🪂",
+		StatefulSets:             "🎎",
+		DaemonSets:               "😈",
+		ReplicaSets:              "👯‍♂️",
+		ClusterRoles:             "👩‍",
+		Roles:                    "👨🏻‍",
+		NetworkPolicies:          "📕",
+		PodDisruptionBudgets:     "🏷",
+		PodSecurityPolicies:      "👮‍♂️",
+		Containers:               "🐳",
+		Report:                   "🧼",
+		Issue0:                   "👍",
+		Issue1:                   "🔊",
+		Issue2:                   "☣️",
+		Issue3:                   "🧨",
 	}
 }
 
@@ -280,11 +421,11 @@ func newCharts() Charts {
 		BgColor:            "black",
 		DialBgColor:        "black",
 		ChartBgColor:       "black",
-		DefaultDialColors:  Colors{Color("palegreen"), Color("orangered")},
-		DefaultChartColors: Colors{Color("palegreen"), Color("orangered")},
+		DefaultDialColors:  Colors{"palegreen", "orangered"},
+		DefaultChartColors: Colors{"palegreen", "orangered"},
 		ResourceColors: map[string]Colors{
-			"cpu": {Color("dodgerblue"), Color("darkslateblue")},
-			"mem": {Color("yellow"), Color("goldenrod")},
+			"cpu": {"dodgerblue", "darkslateblue"},
+			"mem": {"yellow", "goldenrod"},
 		},
 	}
 }
@@ -448,21 +589,29 @@ func newMenu() Menu {
 }
 
 // NewStyles creates a new default config.
-func NewStyles() *Styles {
-	var s Styles
-	if err := yaml.Unmarshal(stockSkinTpl, &s); err == nil {
-		return &s
+func NewStyles(noIcons bool) *Styles {
+	var s StyleConfig
+	if err := yaml.Unmarshal(stockSkinTpl, &s); err != nil {
+		s = newSkin()
 	}
 
+	var e EmojiConfig
+	if err := yaml.Unmarshal(emojiTpl, &e); err != nil {
+		e = newEmoji()
+	}
+
+	e.NoIcons = noIcons
+
 	return &Styles{
-		K9s: newStyle(),
+		Skin:  s,
+		Emoji: e,
 	}
 }
 
 // Reset resets styles.
 func (s *Styles) Reset() {
 	if err := yaml.Unmarshal(stockSkinTpl, s); err != nil {
-		s.K9s = newStyle()
+		s.Skin = newSkin()
 	}
 }
 
@@ -504,17 +653,17 @@ func (s *Styles) fireStylesChanged() {
 
 // Body returns body styles.
 func (s *Styles) Body() Body {
-	return s.K9s.Body
+	return s.Skin.K9s.Body
 }
 
 // Prompt returns prompt styles.
 func (s *Styles) Prompt() Prompt {
-	return s.K9s.Prompt
+	return s.Skin.K9s.Prompt
 }
 
 // Frame returns frame styles.
 func (s *Styles) Frame() Frame {
-	return s.K9s.Frame
+	return s.Skin.K9s.Frame
 }
 
 // Crumb returns crumb styles.
@@ -529,31 +678,132 @@ func (s *Styles) Title() Title {
 
 // Charts returns charts styles.
 func (s *Styles) Charts() Charts {
-	return s.K9s.Views.Charts
+	return s.Skin.K9s.Views.Charts
 }
 
 // Dialog returns dialog styles.
 func (s *Styles) Dialog() Dialog {
-	return s.K9s.Dialog
+	return s.Skin.K9s.Dialog
 }
 
 // Table returns table styles.
 func (s *Styles) Table() Table {
-	return s.K9s.Views.Table
+	return s.Skin.K9s.Views.Table
 }
 
 // Xray returns xray styles.
 func (s *Styles) Xray() Xray {
-	return s.K9s.Views.Xray
+	return s.Skin.K9s.Views.Xray
 }
 
 // Views returns views styles.
 func (s *Styles) Views() Views {
-	return s.K9s.Views
+	return s.Skin.K9s.Views
 }
 
-// Load K9s configuration from file.
-func (s *Styles) Load(path string) error {
+// EmojiFor returns an emoji for the given key.
+// Examples: "prompt.filter", "status.warn", "xray.pod".
+func (e *EmojiConfig) EmojiFor(key string) string {
+	if e.NoIcons {
+		return ""
+	}
+
+	parts := strings.Split(key, ".")
+	if len(parts) != 2 {
+		return e.K9s.System.Default
+	}
+
+	category, subKey := parts[0], parts[1]
+	switch category {
+	case "system":
+		switch subKey {
+		case "log_stream_cancelled":
+			return e.K9s.System.LogStreamCancel
+		case "new_version":
+			return e.K9s.System.NewVersion
+		case "locked":
+			return e.K9s.System.LockedIC
+		case "unlocked":
+			return e.K9s.System.UnlockedIC
+		}
+	case "prompt":
+		switch subKey {
+		case "query":
+			return e.K9s.Prompt.Query
+		case "filter":
+			return e.K9s.Prompt.Filter
+		}
+	case "status":
+		switch subKey {
+		case "info":
+			return e.K9s.Status.Info
+		case "warn":
+			return e.K9s.Status.Warn
+		case "error":
+			return e.K9s.Status.Error
+		}
+	case "xray":
+		switch subKey {
+		case "namespaces":
+			return e.K9s.Xray.Namespaces
+		case "default_gvr":
+			return e.K9s.Xray.DefaultGVR
+		case "nodes":
+			return e.K9s.Xray.Nodes
+		case "pods":
+			return e.K9s.Xray.Pods
+		case "services":
+			return e.K9s.Xray.Services
+		case "service_accounts":
+			return e.K9s.Xray.ServiceAccounts
+		case "persistent_volumes":
+			return e.K9s.Xray.PersistentVolumes
+		case "persistent_volume_claims":
+			return e.K9s.Xray.PersistentVolumeClaims
+		case "secrets":
+			return e.K9s.Xray.Secrets
+		case "horizontal_pod_autoscalers":
+			return e.K9s.Xray.HorizontalPodAutoscalers
+		case "config_maps":
+			return e.K9s.Xray.ConfigMaps
+		case "deployments":
+			return e.K9s.Xray.Deployments
+		case "stateful_sets":
+			return e.K9s.Xray.StatefulSets
+		case "daemon_sets":
+			return e.K9s.Xray.DaemonSets
+		case "replica_sets":
+			return e.K9s.Xray.ReplicaSets
+		case "cluster_roles":
+			return e.K9s.Xray.ClusterRoles
+		case "roles":
+			return e.K9s.Xray.Roles
+		case "network_policies":
+			return e.K9s.Xray.NetworkPolicies
+		case "pod_disruption_budgets":
+			return e.K9s.Xray.PodDisruptionBudgets
+		case "pod_security_policies":
+			return e.K9s.Xray.PodSecurityPolicies
+		case "containers":
+			return e.K9s.Xray.Containers
+		case "report":
+			return e.K9s.Xray.Report
+		case "issue_0":
+			return e.K9s.Xray.Issue0
+		case "issue_1":
+			return e.K9s.Xray.Issue1
+		case "issue_2":
+			return e.K9s.Xray.Issue2
+		case "issue_3":
+			return e.K9s.Xray.Issue3
+		}
+	}
+
+	return e.K9s.System.Default
+}
+
+// LoadSkin K9s configuration from file.
+func (s *Styles) LoadSkin(path string) error {
 	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -561,7 +811,23 @@ func (s *Styles) Load(path string) error {
 	if err := data.JSONValidator.Validate(json.SkinSchema, bb); err != nil {
 		return err
 	}
-	if err := yaml.Unmarshal(bb, s); err != nil {
+	if err := yaml.Unmarshal(bb, &s.Skin); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LoadEmoji emoji configuration from file.
+func (s *Styles) LoadEmoji(path string) error {
+	bb, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := data.JSONValidator.Validate(json.EmojiSchema, bb); err != nil {
+		return err
+	}
+	if err := yaml.Unmarshal(bb, &s.Emoji); err != nil {
 		return err
 	}
 
@@ -574,8 +840,8 @@ func (s *Styles) Update() {
 	tview.Styles.ContrastBackgroundColor = s.BgColor()
 	tview.Styles.MoreContrastBackgroundColor = s.BgColor()
 	tview.Styles.PrimaryTextColor = s.FgColor()
-	tview.Styles.BorderColor = s.K9s.Frame.Border.FgColor.Color()
-	tview.Styles.FocusColor = s.K9s.Frame.Border.FocusColor.Color()
+	tview.Styles.BorderColor = s.Skin.K9s.Frame.Border.FgColor.Color()
+	tview.Styles.FocusColor = s.Skin.K9s.Frame.Border.FocusColor.Color()
 	tview.Styles.TitleColor = s.FgColor()
 	tview.Styles.GraphicsColor = s.FgColor()
 	tview.Styles.SecondaryTextColor = s.FgColor()

@@ -335,11 +335,11 @@ func (h *Help) addSection(c int, title string, hh model.MenuHints) {
 
 func (h *Help) updateStyle() {
 	var (
-		style   = tcell.StyleDefault.Background(h.styles.K9s.Help.BgColor.Color())
-		key     = style.Foreground(h.styles.K9s.Help.KeyColor.Color()).Bold(true)
-		numKey  = style.Foreground(h.app.Styles.K9s.Help.NumKeyColor.Color()).Bold(true)
-		info    = style.Foreground(h.app.Styles.K9s.Help.FgColor.Color())
-		heading = style.Foreground(h.app.Styles.K9s.Help.SectionColor.Color())
+		style   = tcell.StyleDefault.Background(h.styles.Skin.K9s.Help.BgColor.Color())
+		key     = style.Foreground(h.styles.Skin.K9s.Help.KeyColor.Color()).Bold(true)
+		numKey  = style.Foreground(h.app.Styles.Skin.K9s.Help.NumKeyColor.Color()).Bold(true)
+		info    = style.Foreground(h.app.Styles.Skin.K9s.Help.FgColor.Color())
+		heading = style.Foreground(h.app.Styles.Skin.K9s.Help.SectionColor.Color())
 	)
 	for col := 0; col < h.GetColumnCount(); col++ {
 		for row := 0; row < h.GetRowCount(); row++ {
@@ -376,7 +376,7 @@ func extractRef(c *tview.TableCell) string {
 
 func (h *Help) titleCell(title string) *tview.TableCell {
 	c := tview.NewTableCell(title)
-	c.SetTextColor(h.Styles().K9s.Help.SectionColor.Color())
+	c.SetTextColor(h.Styles().Skin.K9s.Help.SectionColor.Color())
 	c.SetAttributes(tcell.AttrBold)
 	c.SetExpansion(1)
 	c.SetAlign(tview.AlignLeft)
