@@ -185,7 +185,7 @@ func (v *CustomView) getVS(gvr, ns string) *ViewSetting {
 	})
 	slices.Reverse(kk)
 	for _, key := range kk {
-		if !strings.HasPrefix(key, gvr) {
+		if !strings.HasPrefix(key, gvr) && !strings.HasPrefix(gvr, key) {
 			continue
 		}
 
@@ -203,10 +203,23 @@ func (v *CustomView) getVS(gvr, ns string) *ViewSetting {
 				vs := v.Views[key]
 				return &vs
 			}
+		case strings.HasPrefix(k, key):
+			kk := strings.Fields(k)
+			if len(kk) == 2 {
+				if v, ok := v.Views[kk[0]+"@"+kk[1]]; ok {
+					return &v
+				}
+				if key == kk[0] {
+					vs := v.Views[key]
+					return &vs
+				}
+			}
+			fallthrough
 		case key == k:
 			vs := v.Views[key]
 			return &vs
 		}
+
 	}
 
 	return nil
