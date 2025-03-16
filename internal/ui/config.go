@@ -253,17 +253,22 @@ func (c *Configurator) loadSkinFile(s synchronizer) {
 
 	skinFile := config.SkinFileFromName(skin)
 	log.Debug().Msgf("Loading skin file: %q", skinFile)
-	if err := c.Styles.Load(skinFile); err != nil {
+	if err := c.Styles.LoadSkin(skinFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Warn().Msgf("Skin file %q not found in skins dir: %s", filepath.Base(skinFile), config.AppSkinsDir)
 			c.updateStyles("")
 		} else {
 			log.Error().Msgf("Failed to parse skin file -- %s: %s.", filepath.Base(skinFile), err)
 			c.updateStyles(skinFile)
+
 		}
 	} else {
 		c.updateStyles(skinFile)
 	}
+}
+
+func (c *Configurator) updateEmoji() {
+
 }
 
 func (c *Configurator) updateStyles(f string) {

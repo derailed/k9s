@@ -114,3 +114,5 @@ k9s:
     buttonFocusBgColor: dodgerblue
     labelFgColor: white
     fieldFgColor: white
+  emoji:
+    config_file: ./emoji/default.yaml

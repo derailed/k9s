@@ -178,6 +178,12 @@
               }
             }
           }
+        },
+        "emoji": {
+          "type": "object",
+          "properties": {
+            "configFile": {"type": "string"}
+          }
         }
       }
     }

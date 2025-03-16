@@ -57,13 +57,18 @@ type (
 
 	// Style tracks K9s styles.
 	Style struct {
-		Body   Body   `json:"body" yaml:"body"`
-		Prompt Prompt `json:"prompt" yaml:"prompt"`
-		Help   Help   `json:"help" yaml:"help"`
-		Frame  Frame  `json:"frame" yaml:"frame"`
-		Info   Info   `json:"info" yaml:"info"`
-		Views  Views  `json:"views" yaml:"views"`
-		Dialog Dialog `json:"dialog" yaml:"dialog"`
+		Body   Body       `json:"body" yaml:"body"`
+		Prompt Prompt     `json:"prompt" yaml:"prompt"`
+		Help   Help       `json:"help" yaml:"help"`
+		Frame  Frame      `json:"frame" yaml:"frame"`
+		Info   Info       `json:"info" yaml:"info"`
+		Views  Views      `json:"views" yaml:"views"`
+		Dialog Dialog     `json:"dialog" yaml:"dialog"`
+		Emoji  EmojiStyle `json:"emoji" yaml:"emoji"`
+	}
+
+	EmojiStyle struct {
+		ConfigFile string `json:"configFile" yaml:"configFile"`
 	}
 
 	EmojiConfig struct {
@@ -596,7 +601,6 @@ func newMenu() Menu {
 	}
 }
 
-// TODO:KIRILL test
 // NewStyles creates a new default config.
 func NewStyles() *Styles {
 	var s StyleConfig
@@ -812,8 +816,8 @@ func (e *EmojiConfig) EmojiFor(key string) string {
 	return e.K9s.System.LogStreamCancel
 }
 
-// Load K9s configuration from file.
-func (s *Styles) Load(path string) error {
+// LoadSkin K9s configuration from file.
+func (s *Styles) LoadSkin(path string) error {
 	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -821,7 +825,23 @@ func (s *Styles) Load(path string) error {
 	if err := data.JSONValidator.Validate(json.SkinSchema, bb); err != nil {
 		return err
 	}
-	if err := yaml.Unmarshal(bb, s); err != nil {
+	if err := yaml.Unmarshal(bb, &s.Skin); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LoadEmoji emoji configuration from file.
+func (s *Styles) LoadEmoji(path string) error {
+	bb, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := data.JSONValidator.Validate(json.EmojiSchema, bb); err != nil {
+		return err
+	}
+	if err := yaml.Unmarshal(bb, &s.Emoji); err != nil {
 		return err
 	}
 

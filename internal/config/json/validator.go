@@ -36,6 +36,9 @@ const (
 
 	// SkinSchema describes skin config schema.
 	SkinSchema = "skin.json"
+
+	// EmojiSchema describes emoji config schema.
+	EmojiSchema = "emoji.json"
 )
 
 var (
