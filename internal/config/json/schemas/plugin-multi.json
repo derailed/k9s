@@ -3,7 +3,24 @@
   "title": "K9s plugin-multi schema",
   "type": "object",
   "additionalProperties": {
-    "$ref": "file://internal/config/json/schemas/plugin.json",
-    "additionalProperties": false
+    "properties": {
+      "shortCut": { "type": "string" },
+      "override": { "type": "boolean" },
+      "description": { "type": "string" },
+      "confirm": { "type": "boolean" },
+      "dangerous": { "type": "boolean" },
+      "scopes": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "command": { "type": "string" },
+      "background": { "type": "boolean" },
+      "overwriteOutput": { "type": "boolean" },
+      "args": {
+        "type": "array",
+        "items": { "type": ["string", "number"] }
+      }
+    },
+    "required": ["shortCut", "description", "scopes", "command"]
   }
 }

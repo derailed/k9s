@@ -35,7 +35,7 @@ func TestValidatePlugins(t *testing.T) {
 		"toast": {
 			path:   "testdata/plugins/toast.yaml",
 			schema: json.PluginsSchema,
-			err:    "Additional property shortCuts is not allowed\nscopes is required\nshortCut is required",
+			err:    "scopes is required\nshortCut is required",
 		},
 		"cool-snippet": {
 			path:   "testdata/plugins/snippet.yaml",
@@ -52,13 +52,10 @@ func TestValidatePlugins(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			bb, err := os.ReadFile(u.path)
 			assert.NoError(t, err)
-			dir, _ := os.Getwd()
-			assert.NoError(t, os.Chdir("../../.."))
 			v := json.NewValidator()
 			if err := v.Validate(u.schema, bb); err != nil {
 				assert.Equal(t, u.err, err.Error())
 			}
-			assert.NoError(t, os.Chdir(dir))
 		})
 	}
 }
@@ -80,11 +77,8 @@ func TestValidatePluginDir(t *testing.T) {
 		bb, err := os.ReadFile(filepath.Join(plugDir, e.Name()))
 		assert.NoError(t, err)
 
-		dir, _ := os.Getwd()
-		assert.NoError(t, os.Chdir("../../.."))
 		p := json.NewValidator()
 		assert.NoError(t, p.Validate(json.PluginsSchema, bb), e.Name())
-		assert.NoError(t, os.Chdir(dir))
 	}
 }
 

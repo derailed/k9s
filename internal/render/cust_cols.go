@@ -151,7 +151,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 					Header: cc[idx].Header,
 					Value:  NAValue,
 				}
-				slog.Warn("Unable to find column %s", slogs.Name, cc[idx].Header.Name)
+				slog.Warn("Unable to find custom column", slogs.Name, cc[idx].Header.Name)
 				continue
 			}
 			var v string
