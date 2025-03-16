@@ -4,9 +4,6 @@
 package config
 
 import (
-	"os"
-	"path"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -79,22 +76,16 @@ func TestPluginLoad(t *testing.T) {
 		"toast-invalid": {
 			path: "testdata/plugins/plugins-toast.yaml",
 			ee:   NewPlugins(),
-			err:  "Additional property scoped is not allowed\nscopes is required\nAdditional property plugins is not allowed\ncommand is required\ndescription is required\nscopes is required\nshortCut is required\nAdditional property blah is not allowed\ncommand is required\ndescription is required\nscopes is required\nshortCut is required",
+			err:  "plugin validation failed for testdata/plugins/plugins-toast.yaml: scopes is required\nAdditional property plugins is not allowed\ncommand is required\ndescription is required\nscopes is required\nshortCut is required\ncommand is required\ndescription is required\nscopes is required\nshortCut is required",
 		},
 	}
 
-	dir, _ := os.Getwd()
-	assert.NoError(t, os.Chdir("../.."))
-	defer func() {
-		assert.NoError(t, os.Chdir(dir))
-	}()
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			p := NewPlugins()
-			err := p.Load(path.Join(dir, u.path), false)
+			err := p.Load(u.path, false)
 			if err != nil {
-				idx := strings.Index(err.Error(), ":")
-				assert.Equal(t, u.err, err.Error()[idx+2:])
+				assert.Equal(t, u.err, err.Error())
 			}
 			assert.Equal(t, u.ee, p)
 		})
@@ -111,15 +102,9 @@ func TestSinglePluginFileLoad(t *testing.T) {
 		Confirm:     true,
 	}
 
-	dir, _ := os.Getwd()
-	assert.NoError(t, os.Chdir("../.."))
-	defer func() {
-		assert.NoError(t, os.Chdir(dir))
-	}()
-
 	p := NewPlugins()
-	assert.NoError(t, p.load(path.Join(dir, "testdata/plugins/plugins.yaml")))
-	assert.NoError(t, p.loadDir(path.Join(dir, "/random/dir/not/exist")))
+	assert.NoError(t, p.load("testdata/plugins/plugins.yaml"))
+	assert.NoError(t, p.loadDir("/random/dir/not/exist"))
 
 	assert.Equal(t, 1, len(p.Plugins))
 	v, ok := p.Plugins["blah"]
@@ -135,8 +120,8 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 		ee   Plugins
 	}{
 		"empty": {
-			path: "internal/config/testdata/plugins/plugins.yaml",
-			dir:  "internal/config/testdata/plugins/dir",
+			path: "testdata/plugins/plugins.yaml",
+			dir:  "testdata/plugins/dir",
 			ee: Plugins{
 				Plugins: plugins{
 					"blah": {
@@ -181,11 +166,6 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 		},
 	}
 
-	dir, _ := os.Getwd()
-	assert.NoError(t, os.Chdir("../.."))
-	defer func() {
-		assert.NoError(t, os.Chdir(dir))
-	}()
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			p := NewPlugins()
