@@ -20,6 +20,12 @@ const (
 	// PluginsSchema describes plugins schema.
 	PluginsSchema = "plugins.json"
 
+	// PluginSchema describes a plugin snippet schema.
+	PluginSchema = "plugin.json"
+
+	// PluginMultiSchema describes plugin snippets schema.
+	PluginMultiSchema = "plugin-multi.json"
+
 	// AliasesSchema describes aliases schema.
 	AliasesSchema = "aliases.json"
 
@@ -41,7 +47,13 @@ const (
 
 var (
 	//go:embed schemas/plugins.json
+	pluginsSchema string
+
+	//go:embed schemas/plugin.json
 	pluginSchema string
+
+	//go:embed schemas/plugin-multi.json
+	pluginMultiSchema string
 
 	//go:embed schemas/aliases.json
 	aliasSchema string
@@ -72,13 +84,15 @@ type Validator struct {
 func NewValidator() *Validator {
 	v := Validator{
 		schemas: map[string]gojsonschema.JSONLoader{
-			K9sSchema:     gojsonschema.NewStringLoader(k9sSchema),
-			ContextSchema: gojsonschema.NewStringLoader(contextSchema),
-			AliasesSchema: gojsonschema.NewStringLoader(aliasSchema),
-			ViewsSchema:   gojsonschema.NewStringLoader(viewsSchema),
-			PluginsSchema: gojsonschema.NewStringLoader(pluginSchema),
-			HotkeysSchema: gojsonschema.NewStringLoader(hotkeysSchema),
-			SkinSchema:    gojsonschema.NewStringLoader(skinSchema),
+			K9sSchema:         gojsonschema.NewStringLoader(k9sSchema),
+			ContextSchema:     gojsonschema.NewStringLoader(contextSchema),
+			AliasesSchema:     gojsonschema.NewStringLoader(aliasSchema),
+			ViewsSchema:       gojsonschema.NewStringLoader(viewsSchema),
+			PluginsSchema:     gojsonschema.NewStringLoader(pluginsSchema),
+			PluginSchema:      gojsonschema.NewStringLoader(pluginSchema),
+			PluginMultiSchema: gojsonschema.NewStringLoader(pluginMultiSchema),
+			HotkeysSchema:     gojsonschema.NewStringLoader(hotkeysSchema),
+			SkinSchema:        gojsonschema.NewStringLoader(skinSchema),
 		},
 	}
 	v.register()
@@ -92,7 +106,6 @@ func (v *Validator) register() {
 	v.loader.Validate = true
 
 	clog := slog.With(slogs.Subsys, "schema")
-
 	for k, s := range v.schemas {
 		if err := v.loader.AddSchema(k, s); err != nil {
 			clog.Error("Schema initialization failed",
@@ -103,9 +116,24 @@ func (v *Validator) register() {
 	}
 }
 
+// ValidatePlugins validates plugins schema.
+// Checks for full, snippet and multi snippets schemas.
+func (v *Validator) ValidatePlugins(bb []byte) (string, error) {
+	var errs error
+	for _, k := range []string{PluginsSchema, PluginSchema, PluginMultiSchema} {
+		if err := v.Validate(k, bb); err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		return k, nil
+	}
+
+	return "", errs
+}
+
 // Validate runs document thru given schema validation.
 func (v *Validator) Validate(k string, bb []byte) error {
-	var m interface{}
+	var m any
 	err := yaml.Unmarshal(bb, &m)
 	if err != nil {
 		return err

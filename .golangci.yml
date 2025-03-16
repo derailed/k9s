@@ -50,7 +50,12 @@ linters-settings:
   goimports:
     local-prefixes: github.com/cilium/cilium
   unused:
-    go: "1.23"
+    parameters-are-used: true
+    local-variables-are-used: true
+    field-writes-are-uses: true
+    post-statements-are-reads: true
+    exported-fields-are-used: true
+    generated-is-used: true
   goheader:
     values:
       regexp:
@@ -61,23 +66,6 @@ linters-settings:
   gosec:
     includes:
       - G402
-  gomodguard:
-    blocked:
-      modules:
-        - github.com/miekg/dns:
-            recommendations:
-              - github.com/cilium/dns
-            reason: "use the cilium fork directly to avoid replace directives in go.mod, see https://github.com/cilium/cilium/pull/27582"
-        - gopkg.in/check.v1:
-            recommendations:
-              - testing
-              - github.com/stretchr/testify/assert
-            reason: "gocheck has been deprecated, see https://docs.cilium.io/en/latest/contributing/testing/unit/#migrating-tests-off-of-gopkg-in-check-v1"
-        - go.uber.org/multierr:
-            recommendations:
-              - errors
-            reason: "Go 1.20+ has support for combining multiple errors, see https://go.dev/doc/go1.20#errors"
-
   sloglint:
     # Enforce not mixing key-value pairs and attributes.
     # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-mixed-arguments
@@ -138,7 +126,7 @@ issues:
 
   # default is true. Enables skipping of directories:
   #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
-  skip-dirs-use-default: true
+  exclude-dirs-use-default: true
 
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:

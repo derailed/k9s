@@ -4,86 +4,174 @@
 package config
 
 import (
-	"os"
 	"testing"
 
-	"github.com/adrg/xdg"
 	"github.com/stretchr/testify/assert"
 )
 
-var pluginYmlTestData = Plugin{
-	Scopes:      []string{"po", "dp"},
-	Args:        []string{"-n", "$NAMESPACE", "-boolean"},
-	ShortCut:    "shift-s",
-	Description: "blee",
-	Command:     "duh",
-	Confirm:     true,
-	Background:  false,
-}
-
-var test1YmlTestData = Plugin{
-	Scopes:          []string{"po", "dp"},
-	Args:            []string{"-n", "$NAMESPACE", "-boolean"},
-	ShortCut:        "shift-s",
-	Description:     "blee",
-	Command:         "duh",
-	Confirm:         true,
-	Background:      false,
-	OverwriteOutput: true,
-}
-
-var test2YmlTestData = Plugin{
-	Scopes:          []string{"svc", "ing"},
-	Args:            []string{"-n", "$NAMESPACE", "-oyaml"},
-	ShortCut:        "shift-r",
-	Description:     "bla",
-	Command:         "duha",
-	Confirm:         false,
-	Background:      true,
-	OverwriteOutput: false,
-}
-
 func TestPluginLoad(t *testing.T) {
-	AppPluginsFile = "/tmp/k9s-test/fred.yaml"
-	os.Setenv("XDG_DATA_HOME", "/tmp/k9s-test")
-	xdg.Reload()
+	uu := map[string]struct {
+		path string
+		err  string
+		ee   Plugins
+	}{
+		"snippet": {
+			path: "testdata/plugins/dir/snippet.1.yaml",
+			ee: Plugins{
+				Plugins: plugins{
+					"snippet.1": Plugin{
+						Scopes:          []string{"po", "dp"},
+						Args:            []string{"-n", "$NAMESPACE", "-boolean"},
+						ShortCut:        "shift-s",
+						Description:     "blee",
+						Command:         "duh",
+						Confirm:         true,
+						OverwriteOutput: true,
+					},
+				},
+			},
+		},
 
-	p := NewPlugins()
-	assert.NoError(t, p.Load("testdata/plugins.yaml"))
+		"multi-snippets": {
+			path: "testdata/plugins/dir/snippet.multi.yaml",
+			ee: Plugins{
+				Plugins: plugins{
+					"crapola": Plugin{
+						ShortCut:    "Shift-1",
+						Command:     "crapola",
+						Description: "crapola",
+						Scopes:      []string{"pods"},
+					},
+					"bozo": Plugin{
+						ShortCut:    "Shift-2",
+						Description: "bozo",
+						Command:     "bozo",
+						Scopes:      []string{"pods", "svc"},
+					},
+				},
+			},
+		},
 
-	assert.Equal(t, 1, len(p.Plugins))
-	k, ok := p.Plugins["blah"]
-	assert.True(t, ok)
-	assert.ObjectsAreEqual(pluginYmlTestData, k)
+		"full": {
+			path: "testdata/plugins/plugins.yaml",
+			ee: Plugins{
+				Plugins: plugins{
+					"blah": Plugin{
+						Scopes:      []string{"po", "dp"},
+						Args:        []string{"-n", "$NAMESPACE", "-boolean"},
+						ShortCut:    "shift-s",
+						Description: "blee",
+						Command:     "duh",
+						Confirm:     true,
+					},
+				},
+			},
+		},
+
+		"toast-no-file": {
+			path: "testdata/plugins/plugins-bozo.yaml",
+			ee:   NewPlugins(),
+		},
+
+		"toast-invalid": {
+			path: "testdata/plugins/plugins-toast.yaml",
+			ee:   NewPlugins(),
+			err:  "plugin validation failed for testdata/plugins/plugins-toast.yaml: scopes is required\nAdditional property plugins is not allowed\ncommand is required\ndescription is required\nscopes is required\nshortCut is required\ncommand is required\ndescription is required\nscopes is required\nshortCut is required",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			p := NewPlugins()
+			err := p.Load(u.path, false)
+			if err != nil {
+				assert.Equal(t, u.err, err.Error())
+			}
+			assert.Equal(t, u.ee, p)
+		})
+	}
 }
 
 func TestSinglePluginFileLoad(t *testing.T) {
+	e := Plugin{
+		Scopes:      []string{"po", "dp"},
+		Args:        []string{"-n", "$NAMESPACE", "-boolean"},
+		ShortCut:    "shift-s",
+		Description: "blee",
+		Command:     "duh",
+		Confirm:     true,
+	}
+
 	p := NewPlugins()
-	assert.NoError(t, p.load("testdata/plugins.yaml"))
-	assert.NoError(t, p.loadPluginDir("/random/dir/not/exist"))
+	assert.NoError(t, p.load("testdata/plugins/plugins.yaml"))
+	assert.NoError(t, p.loadDir("/random/dir/not/exist"))
 
 	assert.Equal(t, 1, len(p.Plugins))
-	k, ok := p.Plugins["blah"]
-	assert.True(t, ok)
+	v, ok := p.Plugins["blah"]
 
-	assert.ObjectsAreEqual(pluginYmlTestData, k)
+	assert.True(t, ok)
+	assert.ObjectsAreEqual(e, v)
 }
 
 func TestMultiplePluginFilesLoad(t *testing.T) {
-	p := NewPlugins()
-	assert.NoError(t, p.load("testdata/plugins.yaml"))
-	assert.NoError(t, p.loadPluginDir("testdata/plugins"))
-
-	testPlugins := map[string]Plugin{
-		"blah":  pluginYmlTestData,
-		"test1": test1YmlTestData,
-		"test2": test2YmlTestData,
+	uu := map[string]struct {
+		path string
+		dir  string
+		ee   Plugins
+	}{
+		"empty": {
+			path: "testdata/plugins/plugins.yaml",
+			dir:  "testdata/plugins/dir",
+			ee: Plugins{
+				Plugins: plugins{
+					"blah": {
+						Scopes:      []string{"po", "dp"},
+						Args:        []string{"-n", "$NAMESPACE", "-boolean"},
+						ShortCut:    "shift-s",
+						Description: "blee",
+						Command:     "duh",
+						Confirm:     true,
+					},
+					"snippet.1": {
+						ShortCut:        "shift-s",
+						Command:         "duh",
+						Scopes:          []string{"po", "dp"},
+						Args:            []string{"-n", "$NAMESPACE", "-boolean"},
+						Description:     "blee",
+						Confirm:         true,
+						OverwriteOutput: true,
+					},
+					"snippet.2": {
+						Scopes:      []string{"svc", "ing"},
+						Args:        []string{"-n", "$NAMESPACE", "-oyaml"},
+						ShortCut:    "shift-r",
+						Description: "bla",
+						Command:     "duha",
+						Background:  true,
+					},
+					"crapola": {
+						Scopes:      []string{"pods"},
+						Command:     "crapola",
+						Description: "crapola",
+						ShortCut:    "Shift-1",
+					},
+					"bozo": {
+						Scopes:      []string{"pods", "svc"},
+						Command:     "bozo",
+						Description: "bozo",
+						ShortCut:    "Shift-2",
+					},
+				},
+			},
+		},
 	}
 
-	assert.Equal(t, len(testPlugins), len(p.Plugins))
-	for name, expectedPlugin := range testPlugins {
-		k, ok := p.Plugins[name]
-		assert.True(t, ok)
-		assert.ObjectsAreEqual(expectedPlugin, k)
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			p := NewPlugins()
+			assert.NoError(t, p.load(u.path))
+			assert.NoError(t, p.loadDir(u.dir))
+			assert.Equal(t, u.ee, p)
+		})
 	}
 }

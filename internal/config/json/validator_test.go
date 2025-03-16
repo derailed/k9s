@@ -14,11 +14,56 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidatePluginDir(t *testing.T) {
-	skinDir := "../../../plugins"
-	ee, err := os.ReadDir(skinDir)
+func TestValidatePluginSnippet(t *testing.T) {
+	plugPath := "testdata/plugins/snippet.yaml"
+	bb, err := os.ReadFile(plugPath)
 	assert.NoError(t, err)
+
 	p := json.NewValidator()
+	assert.NoError(t, p.Validate(json.PluginSchema, bb), plugPath)
+}
+
+func TestValidatePlugins(t *testing.T) {
+	uu := map[string]struct {
+		path, schema string
+		err          string
+	}{
+		"cool": {
+			path:   "testdata/plugins/cool.yaml",
+			schema: json.PluginsSchema,
+		},
+		"toast": {
+			path:   "testdata/plugins/toast.yaml",
+			schema: json.PluginsSchema,
+			err:    "scopes is required\nshortCut is required",
+		},
+		"cool-snippet": {
+			path:   "testdata/plugins/snippet.yaml",
+			schema: json.PluginSchema,
+		},
+		"cool-snippets": {
+			path:   "testdata/plugins/snippets.yaml",
+			schema: json.PluginMultiSchema,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			bb, err := os.ReadFile(u.path)
+			assert.NoError(t, err)
+			v := json.NewValidator()
+			if err := v.Validate(u.schema, bb); err != nil {
+				assert.Equal(t, u.err, err.Error())
+			}
+		})
+	}
+}
+
+func TestValidatePluginDir(t *testing.T) {
+	plugDir := "../../../plugins"
+	ee, err := os.ReadDir(plugDir)
+	assert.NoError(t, err)
 	for _, e := range ee {
 		if e.IsDir() {
 			continue
@@ -28,9 +73,11 @@ func TestValidatePluginDir(t *testing.T) {
 			continue
 		}
 		assert.True(t, ext == ".yaml", fmt.Sprintf("expected yaml file: %q", e.Name()))
-		assert.True(t, !strings.Contains(e.Name(), "_"), fmt.Sprintf("underscore in: %q", e.Name()))
-		bb, err := os.ReadFile(filepath.Join(skinDir, e.Name()))
+		assert.False(t, strings.Contains(e.Name(), "_"), fmt.Sprintf("underscore in: %q", e.Name()))
+		bb, err := os.ReadFile(filepath.Join(plugDir, e.Name()))
 		assert.NoError(t, err)
+
+		p := json.NewValidator()
 		assert.NoError(t, p.Validate(json.PluginsSchema, bb), e.Name())
 	}
 }
@@ -129,35 +176,6 @@ Additional property namespaces is not allowed`,
 			bb, err := os.ReadFile(u.f)
 			assert.NoError(t, err)
 			if err := v.Validate(json.ContextSchema, bb); err != nil {
-				assert.Equal(t, u.err, err.Error())
-			}
-		})
-	}
-}
-
-func TestValidatePlugins(t *testing.T) {
-	uu := map[string]struct {
-		f   string
-		err string
-	}{
-		"happy": {
-			f: "testdata/plugins/cool.yaml",
-		},
-		"toast": {
-			f: "testdata/plugins/toast.yaml",
-			err: `Additional property shortCuts is not allowed
-scopes is required
-shortCut is required`,
-		},
-	}
-
-	v := json.NewValidator()
-	for k := range uu {
-		u := uu[k]
-		t.Run(k, func(t *testing.T) {
-			bb, err := os.ReadFile(u.f)
-			assert.NoError(t, err)
-			if err := v.Validate(json.PluginsSchema, bb); err != nil {
 				assert.Equal(t, u.err, err.Error())
 			}
 		})
