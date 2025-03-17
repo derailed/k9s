@@ -68,14 +68,14 @@ type (
 	}
 
 	EmojiStyle struct {
-		ConfigFile string `json:"configFile" yaml:"configFile"`
+		Palette string `json:"palette" yaml:"palette"`
 	}
 
 	EmojiConfig struct {
-		K9s Emoji `json:"k9s" yaml:"k9s"`
+		K9s EmojiPalette `json:"k9s" yaml:"k9s"`
 	}
 
-	Emoji struct {
+	EmojiPalette struct {
 		System SystemEmoji `json:"system" yaml:"system"`
 		Files  FilesEmoji  `json:"files" yaml:"files"`
 		Prompt PromptEmoji `json:"prompt" yaml:"prompt"`
@@ -331,7 +331,7 @@ func newSkin() StyleConfig {
 
 func newEmoji() EmojiConfig {
 	return EmojiConfig{
-		K9s: Emoji{
+		K9s: EmojiPalette{
 			System: newSystemEmoji(),
 			Files:  newFilesEmoji(),
 			Prompt: newPromptEmoji(),

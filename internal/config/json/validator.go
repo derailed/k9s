@@ -62,6 +62,9 @@ var (
 
 	//go:embed schemas/skin.json
 	skinSchema string
+
+	//go:embed schemas/emoji.json
+	emojiSchema string
 )
 
 // Validator tracks schemas validation.
@@ -81,6 +84,7 @@ func NewValidator() *Validator {
 			PluginsSchema: gojsonschema.NewStringLoader(pluginSchema),
 			HotkeysSchema: gojsonschema.NewStringLoader(hotkeysSchema),
 			SkinSchema:    gojsonschema.NewStringLoader(skinSchema),
+			EmojiSchema:   gojsonschema.NewStringLoader(emojiSchema),
 		},
 	}
 	v.register()
