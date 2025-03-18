@@ -327,3 +327,26 @@ func Test_linesWithRegions(t *testing.T) {
 		})
 	}
 }
+
+func Test_sanitizeEsc(t *testing.T) {
+	uu := map[string]struct {
+		s string
+		e string
+	}{
+		"empty": {},
+		"empty-brackets": {
+			s: "[]",
+			e: "[]",
+		},
+		"tag": {
+			s: "[fred[]",
+			e: "[fred]",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, sanitizeEsc(u.s))
+		})
+	}
+}

@@ -36,9 +36,6 @@ type K9s struct {
 	Logger              Logger     `json:"logger" yaml:"logger"`
 	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
 	manualRefreshRate   int
-	manualHeadless      *bool
-	manualLogoless      *bool
-	manualCrumbsless    *bool
 	manualReadOnly      *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
@@ -293,9 +290,9 @@ func (k *K9s) Override(k9sFlags *Flags) {
 		k.manualRefreshRate = *k9sFlags.RefreshRate
 	}
 
-	k.manualHeadless = k9sFlags.Headless
-	k.manualLogoless = k9sFlags.Logoless
-	k.manualCrumbsless = k9sFlags.Crumbsless
+	k.UI.manualHeadless = k9sFlags.Headless
+	k.UI.manualLogoless = k9sFlags.Logoless
+	k.UI.manualCrumbsless = k9sFlags.Crumbsless
 	if k9sFlags.ReadOnly != nil && *k9sFlags.ReadOnly {
 		k.manualReadOnly = k9sFlags.ReadOnly
 	}
@@ -309,7 +306,7 @@ func (k *K9s) Override(k9sFlags *Flags) {
 
 // IsHeadless returns headless setting.
 func (k *K9s) IsHeadless() bool {
-	if IsBoolSet(k.manualHeadless) {
+	if IsBoolSet(k.UI.manualHeadless) {
 		return true
 	}
 
@@ -318,7 +315,7 @@ func (k *K9s) IsHeadless() bool {
 
 // IsLogoless returns logoless setting.
 func (k *K9s) IsLogoless() bool {
-	if IsBoolSet(k.manualLogoless) {
+	if IsBoolSet(k.UI.manualLogoless) {
 		return true
 	}
 
@@ -327,7 +324,7 @@ func (k *K9s) IsLogoless() bool {
 
 // IsCrumbsless returns crumbsless setting.
 func (k *K9s) IsCrumbsless() bool {
-	if IsBoolSet(k.manualCrumbsless) {
+	if IsBoolSet(k.UI.manualCrumbsless) {
 		return true
 	}
 

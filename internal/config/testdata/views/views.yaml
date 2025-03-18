@@ -17,3 +17,9 @@ views:
       - AGE
       - NAME
       - IP
+
+  bozo:
+    columns:
+      - DUH
+      - BLAH
+      - BLEE

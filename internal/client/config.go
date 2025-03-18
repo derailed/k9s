@@ -54,11 +54,9 @@ func (c *Config) CallTimeout() time.Duration {
 
 func (c *Config) RESTConfig() (*restclient.Config, error) {
 	cfg, err := c.clientConfig().ClientConfig()
-
 	if err != nil {
 		return nil, err
 	}
-
 	if c.proxy != nil {
 		cfg.Proxy = c.proxy
 	}
@@ -192,13 +190,9 @@ func (c *Config) GetContext(n string) (*api.Context, error) {
 	return nil, fmt.Errorf("getcontext - invalid context specified: %q", n)
 }
 
+// SetProxy sets the proxy function.
 func (c *Config) SetProxy(proxy func(*http.Request) (*url.URL, error)) {
 	c.proxy = proxy
-}
-
-func (c *Config) WithProxy(proxy func(*http.Request) (*url.URL, error)) *Config {
-	c.SetProxy(proxy)
-	return c
 }
 
 // Contexts fetch all available contexts.

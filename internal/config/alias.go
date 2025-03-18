@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/k9s/internal/slogs"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Alias tracks shortname to GVR mappings.
@@ -176,8 +176,6 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("help", "h", "?")
 	a.declare("quit", "q", "q!", "qa", "Q")
 	a.declare("aliases", "alias", "a")
-	// !!BOZO!!
-	// a.declare("popeye", "pop")
 	a.declare("helm", "charts", "chart", "hm")
 	a.declare("dir", "d")
 	a.declare("contexts", "context", "ctx")
@@ -202,10 +200,6 @@ func (a *Aliases) SaveAliases(path string) error {
 	if err := data.EnsureDirPath(path, data.DefaultDirMod); err != nil {
 		return err
 	}
-	cfg, err := yaml.Marshal(a)
-	if err != nil {
-		return err
-	}
 
-	return os.WriteFile(path, cfg, data.DefaultFileMod)
+	return data.SaveYAML(path, a)
 }

@@ -20,7 +20,6 @@ import (
 	"github.com/derailed/k9s/internal/view"
 
 	"github.com/lmittmann/tint"
-	// "github.com/MatusOllah/slogcolor"
 	"github.com/mattn/go-colorable"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -134,6 +133,12 @@ func loadConfiguration() (*config.Config, error) {
 	k9sCfg := config.NewConfig(k8sCfg)
 	var errs error
 
+	conn, err := client.InitConnection(k8sCfg, slog.Default())
+	if err != nil {
+		errs = errors.Join(errs, err)
+	}
+	k9sCfg.SetConnection(conn)
+
 	if err := k9sCfg.Load(config.AppConfigFile, false); err != nil {
 		errs = errors.Join(errs, err)
 	}
@@ -143,10 +148,6 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 
-	conn, err := client.InitConnection(k8sCfg, slog.Default())
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
 	// Try to access server version if that fail. Connectivity issue?
 	if !conn.CheckConnectivity() {
 		errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
@@ -157,7 +158,7 @@ func loadConfiguration() (*config.Config, error) {
 	} else {
 		slog.Info("✅ Kubernetes connectivity OK")
 	}
-	k9sCfg.SetConnection(conn)
+
 	if err := k9sCfg.Save(false); err != nil {
 		slog.Error("K9s config save failed", slogs.Error, err)
 		errs = errors.Join(errs, err)

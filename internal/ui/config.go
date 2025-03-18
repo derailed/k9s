@@ -32,9 +32,17 @@ type synchronizer interface {
 type Configurator struct {
 	Config     *config.Config
 	Styles     *config.Styles
-	CustomView *config.CustomView
+	customView *config.CustomView
 	BenchFile  string
 	skinFile   string
+}
+
+func (c *Configurator) CustomView() *config.CustomView {
+	if c.customView == nil {
+		c.customView = config.NewCustomView()
+	}
+
+	return c.customView
 }
 
 // HasSkin returns true if a skin file was located.
@@ -82,13 +90,9 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 
 // RefreshCustomViews load view configuration changes.
 func (c *Configurator) RefreshCustomViews() error {
-	if c.CustomView == nil {
-		c.CustomView = config.NewCustomView()
-	} else {
-		c.CustomView.Reset()
-	}
+	c.CustomView().Reset()
 
-	return c.CustomView.Load(config.AppViewsFile)
+	return c.CustomView().Load(config.AppViewsFile)
 }
 
 // SkinsDirWatcher watches for skin directory file changes.

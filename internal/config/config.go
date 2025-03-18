@@ -15,7 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -289,14 +289,13 @@ func (c *Config) SaveFile(path string) error {
 		return err
 	}
 
-	cfg, err := yaml.Marshal(c)
-	if err != nil {
+	if err := data.SaveYAML(path, c); err != nil {
 		slog.Error("Unable to save K9s config file", slogs.Error, err)
 		return err
 	}
 
 	slog.Info("[CONFIG] Saving K9s config to disk", slogs.Path, path)
-	return os.WriteFile(path, cfg, data.DefaultFileMod)
+	return nil
 }
 
 // Validate the configuration.

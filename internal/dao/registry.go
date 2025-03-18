@@ -242,21 +242,6 @@ func loadK9s(m ResourceMetas) {
 		Verbs:        []string{},
 		Categories:   []string{k9sCat},
 	}
-	m[client.NewGVR("popeye")] = metav1.APIResource{
-		Name:         "popeye",
-		Kind:         "Popeye",
-		SingularName: "popeye",
-		Namespaced:   true,
-		Verbs:        []string{},
-		Categories:   []string{k9sCat},
-	}
-	m[client.NewGVR("sanitizer")] = metav1.APIResource{
-		Name:         "sanitizer",
-		Kind:         "Sanitizer",
-		SingularName: "sanitizer",
-		Verbs:        []string{},
-		Categories:   []string{k9sCat},
-	}
 	m[client.NewGVR("contexts")] = metav1.APIResource{
 		Name:         "contexts",
 		Kind:         "Contexts",

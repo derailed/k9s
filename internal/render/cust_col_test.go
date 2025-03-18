@@ -57,6 +57,18 @@ func TestCustCol_parse(t *testing.T) {
 			},
 		},
 
+		"plain-show": {
+			s: "fred|S",
+			e: colDef{
+				name: "fred",
+				idx:  -1,
+				colAttrs: colAttrs{
+					align: tview.AlignLeft,
+					show:  true,
+				},
+			},
+		},
+
 		"age": {
 			s: "AGE|TR",
 			e: colDef{
@@ -198,7 +210,7 @@ func TestCustCol_parse(t *testing.T) {
 		},
 
 		"toast-no-name": {
-			s:   `:.metadata.name.fred|TW`,
+			s:   ":.metadata.name.fred|TW",
 			err: errors.New(`invalid column definition ":.metadata.name.fred|TW"`),
 		},
 
