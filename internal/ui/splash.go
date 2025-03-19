@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
@@ -82,6 +83,24 @@ func GetLogo(logoUrl string) {
 
     if logoUrl == "" {
         LogoSmall = defaultLogo
+        return
+    }
+
+    if strings.HasPrefix(logoUrl, "file:") {
+        filePath := strings.TrimPrefix(logoUrl, "file:")
+        body, err := os.ReadFile(filePath)
+        if err != nil {
+            slog.Error("Error reading logo from file", slog.String("file", filePath), slog.Any("error", err))
+            LogoSmall = defaultLogo
+            return
+        }
+        logo := strings.Split(string(body), "\n")
+        // last line is empty, remove it
+        if len(logo) > 0 && logo[len(logo)-1] == "" {
+            logo = logo[:len(logo)-1]
+        }
+        slog.Debug("Successfully fetched logo from file", slog.String("file", filePath))
+        LogoSmall = logo
         return
     }
 
