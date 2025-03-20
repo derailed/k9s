@@ -38,6 +38,10 @@ var (
 	// aliasesTpl tracks aliases default config template
 	aliasesTpl []byte
 
+	//go:embed templates/json.yaml
+	// jsonTpl tracks json default config template
+	jsonTpl []byte
+
 	//go:embed templates/hotkeys.yaml
 	// hotkeysTpl tracks hotkeys default config template
 	hotkeysTpl []byte
@@ -74,6 +78,9 @@ var (
 
 	// AppAliasesFile tracks aliases config file.
 	AppAliasesFile string
+
+	// AppJsonFile tracks json config file.
+	AppJsonFile string
 
 	// AppPluginsFile tracks plugins config file.
 	AppPluginsFile string
@@ -152,6 +159,7 @@ func initK9sEnvLocs() error {
 
 	AppConfigFile = filepath.Join(AppConfigDir, data.MainConfigFile)
 	AppHotKeysFile = filepath.Join(AppConfigDir, "hotkeys.yaml")
+	AppJsonFile = filepath.Join(AppConfigDir, "json.yaml")
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
@@ -173,6 +181,7 @@ func initXDGLocs() error {
 	}
 
 	AppHotKeysFile = filepath.Join(AppConfigDir, "hotkeys.yaml")
+	AppJsonFile = filepath.Join(AppConfigDir, "json.yaml")
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
@@ -218,6 +227,11 @@ func AppContextDir(cluster, context string) string {
 // AppContextAliasesFile generates a valid context specific aliases file path.
 func AppContextAliasesFile(cluster, context string) string {
 	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "aliases.yaml")
+}
+
+// AppContextJsonFile generates a valid context specific json file path.
+func AppContextJsonFile(cluster, context string) string {
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "json.yaml")
 }
 
 // AppContextPluginsFile generates a valid context specific plugins file path.
@@ -270,6 +284,19 @@ func EnsureAliasesCfgFile() (string, error) {
 	}
 	if _, err := os.Stat(f); errors.Is(err, fs.ErrNotExist) {
 		return f, os.WriteFile(f, aliasesTpl, data.DefaultFileMod)
+	}
+
+	return f, nil
+}
+
+// EnsureJsonCfgFile generates a valid json config file.
+func EnsureJsonCfgFile() (string, error) {
+	f := filepath.Join(AppConfigDir, "json.yaml")
+	if err := data.EnsureDirPath(f, data.DefaultDirMod); err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(f); errors.Is(err, fs.ErrNotExist) {
+		return f, os.WriteFile(f, jsonTpl, data.DefaultFileMod)
 	}
 
 	return f, nil

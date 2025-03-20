@@ -122,12 +122,12 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 		Previous:        prev,
 		DecodeJson:      cfg.DecodeJson,
 		Json: dao.JsonOptions{
-			Debug:             cfg.JsonConfig.Debug,
-			GlobalExpressions: cfg.JsonConfig.GlobalExpressions,
-			Templates:         dao.TemplatesFromConfig(cfg.JsonConfig),
+			Debug:             c.App().Config.Json.JsonConfig.Debug,
+			GlobalExpressions: c.App().Config.Json.JsonConfig.GlobalExpressions,
+			Templates:         dao.TemplatesFromConfig(c.App().Config.Json.JsonConfig),
 		},
 	}
-	opts.Json.SetCurrentTemplateByName(cfg.JsonConfig.DefaultTemplate)
+	opts.Json.SetCurrentTemplateByName(c.App().Config.Json.JsonConfig.DefaultTemplate)
 
 	return &opts, nil
 }
