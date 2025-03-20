@@ -36,4 +36,5 @@ const (
 	KeyWait          ContextKey = "wait"
 	KeyPodCounting   ContextKey = "podCounting"
 	KeyEnableImgScan ContextKey = "vulScan"
+	KeyContents      ContextKey = "contents"
 )
