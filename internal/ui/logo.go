@@ -121,7 +121,7 @@ func logo() *tview.TextView {
 	v := tview.NewTextView()
 	v.SetWordWrap(false)
 	v.SetWrap(false)
-	v.SetTextAlign(tview.AlignLeft)
+	v.SetTextAlign(tview.AlignCenter)
 	v.SetDynamicColors(true)
 
 	return v
