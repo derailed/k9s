@@ -1,0 +1,45 @@
+json:
+  debug: false
+  globalExpressions: |
+    def lpad(n;p): . | tostring | if (n > length) then ((n - length) * (p|tostring)) + . else . end;
+    def lpad(n): lpad(n;" "); 
+    def rpad(n;p): . | tostring | if (n > length) then . + ((n - length) * (p|tostring)) else . end;
+    def rpad(n): rpad(n;" ");
+    def dateTimeFromTsNs($ts;$nanos): if $ts then ($ts/1000 | strflocaltime("%FT%T.")) + 
+      (if $nanos then $nanos | lpad(9;0) else $ts%1000 | lpad(3;0) end) else "" end + "Z";
+    def color($content;$logLvl): ({
+      "ERROR": "\u001b[31m", 
+      "E": "\u001b[31m", 
+      "F": "\u001b[31m", 
+      "WARN":"\u001b[33m", 
+      "W":"\u001b[33m", 
+      "INFO":"",
+      "I":"",
+      "DEBUG":"\u001b[34m", 
+      "D1":"\u001b[34m",
+      "TRACE":"\u361b[0m"
+    }) as $lvlColor | $lvlColor.[$logLvl] + ($content | tostring) + "\u001b[0m";
+    def insertSpringArgs(args): if (args | not) then . else reduce args[] as $arg (.; . |= sub("{}"; $arg)) end;
+    def formatThrowable: .className + (if .message and .message != "null" then ": " + .message else "" end) + "\n" + 
+    (.stepArray | [ .[]? | "    at " + .className + "." + .methodName + "(" + .fileName + ":" + (.lineNumber|tostring) + ")" ] | join("\n")) + 
+    if .commonFramesCount then "\n    ... " + (.commonFramesCount | tostring) + " common frames omitted" else "" end;
+    def formatThrowableWithCause: formatThrowable + (if .cause then "\nCaused by: " + (.cause | formatThrowableWithCause) else "" end)
+  defaultTemplate: Spring
+  templates:
+    - name: Generic
+      loglevel: '.s // .level // ."log.level"'
+      datetime: '."@timestamp" // .t."$date" // .timestamp // .timeMillis'
+      message: '.message // "\(.msg) \(.attr)"'
+    - name: Spring
+      loglevel: '.level // ."log.level" | color("[" + . + "]" | lpad(7); .)'
+      datetime: '."@timestamp" // dateTimeFromTsNs(.timestamp//.timeMillis; .nanoseconds) // $k8sts'
+      message: '. as $j | .message | color(insertSpringArgs($j.arguments); $j.level // $j."log.level")'
+    - name: Spring + Stacktraces
+      loglevel: '.level // ."log.level" | color("[" + . + "]" | lpad(7); .)'
+      datetime: '."@timestamp" // dateTimeFromTsNs(.timestamp//.timeMillis; .nanoseconds)'
+      message: '. as $j | .message | color(insertSpringArgs($j.arguments); $j.level // $j."log.level") +
+        (if $j.throwable then "\n" + ($j.throwable | formatThrowableWithCause) else "" end)'
+    - name: Mongo
+      loglevel: '.s | color("[" + . + "]" | lpad(4); .)'
+      datetime: '."@timestamp" // .t."$date" // dateTimeFromTsNs(.timestamp//.timeMillis; .nanoseconds)'
+      message: '. as $j | "\(.msg) \(.attr)" | color(. ;$j.s // $j.level // $j."log.level")'

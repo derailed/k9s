@@ -25,6 +25,7 @@ type Config struct {
 	K9s      *K9s `yaml:"k9s" json:"k9s"`
 	conn     client.Connection
 	settings data.KubeSettings
+	Json     *Json
 }
 
 // NewConfig creates a new default config.
@@ -58,6 +59,16 @@ func (c *Config) ContextHotkeysPath() string {
 	}
 
 	return AppContextHotkeysFile(ct.ClusterName, c.K9s.activeContextName)
+}
+
+// ContextJsonPath returns a context specific json file spec.
+func (c *Config) ContextJsonPath() string {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+
+	return AppContextJsonFile(ct.GetClusterName(), c.K9s.activeContextName)
 }
 
 // ContextAliasesPath returns a context specific aliases file spec.

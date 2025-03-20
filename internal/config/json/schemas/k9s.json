@@ -110,29 +110,7 @@
             "textWrap": {"type": "boolean"},
             "disableAutoscroll": {"type": "boolean"},
             "showTime": {"type": "boolean"},
-            "decodeJson": {"type": "boolean"},
-            "json": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "debug": {"type": "boolean"},
-                "globalExpressions": {"type": "string"},
-                "defaultTemplate": {"type": "string"},
-                "templates": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                      "name": {"type": "string"},
-                      "loglevel": {"type": "string"},
-                      "datetime": {"type": "string"},
-                      "message": {"type": "string"}
-                    }
-                  }
-                }
-              }
-            }
+            "decodeJson": {"type": "boolean"}
           }
         },
         "thresholds": {

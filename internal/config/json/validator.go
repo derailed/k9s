@@ -29,6 +29,9 @@ const (
 	// AliasesSchema describes aliases schema.
 	AliasesSchema = "aliases.json"
 
+	// AliasesSchema describes json schema.
+	JsonSchema = "json.json"
+
 	// ViewsSchema describes views schema.
 	ViewsSchema = "views.json"
 
@@ -57,6 +60,9 @@ var (
 
 	//go:embed schemas/aliases.json
 	aliasSchema string
+
+	//go:embed schemas/json.json
+	jsonSchema string
 
 	//go:embed schemas/views.json
 	viewsSchema string
@@ -87,6 +93,7 @@ func NewValidator() *Validator {
 			K9sSchema:         gojsonschema.NewStringLoader(k9sSchema),
 			ContextSchema:     gojsonschema.NewStringLoader(contextSchema),
 			AliasesSchema:     gojsonschema.NewStringLoader(aliasSchema),
+			JsonSchema:        gojsonschema.NewStringLoader(jsonSchema),
 			ViewsSchema:       gojsonschema.NewStringLoader(viewsSchema),
 			PluginsSchema:     gojsonschema.NewStringLoader(pluginsSchema),
 			PluginSchema:      gojsonschema.NewStringLoader(pluginSchema),

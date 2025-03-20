@@ -151,6 +151,11 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 
+	k9sCfg.Json = config.NewJson()
+	if err := k9sCfg.Json.Load(config.AppJsonFile); err != nil {
+		errs = errors.Join(errs, err)
+	}
+
 	// Try to access server version if that fail. Connectivity issue?
 	if !conn.CheckConnectivity() {
 		errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
