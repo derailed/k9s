@@ -1018,13 +1018,13 @@ Colors can be defined by name or using a hex representation. Of recent, we've ad
 > NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 > NOTE: Please see [K9s Skins](https://k9scli.io/topics/skins/) for a list of available colors.
 
-To skin a specific context and provided the file `in_the_navy.yaml` is present in your skins directory.
+To skin a specific context and provided the file `in-the-navy.yaml` is present in your skins directory.
 
 ```yaml
 #  $XDG_DATA_HOME/k9s/clusters/clusterX/contextY/config.yaml
 k9s:
   cluster: clusterX
-  skin: in_the_navy
+  skin: in-the-navy
   readOnly: false
   namespace:
     active: default
@@ -1091,7 +1091,7 @@ k9s:
 ```
 
 ```yaml
-# $XDG_DATA_HOME/k9s/skins/in_the_navy.yaml
+# $XDG_DATA_HOME/k9s/skins/in-the-navy.yaml
 # Skin InTheNavy!
 k9s:
   # General K9s styles
