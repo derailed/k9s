@@ -28,7 +28,8 @@
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
             "skin": {"type": "string"},
-            "defaultsToFullScreen": {"type": "boolean"}
+            "defaultsToFullScreen": {"type": "boolean"},
+            "useFullGVRTitle": {"type": "boolean"}
           }
         },
         "shellPod": {

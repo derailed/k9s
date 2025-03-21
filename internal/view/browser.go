@@ -93,6 +93,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	}
 	b.Table.SetReadOnly(b.app.Config.IsReadOnly())
 	b.Table.SetNoIcon(b.app.Config.K9s.UI.NoIcons)
+	b.Table.SetFullGVR(b.app.Config.K9s.UI.UseFullGVRTitle)
 
 	b.bindKeys(b.Actions())
 	for _, f := range b.bindKeysFn {

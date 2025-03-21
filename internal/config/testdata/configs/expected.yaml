@@ -15,6 +15,7 @@ k9s:
     reactive: false
     noIcons: false
     defaultsToFullScreen: false
+    useFullGVRTitle: true
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
