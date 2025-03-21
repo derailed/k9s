@@ -20,13 +20,15 @@ import (
 )
 
 const (
-	defaultServiceAccount      = "default"
-	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
+	defaultServiceAccount = "default"
+
+	// DefaultContainerAnnotation represents the annotation key for the default container.
+	DefaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
 )
 
 // GetDefaultContainer returns a container name if specified in an annotation.
 func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
-	defaultContainer, ok := m.Annotations[defaultContainerAnnotation]
+	defaultContainer, ok := m.Annotations[DefaultContainerAnnotation]
 	if !ok {
 		return "", false
 	}
@@ -38,7 +40,7 @@ func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
 	}
 	slog.Warn("Container not found. Annotation ignored",
 		slogs.CO, defaultContainer,
-		slogs.Annotation, defaultContainerAnnotation,
+		slogs.Annotation, DefaultContainerAnnotation,
 	)
 
 	return "", false
