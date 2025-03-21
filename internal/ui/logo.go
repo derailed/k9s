@@ -55,6 +55,7 @@ func (l *Logo) StylesChanged(s *config.Styles) {
 	l.SetBackgroundColor(l.styles.BgColor())
 	l.status.SetBackgroundColor(l.styles.BgColor())
 	l.logo.SetBackgroundColor(l.styles.BgColor())
+	l.updateLogo()
 	l.refreshLogo(l.styles.Body().LogoColor)
 }
 
@@ -112,11 +113,15 @@ func (l *Logo) refreshLogo(c config.Color) {
 	}
 }
 
+func (l *Logo) updateLogo() {
+	GetLogo(l.styles.Body().LogoUrl)
+}
+
 func logo() *tview.TextView {
 	v := tview.NewTextView()
 	v.SetWordWrap(false)
 	v.SetWrap(false)
-	v.SetTextAlign(tview.AlignLeft)
+	v.SetTextAlign(tview.AlignCenter)
 	v.SetDynamicColors(true)
 
 	return v
