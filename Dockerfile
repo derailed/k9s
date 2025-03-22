@@ -1,7 +1,7 @@
 FROM python:3.12.2-bookworm
 
 ARG AZURE_CLI_VERSION=2.62.0
-ARG K9S_VERSION="v0.40.5"
+ARG K9S_VERSION="v0.40.10"
 #https://github.com/derailed/k9s/releases/download/v0.26.7/k9s_Darwin_arm64.tar.gz 
 ARG USERNAME=k9s
 ARG USER_UID=1000
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get upgrade -y \
     && cd tmp && tar xzf k9s.tar.gz \
     && mv k9s /usr/local/bin/ && rm -rf /tmp/* \
     # Install kubectl
-    && curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/${ARCHITECTURE}/kubectl \
+    && curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCHITECTURE}/kubectl \
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/bin/ \
     # Install helm 
