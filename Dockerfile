@@ -1,16 +1,16 @@
 FROM python:3.12.2-bookworm
 
 ARG AZURE_CLI_VERSION=2.62.0
-ARG K9S_VERSION="v0.32.5"
+ARG K9S_VERSION="v0.40.10"
 #https://github.com/derailed/k9s/releases/download/v0.26.7/k9s_Darwin_arm64.tar.gz 
 ARG USERNAME=k9s
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-ARG KUBECTL_VERSION="v1.30.3"
+ARG KUBECTL_VERSION="v1.32.2"
 #ARG KUBELOGIN_VERSION="v0.0.27"
-ARG LINODE_CLI_VERSION="5.50.0"
+ARG LINODE_CLI_VERSION="5.56.3"
 #ARG ARGO_CLI_VERSION="v3.5.2"
-ARG HELM_VERSION="v3.15.3"
+ARG HELM_VERSION="v3.17.1"
 
 
 RUN apt-get update && apt-get upgrade -y \
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get upgrade -y \
     && cd tmp && tar xzf k9s.tar.gz \
     && mv k9s /usr/local/bin/ && rm -rf /tmp/* \
     # Install kubectl
-    && curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/${ARCHITECTURE}/kubectl \
+    && curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCHITECTURE}/kubectl \
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/bin/ \
     # Install helm 
