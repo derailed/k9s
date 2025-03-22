@@ -1,6 +1,6 @@
 FROM python:3.12.2-bookworm
 
-ARG AZURE_CLI_VERSION=2.62.0
+ARG AZURE_CLI_VERSION="2.70.0"
 ARG K9S_VERSION="v0.40.10"
 #https://github.com/derailed/k9s/releases/download/v0.26.7/k9s_Darwin_arm64.tar.gz 
 ARG USERNAME=k9s

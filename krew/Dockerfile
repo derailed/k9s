@@ -1,6 +1,6 @@
-FROM  ghcr.io/ozlevka-work/k9s:v0.40.5
+FROM  ghcr.io/ozlevka-work/k9s:v0.40.10
 
-ARG KREW_VERSION="v0.4.4"
+ARG KREW_VERSION="v0.4.5"
 
 # Deploy krew
 RUN cd /tmp && curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/download/${KREW_VERSION}/krew-linux_amd64.tar.gz" \
