@@ -121,3 +121,32 @@ func TestSkinFileFromName(t *testing.T) {
 		})
 	}
 }
+
+func TestEmojiPaletteFileFromName(t *testing.T) {
+	config.AppEmojiDir = "/tmp/k9s-test/skins/emoji"
+
+	uu := map[string]struct {
+		n string
+		e string
+	}{
+		"empty": {
+			n: "",
+			e: "",
+		},
+		"happy": {
+			n: "example",
+			e: "/tmp/k9s-test/skins/emoji/example.yaml",
+		},
+		"with-special-chars": {
+			n: "test-emoji_123",
+			e: "/tmp/k9s-test/skins/emoji/test-emoji_123.yaml",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, config.EmojiPaletteFileFromName(u.n))
+		})
+	}
+}

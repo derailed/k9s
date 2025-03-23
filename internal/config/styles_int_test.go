@@ -10,9 +10,9 @@ import (
 )
 
 func Test_newStyle(t *testing.T) {
-	s := newStyle()
+	s := newSkin()
 
-	assert.Equal(t, Color("black"), s.Body.BgColor)
-	assert.Equal(t, Color("cadetblue"), s.Body.FgColor)
-	assert.Equal(t, Color("lightskyblue"), s.Frame.Status.NewColor)
+	assert.Equal(t, Color("black"), s.K9s.Body.BgColor)
+	assert.Equal(t, Color("cadetblue"), s.K9s.Body.FgColor)
+	assert.Equal(t, Color("lightskyblue"), s.K9s.Frame.Status.NewColor)
 }

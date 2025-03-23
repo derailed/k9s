@@ -13,12 +13,6 @@ import (
 	"github.com/derailed/tview"
 )
 
-const (
-	emoHappy = "😎"
-	emoDoh   = "😗"
-	emoRed   = "😡"
-)
-
 // Flash represents a flash message indicator.
 type Flash struct {
 	*tview.TextView
@@ -91,11 +85,11 @@ func (f *Flash) flashEmoji(l model.FlashLevel) string {
 	// nolint:exhaustive
 	switch l {
 	case model.FlashWarn:
-		return emoDoh
+		return f.app.Styles.Emoji.EmojiFor("status.warn")
 	case model.FlashErr:
-		return emoRed
+		return f.app.Styles.Emoji.EmojiFor("status.error")
 	default:
-		return emoHappy
+		return f.app.Styles.Emoji.EmojiFor("status.info")
 	}
 }
 

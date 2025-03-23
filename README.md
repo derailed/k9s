@@ -1173,6 +1173,26 @@ k9s:
 
 ---
 
+## Custom Emoji
+
+K9s supports customizable emoji palettes. You can create your own emoji sets to customize the look and feel of various UI elements.
+
+To use custom emoji:
+
+1. Create an emoji YAML file in the `$XDG_DATA_HOME/k9s/skins/emoji/` directory (e.g., `example.yaml`)
+2. In your skin configuration, specify the emoji palette to use:
+
+```yaml
+k9s:
+  # Other skin settings...
+  emoji:
+    palette: example  # Use the example.yaml emoji palette
+```
+
+See the `skins/emoji/example.yaml` file in this repository for a complete example of an emoji configuration.
+
+---
+
 ## Contributors
 
 Without the contributions from these fine folks, this project would be a total dud!

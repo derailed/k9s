@@ -235,7 +235,7 @@ func (c *Configurator) activeConfig() (cluster string, context string, ok bool) 
 func (c *Configurator) RefreshStyles(s synchronizer) {
 	s.UpdateClusterInfo()
 	if c.Styles == nil {
-		c.Styles = config.NewStyles()
+		c.Styles = config.NewStyles(c.Config.K9s.UI.NoIcons)
 	}
 	defer c.loadSkinFile(s)
 
@@ -255,7 +255,7 @@ func (c *Configurator) RefreshStyles(s synchronizer) {
 	}
 }
 
-func (c *Configurator) loadSkinFile(s synchronizer) {
+func (c *Configurator) loadSkinFile(_ synchronizer) {
 	skin, ok := c.activeSkin()
 	if !ok {
 		slog.Debug("No custom skin found. Using stock skin")
@@ -265,7 +265,7 @@ func (c *Configurator) loadSkinFile(s synchronizer) {
 
 	skinFile := config.SkinFileFromName(skin)
 	slog.Debug("Loading skin file", slogs.Skin, skinFile)
-	if err := c.Styles.Load(skinFile); err != nil {
+	if err := c.Styles.LoadSkin(skinFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			slog.Warn("Skin file not found in skins dir",
 				slogs.Skin, filepath.Base(skinFile),
@@ -280,8 +280,30 @@ func (c *Configurator) loadSkinFile(s synchronizer) {
 			)
 			c.updateStyles(skinFile)
 		}
-	} else {
-		c.updateStyles(skinFile)
+		return
+	}
+
+	c.updateStyles(skinFile)
+
+	emojiFile := config.EmojiPaletteFileFromName(c.Styles.Skin.K9s.Emoji.Palette)
+	if emojiFile == "" {
+		return
+	}
+
+	slog.Debug("Loading emoji file", slogs.Emoji, emojiFile)
+	if err := c.Styles.LoadEmoji(emojiFile); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			slog.Warn("Emoji file not found in emoji dir",
+				slogs.Emoji, filepath.Base(emojiFile),
+				slogs.Dir, config.AppEmojiDir,
+				slogs.Error, err,
+			)
+		} else {
+			slog.Error("Failed to parse emoji file",
+				slogs.Path, filepath.Base(emojiFile),
+				slogs.Error, err,
+			)
+		}
 	}
 }
 

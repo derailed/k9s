@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewLogoView(t *testing.T) {
-	v := ui.NewLogo(config.NewStyles())
+	v := ui.NewLogo(config.NewStyles(false))
 	v.Reset()
 
 	const elogo = "[#ffa500::b] ____  __ ________       \n[#ffa500::b]|    |/  /   __   \\______\n[#ffa500::b]|       /\\____    /  ___/\n[#ffa500::b]|    \\   \\  /    /\\___  \\\n[#ffa500::b]|____|\\__ \\/____//____  /\n[#ffa500::b]         \\/           \\/ \n"
@@ -41,7 +41,7 @@ func TestLogoStatus(t *testing.T) {
 		},
 	}
 
-	v := ui.NewLogo(config.NewStyles())
+	v := ui.NewLogo(config.NewStyles(false))
 	for n := range uu {
 		k, u := n, uu[n]
 		t.Run(k, func(t *testing.T) {
