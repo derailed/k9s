@@ -12,6 +12,8 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/sahilm/fuzzy"
+	"github.com/derailed/k9s/internal/prettyjson"
+	"github.com/fatih/color"
 )
 
 var podPalette = []string{
@@ -29,13 +31,62 @@ var podPalette = []string{
 type LogItems struct {
 	items     []*LogItem
 	podColors map[string]string
+	jsonColorEncoder *prettyjson.ColorEncoder
 	mx        sync.RWMutex
 }
 
+
+
 // NewLogItems returns a new instance.
 func NewLogItems() *LogItems {
+	colorEncoder := prettyjson.NewColorEncoder()
+	for _, rule := range []struct {
+		keyregex string
+		regex string
+		color *color.Color
+	}{
+		{
+			`([Ll]og)*[Ll]evel`,
+			`INFO|Info`,
+			color.New(color.FgHiGreen),
+		},
+		{
+			`([Ll]og)*[Ll]evel`,
+			`ERROR|Error`,
+			color.New(color.FgHiMagenta),
+		},
+		{
+			`([Ll]og)*[Ll]evel`,
+			`CRITICAL|Critical`,
+			color.New(color.FgHiRed),
+		},
+		{
+			`([Ll]og)*[Ll]evel`,
+			`WARN|WARNING|Warn|Warning`,
+			color.New(color.FgHiYellow),
+		},
+		{
+			`(M|m)essage`,
+			`.*`,
+			color.New(color.FgCyan),
+		},
+		{
+			`(L|l)ogger`,
+			`^.*$`,
+			color.New(color.FgBlue),
+		},
+		{
+			`stack[tT]race`,
+			`.*`,
+			color.New(color.FgYellow),
+		},
+	} {
+		_ = colorEncoder.AddStringRule(rule.keyregex, rule.regex, rule.color)
+	}
+
 	return &LogItems{
 		podColors: make(map[string]string),
+		jsonColorEncoder: colorEncoder,
 	}
 }
 
@@ -105,7 +156,7 @@ func (l *LogItems) Add(ii ...*LogItem) {
 }
 
 // Lines returns a collection of log lines.
-func (l *LogItems) Lines(index int, showTime bool, ll [][]byte) {
+func (l *LogItems) Lines(index int, showTime bool, prettyJson bool, ll [][]byte) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
@@ -122,20 +173,20 @@ func (l *LogItems) Lines(index int, showTime bool, ll [][]byte) {
 			colorIndex++
 		}
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(color, showTime, bb)
+		item.Render(color, showTime, prettyJson, l.jsonColorEncoder, bb)
 		ll[i] = bb.Bytes()
 	}
 }
 
 // StrLines returns a collection of log lines.
-func (l *LogItems) StrLines(index int, showTime bool) []string {
+func (l *LogItems) StrLines(index int, showTime bool, prettyJson bool) []string {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
 	ll := make([]string, len(l.items[index:]))
 	for i, item := range l.items[index:] {
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render("white", showTime, bb)
+		item.Render("white", showTime, prettyJson, l.jsonColorEncoder, bb)
 		ll[i] = bb.String()
 	}
 
@@ -143,7 +194,7 @@ func (l *LogItems) StrLines(index int, showTime bool) []string {
 }
 
 // Render returns logs as a collection of strings.
-func (l *LogItems) Render(index int, showTime bool, ll [][]byte) {
+func (l *LogItems) Render(index int, showTime bool, prettyJson bool, ll [][]byte) {
 	var colorIndex int
 	for i, item := range l.items[index:] {
 		id := item.ID()
@@ -157,7 +208,7 @@ func (l *LogItems) Render(index int, showTime bool, ll [][]byte) {
 			colorIndex++
 		}
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(color, showTime, bb)
+		item.Render(color, showTime, prettyJson, l.jsonColorEncoder, bb)
 		ll[i] = bb.Bytes()
 	}
 }
@@ -171,15 +222,15 @@ func (l *LogItems) DumpDebug(m string) {
 }
 
 // Filter filters out log items based on given filter.
-func (l *LogItems) Filter(index int, q string, showTime bool) ([]int, [][]int, error) {
+func (l *LogItems) Filter(index int, q string, showTime bool, prettyJson bool) ([]int, [][]int, error) {
 	if q == "" {
 		return nil, nil, nil
 	}
 	if f, ok := internal.IsFuzzySelector(q); ok {
-		mm, ii := l.fuzzyFilter(index, f, showTime)
+		mm, ii := l.fuzzyFilter(index, f, showTime, prettyJson)
 		return mm, ii, nil
 	}
-	matches, indices, err := l.filterLogs(index, q, showTime)
+	matches, indices, err := l.filterLogs(index, q, showTime, prettyJson)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -187,10 +238,10 @@ func (l *LogItems) Filter(index int, q string, showTime bool) ([]int, [][]int, e
 	return matches, indices, nil
 }
 
-func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]int) {
+func (l *LogItems) fuzzyFilter(index int, q string, showTime bool, prettyJson bool) ([]int, [][]int) {
 	q = strings.TrimSpace(q)
 	matches, indices := make([]int, 0, len(l.items)), make([][]int, 0, 10)
-	mm := fuzzy.Find(q, l.StrLines(index, showTime))
+	mm := fuzzy.Find(q, l.StrLines(index, showTime, prettyJson))
 	for _, m := range mm {
 		matches = append(matches, m.Index)
 		indices = append(indices, m.MatchedIndexes)
@@ -199,7 +250,7 @@ func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]i
 	return matches, indices
 }
 
-func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]int, error) {
+func (l *LogItems) filterLogs(index int, q string, showTime bool, prettyJson bool) ([]int, [][]int, error) {
 	var invert bool
 	if internal.IsInverseSelector(q) {
 		invert = true
@@ -211,7 +262,7 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]in
 	}
 	matches, indices := make([]int, 0, len(l.items)), make([][]int, 0, 10)
 	ll := make([][]byte, len(l.items[index:]))
-	l.Lines(index, showTime, ll)
+	l.Lines(index, showTime, prettyJson, ll)
 	for i, line := range ll {
 		locs := rx.FindIndex(line)
 		if locs != nil && invert {
