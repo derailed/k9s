@@ -17,9 +17,9 @@ func Test_k9sOverrides(t *testing.T) {
 	)
 
 	uu := map[string]struct {
-		k              *K9s
-		rate           int
-		ro, hl, cl, ll bool
+		k                  *K9s
+		rate               int
+		ro, hl, cl, sl, ll bool
 	}{
 		"plain": {
 			k: &K9s{
@@ -47,6 +47,7 @@ func Test_k9sOverrides(t *testing.T) {
 					Headless:   true,
 					Logoless:   true,
 					Crumbsless: true,
+					Splashless: true,
 				},
 				SkipLatestRevCheck: false,
 				DisablePodCounting: false,
@@ -56,6 +57,7 @@ func Test_k9sOverrides(t *testing.T) {
 			hl:   true,
 			ll:   true,
 			cl:   true,
+			sl:   true,
 		},
 		"overrides": {
 			k: &K9s{
@@ -72,6 +74,7 @@ func Test_k9sOverrides(t *testing.T) {
 					manualHeadless:   &true,
 					manualLogoless:   &true,
 					manualCrumbsless: &true,
+					manualSplashless: &true,
 				},
 				SkipLatestRevCheck:  false,
 				DisablePodCounting:  false,
@@ -85,6 +88,7 @@ func Test_k9sOverrides(t *testing.T) {
 			hl:   true,
 			ll:   true,
 			cl:   true,
+			sl:   true,
 		},
 	}
 
@@ -94,6 +98,7 @@ func Test_k9sOverrides(t *testing.T) {
 			assert.Equal(t, u.rate, u.k.GetRefreshRate())
 			assert.Equal(t, u.ro, u.k.IsReadOnly())
 			assert.Equal(t, u.cl, u.k.IsCrumbsless())
+			assert.Equal(t, u.sl, u.k.IsSplashless())
 			assert.Equal(t, u.hl, u.k.IsHeadless())
 			assert.Equal(t, u.ll, u.k.IsLogoless())
 

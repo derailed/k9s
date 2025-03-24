@@ -22,6 +22,9 @@ type UI struct {
 	// Crumbsless toggles nav crumb display.
 	Crumbsless bool `json:"crumbsless" yaml:"crumbsless"`
 
+	// Splashless disables the splash screen on startup.
+	Splashless bool `json:"splashless" yaml:"splashless"`
+
 	// Reactive toggles reactive ui changes.
 	Reactive bool `json:"reactive" yaml:"reactive"`
 
@@ -38,4 +41,5 @@ type UI struct {
 	manualHeadless   *bool
 	manualLogoless   *bool
 	manualCrumbsless *bool
+	manualSplashless *bool
 }
