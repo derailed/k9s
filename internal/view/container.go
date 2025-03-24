@@ -77,6 +77,13 @@ func (c *Container) bindDangerousKeys(aa *ui.KeyActions) {
 				Visible:   true,
 				Dangerous: true,
 			}),
+		ui.KeyB: ui.NewKeyActionWithOpts(
+			"Browse",
+			c.browseCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
 	})
 }
 
@@ -201,6 +208,15 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	ShowPortForwards(c, c.GetTable().Path+"|"+path, ports, ann, startFwdCB)
 
+	return nil
+}
+
+func (c *Container) browseCmd(evt *tcell.EventKey) *tcell.EventKey {
+	co := c.GetTable().GetSelectedItem()
+	if co == "" {
+		return evt
+	}
+	dirRemoteIn(c.App(), c, c.GetTable().Path, co, "")
 	return nil
 }
 
