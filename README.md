@@ -466,6 +466,10 @@ You can now override the context portForward default address configuration by se
         memory: 100Mi
       # Enable TTY
       tty: true
+      # Set environment variables
+      env:
+      - name: HELLO
+        value: world
   ```
 
 ---
@@ -513,6 +517,20 @@ k9s:
     nodeShell: true # => Enable this feature gate to make nodeShell available on this cluster
   portForwardAddress: localhost
 ```
+
+### Environment variables
+
+You can add environment variables as follows:
+
+```yaml
+k9s:
+  shellPod:
+    env:
+    - name: HELLO
+      value: world
+```
+
+This follows the syntax of a normal pod environment variable definition which also allows you to fetch the value from configmaps or secrets by using the `valueFrom` syntax. 
 
 ---
 
