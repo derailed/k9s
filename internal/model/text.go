@@ -82,7 +82,6 @@ func (t *Text) RemoveListener(listener TextListener) {
 			break
 		}
 	}
-
 	if victim >= 0 {
 		t.listeners = append(t.listeners[:victim], t.listeners[victim+1:]...)
 	}

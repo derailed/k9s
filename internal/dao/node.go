@@ -115,7 +115,7 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 	dd, errs := h.GetPodsForDeletion(path)
 	if len(errs) != 0 {
 		for _, e := range errs {
-			if _, err := h.ErrOut.Write([]byte(fmt.Sprintf("[%s] %s\n", path, e.Error()))); err != nil {
+			if _, err := fmt.Fprintf(h.ErrOut, "[%s] %s\n", path, e.Error()); err != nil {
 				return err
 			}
 		}
@@ -125,7 +125,7 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 	if err := h.DeleteOrEvictPods(dd.Pods()); err != nil {
 		return err
 	}
-	fmt.Fprintf(h.Out, "Node %s drained!", path)
+	_, _ = fmt.Fprintf(h.Out, "Node %s drained!", path)
 
 	return nil
 }

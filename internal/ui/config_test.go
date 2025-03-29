@@ -21,7 +21,7 @@ import (
 )
 
 func TestSkinnedContext(t *testing.T) {
-	os.Setenv(config.K9sEnvConfigDir, "/tmp/k9s-test")
+	assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/k9s-test"))
 	assert.NoError(t, config.InitLocs())
 	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
 
@@ -52,7 +52,7 @@ func TestSkinnedContext(t *testing.T) {
 }
 
 func TestBenchConfig(t *testing.T) {
-	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
+	assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
 	assert.NoError(t, config.InitLocs())
 	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
 

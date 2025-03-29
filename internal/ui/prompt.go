@@ -235,7 +235,7 @@ func (p *Prompt) write(text, suggest string) {
 		txt += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
 	}
 	p.StylesChanged(p.styles)
-	fmt.Fprintf(p, defaultPrompt, p.icon, txt)
+	_, _ = fmt.Fprintf(p, defaultPrompt, p.icon, txt)
 }
 
 // ----------------------------------------------------------------------------

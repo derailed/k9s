@@ -41,7 +41,7 @@ func ParsePlainPF(ann string) (*PFAnn, error) {
 	var pf PFAnn
 	mm := pfPlainRX.FindStringSubmatch(strings.TrimSpace(ann))
 	if len(mm) < 3 {
-		return nil, fmt.Errorf("Invalid plain port-forward %s", ann)
+		return nil, fmt.Errorf("invalid plain port-forward %s", ann)
 	}
 	if len(mm[2]) == 0 {
 		pf.ContainerPort = intstr.Parse(mm[1])

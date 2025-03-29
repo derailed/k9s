@@ -51,7 +51,6 @@ func (c ImageScan) ColorerFunc() model1.ColorerFunc {
 
 		return c
 	}
-
 }
 
 // Header returns a header row.

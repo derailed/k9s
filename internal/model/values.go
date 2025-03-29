@@ -59,7 +59,7 @@ func (v *Values) getValues() ([]string, error) {
 
 	valuer, ok := accessor.(dao.Valuer)
 	if !ok {
-		return nil, fmt.Errorf("Resource %s is not Valuer", v.gvr)
+		return nil, fmt.Errorf("resource %s is not Valuer", v.gvr)
 	}
 
 	values, err := valuer.GetValues(v.path, v.allValues)

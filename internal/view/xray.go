@@ -149,7 +149,7 @@ func (x *Xray) refreshActions() {
 
 	x.Actions().Clear()
 	x.bindKeys()
-	x.Tree.BindKeys()
+	x.BindKeys()
 
 	spec := x.selectedSpec()
 	if spec == nil {

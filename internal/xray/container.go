@@ -35,7 +35,7 @@ func (c *Container) Render(ctx context.Context, ns string, o interface{}) error 
 	root := NewTreeNode("containers", client.FQN(ns, co.Container.Name))
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 	pns, _ := client.Namespaced(parent.ID)
 	c.envRefs(f, root, pns, co.Container)
@@ -69,7 +69,7 @@ func (c *Container) secretRefs(f dao.Factory, parent *TreeNode, ns string, ref *
 	if ref == nil {
 		return
 	}
-	gvr, id := "v1/secrets", client.FQN(ns, ref.LocalObjectReference.Name)
+	gvr, id := "v1/secrets", client.FQN(ns, ref.Name)
 	addRef(f, parent, gvr, id, ref.Optional)
 }
 
@@ -77,7 +77,7 @@ func (c *Container) configMapRefs(f dao.Factory, parent *TreeNode, ns string, re
 	if ref == nil {
 		return
 	}
-	gvr, id := "v1/configmaps", client.FQN(ns, ref.LocalObjectReference.Name)
+	gvr, id := "v1/configmaps", client.FQN(ns, ref.Name)
 	addRef(f, parent, gvr, id, ref.Optional)
 }
 

@@ -54,7 +54,6 @@ func TestLabelize(t *testing.T) {
 }
 
 func TestIsValid(t *testing.T) {
-
 	uu := map[string]struct {
 		ns string
 		h  Header

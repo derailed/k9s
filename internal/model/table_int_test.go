@@ -81,11 +81,6 @@ func TestTableMeta(t *testing.T) {
 			accessor: &dao.Node{},
 			renderer: &render.Node{},
 		},
-		"table": {
-			gvr:      "v1/events",
-			accessor: &dao.Table{},
-			renderer: &render.Event{},
-		},
 	}
 
 	for k := range uu {

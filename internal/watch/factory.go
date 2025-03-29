@@ -10,15 +10,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
-
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -317,7 +316,7 @@ func (f *Factory) ValidatePortForwards() {
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
 			continue
 		}
-		if pod.GetCreationTimestamp().Time.Unix() > fwd.Age().Unix() {
+		if pod.GetCreationTimestamp().Unix() > fwd.Age().Unix() {
 			fwd.Stop()
 			delete(f.forwarders, k)
 		}

@@ -14,7 +14,7 @@ import (
 )
 
 func Test_activeConfig(t *testing.T) {
-	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
+	assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
 	assert.NoError(t, config.InitLocs())
 
 	cl, ct := "cl-1", "ct-1-1"

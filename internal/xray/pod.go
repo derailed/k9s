@@ -127,19 +127,19 @@ func (*Pod) serviceAccountRef(ctx context.Context, f dao.Factory, parent *TreeNo
 
 func (*Pod) podVolumeRefs(f dao.Factory, parent *TreeNode, ns string, vv []v1.Volume) {
 	for _, v := range vv {
-		sec := v.VolumeSource.Secret
+		sec := v.Secret
 		if sec != nil {
 			addRef(f, parent, "v1/secrets", client.FQN(ns, sec.SecretName), sec.Optional)
 			continue
 		}
 
-		cm := v.VolumeSource.ConfigMap
+		cm := v.ConfigMap
 		if cm != nil {
-			addRef(f, parent, "v1/configmaps", client.FQN(ns, cm.LocalObjectReference.Name), cm.Optional)
+			addRef(f, parent, "v1/configmaps", client.FQN(ns, cm.Name), cm.Optional)
 			continue
 		}
 
-		pvc := v.VolumeSource.PersistentVolumeClaim
+		pvc := v.PersistentVolumeClaim
 		if pvc != nil {
 			addRef(f, parent, "v1/persistentvolumeclaims", client.FQN(ns, pvc.ClaimName), nil)
 		}

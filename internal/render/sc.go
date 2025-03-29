@@ -68,7 +68,7 @@ func (s StorageClass) defaultRow(raw *unstructured.Unstructured, r *model1.Row) 
 		return err
 	}
 
-	r.ID = client.FQN(client.ClusterScope, sc.ObjectMeta.Name)
+	r.ID = client.FQN(client.ClusterScope, sc.Name)
 	r.Fields = model1.Fields{
 		s.nameWithDefault(sc.ObjectMeta),
 		sc.Provisioner,

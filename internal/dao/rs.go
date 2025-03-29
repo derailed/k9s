@@ -57,7 +57,7 @@ func (r *ReplicaSet) Load(f Factory, path string) (*appsv1.ReplicaSet, error) {
 }
 
 func getRSRevision(rs *appsv1.ReplicaSet) (int64, error) {
-	revision := rs.ObjectMeta.Annotations["deployment.kubernetes.io/revision"]
+	revision := rs.Annotations["deployment.kubernetes.io/revision"]
 	if rs.Status.Replicas != 0 {
 		return 0, errors.New("can not rollback current replica")
 	}
@@ -70,7 +70,7 @@ func getRSRevision(rs *appsv1.ReplicaSet) (int64, error) {
 }
 
 func controllerInfo(rs *appsv1.ReplicaSet) (string, string, string, error) {
-	for _, ref := range rs.ObjectMeta.OwnerReferences {
+	for _, ref := range rs.OwnerReferences {
 		if ref.Controller == nil {
 			continue
 		}
@@ -80,7 +80,7 @@ func controllerInfo(rs *appsv1.ReplicaSet) (string, string, string, error) {
 		}
 		return ref.Name, ref.Kind, group, nil
 	}
-	return "", "", "", fmt.Errorf("unable to find controller for replicaset: %s", rs.ObjectMeta.Name)
+	return "", "", "", fmt.Errorf("unable to find controller for replicaset: %s", rs.Name)
 }
 
 // Rollback reverses the last deployment.

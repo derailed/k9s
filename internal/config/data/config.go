@@ -51,5 +51,5 @@ func (c *Config) Validate(conn client.Connection, contextName, clusterName strin
 func (c *Config) Dump(w io.Writer) {
 	bb, _ := yaml.Marshal(&c)
 
-	fmt.Fprintf(w, "%s\n", string(bb))
+	_, _ = fmt.Fprintf(w, "%s\n", string(bb))
 }

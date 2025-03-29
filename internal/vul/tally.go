@@ -49,7 +49,7 @@ func newTally(t *table) tally {
 
 // Dump dumps tally as text.
 func (t tally) Dump(w io.Writer) {
-	fmt.Fprintf(w, "%d critical, %d high, %d medium, %d low, %d negligible",
+	_, _ = fmt.Fprintf(w, "%d critical, %d high, %d medium, %d low, %d negligible",
 		t[sevCritical],
 		t[sevHigh],
 		t[sevMedium],
@@ -57,10 +57,10 @@ func (t tally) Dump(w io.Writer) {
 		t[sevNegligible],
 	)
 	if t[sevUnknown] > 0 {
-		fmt.Fprintf(w, " (%d unknown)", t[sevUnknown])
+		_, _ = fmt.Fprintf(w, " (%d unknown)", t[sevUnknown])
 	}
 	if t[sevFixed] > 0 {
-		fmt.Fprintf(w, " -- [Fixed: %d]", t[sevFixed])
+		_, _ = fmt.Fprintf(w, " -- [Fixed: %d]", t[sevFixed])
 	}
 }
 

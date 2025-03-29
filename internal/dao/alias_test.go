@@ -17,8 +17,8 @@ import (
 
 func TestAsGVR(t *testing.T) {
 	a := dao.NewAlias(makeFactory())
-	a.Aliases.Define("v1/pods", "po", "pod", "pods")
-	a.Aliases.Define("workloads", "workloads", "workload", "wkl")
+	a.Define("v1/pods", "po", "pod", "pods")
+	a.Define("workloads", "workloads", "workload", "wkl")
 
 	uu := map[string]struct {
 		cmd string

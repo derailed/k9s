@@ -31,7 +31,7 @@ func (r *ReplicaSet) Render(ctx context.Context, ns string, o interface{}) error
 
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
 	root := NewTreeNode("apps/v1/replicasets", client.FQN(rs.Namespace, rs.Name))

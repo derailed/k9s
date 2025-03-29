@@ -11,10 +11,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/adrg/xdg"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/slogs"
-
-	"github.com/adrg/xdg"
 )
 
 const (
@@ -127,10 +126,7 @@ func initK9sEnvLocs() error {
 
 	AppDumpsDir = filepath.Join(AppConfigDir, "screen-dumps")
 	if err := data.EnsureFullPath(AppDumpsDir, data.DefaultDirMod); err != nil {
-		slog.Warn("Unable to create screen-dumps dir",
-			slogs.Dir, AppDumpsDir,
-			slogs.Error, err,
-		)
+		slog.Warn("Unable to create screen-dumps dir", slogs.Dir, AppDumpsDir, slogs.Error, err)
 	}
 	AppBenchmarksDir = filepath.Join(AppConfigDir, "benchmarks")
 	if err := data.EnsureFullPath(AppBenchmarksDir, data.DefaultDirMod); err != nil {

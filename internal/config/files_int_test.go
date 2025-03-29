@@ -17,15 +17,15 @@ func Test_initXDGLocs(t *testing.T) {
 	tmp, err := UserTmpDir()
 	assert.NoError(t, err)
 
-	os.Unsetenv("XDG_CONFIG_HOME")
-	os.Unsetenv("XDG_CACHE_HOME")
-	os.Unsetenv("XDG_STATE_HOME")
-	os.Unsetenv("XDG_DATA_HOME")
+	assert.NoError(t, os.Unsetenv("XDG_CONFIG_HOME"))
+	assert.NoError(t, os.Unsetenv("XDG_CACHE_HOME"))
+	assert.NoError(t, os.Unsetenv("XDG_STATE_HOME"))
+	assert.NoError(t, os.Unsetenv("XDG_DATA_HOME"))
 
-	os.Setenv("XDG_CONFIG_HOME", filepath.Join(tmp, "k9s-xdg", "config"))
-	os.Setenv("XDG_CACHE_HOME", filepath.Join(tmp, "k9s-xdg", "cache"))
-	os.Setenv("XDG_STATE_HOME", filepath.Join(tmp, "k9s-xdg", "state"))
-	os.Setenv("XDG_DATA_HOME", filepath.Join(tmp, "k9s-xdg", "data"))
+	assert.NoError(t, os.Setenv("XDG_CONFIG_HOME", filepath.Join(tmp, "k9s-xdg", "config")))
+	assert.NoError(t, os.Setenv("XDG_CACHE_HOME", filepath.Join(tmp, "k9s-xdg", "cache")))
+	assert.NoError(t, os.Setenv("XDG_STATE_HOME", filepath.Join(tmp, "k9s-xdg", "state")))
+	assert.NoError(t, os.Setenv("XDG_DATA_HOME", filepath.Join(tmp, "k9s-xdg", "data")))
 	xdg.Reload()
 
 	uu := map[string]struct {

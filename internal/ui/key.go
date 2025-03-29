@@ -80,7 +80,7 @@ const (
 	KeySlash        = 47
 	KeyColon        = 58
 	KeySpace        = 32
-	KeyDash         = 45 //or minus for those searching in the code
+	KeyDash         = 45
 	KeyLeftBracket  = 91
 	KeyRightBracket = 93
 )

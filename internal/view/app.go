@@ -100,8 +100,8 @@ func (a *App) Init(version string, rate int) error {
 	if err := a.Content.Init(ctx); err != nil {
 		return err
 	}
-	a.Content.Stack.AddListener(a.Crumbs())
-	a.Content.Stack.AddListener(a.Menu())
+	a.Content.AddListener(a.Crumbs())
+	a.Content.AddListener(a.Menu())
 
 	a.App.Init()
 	a.SetInputCapture(a.keyboard)
@@ -198,7 +198,7 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 		}
 
 		ls := strings.ToLower(s)
-		for _, k := range a.command.alias.Aliases.Keys() {
+		for _, k := range a.command.alias.Keys() {
 			if suggest, ok := cmd.ShouldAddSuggest(ls, k); ok {
 				entries = append(entries, suggest)
 			}
@@ -776,7 +776,7 @@ func (a *App) inject(c model.Component, clearStack bool) error {
 		return err
 	}
 	if clearStack {
-		a.Content.Stack.Clear()
+		a.Content.Clear()
 	}
 	a.Content.Push(c)
 

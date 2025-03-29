@@ -100,7 +100,7 @@ func (p PersistentVolume) defaultRow(raw *unstructured.Unstructured, r *model1.R
 	}
 
 	phase := pv.Status.Phase
-	if pv.ObjectMeta.DeletionTimestamp != nil {
+	if pv.DeletionTimestamp != nil {
 		phase = terminatingPhase
 	}
 	var claim string

@@ -62,7 +62,7 @@ func (ClusterRole) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 		return err
 	}
 
-	r.ID = client.FQN("-", cr.ObjectMeta.Name)
+	r.ID = client.FQN("-", cr.Name)
 	r.Fields = model1.Fields{
 		cr.Name,
 		mapToStr(cr.Labels),

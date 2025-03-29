@@ -35,7 +35,7 @@ func (d *Deployment) Render(ctx context.Context, ns string, o interface{}) error
 
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
 	root := NewTreeNode("apps/v1/deployments", client.FQN(dp.Namespace, dp.Name))
@@ -99,7 +99,7 @@ func locatePods(ctx context.Context, ns string, sel *metav1.LabelSelector) ([]ru
 
 	f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
-		return nil, fmt.Errorf("Expecting a factory but got %T", ctx.Value(internal.KeyFactory))
+		return nil, fmt.Errorf("expecting a factory but got %T", ctx.Value(internal.KeyFactory))
 	}
 
 	return f.List("v1/pods", ns, false, fsel.AsSelector())

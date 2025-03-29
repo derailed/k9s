@@ -139,7 +139,6 @@ func (c *Config) CurrentClusterName() (string, error) {
 	}
 
 	return ct.Cluster, nil
-
 }
 
 // CurrentContextName returns the currently active config context.

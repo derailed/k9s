@@ -38,7 +38,6 @@ func NewContextFromConfig(cfg *api.Context) *Context {
 	ct.Namespace, ct.ClusterName = NewActiveNamespace(cfg.Namespace), cfg.Cluster
 
 	return ct
-
 }
 
 // NewContextFromKubeConfig returns a new instance based on kubesettings or an error.

@@ -9,7 +9,7 @@ require (
 	github.com/anchore/syft v1.21.0
 	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/derailed/tcell/v2 v2.3.1-rc.3
+	github.com/derailed/tcell/v2 v2.3.1-rc.4
 	github.com/derailed/tview v0.8.5
 	github.com/fatih/color v1.18.0
 	github.com/fsnotify/fsnotify v1.8.0

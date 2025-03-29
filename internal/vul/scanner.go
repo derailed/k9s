@@ -114,7 +114,7 @@ func (s *imageScanner) Stop() {
 	defer s.mx.RUnlock()
 
 	if s.store != nil {
-		s.store.Close()
+		_ = s.store.Close()
 		s.store = nil
 	}
 }
