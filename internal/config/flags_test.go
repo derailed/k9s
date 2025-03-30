@@ -26,4 +26,5 @@ func TestNewFlags(t *testing.T) {
 	assert.False(t, *f.ReadOnly)
 	assert.False(t, *f.Write)
 	assert.False(t, *f.Crumbsless)
+	assert.False(t, *f.Splashless)
 }

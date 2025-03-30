@@ -167,8 +167,10 @@ func (a *App) layout(ctx context.Context) {
 	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
-	a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version), true, true)
 	a.toggleHeader(!a.Config.K9s.IsHeadless(), !a.Config.K9s.IsLogoless())
+	if !a.Config.K9s.IsSplashless() {
+		a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version), true, true)
+	}
 }
 
 func (a *App) initSignals() {
@@ -523,7 +525,9 @@ func (a *App) Run() error {
 	a.Resume()
 
 	go func() {
-		<-time.After(splashDelay)
+		if !a.Config.K9s.IsSplashless() {
+			<-time.After(splashDelay)
+		}
 		a.QueueUpdateDraw(func() {
 			a.Main.SwitchToPage("main")
 			// if command bar is already active, focus it
