@@ -9,15 +9,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -287,7 +288,10 @@ func (p *Pod) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (
 		case SecGVR:
 			found, err := hasSecret(p.Factory, &pod.Spec, pod.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				slog.Warn("Locate secret failed",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {
@@ -332,30 +336,33 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	go func() {
 		defer wg.Done()
 		podOpts := opts.ToPodLogOptions()
-		var stream io.ReadCloser
 		for r := 0; r < logRetryCount; r++ {
-			var e error
 			req, err := logger.Logs(opts.Path, podOpts)
 			if err == nil {
 				// This call will block if nothing is in the stream!!
-				if stream, err = req.Stream(ctx); err == nil {
+				if stream, e := req.Stream(ctx); e == nil {
 					wg.Add(1)
 					go readLogs(ctx, &wg, stream, out, opts)
 					return
+				} else {
+					slog.Error("Stream logs failed",
+						slogs.Error, e,
+						slogs.Container, opts.Info(),
+					)
 				}
-				e = fmt.Errorf("stream logs failed %w for %s", err, opts.Info())
-				log.Error().Err(e).Msg("logs-stream")
 			} else {
-				e = fmt.Errorf("stream logs failed %w for %s", err, opts.Info())
-				log.Error().Err(e).Msg("log-request")
+				slog.Error("Log request failed",
+					slogs.Container, opts.Info(),
+					slogs.Error, err,
+				)
 			}
 
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				if e != nil {
-					out <- opts.ToErrLogItem(e)
+				if err != nil {
+					out <- opts.ToErrLogItem(err)
 				}
 				time.Sleep(logRetryWait)
 			}
@@ -372,12 +379,15 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions) {
 	defer func() {
 		if err := stream.Close(); err != nil {
-			log.Error().Err(err).Msgf("Fail to close stream %s", opts.Info())
+			slog.Error("Fail to close stream",
+				slogs.Container, opts.Info(),
+				slogs.Error, err,
+			)
 		}
 		wg.Done()
 	}()
 
-	log.Debug().Msgf(">>> LOG-READER PROCESSING %#v", opts)
+	slog.Debug("Processing logs", slogs.Options, opts.Info())
 	r := bufio.NewReader(stream)
 	for {
 		var item *LogItem
@@ -387,11 +397,14 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 			if errors.Is(err, io.EOF) {
 				e := fmt.Errorf("stream closed %w for %s", err, opts.Info())
 				item = opts.ToErrLogItem(e)
-				log.Warn().Err(e).Msg("log-reader EOF")
+				slog.Warn("Log reader EOF",
+					slogs.Container, opts.Info(),
+					slogs.Error, e,
+				)
 			} else {
 				e := fmt.Errorf("stream canceled %w for %s", err, opts.Info())
 				item = opts.ToErrLogItem(e)
-				log.Warn().Err(e).Msg("log-reader canceled")
+				slog.Warn("Log stream canceled")
 			}
 		}
 		select {
@@ -488,7 +501,6 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 		if err != nil {
 			continue
 		}
-		log.Debug().Msgf("Pod status: %q", render.PodStatus(&pod))
 		switch render.PodStatus(&pod) {
 		case render.PhaseCompleted:
 			fallthrough
@@ -506,16 +518,20 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 			fallthrough
 		case render.PhaseOOMKilled:
 			// !!BOZO!! Might need to bump timeout otherwise rev limit if too many??
-			log.Debug().Msgf("Sanitizing %s:%s", pod.Namespace, pod.Name)
 			fqn := client.FQN(pod.Namespace, pod.Name)
+			slog.Debug("Sanitizing resource", slogs.FQN, fqn)
 			if err := p.Delete(ctx, fqn, nil, 0); err != nil {
-				log.Debug().Msgf("Aborted! Sanitizer deleted %d pods", count)
+				slog.Debug("Aborted! Sanitizer delete failed",
+					slogs.FQN, fqn,
+					slogs.Count, count,
+					slogs.Error, err,
+				)
 				return count, err
 			}
 			count++
 		}
 	}
-	log.Debug().Msgf("Sanitizer deleted %d pods", count)
+	slog.Debug("Sanitizer deleted pods", slogs.Count, count)
 
 	return count, nil
 }

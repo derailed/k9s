@@ -157,7 +157,7 @@ func TestPodRender(t *testing.T) {
 		MX:  makePodMX("nginx", "100m", "50Mi"),
 	}
 
-	var po render.Pod
+	po := render.NewPod()
 	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
@@ -188,7 +188,7 @@ func TestPodInitRender(t *testing.T) {
 		MX:  makePodMX("nginx", "10m", "10Mi"),
 	}
 
-	var po render.Pod
+	po := render.NewPod()
 	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
@@ -204,7 +204,7 @@ func TestPodSidecarRender(t *testing.T) {
 		MX:  makePodMX("sleep", "100m", "40Mi"),
 	}
 
-	var po render.Pod
+	po := render.NewPod()
 	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)

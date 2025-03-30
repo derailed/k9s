@@ -4,13 +4,17 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
 
-	"github.com/derailed/k9s/internal/config/data"
-	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
+	"github.com/derailed/k9s/internal/slogs"
+)
+
+const (
+	envPFAddress          = "K9S_DEFAULT_PF_ADDRESS"
+	defaultPortFwdAddress = "localhost"
 )
 
 // IsBoolSet checks if a bool ptr is set.
@@ -44,17 +48,6 @@ func UserTmpDir() (string, error) {
 	return dir, nil
 }
 
-// InNSList check if ns is in an ns collection.
-func InNSList(nn []interface{}, ns string) bool {
-	ss := make([]string, len(nn))
-	for i, n := range nn {
-		if nsp, ok := n.(v1.Namespace); ok {
-			ss[i] = nsp.Name
-		}
-	}
-	return data.InList(ss, ns)
-}
-
 // MustK9sUser establishes current user identity or fail.
 func MustK9sUser() string {
 	usr, err := user.Current()
@@ -67,7 +60,16 @@ func MustK9sUser() string {
 		if envUsr != "" {
 			return envUsr
 		}
-		log.Fatal().Err(err).Msg("Die on retrieving user info")
+		slog.Error("Die on retrieving user info", slogs.Error, err)
+		os.Exit(1)
 	}
 	return usr.Username
+}
+
+func defaultPFAddress() string {
+	if a := os.Getenv(envPFAddress); a != "" {
+		return a
+	}
+
+	return defaultPortFwdAddress
 }

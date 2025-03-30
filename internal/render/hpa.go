@@ -13,7 +13,7 @@ import (
 
 // HorizontalPodAutoscaler renders a K8s HorizontalPodAutoscaler to screen.
 type HorizontalPodAutoscaler struct {
-	Generic
+	Table
 }
 
 // ColorerFunc colors a resource row.

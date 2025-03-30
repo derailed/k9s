@@ -13,4 +13,3 @@ k9s:
     active: dp
   featureGates:
     nodeShell: true
-  portForwardAddress: localhost

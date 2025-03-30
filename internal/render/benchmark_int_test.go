@@ -4,16 +4,16 @@
 package render
 
 import (
+	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/derailed/k9s/internal/model1"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestAugmentRow(t *testing.T) {

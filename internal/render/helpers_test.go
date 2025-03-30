@@ -20,7 +20,7 @@ import (
 )
 
 func TestTableGenericHydrate(t *testing.T) {
-	raw := raw(t, "p1")
+	raw := load(t, "p1")
 	tt := metav1beta1.Table{
 		ColumnDefinitions: []metav1beta1.TableColumnDefinition{
 			{Name: "c1"},
@@ -29,21 +29,21 @@ func TestTableGenericHydrate(t *testing.T) {
 		Rows: []metav1beta1.TableRow{
 			{
 				Cells:  []interface{}{"fred", 10},
-				Object: runtime.RawExtension{Raw: raw},
+				Object: runtime.RawExtension{Object: raw},
 			},
 			{
 				Cells:  []interface{}{"blee", 20},
-				Object: runtime.RawExtension{Raw: raw},
+				Object: runtime.RawExtension{Object: raw},
 			},
 		},
 	}
 	rr := make([]model1.Row, 2)
-	var re Generic
+	var re Table
 	re.SetTable("blee", &tt)
 
 	assert.Nil(t, model1.GenericHydrate("blee", &tt, rr, &re))
 	assert.Equal(t, 2, len(rr))
-	assert.Equal(t, 3, len(rr[0].Fields))
+	assert.Equal(t, 2, len(rr[0].Fields))
 }
 
 func TestTableHydrate(t *testing.T) {
@@ -52,7 +52,7 @@ func TestTableHydrate(t *testing.T) {
 	}
 	rr := make([]model1.Row, 1)
 
-	assert.Nil(t, model1.Hydrate("blee", oo, rr, Pod{}))
+	assert.Nil(t, model1.Hydrate("blee", oo, rr, NewPod()))
 	assert.Equal(t, 1, len(rr))
 	assert.Equal(t, 25, len(rr[0].Fields))
 }
@@ -313,7 +313,7 @@ func TestMapToStr(t *testing.T) {
 		i map[string]string
 		e string
 	}{
-		{map[string]string{"blee": "duh", "aa": "bb"}, "aa=bb blee=duh"},
+		{map[string]string{"blee": "duh", "aa": "bb"}, "aa=bb,blee=duh"},
 		{map[string]string{}, ""},
 	}
 	for _, u := range uu {
@@ -437,10 +437,4 @@ func load(t *testing.T, n string) *unstructured.Unstructured {
 	err = json.Unmarshal(raw, &o)
 	assert.Nil(t, err)
 	return &o
-}
-
-func raw(t *testing.T, n string) []byte {
-	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
-	assert.Nil(t, err)
-	return raw
 }

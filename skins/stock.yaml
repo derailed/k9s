@@ -30,6 +30,7 @@ k9s:
       focusColor: aqua
     menu:
       fgColor: white
+      fgStyle: dim
       keyColor: dodgerblue
       numKeyColor: fuchsia
     crumbs:

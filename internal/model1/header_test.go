@@ -104,7 +104,7 @@ func TestHeaderCustomize(t *testing.T) {
 		"reverse": {
 			h: model1.Header{
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 				model1.HeaderColumn{Name: "C"},
 			},
 			cols: []string{"C", "A"},
@@ -116,7 +116,7 @@ func TestHeaderCustomize(t *testing.T) {
 		"reverse-wide": {
 			h: model1.Header{
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 				model1.HeaderColumn{Name: "C"},
 			},
 			cols: []string{"C", "A"},
@@ -124,27 +124,27 @@ func TestHeaderCustomize(t *testing.T) {
 			e: model1.Header{
 				model1.HeaderColumn{Name: "C"},
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 			},
 		},
 		"toggle-wide": {
 			h: model1.Header{
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 				model1.HeaderColumn{Name: "C"},
 			},
 			cols: []string{"C", "B"},
 			wide: true,
 			e: model1.Header{
 				model1.HeaderColumn{Name: "C"},
-				model1.HeaderColumn{Name: "B", Wide: false},
-				model1.HeaderColumn{Name: "A", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: false}},
+				model1.HeaderColumn{Name: "A", Attrs: model1.Attrs{Wide: true}},
 			},
 		},
 		"missing": {
 			h: model1.Header{
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 				model1.HeaderColumn{Name: "C"},
 			},
 			cols: []string{"BLEE", "A"},
@@ -152,8 +152,8 @@ func TestHeaderCustomize(t *testing.T) {
 			e: model1.Header{
 				model1.HeaderColumn{Name: "BLEE"},
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
-				model1.HeaderColumn{Name: "C", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
+				model1.HeaderColumn{Name: "C", Attrs: model1.Attrs{Wide: true}},
 			},
 		},
 	}
@@ -183,7 +183,7 @@ func TestHeaderDiff(t *testing.T) {
 		"differ-wide": {
 			h1: model1.Header{
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 				model1.HeaderColumn{Name: "C"},
 			},
 			h2: model1.Header{
@@ -196,13 +196,13 @@ func TestHeaderDiff(t *testing.T) {
 		"differ-order": {
 			h1: model1.Header{
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 				model1.HeaderColumn{Name: "C"},
 			},
 			h2: model1.Header{
 				model1.HeaderColumn{Name: "A"},
 				model1.HeaderColumn{Name: "C"},
-				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 			},
 			e: true,
 		},
@@ -236,8 +236,8 @@ func TestHeaderHasAge(t *testing.T) {
 		"age": {
 			h: model1.Header{
 				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
-				model1.HeaderColumn{Name: "AGE", Time: true},
+				model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
+				model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 			},
 			e:   true,
 			age: true,
@@ -312,7 +312,7 @@ func TestHeaderClone(t *testing.T) {
 func makeHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "A"},
-		model1.HeaderColumn{Name: "B", Wide: true},
+		model1.HeaderColumn{Name: "B", Attrs: model1.Attrs{Wide: true}},
 		model1.HeaderColumn{Name: "C"},
 	}
 }

@@ -4,10 +4,12 @@
 package data
 
 import (
+	"log/slog"
+	"slices"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -47,7 +49,7 @@ func (n *Namespace) merge(old *Namespace) {
 		return
 	}
 	for _, fav := range old.Favorites {
-		if InList(n.Favorites, fav) {
+		if slices.Contains(n.Favorites, fav) {
 			continue
 		}
 		n.Favorites = append(n.Favorites, fav)
@@ -57,16 +59,19 @@ func (n *Namespace) merge(old *Namespace) {
 }
 
 // Validate validates a namespace is setup correctly.
-func (n *Namespace) Validate(c client.Connection) {
+func (n *Namespace) Validate(conn client.Connection) {
 	n.mx.RLock()
 	defer n.mx.RUnlock()
 
-	if c == nil || !c.IsValidNamespace(n.Active) {
+	if conn == nil || !conn.IsValidNamespace(n.Active) {
 		return
 	}
 	for _, ns := range n.Favorites {
-		if !c.IsValidNamespace(ns) {
-			log.Debug().Msgf("[Namespace] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
+		if !conn.IsValidNamespace(ns) {
+			slog.Debug("Invalid favorite found",
+				slogs.Namespace, ns,
+				slogs.AllNS, n.isAllNamespaces(),
+			)
 			n.rmFavNS(ns)
 		}
 	}
@@ -100,7 +105,7 @@ func (n *Namespace) isAllNamespaces() bool {
 }
 
 func (n *Namespace) addFavNS(ns string) {
-	if InList(n.Favorites, ns) {
+	if slices.Contains(n.Favorites, ns) {
 		return
 	}
 
@@ -135,7 +140,7 @@ func (n *Namespace) rmFavNS(ns string) {
 
 func (n *Namespace) trimFavNs() {
 	if len(n.Favorites) > MaxFavoritesNS {
-		log.Debug().Msgf("[Namespace] Number of favorite exceeds hard limit of %v. Trimming.", MaxFavoritesNS)
+		slog.Debug("Number of favorite exceeds hard limit. Trimming.", slogs.Max, MaxFavoritesNS)
 		n.Favorites = n.Favorites[:MaxFavoritesNS]
 	}
 }

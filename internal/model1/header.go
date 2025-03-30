@@ -4,23 +4,64 @@
 package model1
 
 import (
+	"fmt"
+	"log/slog"
 	"reflect"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const ageCol = "AGE"
 
-// HeaderColumn represent a table header.
-type HeaderColumn struct {
-	Name      string
+type Attrs struct {
 	Align     int
 	Decorator DecoratorFunc
 	Wide      bool
+	Show      bool
 	MX        bool
+	MXC, MXM  bool
 	Time      bool
 	Capacity  bool
 	VS        bool
+	Hide      bool
+}
+
+func (a Attrs) Merge(b Attrs) Attrs {
+	a.MX = b.MX
+	a.MXC = b.MXC
+	a.MXM = b.MXM
+	a.Decorator = b.Decorator
+	a.VS = b.VS
+
+	if a.Align == 0 {
+		a.Align = b.Align
+	}
+
+	if !a.Hide {
+		a.Hide = b.Hide
+	}
+	if !a.Show && !a.Wide {
+		a.Wide = b.Wide
+	}
+
+	if !a.Time {
+		a.Time = b.Time
+	}
+	if !a.Capacity {
+		a.Capacity = b.Capacity
+	}
+
+	return a
+}
+
+// HeaderColumn represent a table header.
+type HeaderColumn struct {
+	Attrs
+	Name string
+}
+
+func (h HeaderColumn) String() string {
+	return fmt.Sprintf("%s [%d::%t::%t::%t]", h.Name, h.Align, h.Wide, h.MX, h.Time)
 }
 
 // Clone copies a header.
@@ -70,7 +111,7 @@ func (h Header) MapIndices(cols []string, wide bool) []int {
 	for _, col := range cols {
 		idx, ok := h.IndexOf(col, true)
 		if !ok {
-			log.Warn().Msgf("Column %q not found on resource", col)
+			slog.Warn("Column not found on resource", slogs.ColName, col)
 		}
 		ii, cc[idx] = append(ii, idx), struct{}{}
 	}
@@ -97,7 +138,7 @@ func (h Header) Customize(cols []string, wide bool) Header {
 	for _, c := range cols {
 		idx, ok := h.IndexOf(c, true)
 		if !ok {
-			log.Warn().Msgf("Column %s is not available on this resource", c)
+			slog.Warn("Column is not available on this resource", slogs.ColName, c)
 			cc = append(cc, HeaderColumn{Name: c})
 			continue
 		}
@@ -106,7 +147,6 @@ func (h Header) Customize(cols []string, wide bool) Header {
 		col.Wide = false
 		cc = append(cc, col)
 	}
-
 	if !wide {
 		return cc
 	}
@@ -196,8 +236,8 @@ func (h Header) IndexOf(colName string, includeWide bool) (int, bool) {
 
 // Dump for debugging.
 func (h Header) Dump() {
-	log.Debug().Msgf("HEADER")
+	slog.Debug("HEADER")
 	for i, c := range h {
-		log.Debug().Msgf("%d %q -- %t", i, c.Name, c.Wide)
+		slog.Debug(fmt.Sprintf("%d %q -- %t", i, c.Name, c.Wide))
 	}
 }

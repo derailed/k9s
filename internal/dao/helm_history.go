@@ -9,13 +9,13 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/render/helm"
 )
 
@@ -126,10 +126,14 @@ func (h *HelmHistory) GetValues(path string, allValues bool) ([]byte, error) {
 		return nil, fmt.Errorf("expected helm.ReleaseRes, but got %T", rel)
 	}
 
+	var content any
 	if allValues {
-		return yaml.Marshal(resp.Release.Chart.Values)
+		content = resp.Release.Chart.Values
+	} else {
+		content = resp.Release.Config
 	}
-	return yaml.Marshal(resp.Release.Config)
+
+	return data.WriteYAML(content)
 }
 
 func (h *HelmHistory) Rollback(_ context.Context, path, rev string) error {

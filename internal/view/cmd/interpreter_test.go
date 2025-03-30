@@ -242,10 +242,17 @@ func TestDirCmd(t *testing.T) {
 		"toast-nodir": {
 			cmd: "dir",
 		},
+
 		"caps": {
 			cmd: "dir DirName",
 			ok:  true,
 			dir: "DirName",
+		},
+
+		"abs": {
+			cmd: "dir /tmp",
+			ok:  true,
+			dir: "/tmp",
 		},
 	}
 

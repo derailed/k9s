@@ -5,10 +5,11 @@ package ui
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 // Pages represents a stack of view pages.
@@ -72,9 +73,9 @@ func (p *Pages) delete(c model.Component) {
 
 // Dump for debug.
 func (p *Pages) Dump() {
-	log.Debug().Msgf("Dumping Pages %p", p)
+	slog.Debug("Dumping Pages", slogs.Page, p)
 	for i, c := range p.Stack.Peek() {
-		log.Debug().Msgf("%d -- %s -- %#v", i, componentID(c), p.GetPrimitive(componentID(c)))
+		slog.Debug(fmt.Sprintf("%d -- %s -- %#v", i, componentID(c), p.GetPrimitive(componentID(c))))
 	}
 }
 
@@ -102,7 +103,7 @@ func (p *Pages) StackTop(top model.Component) {
 
 func componentID(c model.Component) string {
 	if c.Name() == "" {
-		log.Error().Msg("Component has no name")
+		slog.Error("Component has no name", slogs.Component, fmt.Sprintf("%T", c))
 	}
 	return fmt.Sprintf("%s-%p", c.Name(), c)
 }

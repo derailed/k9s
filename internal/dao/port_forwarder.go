@@ -12,7 +12,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/port"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -101,7 +100,6 @@ func (p *PortForwarder) Container() string {
 
 // Stop terminates a port forward.
 func (p *PortForwarder) Stop() {
-	log.Debug().Msgf("<<< Stopping PortForward %s", p.ID())
 	p.active = false
 	if p.stopChan != nil {
 		close(p.stopChan)

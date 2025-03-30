@@ -6,6 +6,7 @@ package view
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/derailed/k9s/internal"
@@ -15,14 +16,13 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog"
 	"github.com/sahilm/fuzzy"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.Disabled)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestParsePFAnn(t *testing.T) {
@@ -324,6 +324,29 @@ func Test_linesWithRegions(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
 			assert.Equal(t, u.e, linesWithRegions(u.lines, u.matches))
+		})
+	}
+}
+
+func Test_sanitizeEsc(t *testing.T) {
+	uu := map[string]struct {
+		s string
+		e string
+	}{
+		"empty": {},
+		"empty-brackets": {
+			s: "[]",
+			e: "[]",
+		},
+		"tag": {
+			s: "[fred[]",
+			e: "[fred]",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, sanitizeEsc(u.s))
 		})
 	}
 }

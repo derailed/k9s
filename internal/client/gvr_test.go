@@ -108,9 +108,9 @@ func TestGVRAsResourceName(t *testing.T) {
 		e   string
 	}{
 		"full":  {"apps/v1/deployments", "deployments.v1.apps"},
-		"core":  {"v1/pods", "pods.v1."},
-		"k9s":   {"users", "users.."},
-		"empty": {"", ".."},
+		"core":  {"v1/pods", "pods"},
+		"k9s":   {"users", "users"},
+		"empty": {"", ""},
 	}
 
 	for k := range uu {

@@ -4,18 +4,20 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/adrg/xdg"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
-
-	"github.com/adrg/xdg"
-	"gopkg.in/yaml.v2"
+	"github.com/derailed/k9s/internal/slogs"
+	"gopkg.in/yaml.v3"
 )
 
 const k9sPluginsDir = "k9s/plugins"
@@ -87,10 +89,14 @@ func (p Plugins) loadPluginDir(dir string) error {
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}
+
+		d := yaml.NewDecoder(bytes.NewReader(fileContent))
+		d.KnownFields(true)
+
 		var plugin Plugin
-		if err = yaml.UnmarshalStrict(fileContent, &plugin); err != nil {
+		if err = d.Decode(&plugin); err != nil {
 			var plugins Plugins
-			if err = yaml.UnmarshalStrict(fileContent, &plugins); err != nil {
+			if err = d.Decode(&plugins); err != nil {
 				return fmt.Errorf("cannot parse %s into either a single plugin nor plugins: %w", fileName, err)
 			}
 			for name, plugin := range plugins.Plugins {
@@ -113,7 +119,10 @@ func (p *Plugins) load(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.PluginsSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		slog.Warn("Validation failed. Please update your config and restart!",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 	}
 	var pp Plugins
 	if err := yaml.Unmarshal(bb, &pp); err != nil {

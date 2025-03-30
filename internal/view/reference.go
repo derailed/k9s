@@ -56,7 +56,7 @@ func (r *Reference) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := r.GetTable().GetSelectedItem()
 	ns, _ := client.Namespaced(path)
 	gvr := ui.TrimCell(r.GetTable().SelectTable, row, 2)
-	r.App().gotoResource(client.NewGVR(gvr).R()+" "+ns, path, false)
+	r.App().gotoResource(client.NewGVR(gvr).R()+" "+ns, path, false, true)
 
 	return evt
 }

@@ -21,17 +21,38 @@ type Endpoints struct {
 }
 
 // Header returns a header row.
-func (Endpoints) Header(ns string) model1.Header {
+func (e Endpoints) Header(_ string) model1.Header {
+	return e.doHeader(e.defaultHeader())
+}
+
+// Header returns a header row.
+func (Endpoints) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "ENDPOINTS"},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (e Endpoints) Render(o interface{}, ns string, r *model1.Row) error {
+func (e Endpoints) Render(o interface{}, ns string, row *model1.Row) error {
+	if err := e.defaultRow(o, ns, row); err != nil {
+		return err
+	}
+	if e.specs.isEmpty() {
+		return nil
+	}
+	cols, err := e.specs.realize(o.(*unstructured.Unstructured), e.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (e Endpoints) defaultRow(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Endpoints, but got %T", o)

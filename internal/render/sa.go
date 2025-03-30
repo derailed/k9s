@@ -20,23 +20,45 @@ type ServiceAccount struct {
 }
 
 // Header returns a header row.
-func (ServiceAccount) Header(ns string) model1.Header {
+func (s ServiceAccount) Header(_ string) model1.Header {
+	return s.doHeader(s.defaultHeader())
+}
+
+func (ServiceAccount) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "SECRET"},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (s ServiceAccount) Render(o interface{}, ns string, r *model1.Row) error {
+func (s ServiceAccount) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected ServiceAccount, but got %T", o)
 	}
+
+	if err := s.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if s.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := s.specs.realize(raw, s.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (s ServiceAccount) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var sa v1.ServiceAccount
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sa)
 	if err != nil {

@@ -5,43 +5,47 @@ package dao
 
 import (
 	"fmt"
+	"log/slog"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
-	crdCat  = "crd"
-	k9sCat  = "k9s"
-	helmCat = "helm"
-	crdGVR  = "apiextensions.k8s.io/v1/customresourcedefinitions"
+	crdCat   = "crd"
+	k9sCat   = "k9s"
+	helmCat  = "helm"
+	scaleCat = "scale"
+	crdGVR   = "apiextensions.k8s.io/v1/customresourcedefinitions"
 )
 
 // MetaAccess tracks resources metadata.
 var MetaAccess = NewMeta()
 
-var stdGroups = map[string]struct{}{
-	"apps/v1":             {},
-	"autoscaling/v1":      {},
-	"autoscaling/v2":      {},
-	"autoscaling/v2beta1": {},
-	"autoscaling/v2beta2": {},
-	"batch/v1":            {},
-	"batch/v1beta1":       {},
-	"extensions/v1beta1":  {},
-	"policy/v1beta1":      {},
-	"policy/v1":           {},
-	"v1":                  {},
-}
+var stdGroups = sets.New[string](
+	"apps/v1",
+	"autoscaling/v1",
+	"autoscaling/v2",
+	"autoscaling/v2beta1",
+	"autoscaling/v2beta2",
+	"batch/v1",
+	"batch/v1beta1",
+	"extensions/v1beta1",
+	"policy/v1beta1",
+	"policy/v1",
+	"v1",
+)
 
 func (m ResourceMetas) clear() {
 	for k := range m {
@@ -89,14 +93,12 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("helm"):                                              &HelmChart{},
 		client.NewGVR("helm-history"):                                      &HelmHistory{},
 		client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions"): &CustomResourceDefinition{},
-		// !!BOZO!! Popeye
-		//client.NewGVR("popeye"):                 &Popeye{},
 	}
 
 	r, ok := m[gvr]
 	if !ok {
-		r = new(Generic)
-		log.Debug().Msgf("No DAO registry entry for %q. Using generics!", gvr)
+		r = new(Scaler)
+		slog.Debug("No DAO registry entry. Using generics!", slogs.GVR, gvr)
 	}
 	r.Init(f, gvr)
 
@@ -139,16 +141,6 @@ func (m *Meta) GVK2GVR(gv schema.GroupVersion, kind string) (client.GVR, bool, b
 	return client.NoGVR, false, false
 }
 
-// IsCRD checks if resource represents a CRD
-func IsCRD(r metav1.APIResource) bool {
-	for _, c := range r.Categories {
-		if c == crdCat {
-			return true
-		}
-	}
-	return false
-}
-
 // MetaFor returns a resource metadata for a given gvr.
 func (m *Meta) MetaFor(gvr client.GVR) (metav1.APIResource, error) {
 	m.mx.RLock()
@@ -161,26 +153,26 @@ func (m *Meta) MetaFor(gvr client.GVR) (metav1.APIResource, error) {
 	return meta, nil
 }
 
+// IsCRD checks if resource represents a CRD
+func IsCRD(r metav1.APIResource) bool {
+	return slices.Contains(r.Categories, crdCat)
+}
+
 // IsK8sMeta checks for non resource meta.
 func IsK8sMeta(m metav1.APIResource) bool {
-	for _, c := range m.Categories {
-		if c == k9sCat || c == helmCat {
-			return false
-		}
-	}
-
-	return true
+	return !slices.ContainsFunc(m.Categories, func(category string) bool {
+		return category == k9sCat || category == helmCat
+	})
 }
 
 // IsK9sMeta checks for non resource meta.
 func IsK9sMeta(m metav1.APIResource) bool {
-	for _, c := range m.Categories {
-		if c == k9sCat {
-			return true
-		}
-	}
+	return slices.Contains(m.Categories, k9sCat)
+}
 
-	return false
+// IsScalable check if the resource can be scaled
+func IsScalable(m metav1.APIResource) bool {
+	return slices.Contains(m.Categories, scaleCat)
 }
 
 // LoadResources hydrates server preferred+CRDs resource metadata.
@@ -193,6 +185,9 @@ func (m *Meta) LoadResources(f Factory) error {
 		return err
 	}
 	loadNonResource(m.resMetas)
+
+	// We've actually loaded all the CRDs in loadPreferred, and we're now adding
+	// some additional CRD properties on top of that.
 	loadCRDs(f, m.resMetas)
 
 	return nil
@@ -244,21 +239,6 @@ func loadK9s(m ResourceMetas) {
 		Name:         "aliases",
 		Kind:         "Aliases",
 		SingularName: "alias",
-		Verbs:        []string{},
-		Categories:   []string{k9sCat},
-	}
-	m[client.NewGVR("popeye")] = metav1.APIResource{
-		Name:         "popeye",
-		Kind:         "Popeye",
-		SingularName: "popeye",
-		Namespaced:   true,
-		Verbs:        []string{},
-		Categories:   []string{k9sCat},
-	}
-	m[client.NewGVR("sanitizer")] = metav1.APIResource{
-		Name:         "sanitizer",
-		Kind:         "Sanitizer",
-		SingularName: "sanitizer",
 		Verbs:        []string{},
 		Categories:   []string{k9sCat},
 	}
@@ -354,7 +334,7 @@ func loadRBAC(m ResourceMetas) {
 
 func loadPreferred(f Factory, m ResourceMetas) error {
 	if f.Client() == nil || !f.Client().ConnectionOK() {
-		log.Error().Msgf("Load cluster resources - No API server connection")
+		slog.Error("Load cluster resources - No API server connection")
 		return nil
 	}
 
@@ -364,7 +344,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	}
 	rr, err := dial.ServerPreferredResources()
 	if err != nil {
-		log.Debug().Err(err).Msgf("Failed to load preferred resources")
+		slog.Debug("Failed to load preferred resources", slogs.Error, err)
 	}
 	for _, r := range rr {
 		for _, res := range r.APIResources {
@@ -387,29 +367,26 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 }
 
 func isStandardGroup(gv string) bool {
-	if _, ok := stdGroups[gv]; ok {
-		return true
-	}
-
-	return strings.Contains(gv, "k8s.io")
+	return stdGroups.Has(gv) || strings.Contains(gv, "k8s.io")
 }
 
-var deprecatedGVRs = map[client.GVR]struct{}{
-	client.NewGVR("extensions/v1beta1/ingresses"): {},
-}
+var deprecatedGVRs = sets.New[client.GVR](
+	client.NewGVR("extensions/v1beta1/ingresses"),
+)
 
 func isDeprecated(gvr client.GVR) bool {
-	_, ok := deprecatedGVRs[gvr]
-	return ok
+	return deprecatedGVRs.Has(gvr)
 }
 
+// loadCRDs Wait for the cache to synced and then add some additional properties to CRD.
 func loadCRDs(f Factory, m ResourceMetas) {
 	if f.Client() == nil || !f.Client().ConnectionOK() {
 		return
 	}
-	oo, err := f.List(crdGVR, client.ClusterScope, false, labels.Everything())
+
+	oo, err := f.List(crdGVR, client.ClusterScope, true, labels.Everything())
 	if err != nil {
-		log.Warn().Err(err).Msgf("Fail CRDs load")
+		slog.Warn("CRDs load Fail", slogs.Error, err)
 		return
 	}
 
@@ -417,29 +394,36 @@ func loadCRDs(f Factory, m ResourceMetas) {
 		var crd apiext.CustomResourceDefinition
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crd)
 		if err != nil {
-			log.Err(err).Msg("boom")
+			slog.Error("CRD conversion failed", slogs.Error, err)
+			continue
+		}
+		gvr, version, ok := newGVRFromCRD(&crd)
+		if !ok {
 			continue
 		}
 
-		var meta metav1.APIResource
-		meta.Kind = crd.Spec.Names.Kind
-		meta.Group = crd.Spec.Group
-		meta.Name = strings.TrimSuffix(crd.Name, "."+meta.Group)
-
-		meta.SingularName = crd.Spec.Names.Singular
-		meta.ShortNames = crd.Spec.Names.ShortNames
-		meta.Namespaced = crd.Spec.Scope == apiext.NamespaceScoped
-		for _, v := range crd.Spec.Versions {
-			if v.Served && !v.Deprecated {
-				meta.Version = v.Name
-				break
+		if meta, ok := m[gvr]; ok && version.Subresources != nil && version.Subresources.Scale != nil {
+			if !slices.Contains(meta.Categories, scaleCat) {
+				meta.Categories = append(meta.Categories, scaleCat)
+				m[gvr] = meta
 			}
 		}
-
-		meta.Categories = append(meta.Categories, crdCat)
-		gvr := client.NewGVRFromMeta(meta)
-		m[gvr] = meta
 	}
+}
+
+func newGVRFromCRD(crd *apiext.CustomResourceDefinition) (client.GVR, apiext.CustomResourceDefinitionVersion, bool) {
+	for _, v := range crd.Spec.Versions {
+		if v.Served && !v.Deprecated {
+			return client.NewGVRFromMeta(metav1.APIResource{
+				Kind:    crd.Spec.Names.Kind,
+				Group:   crd.Spec.Group,
+				Name:    crd.Spec.Names.Plural,
+				Version: v.Name,
+			}), v, true
+		}
+	}
+
+	return client.GVR{}, apiext.CustomResourceDefinitionVersion{}, false
 }
 
 func extractMeta(o runtime.Object) (metav1.APIResource, []error) {

@@ -4,24 +4,25 @@
 package model1
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
-func TestTableDataCustomize(t *testing.T) {
+func TestTableDataComputeSortCol(t *testing.T) {
 	uu := map[string]struct {
-		t1, e        *TableData
+		t1           *TableData
 		vs           config.ViewSetting
 		sc           SortColumn
 		wide, manual bool
+		e            SortColumn
 	}{
 		"same": {
 			t1: NewTableDataWithRows(
@@ -37,27 +38,15 @@ func TestTableDataCustomize(t *testing.T) {
 					RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "2", "3"}}},
 				),
 			),
-			vs: config.ViewSetting{Columns: []string{"A", "B", "C"}},
-			e: NewTableDataWithRows(
-				client.NewGVR("test"),
-				Header{
-					HeaderColumn{Name: "A"},
-					HeaderColumn{Name: "B"},
-					HeaderColumn{Name: "C"},
-				},
-				NewRowEventsWithEvts(
-					RowEvent{Row: Row{ID: "A", Fields: Fields{"1", "2", "3"}}},
-					RowEvent{Row: Row{ID: "B", Fields: Fields{"0", "2", "3"}}},
-					RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "2", "3"}}},
-				),
-			),
+			vs: config.ViewSetting{Columns: []string{"A", "B", "C"}, SortColumn: "A:asc"},
+			e:  SortColumn{Name: "A", ASC: true},
 		},
 		"wide-col": {
 			t1: NewTableDataWithRows(
 				client.NewGVR("test"),
 				Header{
 					HeaderColumn{Name: "A"},
-					HeaderColumn{Name: "B", Wide: true},
+					HeaderColumn{Name: "B", Attrs: Attrs{Wide: true}},
 					HeaderColumn{Name: "C"},
 				},
 				NewRowEventsWithEvts(
@@ -66,27 +55,16 @@ func TestTableDataCustomize(t *testing.T) {
 					RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "2", "3"}}},
 				),
 			),
-			vs: config.ViewSetting{Columns: []string{"A", "B", "C"}},
-			e: NewTableDataWithRows(
-				client.NewGVR("test"),
-				Header{
-					HeaderColumn{Name: "A"},
-					HeaderColumn{Name: "B", Wide: false},
-					HeaderColumn{Name: "C"},
-				},
-				NewRowEventsWithEvts(
-					RowEvent{Row: Row{ID: "A", Fields: Fields{"1", "2", "3"}}},
-					RowEvent{Row: Row{ID: "B", Fields: Fields{"0", "2", "3"}}},
-					RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "2", "3"}}},
-				),
-			),
+			vs: config.ViewSetting{Columns: []string{"A", "B", "C"}, SortColumn: "B:desc"},
+			e:  SortColumn{Name: "B"},
 		},
+
 		"wide": {
 			t1: NewTableDataWithRows(
 				client.NewGVR("test"),
 				Header{
 					HeaderColumn{Name: "A"},
-					HeaderColumn{Name: "B", Wide: true},
+					HeaderColumn{Name: "B", Attrs: Attrs{Wide: true}},
 					HeaderColumn{Name: "C"},
 				},
 				NewRowEventsWithEvts(
@@ -96,28 +74,16 @@ func TestTableDataCustomize(t *testing.T) {
 				),
 			),
 			wide: true,
-			vs:   config.ViewSetting{Columns: []string{"A", "C"}},
-			e: NewTableDataWithRows(
-				client.NewGVR("test"),
-				Header{
-					HeaderColumn{Name: "A"},
-					HeaderColumn{Name: "C"},
-					HeaderColumn{Name: "B", Wide: true},
-				},
-				NewRowEventsWithEvts(
-					RowEvent{Row: Row{ID: "A", Fields: Fields{"1", "3", "2"}}},
-					RowEvent{Row: Row{ID: "B", Fields: Fields{"0", "3", "2"}}},
-					RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "3", "2"}}},
-				),
-			),
+			vs:   config.ViewSetting{Columns: []string{"A", "C"}, SortColumn: ""},
+			e:    SortColumn{Name: ""},
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			td, _ := u.t1.Customize(&u.vs, u.sc, u.manual, u.wide)
-			assert.Equal(t, u.e, td)
+			sc := u.t1.ComputeSortCol(&u.vs, u.sc, u.manual)
+			assert.Equal(t, u.e, sc)
 		})
 	}
 }

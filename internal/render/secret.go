@@ -20,24 +20,46 @@ type Secret struct {
 	Base
 }
 
-// Header returns a header rbw.
-func (Secret) Header(string) model1.Header {
+// Header returns a header row.
+func (s Secret) Header(_ string) model1.Header {
+	return s.doHeader(s.defaultHeader())
+}
+
+func (Secret) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "TYPE"},
 		model1.HeaderColumn{Name: "DATA"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n Secret) Render(o interface{}, _ string, r *model1.Row) error {
+func (s Secret) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Secret, but got %T", o)
 	}
+
+	if err := s.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if s.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := s.specs.realize(raw, s.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (n Secret) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var sec v1.Secret
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sec)
 	if err != nil {

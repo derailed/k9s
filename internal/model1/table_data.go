@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"sync"
@@ -14,22 +15,25 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type (
-	// SortFn represent a function that can sort columnar data.
-	SortFn func(rows Rows, sortCol SortColumn)
+// SortFn represent a function that can sort columnar data.
+type SortFn func(rows Rows, sortCol SortColumn)
 
-	// SortColumn represents a sortable column.
-	SortColumn struct {
-		Name string
-		ASC  bool
-	}
-)
+// SortColumn represents a sortable column.
+type SortColumn struct {
+	Name string
+	ASC  bool
+}
+
+// IsSet checks if the sort column is set.
+func (s SortColumn) IsSet() bool {
+	return s.Name != ""
+}
 
 const spacer = " "
 
@@ -152,7 +156,7 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 	if err == nil {
 		td.rowEvents = rr
 	} else {
-		log.Error().Err(err).Msg("rx filter failed")
+		slog.Error("RX filter failed", slogs.Error, err)
 	}
 
 	return td
@@ -174,8 +178,11 @@ func (t *TableData) rxFilter(q string, inverse bool) (*RowEvents, error) {
 	rr := NewRowEvents(t.RowCount() / 2)
 	ageIndex, _ := t.header.IndexOf("AGE", true)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
-		ff := re.Row.Fields[startIndex:]
-		if ageIndex >= 0 && ageIndex+1 <= len(ff) {
+		ff := make([]string, 0, len(re.Row.Fields))
+		for _, r := range re.Row.Fields[startIndex:] {
+			ff = append(ff, r)
+		}
+		if ageIndex >= 0 && startIndex != ageIndex && ageIndex+1 <= len(ff) {
 			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
 		}
 		match := rx.MatchString(strings.Join(ff, spacer))
@@ -200,12 +207,11 @@ func (t *TableData) fuzzyFilter(q string) *RowEvents {
 	mm := fuzzy.Find(q, ss)
 	rr := NewRowEvents(t.RowCount() / 2)
 	for _, m := range mm {
-		re, ok := t.rowEvents.At(m.Index)
-		if !ok {
-			log.Error().Msgf("unable to find event for index in fuzzfilter: %d", m.Index)
-			continue
+		if re, ok := t.rowEvents.At(m.Index); !ok {
+			slog.Error("Unable to find event for index in fuzzfilter", slogs.Index, m.Index)
+		} else {
+			rr.Add(re)
 		}
-		rr.Add(re)
 	}
 
 	return rr
@@ -321,36 +327,25 @@ func (t *TableData) Labelize(labels []string) *TableData {
 	return &data
 }
 
-// Customize returns a new model with customized column layout.
-func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual, wide bool) (*TableData, SortColumn) {
+// ComputeSortCol computes the best matched sort column.
+func (t *TableData) ComputeSortCol(vs *config.ViewSetting, sc SortColumn, manual bool) SortColumn {
 	if vs.IsBlank() {
 		if sc.Name != "" {
-			return t, sc
+			return sc
 		}
-		psc, err := t.sortCol(vs)
-		if err == nil {
-			return t, psc
+		if psc, err := t.sortCol(vs); err == nil {
+			return psc
 		}
-		return t, sc
+		return sc
+	}
+	if manual && sc.IsSet() {
+		return sc
+	}
+	if s, asc, err := vs.SortCol(); err == nil {
+		return SortColumn{Name: s, ASC: asc}
 	}
 
-	cols := vs.Columns
-	cdata := TableData{
-		gvr:       t.gvr,
-		namespace: t.namespace,
-		header:    t.header.Customize(cols, wide),
-	}
-	ids := t.header.MapIndices(cols, wide)
-	cdata.rowEvents = t.rowEvents.Customize(ids)
-	if manual || vs == nil {
-		return &cdata, sc
-	}
-	psc, err := cdata.sortCol(vs)
-	if err != nil {
-		return &cdata, sc
-	}
-
-	return &cdata, psc
+	return sc
 }
 
 func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {
@@ -479,7 +474,10 @@ func (t *TableData) Delete(newKeys map[string]struct{}) {
 		})
 		for _, id := range victims {
 			if err := t.rowEvents.Delete(id); err != nil {
-				log.Error().Err(err).Msgf("table delete failed: %q", id)
+				slog.Error("Table delete failed",
+					slogs.Error, err,
+					slogs.Message, id,
+				)
 			}
 		}
 	}

@@ -13,7 +13,7 @@ import (
 
 func TestClusterValidate(t *testing.T) {
 	c := data.NewContext()
-	c.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
+	c.Validate(mock.NewMockConnection(), "ct-1", "cl-1")
 
 	assert.Equal(t, "po", c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)
@@ -23,7 +23,7 @@ func TestClusterValidate(t *testing.T) {
 
 func TestClusterValidateEmpty(t *testing.T) {
 	c := data.NewContext()
-	c.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
+	c.Validate(mock.NewMockConnection(), "ct-1", "cl-1")
 
 	assert.Equal(t, "po", c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)

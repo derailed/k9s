@@ -22,30 +22,52 @@ type CronJob struct {
 }
 
 // Header returns a header row.
-func (CronJob) Header(ns string) model1.Header {
+func (c CronJob) Header(_ string) model1.Header {
+	return c.doHeader(c.defaultHeader())
+}
+
+func (CronJob) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
 		model1.HeaderColumn{Name: "SCHEDULE"},
 		model1.HeaderColumn{Name: "SUSPEND"},
 		model1.HeaderColumn{Name: "ACTIVE"},
-		model1.HeaderColumn{Name: "LAST_SCHEDULE", Time: true},
-		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
-		model1.HeaderColumn{Name: "CONTAINERS", Wide: true},
-		model1.HeaderColumn{Name: "IMAGES", Wide: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "LAST_SCHEDULE", Attrs: model1.Attrs{Time: true}},
+		model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (c CronJob) Render(o interface{}, ns string, r *model1.Row) error {
+func (c CronJob) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected CronJob, but got %T", o)
 	}
+	if err := c.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if c.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := c.specs.realize(raw, c.defaultHeader(), row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (c CronJob) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var cj batchv1.CronJob
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cj)
 	if err != nil {

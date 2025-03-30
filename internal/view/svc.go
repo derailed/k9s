@@ -6,6 +6,7 @@ package view
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -15,9 +16,9 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -100,7 +101,7 @@ func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
 
 func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.bench != nil {
-		log.Debug().Msg(">>> Benchmark canceled!!")
+		slog.Debug(">>> Benchmark canceled!!")
 		s.App().Status(model.FlashErr, "Benchmark Canceled!")
 		s.bench.Cancel()
 		s.App().ClearStatus(true)
@@ -114,7 +115,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	cust, err := config.NewBench(s.App().BenchFile)
 	if err != nil {
-		log.Debug().Msgf("No bench config file found %s", s.App().BenchFile)
+		slog.Debug("No bench config file found", slogs.FileName, s.App().BenchFile)
 	}
 
 	cfg, ok := cust.Benchmarks.Services[path]
@@ -123,7 +124,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	cfg.Name = path
-	log.Debug().Msgf("Benchmark config %#v", cfg)
+	slog.Debug("Benchmark config", slogs.Config, cfg)
 
 	svc, err := fetchService(s.App().factory, path)
 	if err != nil {
@@ -170,7 +171,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	}
 
 	s.App().Status(model.FlashWarn, "Benchmark in progress...")
-	log.Debug().Msg("Benchmark starting...")
+	slog.Debug("Benchmark starting...")
 
 	ct, err := s.App().Config.K9s.ActiveContext()
 	if err != nil {
@@ -184,7 +185,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 }
 
 func (s *Service) benchDone() {
-	log.Debug().Msg("Bench Completed!")
+	slog.Debug("Bench Completed!")
 	s.App().QueueUpdate(func() {
 		if s.bench.Canceled() {
 			s.App().Status(model.FlashInfo, "Benchmark canceled")

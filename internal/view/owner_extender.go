@@ -6,16 +6,17 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/go-errors/errors"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,7 +47,10 @@ func (v *OwnerExtender) ownerCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if err := v.findOwnerFor(path); err != nil {
-		log.Warn().Msgf("Unable to jump to the owner of resource %q: %s", path, err)
+		slog.Warn("Unable to jump to owner of resource",
+			slogs.FQN, path,
+			slogs.Error, err,
+		)
 		v.App().Flash().Warnf("Unable to jump owner: %s", err)
 	}
 	return nil
@@ -107,7 +111,7 @@ func (v *OwnerExtender) jumpOwner(ns string, owner metav1.OwnerReference) error 
 		ownerFQN = owner.Name
 	}
 
-	v.App().gotoResource(gvr.String(), ownerFQN, false)
+	v.App().gotoResource(gvr.String(), ownerFQN, false, true)
 	return nil
 }
 
