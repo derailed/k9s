@@ -242,6 +242,37 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 
 ---
 
+## Running directly inside a Kubernetes cluster
+
+You can run k9s directly inside a Kubernetes cluster by creating a Pod with the official image (quay.io/derailed/k9s). This works great with tools like [Telepresence](https://telepresence.io/) or [Engity's Bifröst](https://bifroest.engity.org/) that let you connect to Kubernetes clusters from your computer as if you were right inside them.
+
+They usually require you to create a matching Service Account, like the following:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k9s
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k9s
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: k9s
+    namespace: default
+```
+
+This allows you to use the Service Account `k9s` within the `default` namespace with full cluster permissions. For more details on how to use and define Service Accounts, please refer to [the official Kubernetes documentation](https://kubernetes.io/docs/concepts/security/service-accounts/#how-to-use).
+
+---
+
 ## PreFlight Checks
 
 * K9s uses 256 colors terminal mode. On `Nix system make sure TERM is set accordingly.
