@@ -127,7 +127,7 @@ func makeTableData() *model1.TableData {
 }
 
 func makeContext() context.Context {
-	ctx := context.WithValue(context.Background(), internal.KeyStyles, config.NewStyles())
+	ctx := context.WithValue(context.Background(), internal.KeyStyles, config.NewStyles(false))
 	ctx = context.WithValue(ctx, internal.KeyViewConfig, config.NewCustomView())
 
 	return ctx

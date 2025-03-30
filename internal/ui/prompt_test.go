@@ -15,7 +15,7 @@ import (
 )
 
 func TestCmdNew(t *testing.T) {
-	v := ui.NewPrompt(nil, true, config.NewStyles())
+	v := ui.NewPrompt(nil, true, config.NewStyles(false))
 	model := model.NewFishBuff(':', model.CommandBuffer)
 	v.SetModel(model)
 	model.AddListener(v)
@@ -23,25 +23,25 @@ func TestCmdNew(t *testing.T) {
 		model.Add(r)
 	}
 
-	assert.Equal(t, "\x00> [::b]blee\n", v.GetText(false))
+	assert.Equal(t, "> [::b]blee\n", v.GetText(false))
 }
 
 func TestCmdUpdate(t *testing.T) {
 	model := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(nil, true, config.NewStyles())
+	v := ui.NewPrompt(nil, true, config.NewStyles(false))
 	v.SetModel(model)
 
 	model.AddListener(v)
 	model.SetText("blee", "")
 	model.Add('!')
 
-	assert.Equal(t, "\x00> [::b]blee!\n", v.GetText(false))
+	assert.Equal(t, "> [::b]blee!\n", v.GetText(false))
 	assert.False(t, v.InCmdMode())
 }
 
 func TestCmdMode(t *testing.T) {
 	model := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles(false))
 	v.SetModel(model)
 	model.AddListener(v)
 
@@ -53,7 +53,7 @@ func TestCmdMode(t *testing.T) {
 
 func TestPrompt_Deactivate(t *testing.T) {
 	model := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles(false))
 	v.SetModel(model)
 	model.AddListener(v)
 
@@ -66,7 +66,7 @@ func TestPrompt_Deactivate(t *testing.T) {
 
 // Tests that, when active, the prompt has the appropriate color
 func TestPromptColor(t *testing.T) {
-	styles := config.NewStyles()
+	styles := config.NewStyles(false)
 	app := ui.App{}
 
 	// Make sure to have different values to be sure that the prompt color actually changes depending on its type
@@ -107,9 +107,9 @@ func TestPromptColor(t *testing.T) {
 // Tests that, when a change of style occurs, the prompt will have the appropriate color when active
 func TestPromptStyleChanged(t *testing.T) {
 	app := ui.App{}
-	styles := config.NewStyles()
-	newStyles := config.NewStyles()
-	newStyles.K9s.Prompt.Border = config.PromptBorder{
+	styles := config.NewStyles(false)
+	newStyles := config.NewStyles(false)
+	newStyles.Skin.K9s.Prompt.Border = config.PromptBorder{
 		DefaultColor: "green",
 		CommandColor: "yellow",
 	}

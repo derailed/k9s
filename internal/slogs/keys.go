@@ -61,6 +61,9 @@ const (
 	// Skin tracks a skin logger key.
 	Skin = "skin"
 
+	// Emoji tracks a emoji logger key.
+	Emoji = "emoji"
+
 	// CmdHist tracks a command history logger key.
 	CmdHist = "cmd-hist"
 
