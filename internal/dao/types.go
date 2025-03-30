@@ -8,15 +8,14 @@ import (
 	"io"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/watch"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
 	restclient "k8s.io/client-go/rest"
-
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/watch"
 )
 
 // ResourceMetas represents a collection of resource metadata.

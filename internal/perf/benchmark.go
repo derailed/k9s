@@ -16,11 +16,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/derailed/k9s/internal/config/data"
-	"github.com/derailed/k9s/internal/slogs"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/rakyll/hey/requester"
 )
 
@@ -127,8 +126,8 @@ func (b *Benchmark) Run(cluster, context string, done func()) {
 
 func (b *Benchmark) save(cluster, context string, r io.Reader) error {
 	ns, n := client.Namespaced(b.config.Name)
-	n = strings.Replace(n, "|", "_", -1)
-	n = strings.Replace(n, ":", "_", -1)
+	n = strings.ReplaceAll(n, "|", "_")
+	n = strings.ReplaceAll(n, ":", "_")
 	dir, err := config.EnsureBenchmarksDir(cluster, context)
 	if err != nil {
 		return err

@@ -12,11 +12,10 @@ import (
 )
 
 func TestEncodedSecretDescribe(t *testing.T) {
-	s := dao.Secret{}
+	var s dao.Secret
 	s.Init(makeFactory(), client.NewGVR("v1/secrets"))
 
-	encodedString :=
-		`
+	encodedString := `
 Name: bootstrap-token-abcdef
 Namespace:    kube-system
 Labels:       <none>
@@ -37,8 +36,9 @@ token-secret:  24 bytes`
 		"\n" +
 		"Data\n" +
 		"====\n" +
-		"token-secret:\t0123456789abcdef"
+		"token-secret: 0123456789abcdef"
 
-	decodedDescription, _ := s.Decode(encodedString, "kube-system/bootstrap-token-abcdef")
+	decodedDescription, err := s.Decode(encodedString, "kube-system/bootstrap-token-abcdef")
+	assert.NoError(t, err)
 	assert.Equal(t, expected, decodedDescription)
 }

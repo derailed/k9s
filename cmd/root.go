@@ -18,7 +18,6 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view"
-
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-colorable"
 	"github.com/spf13/cobra"

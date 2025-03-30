@@ -113,7 +113,7 @@ func (p *Pulse) reconcile(ctx context.Context) error {
 	for _, o := range oo {
 		c, ok := o.(*health.Check)
 		if !ok {
-			return fmt.Errorf("Expecting health check but got %T", o)
+			return fmt.Errorf("expecting health check but got %T", o)
 		}
 		p.data = append(p.data, c)
 		p.firePulseChanged(c)

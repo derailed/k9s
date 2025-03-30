@@ -61,8 +61,12 @@ func colorizeYAML(style config.Yaml, raw string) string {
 	return strings.Join(buff, "\n")
 }
 
-func enableRegion(str string) string {
-	return searchRX.ReplaceAllString(str, `[$1]$2[""]`)
+func enableRegion(s string) string {
+	if searchRX.MatchString(s) {
+		return strings.ReplaceAll(strings.ReplaceAll(s, "<<<", "["), ">>>", "]")
+	}
+
+	return s
 }
 
 func saveYAML(dir, name, raw string) (string, error) {

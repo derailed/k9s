@@ -39,17 +39,17 @@ func TestInitLogLoc(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			os.Unsetenv(config.K9sEnvLogsDir)
-			os.Unsetenv("XDG_STATE_HOME")
-			os.Unsetenv(config.K9sEnvConfigDir)
+			assert.NoError(t, os.Unsetenv(config.K9sEnvLogsDir))
+			assert.NoError(t, os.Unsetenv("XDG_STATE_HOME"))
+			assert.NoError(t, os.Unsetenv(config.K9sEnvConfigDir))
 			switch k {
 			case "log-env":
-				os.Setenv(config.K9sEnvLogsDir, u.dir)
+				assert.NoError(t, os.Setenv(config.K9sEnvLogsDir, u.dir))
 			case "xdg-env":
-				os.Setenv("XDG_STATE_HOME", u.dir)
+				assert.NoError(t, os.Setenv("XDG_STATE_HOME", u.dir))
 				xdg.Reload()
 			case "cfg-env":
-				os.Setenv(config.K9sEnvConfigDir, u.dir)
+				assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, u.dir))
 			}
 			err := config.InitLogLoc()
 			assert.NoError(t, err)
@@ -60,7 +60,7 @@ func TestInitLogLoc(t *testing.T) {
 }
 
 func TestEnsureBenchmarkCfg(t *testing.T) {
-	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
+	assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
 	assert.NoError(t, config.InitLocs())
 	defer assert.NoError(t, os.RemoveAll("/tmp/test-config"))
 

@@ -240,7 +240,6 @@ func TestClusterLoad(t *testing.T) {
 			eSize: 0,
 		},
 		"ok": {
-
 			nodes: &v1.NodeList{
 				Items: []v1.Node{
 					makeNode("n1", "100m", "4Mi", "50m", "2Mi"),

@@ -29,7 +29,7 @@ func TestGetDefaultContainer(t *testing.T) {
 		"container_not_present": {
 			po: &v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{"kubectl.kubernetes.io/default-container": "container1"},
+					Annotations: map[string]string{DefaultContainerAnnotation: "container1"},
 				},
 			},
 			wantContainer: "",
@@ -38,7 +38,7 @@ func TestGetDefaultContainer(t *testing.T) {
 		"container_found": {
 			po: &v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{"kubectl.kubernetes.io/default-container": "container1"},
+					Annotations: map[string]string{DefaultContainerAnnotation: "container1"},
 				},
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{{Name: "container1"}},

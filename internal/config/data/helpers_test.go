@@ -63,9 +63,10 @@ func TestHelperInList(t *testing.T) {
 }
 
 func TestEnsureDirPathNone(t *testing.T) {
-	var mod os.FileMode = 0744
+	const mod = 0744
+
 	dir := filepath.Join("/tmp", "k9s-test")
-	os.Remove(dir)
+	_ = os.Remove(dir)
 
 	path := filepath.Join(dir, "duh.yaml")
 	assert.NoError(t, data.EnsureDirPath(path, mod))

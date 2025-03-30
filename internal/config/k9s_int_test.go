@@ -101,7 +101,6 @@ func Test_k9sOverrides(t *testing.T) {
 			assert.Equal(t, u.sl, u.k.IsSplashless())
 			assert.Equal(t, u.hl, u.k.IsHeadless())
 			assert.Equal(t, u.ll, u.k.IsLogoless())
-
 		})
 	}
 }

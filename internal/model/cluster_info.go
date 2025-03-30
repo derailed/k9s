@@ -13,11 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/slogs"
-
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/apimachinery/pkg/util/cache"
 )
 
@@ -239,5 +238,5 @@ func fetchLatestRev() (string, error) {
 		return v.(string), nil
 	}
 
-	return "", errors.New("No version found")
+	return "", errors.New("no version found")
 }

@@ -160,7 +160,7 @@ func lessCapacity(s1, s2 string) bool {
 }
 
 func lessNumber(s1, s2 string) bool {
-	v1, v2 := strings.Replace(s1, ",", "", -1), strings.Replace(s2, ",", "", -1)
+	v1, v2 := strings.ReplaceAll(s1, ",", ""), strings.ReplaceAll(s2, ",", "")
 
 	return sortorder.NaturalLess(v1, v2)
 }

@@ -369,11 +369,17 @@ func containerShellIn(a *App, comp model.Component, path, co string) error {
 	if err != nil {
 		return err
 	}
+	if dco, ok := dao.GetDefaultContainer(pod.ObjectMeta, pod.Spec); ok {
+		resumeShellIn(a, comp, path, dco)
+		return nil
+	}
+
 	cc := fetchContainers(pod.ObjectMeta, pod.Spec, false)
 	if len(cc) == 1 {
 		resumeShellIn(a, comp, path, cc[0])
 		return nil
 	}
+
 	picker := NewPicker()
 	picker.populate(cc)
 	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
@@ -474,15 +480,14 @@ func buildShellArgs(cmd, path, co string, kcfg *string) []string {
 
 func fetchContainers(meta metav1.ObjectMeta, spec v1.PodSpec, allContainers bool) []string {
 	nn := make([]string, 0, len(spec.Containers)+len(spec.InitContainers))
-
 	// put the default container as the first entry
-	defaultContainer, hasDefaultContainer := dao.GetDefaultContainer(meta, spec)
-	if hasDefaultContainer {
+	defaultContainer, ok := dao.GetDefaultContainer(meta, spec)
+	if ok {
 		nn = append(nn, defaultContainer)
 	}
 
 	for _, c := range spec.Containers {
-		if !hasDefaultContainer || c.Name != defaultContainer {
+		if c.Name != defaultContainer {
 			nn = append(nn, c.Name)
 		}
 	}

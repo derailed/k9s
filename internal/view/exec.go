@@ -17,12 +17,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/slogs"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/fatih/color"
 	v1 "k8s.io/api/core/v1"
@@ -447,7 +446,7 @@ func k9sShellPodName() string {
 
 func k9sShellPod(node string, cfg config.ShellPod) *v1.Pod {
 	var grace int64
-	var priv bool = true
+	var priv = true
 
 	slog.Debug("Shell pod config", slogs.ShellPodCfg, cfg)
 	c := v1.Container{

@@ -62,7 +62,7 @@ func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 			continue
 		}
 
-		for _, r := range j.ObjectMeta.OwnerReferences {
+		for _, r := range j.OwnerReferences {
 			if r.Name == n {
 				ll = append(ll, o)
 			}

@@ -321,8 +321,8 @@ func hasConfigMap(spec *v1.PodSpec, name string) bool {
 	}
 
 	for _, v := range spec.Volumes {
-		if cm := v.VolumeSource.ConfigMap; cm != nil {
-			if cm.LocalObjectReference.Name == name {
+		if cm := v.ConfigMap; cm != nil {
+			if cm.Name == name {
 				return true
 			}
 		}
@@ -375,7 +375,7 @@ func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, e
 	}
 
 	for _, v := range spec.Volumes {
-		if sec := v.VolumeSource.Secret; sec != nil {
+		if sec := v.Secret; sec != nil {
 			if sec.SecretName == name {
 				return true, nil
 			}

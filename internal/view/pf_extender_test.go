@@ -7,16 +7,15 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
-
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/watch"
 )
 
 func TestEnsurePodPortFwdAllowed(t *testing.T) {

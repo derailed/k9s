@@ -262,14 +262,17 @@ func newTestView() *testView {
 func (t *testView) LogCanceled() {}
 func (t *testView) LogStop()     {}
 func (t *testView) LogResume()   {}
+
 func (t *testView) LogChanged(ll [][]byte) {
 	t.data = ll
 	t.dataCalled++
 }
+
 func (t *testView) LogCleared() {
 	t.clearCalled++
 	t.data = nil
 }
+
 func (t *testView) LogFailed(err error) {
 	fmt.Println("LogErr", err)
 	t.errCalled++

@@ -23,9 +23,9 @@ type Scans map[string]*Scan
 // Dump dump reports to stdout.
 func (s Scans) Dump(w io.Writer) {
 	for k, v := range s {
-		fmt.Fprintf(w, "Image: %s -- ", k)
+		_, _ = fmt.Fprintf(w, "Image: %s -- ", k)
 		v.Tally.Dump(w)
-		fmt.Fprintln(w)
+		_, _ = fmt.Fprintln(w)
 		v.Dump(w)
 	}
 }
