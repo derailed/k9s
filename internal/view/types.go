@@ -22,6 +22,7 @@ const (
 	uptodateCol = "UP-TO-DATE"
 	readyCol    = "READY"
 	availCol    = "AVAILABLE"
+	pausedCol   = "PAUSED"
 )
 
 type (
