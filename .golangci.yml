@@ -1,4 +1,5 @@
 version: "2"
+
 run:
   concurrency: 8
 
@@ -18,7 +19,7 @@ formatters:
     # - golines
 
 linters:
-  disable-all: true
+  # disable-all: true
   enable:
    - sloglint
   exclusions:
@@ -29,117 +30,117 @@ linters:
       - examples$
       - \\.(generated\\.deepcopy|pb)\\.go$
 
-  settings:
-    gocyclo:
-      min-complexity: 35
+settings:
+  gocyclo:
+    min-complexity: 35
 
-    govet:
-      enable:
-        - nilness
+  govet:
+    enable:
+      - nilness
 
-    goimports:
-      local-prefixes: github.com/derailed/k9s
+  goimports:
+    local-prefixes: github.com/derailed/k9s
 
-    unused:
-      parameters-are-used: true
-      local-variables-are-used: true
-      field-writes-are-uses: true
-      post-statements-are-reads: true
-      exported-fields-are-used: true
-      generated-is-used: true
+  unused:
+    parameters-are-used: true
+    local-variables-are-used: true
+    field-writes-are-uses: true
+    post-statements-are-reads: true
+    exported-fields-are-used: true
+    generated-is-used: true
 
-    goheader:
-      values:
-        regexp:
-          PROJECT: 'K9s'
-      template: |-
-        SPDX-License-Identifier: Apache-2.0
-        Copyright Authors of {{ PROJECT }}
+  goheader:
+    values:
+      regexp:
+        PROJECT: 'K9s'
+    template: |-
+      SPDX-License-Identifier: Apache-2.0
+      Copyright Authors of {{ PROJECT }}
 
-    gosec:
-      includes:
-        - G402
+  gosec:
+    includes:
+      - G402
 
-    sloglint:
-      # Enforce not mixing key-value pairs and attributes.
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-mixed-arguments
-      # Default: true
-      no-mixed-args: true
-      # Enforce using key-value pairs only (overrides no-mixed-args, incompatible with attr-only).
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#key-value-pairs-only
-      # Default: false
-      kv-only: true
-      # Enforce using attributes only (overrides no-mixed-args, incompatible with kv-only).
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#attributes-only
-      # Default: false
-      attr-only: false
-      # Enforce not using global loggers.
-      # Values:
-      # - "": disabled
-      # - "all": report all global loggers
-      # - "default": report only the default slog logger
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-global
-      # Default: ""
-      no-global: ""
-      # Enforce using methods that accept a context.
-      # Values:
-      # - "": disabled
-      # - "all": report all contextless calls
-      # - "scope": report only if a context exists in the scope of the outermost function
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#context-only
-      # Default: ""
-      context: ""
-      # Enforce using static values for log messages.
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#static-messages
-      # Default: false
-      static-msg: false
-      # Enforce using constants instead of raw keys.
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-raw-keys
-      # Default: false
-      no-raw-keys: true
-      # Enforce a single key naming convention.
-      # Values: snake, kebab, camel, pascal
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#key-naming-convention
-      # Default: ""
-      key-naming-case: camel
-      # Enforce not using specific keys.
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#forbidden-keys
-      # Default: []
-      forbidden-keys:
-        - time
-        - level
-        - msg
-        - source
-      # Enforce putting arguments on separate lines.
-      # https://github.com/go-simpler/sloglint?tab=readme-ov-file#arguments-on-separate-lines
-      # Default: false
-      args-on-sep-lines: false
+  sloglint:
+    # Enforce not mixing key-value pairs and attributes.
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-mixed-arguments
+    # Default: true
+    no-mixed-args: true
+    # Enforce using key-value pairs only (overrides no-mixed-args, incompatible with attr-only).
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#key-value-pairs-only
+    # Default: false
+    kv-only: true
+    # Enforce using attributes only (overrides no-mixed-args, incompatible with kv-only).
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#attributes-only
+    # Default: false
+    attr-only: false
+    # Enforce not using global loggers.
+    # Values:
+    # - "": disabled
+    # - "all": report all global loggers
+    # - "default": report only the default slog logger
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-global
+    # Default: ""
+    no-global: ""
+    # Enforce using methods that accept a context.
+    # Values:
+    # - "": disabled
+    # - "all": report all contextless calls
+    # - "scope": report only if a context exists in the scope of the outermost function
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#context-only
+    # Default: ""
+    context: ""
+    # Enforce using static values for log messages.
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#static-messages
+    # Default: false
+    static-msg: false
+    # Enforce using constants instead of raw keys.
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-raw-keys
+    # Default: false
+    no-raw-keys: true
+    # Enforce a single key naming convention.
+    # Values: snake, kebab, camel, pascal
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#key-naming-convention
+    # Default: ""
+    key-naming-case: camel
+    # Enforce not using specific keys.
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#forbidden-keys
+    # Default: []
+    forbidden-keys:
+      - time
+      - level
+      - msg
+      - source
+    # Enforce putting arguments on separate lines.
+    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#arguments-on-separate-lines
+    # Default: false
+    args-on-sep-lines: false
 
 
 issues:
 
   # default is true. Enables skipping of directories:
   #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
-  exclude-dirs-use-default: true
+  # exclude-dirs-use-default: true
 
   # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-rules:
-    - linters: [staticcheck]
-      text: "SA1019"                  # this is rule for deprecated method
+  # exclude-rules:
+  #   - linters: [staticcheck]
+  #     text: "SA1019"                  # this is rule for deprecated method
 
-    - linters: [staticcheck]
-      text: "SA9003: empty branch"
+  #   - linters: [staticcheck]
+  #     text: "SA9003: empty branch"
 
-    - linters: [staticcheck]
-      text: "SA2001: empty critical section"
+  #   - linters: [staticcheck]
+  #     text: "SA2001: empty critical section"
 
-    - linters: [err113]
-      text: "do not define dynamic errors, use wrapped static errors instead" # This rule to avoid opinionated check fmt.Errorf("text")
-    # Skip goimports check on generated files
-    - path: \\.(generated\\.deepcopy|pb)\\.go$
-      linters:
-        - goimports
-    # Skip goheader check on files imported and modified from upstream k8s
-    - path: "pkg/ipam/(cidrset|service)/.+\\.go"
-      linters:
-        - goheader
+  #   - linters: [err113]
+  #     text: "do not define dynamic errors, use wrapped static errors instead" # This rule to avoid opinionated check fmt.Errorf("text")
+  #   # Skip goimports check on generated files
+  #   - path: \\.(generated\\.deepcopy|pb)\\.go$
+  #     linters:
+  #       - goimports
+  #   # Skip goheader check on files imported and modified from upstream k8s
+  #   - path: "pkg/ipam/(cidrset|service)/.+\\.go"
+  #     linters:
+  #       - goheader
