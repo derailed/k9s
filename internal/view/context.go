@@ -85,16 +85,16 @@ func (c *Context) showRenameModal(name string, ok func(form *tview.Form, context
 			app.Content.Pages.RemovePage(renamePage)
 		}).
 		AddButton("Cancel", func() {
-			app.Content.Pages.RemovePage(renamePage)
+			app.Content.RemovePage(renamePage)
 		})
 
 	m := tview.NewModalForm("<Rename>", f)
 	m.SetText(fmt.Sprintf("Rename context %q?", name))
 	m.SetDoneFunc(func(int, string) {
-		app.Content.Pages.RemovePage(renamePage)
+		app.Content.RemovePage(renamePage)
 	})
-	app.Content.Pages.AddPage(renamePage, m, false, false)
-	app.Content.Pages.ShowPage(renamePage)
+	app.Content.AddPage(renamePage, m, false, false)
+	app.Content.ShowPage(renamePage)
 
 	for i := 0; i < f.GetButtonCount(); i++ {
 		f.GetButton(i).

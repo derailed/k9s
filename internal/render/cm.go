@@ -24,7 +24,6 @@ func (m ConfigMap) Header(_ string) model1.Header {
 	return m.doHeader(m.defaultHeader())
 }
 
-// Header returns a header rbw.
 func (ConfigMap) defaultHeader() model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},

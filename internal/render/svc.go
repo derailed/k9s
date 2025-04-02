@@ -75,7 +75,7 @@ func (s Service) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error
 	r.ID = client.MetaFQN(svc.ObjectMeta)
 	r.Fields = model1.Fields{
 		svc.Namespace,
-		svc.ObjectMeta.Name,
+		svc.Name,
 		string(svc.Spec.Type),
 		toIP(svc.Spec.ClusterIP),
 		toIPs(svc.Spec.Type, getSvcExtIPS(&svc)),

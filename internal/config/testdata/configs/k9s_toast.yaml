@@ -10,6 +10,7 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    splashless: false
     noIcons: false
   skipLatestRevCheck: yes
   disablePodCounts: false

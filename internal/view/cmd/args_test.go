@@ -103,7 +103,8 @@ func TestFlagsNew(t *testing.T) {
 				fuzzyKey:   "blee",
 				labelKey:   "app=fred",
 				nsKey:      "ns1",
-				contextKey: "Dev"},
+				contextKey: "Dev",
+			},
 		},
 		"ctx": {
 			i:  NewInterpreter("ctx"),

@@ -11,11 +11,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
-
-	"github.com/derailed/k9s/internal/config"
 	"github.com/fsnotify/fsnotify"
 )
 

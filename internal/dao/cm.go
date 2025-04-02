@@ -3,9 +3,7 @@
 
 package dao
 
-var (
-	_ Accessor = (*ConfigMap)(nil)
-)
+var _ Accessor = (*ConfigMap)(nil)
 
 // ConfigMap represents a configmap resource.
 type ConfigMap struct {

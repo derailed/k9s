@@ -45,7 +45,7 @@ func TestCallTimeout(t *testing.T) {
 }
 
 func TestConfigCurrentContext(t *testing.T) {
-	var kubeConfig = "./testdata/config"
+	kubeConfig := "./testdata/config"
 
 	uu := map[string]struct {
 		context string

@@ -18,7 +18,6 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view"
-
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-colorable"
 	"github.com/spf13/cobra"
@@ -221,6 +220,12 @@ func initK9sFlags() {
 		"crumbsless",
 		false,
 		"Turn K9s crumbs off",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Splashless,
+		"splashless",
+		false,
+		"Turn K9s splash screen off",
 	)
 	rootCmd.Flags().BoolVarP(
 		k9sFlags.AllNamespaces,

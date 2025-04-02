@@ -22,6 +22,9 @@ type UI struct {
 	// Crumbsless toggles nav crumb display.
 	Crumbsless bool `json:"crumbsless" yaml:"crumbsless"`
 
+	// Splashless disables the splash screen on startup.
+	Splashless bool `json:"splashless" yaml:"splashless"`
+
 	// Reactive toggles reactive ui changes.
 	Reactive bool `json:"reactive" yaml:"reactive"`
 
@@ -35,7 +38,11 @@ type UI struct {
 	// DefaultsToFullScreen toggles fullscreen on views like logs, yaml, details.
 	DefaultsToFullScreen bool `json:"defaultsToFullScreen" yaml:"defaultsToFullScreen"`
 
+	// UseFullGVRTitle toggles the display of full GVR (group/version/resource) vs R in views title.
+	UseFullGVRTitle bool `json:"useFullGVRTitle" yaml:"useFullGVRTitle"`
+
 	manualHeadless   *bool
 	manualLogoless   *bool
 	manualCrumbsless *bool
+	manualSplashless *bool
 }

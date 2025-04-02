@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -51,13 +50,13 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	d, err := dao.ExtractSecrets(o.(*unstructured.Unstructured))
+	mm, err := dao.ExtractSecrets(o)
 	if err != nil {
 		s.App().Flash().Err(err)
 		return nil
 	}
 
-	raw, err := data.WriteYAML(d)
+	raw, err := data.WriteYAML(mm)
 	if err != nil {
 		s.App().Flash().Errf("Error decoding secret %s", err)
 		return nil

@@ -25,7 +25,7 @@ func (s *Section) Render(ctx context.Context, ns string, o interface{}) error {
 	root := NewTreeNode(section.GVR, section.Title)
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 	s.outcomeRefs(root, section)
 	parent.Add(root)
@@ -73,8 +73,8 @@ func colorize(s string, l render.Level) string {
 }
 
 func cleanse(s string) string {
-	s = strings.Replace(s, "[", "(", -1)
-	s = strings.Replace(s, "]", ")", -1)
-	s = strings.Replace(s, "/", "::", -1)
+	s = strings.ReplaceAll(s, "[", "(")
+	s = strings.ReplaceAll(s, "]", ")")
+	s = strings.ReplaceAll(s, "/", "::")
 	return s
 }

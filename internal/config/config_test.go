@@ -556,6 +556,7 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.ReadOnly = true
 	cfg.K9s.Logger.TailCount = 500
 	cfg.K9s.Logger.BufferSize = 800
+	cfg.K9s.UI.UseFullGVRTitle = true
 	cfg.Validate("ct-1-1", "cl-1")
 
 	path := filepath.Join("/tmp", "k9s.yaml")

@@ -35,9 +35,7 @@ const (
 	cacheNSKey    = "validNamespaces"
 )
 
-var (
-	supportedMetricsAPIVersions = []string{"v1beta1"}
-)
+var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 // NamespaceNames tracks a collection of namespace names.
 type NamespaceNames map[string]struct{}

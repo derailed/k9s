@@ -243,7 +243,7 @@ func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 			return nil, errors.New("expecting Deployment resource")
 		}
 		// Just pick controller less pods...
-		if len(pod.ObjectMeta.OwnerReferences) > 0 {
+		if len(pod.OwnerReferences) > 0 {
 			continue
 		}
 		if serviceAccountMatches(pod.Spec.ServiceAccountName, n) {
@@ -273,7 +273,7 @@ func (p *Pod) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (
 			return nil, errors.New("expecting Pod resource")
 		}
 		// Just pick controller less pods...
-		if len(pod.ObjectMeta.OwnerReferences) > 0 {
+		if len(pod.OwnerReferences) > 0 {
 			continue
 		}
 		switch gvr {

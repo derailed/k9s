@@ -72,12 +72,12 @@ func SkinTitle(fmat string, style config.Frame) string {
 	if bgColor == config.DefaultColor {
 		bgColor = config.TransparentColor
 	}
-	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String(), -1)
+	fmat = strings.ReplaceAll(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String())
 	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor.String(), 1)
 	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor.String(), 1)
 	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor.String(), 1)
 	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor.String(), 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+bgColor.String()+":", -1)
+	fmat = strings.ReplaceAll(fmat, ":bg:", ":"+bgColor.String()+":")
 
 	return fmat
 }

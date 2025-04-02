@@ -55,6 +55,7 @@ type Table struct {
 	mx          sync.RWMutex
 	readOnly    bool
 	noIcon      bool
+	fullGVR     bool
 }
 
 // NewTable returns a new table view.
@@ -71,6 +72,14 @@ func NewTable(gvr client.GVR) *Table {
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: model1.SortColumn{ASC: true},
 	}
+}
+
+// SetFullGVR toggles full GVR title display.
+func (t *Table) SetFullGVR(b bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.fullGVR = b
 }
 
 // SetNoIcon toggles no icon mode.
@@ -547,11 +556,16 @@ func (t *Table) styleTitle() string {
 		ns = t.Extras
 	}
 
+	resource := t.gvr.R()
+	if t.fullGVR {
+		resource = t.gvr.String()
+	}
+
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, t.gvr, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, resource, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, resource, ns, render.AsThousands(rc)), t.styles.Frame())
 	}
 	if ic := ROIndicator(t.readOnly, t.noIcon); ic != "" {
 		title = " " + ic + title
@@ -573,13 +587,12 @@ func (t *Table) styleTitle() string {
 
 // ROIndicator returns an icon showing whether the session is in readonly mode or not.
 func ROIndicator(ro, noIC bool) string {
-	if noIC {
+	switch {
+	case noIC:
 		return ""
-	}
-
-	if ro {
+	case ro:
 		return lockedIC
+	default:
+		return unlockedIC
 	}
-
-	return unlockedIC
 }

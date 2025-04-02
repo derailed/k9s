@@ -11,9 +11,11 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    splashless: false
     reactive: false
     noIcons: false
     defaultsToFullScreen: false
+    useFullGVRTitle: false
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:

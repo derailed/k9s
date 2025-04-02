@@ -98,7 +98,7 @@ func (cc ColumnSpecs) Header(rh model1.Header) model1.Header {
 
 	for _, h := range rh {
 		if idx, ok := hh.IndexOf(h.Name, true); ok {
-			hh[idx].Attrs = hh[idx].Attrs.Merge(h.Attrs)
+			hh[idx].Attrs = hh[idx].Merge(h.Attrs)
 			continue
 		}
 		hh = append(hh, h)

@@ -5,7 +5,6 @@ package render
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -137,40 +136,4 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 	}
 
 	return nil
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func resourceNS(raw []byte) (string, string, error) {
-	var obj map[string]interface{}
-	var ns, name string
-	err := json.Unmarshal(raw, &obj)
-	if err != nil {
-		return ns, name, err
-	}
-
-	meta, ok := obj["metadata"].(map[string]interface{})
-	if !ok {
-		return ns, name, errors.New("no metadata found on generic resource")
-	}
-	ina, ok := meta["name"]
-	if !ok {
-		return ns, name, errors.New("unable to extract resource name")
-	}
-	name, ok = ina.(string)
-	if !ok {
-		return ns, name, fmt.Errorf("expecting name string type but got %T", ns)
-	}
-
-	ins, ok := meta["namespace"]
-	if !ok {
-		return client.ClusterScope, name, nil
-	}
-
-	ns, ok = ins.(string)
-	if !ok {
-		return ns, name, fmt.Errorf("expecting namespace string type but got %T", ns)
-	}
-	return ns, name, nil
 }

@@ -395,7 +395,7 @@ func (l *Log) toggleAllContainers(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !l.logs.cmdBuff.IsActive() {
-		fmt.Fprintln(l.ansiWriter)
+		_, _ = fmt.Fprintln(l.ansiWriter)
 		return evt
 	}
 
@@ -460,7 +460,7 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
 	_, _, w, _ := l.GetRect()
-	fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
+	_, _ = fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
 	l.follow = true
 
 	return nil
@@ -516,7 +516,7 @@ func (l *Log) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) toggleFullScreen() {
 	l.SetFullScreen(l.indicator.FullScreen())
-	l.Box.SetBorder(!l.indicator.FullScreen())
+	l.SetBorder(!l.indicator.FullScreen())
 	if l.indicator.FullScreen() {
 		l.logs.SetBorderPadding(0, 0, 0, 0)
 	} else {

@@ -367,7 +367,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 }
 
 func isStandardGroup(gv string) bool {
-	return stdGroups.Has(gv) || strings.Contains(gv, "k8s.io")
+	return stdGroups.Has(gv) || strings.Contains(gv, ".k8s.io")
 }
 
 var deprecatedGVRs = sets.New[client.GVR](

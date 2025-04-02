@@ -14,9 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var (
-	_ Accessor = (*ImageScan)(nil)
-)
+var _ Accessor = (*ImageScan)(nil)
 
 // ImageScan represents vulnerability scans.
 type ImageScan struct {

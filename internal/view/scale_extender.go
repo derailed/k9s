@@ -10,12 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/tcell/v2"
-	"github.com/derailed/tview"
-
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
+	"github.com/derailed/tview"
 )
 
 // ScaleExtender adds scaling extensions.

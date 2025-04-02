@@ -69,7 +69,7 @@ func (p PersistentVolumeClaim) defaultRow(raw *unstructured.Unstructured, r *mod
 	}
 
 	phase := pvc.Status.Phase
-	if pvc.ObjectMeta.DeletionTimestamp != nil {
+	if pvc.DeletionTimestamp != nil {
 		phase = "Terminating"
 	}
 

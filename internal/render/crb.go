@@ -67,7 +67,7 @@ func (ClusterRoleBinding) defaultRow(raw *unstructured.Unstructured, r *model1.R
 
 	kind, ss := renderSubjects(crb.Subjects)
 
-	r.ID = client.FQN("-", crb.ObjectMeta.Name)
+	r.ID = client.FQN("-", crb.Name)
 	r.Fields = model1.Fields{
 		crb.Name,
 		crb.RoleRef.Name,

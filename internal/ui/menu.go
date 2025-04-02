@@ -197,7 +197,7 @@ func ToMnemonic(s string) string {
 
 func formatNSMenu(i int, name string, styles config.Frame) string {
 	fmat := strings.Replace(menuIndexFmt, "[key", "["+styles.Menu.NumKeyColor.String(), 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+styles.Title.BgColor.String()+":", -1)
+	fmat = strings.ReplaceAll(fmat, ":bg:", ":"+styles.Title.BgColor.String()+":")
 	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor.String(), 1)
 	fmat = strings.Replace(fmat, "fgstyle]", styles.Menu.FgStyle.ToShortString()+"]", 1)
 
@@ -208,7 +208,7 @@ func formatPlainMenu(h model.MenuHint, size int, styles config.Frame) string {
 	menuFmt := " [key:-:b]%-" + strconv.Itoa(size+2) + "s [fg:-:fgstyle]%s "
 	fmat := strings.Replace(menuFmt, "[key", "["+styles.Menu.KeyColor.String(), 1)
 	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor.String(), 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+styles.Title.BgColor.String()+":", -1)
+	fmat = strings.ReplaceAll(fmat, ":bg:", ":"+styles.Title.BgColor.String()+":")
 	fmat = strings.Replace(fmat, "fgstyle]", styles.Menu.FgStyle.ToShortString()+"]", 1)
 
 	return fmt.Sprintf(fmat, ToMnemonic(h.Mnemonic), h.Description)

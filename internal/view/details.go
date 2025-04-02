@@ -238,11 +238,11 @@ func (d *Details) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (d *Details) setFullScreen(isFullScreen bool) {
 	d.fullScreen = isFullScreen
 	d.SetFullScreen(isFullScreen)
-	d.Box.SetBorder(!isFullScreen)
+	d.SetBorder(!isFullScreen)
 	if isFullScreen {
-		d.Box.SetBorderPadding(0, 0, 0, 0)
+		d.SetBorderPadding(0, 0, 0, 0)
 	} else {
-		d.Box.SetBorderPadding(0, 0, 1, 1)
+		d.SetBorderPadding(0, 0, 1, 1)
 	}
 }
 

@@ -187,7 +187,7 @@ func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (s
 	}
 
 	if desc, ok := meta.DAO.(*dao.Secret); ok {
-		desc.SetDecode(d.decode)
+		desc.SetDecodeData(d.decode)
 	}
 
 	return desc.Describe(path)

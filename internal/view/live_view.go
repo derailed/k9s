@@ -292,11 +292,11 @@ func (v *LiveView) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *LiveView) setFullScreen(isFullScreen bool) {
 	v.fullScreen = isFullScreen
 	v.SetFullScreen(isFullScreen)
-	v.Box.SetBorder(!isFullScreen)
+	v.SetBorder(!isFullScreen)
 	if isFullScreen {
-		v.Box.SetBorderPadding(0, 0, 0, 0)
+		v.SetBorderPadding(0, 0, 0, 0)
 	} else {
-		v.Box.SetBorderPadding(0, 0, 1, 1)
+		v.SetBorderPadding(0, 0, 1, 1)
 	}
 }
 

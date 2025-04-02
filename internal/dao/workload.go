@@ -82,7 +82,7 @@ func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.
 }
 
 func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav1.Table, error) {
-	a.Table.gvr = gvr
+	a.gvr = gvr
 	oo, err := a.Table.List(ctx, ns)
 	if err != nil {
 		return nil, err
@@ -113,14 +113,12 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 		for _, r := range table.Rows {
 			if obj := r.Object.Object; obj != nil {
 				if m, err := meta.Accessor(obj); err == nil {
-					ns = m.GetNamespace()
-					ts = m.GetCreationTimestamp()
+					ns, ts = m.GetNamespace(), m.GetCreationTimestamp()
 				}
 			} else {
 				var m metav1.PartialObjectMetadata
 				if err := json.Unmarshal(r.Object.Raw, &m); err == nil {
-					ns = m.GetNamespace()
-					ts = m.CreationTimestamp
+					ns, ts = m.GetNamespace(), m.CreationTimestamp
 				}
 			}
 			stat := status(gvr, r, table.ColumnDefinitions)
