@@ -25,7 +25,7 @@ type ImageScan struct {
 }
 
 // ColorerFunc colors a resource row.
-func (c ImageScan) ColorerFunc() model1.ColorerFunc {
+func (ImageScan) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
@@ -54,7 +54,7 @@ func (c ImageScan) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (ImageScan) Header(ns string) model1.Header {
+func (ImageScan) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "SEVERITY"},
 		model1.HeaderColumn{Name: "VULNERABILITY"},
@@ -67,7 +67,7 @@ func (ImageScan) Header(ns string) model1.Header {
 }
 
 // Render renders a K8s resource to screen.
-func (is ImageScan) Render(o interface{}, name string, r *model1.Row) error {
+func (ImageScan) Render(o any, _ string, r *model1.Row) error {
 	res, ok := o.(ImageScanRes)
 	if !ok {
 		return fmt.Errorf("expected ImageScanRes, but got %T", o)

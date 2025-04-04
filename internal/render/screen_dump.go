@@ -23,13 +23,13 @@ type ScreenDump struct {
 
 // ColorerFunc colors a resource row.
 func (ScreenDump) ColorerFunc() model1.ColorerFunc {
-	return func(ns string, _ model1.Header, re *model1.RowEvent) tcell.Color {
+	return func(string, model1.Header, *model1.RowEvent) tcell.Color {
 		return tcell.ColorNavajoWhite
 	}
 }
 
 // Header returns a header row.
-func (ScreenDump) Header(ns string) model1.Header {
+func (ScreenDump) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "DIR"},
@@ -39,7 +39,7 @@ func (ScreenDump) Header(ns string) model1.Header {
 }
 
 // Render renders a K8s resource to screen.
-func (b ScreenDump) Render(o interface{}, ns string, r *model1.Row) error {
+func (ScreenDump) Render(o any, _ string, r *model1.Row) error {
 	f, ok := o.(FileRes)
 	if !ok {
 		return fmt.Errorf("expecting screendumper, but got %T", o)
@@ -70,7 +70,7 @@ type FileRes struct {
 }
 
 // GetObjectKind returns a schema object.
-func (c FileRes) GetObjectKind() schema.ObjectKind {
+func (FileRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 

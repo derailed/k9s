@@ -13,6 +13,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultPVCHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: "VOLUME"},
+	model1.HeaderColumn{Name: "CAPACITY", Attrs: model1.Attrs{Capacity: true}},
+	model1.HeaderColumn{Name: "ACCESS MODES"},
+	model1.HeaderColumn{Name: "STORAGECLASS"},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // PersistentVolumeClaim renders a K8s PersistentVolumeClaim to screen.
 type PersistentVolumeClaim struct {
 	Base
@@ -20,29 +33,14 @@ type PersistentVolumeClaim struct {
 
 // Header returns a header row.
 func (p PersistentVolumeClaim) Header(_ string) model1.Header {
-	return p.doHeader(p.defaultHeader())
-}
-
-func (PersistentVolumeClaim) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "VOLUME"},
-		model1.HeaderColumn{Name: "CAPACITY", Attrs: model1.Attrs{Capacity: true}},
-		model1.HeaderColumn{Name: "ACCESS MODES"},
-		model1.HeaderColumn{Name: "STORAGECLASS"},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return p.doHeader(defaultPVCHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (p PersistentVolumeClaim) Render(o interface{}, ns string, row *model1.Row) error {
+func (p PersistentVolumeClaim) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected PersistentVolumeClaim, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 
 	if err := p.defaultRow(raw, row); err != nil {
@@ -52,7 +50,7 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, row *model1.Row)
 		return nil
 	}
 
-	cols, err := p.specs.realize(raw, p.defaultHeader(), row)
+	cols, err := p.specs.realize(raw, defaultPVCHeader, row)
 	if err != nil {
 		return err
 	}
@@ -87,7 +85,7 @@ func (p PersistentVolumeClaim) defaultRow(raw *unstructured.Unstructured, r *mod
 		}
 	}
 
-	r.ID = client.MetaFQN(pvc.ObjectMeta)
+	r.ID = client.MetaFQN(&pvc.ObjectMeta)
 	r.Fields = model1.Fields{
 		pvc.Namespace,
 		pvc.Name,

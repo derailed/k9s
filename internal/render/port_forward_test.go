@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPortForwardRender(t *testing.T) {
@@ -25,7 +26,7 @@ func TestPortForwardRender(t *testing.T) {
 
 	var p render.PortForward
 	var r model1.Row
-	assert.Nil(t, p.Render(o, "fred", &r))
+	require.NoError(t, p.Render(o, "fred", &r))
 	assert.Equal(t, "blee/fred", r.ID)
 	assert.Equal(t, model1.Fields{
 		"blee",
@@ -43,30 +44,30 @@ func TestPortForwardRender(t *testing.T) {
 
 type fwd struct{}
 
-func (f fwd) ID() string {
+func (fwd) ID() string {
 	return "blee/fred"
 }
 
-func (f fwd) Path() string {
+func (fwd) Path() string {
 	return "blee/fred"
 }
 
-func (f fwd) Container() string {
+func (fwd) Container() string {
 	return "co"
 }
 
-func (f fwd) Port() string {
+func (fwd) Port() string {
 	return "p1:p2"
 }
 
-func (f fwd) Active() bool {
+func (fwd) Active() bool {
 	return true
 }
 
-func (f fwd) Age() time.Time {
+func (fwd) Age() time.Time {
 	return testTime()
 }
 
-func (f fwd) Address() string {
+func (fwd) Address() string {
 	return ""
 }

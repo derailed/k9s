@@ -18,7 +18,7 @@ import (
 type History struct{}
 
 // Healthy checks component health.
-func (History) Healthy(ctx context.Context, o interface{}) error {
+func (History) Healthy(context.Context, any) error {
 	return nil
 }
 
@@ -47,7 +47,7 @@ func (History) Header(_ string) model1.Header {
 }
 
 // Render renders a chart to screen.
-func (c History) Render(o interface{}, ns string, r *model1.Row) error {
+func (c History) Render(o any, _ string, r *model1.Row) error {
 	h, ok := o.(ReleaseRes)
 	if !ok {
 		return fmt.Errorf("expected HistoryRes, but got %T", o)
@@ -67,6 +67,6 @@ func (c History) Render(o interface{}, ns string, r *model1.Row) error {
 	return nil
 }
 
-func (c History) diagnose(s string) error {
+func (History) diagnose(string) error {
 	return nil
 }

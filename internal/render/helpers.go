@@ -27,15 +27,15 @@ import (
 // !!BOZO!! If this has any legs?? enable scans on other container types.
 func ExtractImages(spec *v1.PodSpec) []string {
 	ii := make([]string, 0, len(spec.Containers))
-	for _, c := range spec.Containers {
-		ii = append(ii, c.Image)
+	for i := range spec.Containers {
+		ii = append(ii, spec.Containers[i].Image)
 	}
 
 	return ii
 }
 
-func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
-	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(m) {
+func computeVulScore(ns string, lbls map[string]string, spec *v1.PodSpec) string {
+	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(ns, lbls) {
 		return "0"
 	}
 	ii := ExtractImages(spec)
@@ -91,26 +91,27 @@ func toSelector(m map[string]string) string {
 }
 
 // Blank checks if a collection is empty or all values are blank.
-func blank(s []string) bool {
-	for _, v := range s {
-		if len(v) != 0 {
+func blank(ss []string) bool {
+	for _, s := range ss {
+		if s != "" {
 			return false
 		}
 	}
+
 	return true
 }
 
 // Join a slice of strings, skipping blanks.
-func join(a []string, sep string) string {
-	switch len(a) {
+func join(ss []string, sep string) string {
+	switch len(ss) {
 	case 0:
 		return ""
 	case 1:
-		return a[0]
+		return ss[0]
 	}
 
-	b := make([]string, 0, len(a))
-	for _, s := range a {
+	b := make([]string, 0, len(ss))
+	for _, s := range ss {
 		if s != "" {
 			b = append(b, s)
 		}
@@ -120,8 +121,8 @@ func join(a []string, sep string) string {
 	}
 
 	n := len(sep) * (len(b) - 1)
-	for i := 0; i < len(b); i++ {
-		n += len(a[i])
+	for i := range b {
+		n += len(ss[i])
 	}
 
 	var buff strings.Builder
@@ -147,7 +148,7 @@ func PrintPerc(p int) string {
 
 // IntToStr converts an int to a string.
 func IntToStr(p int) string {
-	return strconv.Itoa(int(p))
+	return strconv.Itoa(p)
 }
 
 func missing(s string) string {
@@ -166,7 +167,7 @@ func na(s string) string {
 }
 
 func check(s, sub string) string {
-	if len(s) == 0 {
+	if s == "" {
 		return sub
 	}
 
@@ -192,7 +193,7 @@ func ToAge(t metav1.Time) string {
 }
 
 func toAgeHuman(s string) string {
-	if len(s) == 0 {
+	if s == "" {
 		return UnknownValue
 	}
 
@@ -231,12 +232,12 @@ func mapToStr(m map[string]string) string {
 	return string(bb)
 }
 
-func mapToIfc(m interface{}) (s string) {
+func mapToIfc(m any) (s string) {
 	if m == nil {
 		return ""
 	}
 
-	mm, ok := m.(map[string]interface{})
+	mm, ok := m.(map[string]any)
 	if !ok {
 		return ""
 	}

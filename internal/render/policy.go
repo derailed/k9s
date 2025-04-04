@@ -37,13 +37,13 @@ type Policy struct {
 
 // ColorerFunc colors a resource row.
 func (Policy) ColorerFunc() model1.ColorerFunc {
-	return func(ns string, _ model1.Header, re *model1.RowEvent) tcell.Color {
+	return func(string, model1.Header, *model1.RowEvent) tcell.Color {
 		return tcell.ColorMediumSpringGreen
 	}
 }
 
 // Header returns a header row.
-func (Policy) Header(ns string) model1.Header {
+func (Policy) Header(string) model1.Header {
 	h := model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
@@ -57,8 +57,8 @@ func (Policy) Header(ns string) model1.Header {
 }
 
 // Render renders a K8s resource to screen.
-func (Policy) Render(o interface{}, gvr string, r *model1.Row) error {
-	p, ok := o.(PolicyRes)
+func (Policy) Render(o any, _ string, r *model1.Row) error {
+	p, ok := o.(*PolicyRes)
 	if !ok {
 		return fmt.Errorf("expecting PolicyRes but got %T", o)
 	}
@@ -102,8 +102,8 @@ type PolicyRes struct {
 }
 
 // NewPolicyRes returns a new policy.
-func NewPolicyRes(ns, binding, res, grp string, vv []string) PolicyRes {
-	return PolicyRes{
+func NewPolicyRes(ns, binding, res, grp string, vv []string) *PolicyRes {
+	return &PolicyRes{
 		Namespace: ns,
 		Binding:   binding,
 		Resource:  res,
@@ -113,13 +113,14 @@ func NewPolicyRes(ns, binding, res, grp string, vv []string) PolicyRes {
 }
 
 // GR returns the group/resource path.
-func (p PolicyRes) GR() string {
+func (p *PolicyRes) GR() string {
 	return p.Group + "/" + p.Resource
 }
 
-func (p PolicyRes) Merge(p1 PolicyRes) (PolicyRes, error) {
+// Merge merges two policies.
+func (p *PolicyRes) Merge(p1 *PolicyRes) (*PolicyRes, error) {
 	if p.GR() != p1.GR() {
-		return PolicyRes{}, fmt.Errorf("policy mismatch %s vs %s", p.GR(), p1.GR())
+		return nil, fmt.Errorf("policy mismatch %s vs %s", p.GR(), p1.GR())
 	}
 
 	for _, v := range p1.Verbs {
@@ -131,7 +132,7 @@ func (p PolicyRes) Merge(p1 PolicyRes) (PolicyRes, error) {
 	return p, nil
 }
 
-func (p PolicyRes) hasVerb(v1 string) bool {
+func (p *PolicyRes) hasVerb(v1 string) bool {
 	for _, v := range p.Verbs {
 		if v == v1 {
 			return true
@@ -142,20 +143,20 @@ func (p PolicyRes) hasVerb(v1 string) bool {
 }
 
 // GetObjectKind returns a schema object.
-func (p PolicyRes) GetObjectKind() schema.ObjectKind {
+func (*PolicyRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 
 // DeepCopyObject returns a container copy.
-func (p PolicyRes) DeepCopyObject() runtime.Object {
+func (p *PolicyRes) DeepCopyObject() runtime.Object {
 	return p
 }
 
 // Policies represents a collection of RBAC policies.
-type Policies []PolicyRes
+type Policies []*PolicyRes
 
 // Upsert adds a new policy.
-func (pp Policies) Upsert(p PolicyRes) Policies {
+func (pp Policies) Upsert(p *PolicyRes) Policies {
 	idx, ok := pp.find(p.GR())
 	if !ok {
 		return append(pp, p)

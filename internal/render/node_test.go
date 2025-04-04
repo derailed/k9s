@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -22,7 +23,7 @@ func TestNodeRender(t *testing.T) {
 	var no render.Node
 	r := model1.NewRow(14)
 	err := no.Render(&pom, "", &r)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "minikube", r.ID)
 	e := model1.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "Buildroot 2018.05.3", "4.15.0", "192.168.64.107", "<none>", "0", "10", "20", "0", "0", "4000", "7874"}
@@ -30,15 +31,18 @@ func TestNodeRender(t *testing.T) {
 }
 
 func BenchmarkNodeRender(b *testing.B) {
-	pom := render.NodeWithMetrics{
-		Raw: load(b, "no"),
-		MX:  makeNodeMX("n1", "10m", "10Mi"),
-	}
-	var no render.Node
-	r := model1.NewRow(14)
+	var (
+		no  render.Node
+		r   = model1.NewRow(14)
+		pom = render.NodeWithMetrics{
+			Raw: load(b, "no"),
+			MX:  makeNodeMX("n1", "10m", "10Mi"),
+		}
+	)
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = no.Render(&pom, "", &r)
 	}
 }
