@@ -25,6 +25,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Browser represents a generic resource browser.
@@ -32,7 +33,7 @@ type Browser struct {
 	*Table
 
 	namespaces map[int]string
-	meta       metav1.APIResource
+	meta       *metav1.APIResource
 	accessor   dao.Accessor
 	contextFn  ContextFunc
 	cancelFn   context.CancelFunc
@@ -41,7 +42,7 @@ type Browser struct {
 }
 
 // NewBrowser returns a new browser.
-func NewBrowser(gvr client.GVR) ResourceViewer {
+func NewBrowser(gvr *client.GVR) ResourceViewer {
 	return &Browser{
 		Table: NewTable(gvr),
 	}
@@ -62,7 +63,6 @@ func (b *Browser) getUpdating() bool {
 // SetCommand sets the current command.
 func (b *Browser) SetCommand(cmd *cmd.Interpreter) {
 	b.GetTable().SetCommand(cmd)
-	//b.Table.SetViewSetting(b.app.CustomView().VSFor(cmd)
 }
 
 // Init watches all running pods in given namespace.
@@ -79,12 +79,12 @@ func (b *Browser) Init(ctx context.Context) error {
 	}
 	b.GetTable().SetColorerFn(colorerFn)
 
-	if err = b.Table.Init(ctx); err != nil {
-		return err
+	if e := b.Table.Init(ctx); e != nil {
+		return e
 	}
 	ns := client.CleanseNamespace(b.app.Config.ActiveNamespace())
 	if dao.IsK8sMeta(b.meta) && b.app.ConOK() {
-		if _, e := b.app.factory.CanForResource(ns, b.GVR().String(), client.ListAccess); e != nil {
+		if _, e := b.app.factory.CanForResource(ns, b.GVR(), client.ListAccess); e != nil {
 			return e
 		}
 	}
@@ -178,11 +178,9 @@ func (b *Browser) Start() {
 // Stop terminates browser updates.
 func (b *Browser) Stop() {
 	b.mx.Lock()
-	{
-		if b.cancelFn != nil {
-			b.cancelFn()
-			b.cancelFn = nil
-		}
+	if b.cancelFn != nil {
+		b.cancelFn()
+		b.cancelFn = nil
 	}
 	b.mx.Unlock()
 	b.GetModel().RemoveListener(b)
@@ -200,7 +198,7 @@ func (b *Browser) SetLabelFilter(labels map[string]string) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (b *Browser) BufferChanged(_, _ string) {}
+func (*Browser) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
 func (b *Browser) BufferCompleted(text, _ string) {
@@ -212,7 +210,7 @@ func (b *Browser) BufferCompleted(text, _ string) {
 }
 
 // BufferActive indicates the buff activity changed.
-func (b *Browser) BufferActive(state bool, k model.BufferKind) {
+func (b *Browser) BufferActive(state bool, _ model.BufferKind) {
 	if state {
 		return
 	}
@@ -234,7 +232,6 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 		if b.GetRowCount() > 1 {
 			b.App().filterHistory.Push(b.CmdBuff().GetText())
 		}
-
 	})
 }
 
@@ -242,12 +239,10 @@ func (b *Browser) prepareContext() context.Context {
 	ctx := b.defaultContext()
 
 	b.mx.Lock()
-	{
-		if b.cancelFn != nil {
-			b.cancelFn()
-		}
-		ctx, b.cancelFn = context.WithCancel(ctx)
+	if b.cancelFn != nil {
+		b.cancelFn()
 	}
+	ctx, b.cancelFn = context.WithCancel(ctx)
 	b.mx.Unlock()
 
 	if b.contextFn != nil {
@@ -257,9 +252,7 @@ func (b *Browser) prepareContext() context.Context {
 		b.Path = path
 	}
 	b.mx.Lock()
-	{
-		b.SetContext(ctx)
-	}
+	b.SetContext(ctx)
 	b.mx.Unlock()
 
 	return ctx
@@ -279,8 +272,8 @@ func (b *Browser) SetContextFn(f ContextFunc) { b.contextFn = f }
 func (b *Browser) GetTable() *Table { return b.Table }
 
 // Aliases returns all available aliases.
-func (b *Browser) Aliases() map[string]struct{} {
-	return aliasesFor(b.meta, b.app.command.AliasesFor(b.meta.Name))
+func (b *Browser) Aliases() sets.Set[string] {
+	return aliases(b.meta, b.app.command.AliasesFor(client.NewGVRFromMeta(b.meta)))
 }
 
 // ----------------------------------------------------------------------------
@@ -446,7 +439,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func editRes(app *App, gvr client.GVR, path string) error {
+func editRes(app *App, gvr *client.GVR, path string) error {
 	if path == "" {
 		return fmt.Errorf("nothing selected %q", path)
 	}
@@ -454,20 +447,19 @@ func editRes(app *App, gvr client.GVR, path string) error {
 	if client.IsClusterScoped(ns) {
 		ns = client.BlankNamespace
 	}
-	if gvr.String() == "v1/namespaces" {
+	if gvr == client.NsGVR {
 		ns = n
 	}
-	if ok, err := app.Conn().CanI(ns, gvr.String(), n, client.PatchAccess); !ok || err != nil {
+	if ok, err := app.Conn().CanI(ns, gvr, n, client.PatchAccess); !ok || err != nil {
 		return fmt.Errorf("current user can't edit resource %s", gvr)
 	}
 
 	args := make([]string, 0, 10)
-	args = append(args, "edit")
-	args = append(args, gvr.FQN(n))
+	args = append(args, "edit", gvr.FQN(n))
 	if ns != client.BlankNamespace {
 		args = append(args, "-n", ns)
 	}
-	if err := runK(app, shellOpts{clear: true, args: args}); err != nil {
+	if err := runK(app, &shellOpts{clear: true, args: args}); err != nil {
 		app.Flash().Errf("Edit command failed: %s", err)
 	}
 
@@ -482,7 +474,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	ns := b.namespaces[i]
 
-	auth, err := b.App().factory.Client().CanI(ns, b.GVR().String(), "", client.ListAccess)
+	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), "", client.ListAccess)
 	if !auth {
 		if err == nil {
 			err = fmt.Errorf("current user can't access namespace %s", ns)
@@ -617,7 +609,8 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 }
 
 func (b *Browser) simpleDelete(selections []string, msg string) {
-	dialog.ShowConfirm(b.app.Styles.Dialog(), b.app.Content.Pages, "Confirm Delete", msg, func() {
+	d := b.app.Styles.Dialog()
+	dialog.ShowConfirm(&d, b.app.Content.Pages, "Confirm Delete", msg, func() {
 		b.ShowDeleted()
 		if len(selections) > 1 {
 			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR().R())
@@ -663,5 +656,6 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 		}
 		b.refresh()
 	}
-	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, okFn, func() {})
+	d := b.app.Styles.Dialog()
+	dialog.ShowDelete(&d, b.app.Content.Pages, msg, okFn, func() {})
 }

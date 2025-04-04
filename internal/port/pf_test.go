@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/port"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -143,7 +144,7 @@ func TestPFPortNum(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			pf, err := port.ParsePF(u.exp)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			n, err := pf.PortNum()
 			assert.Equal(t, u.err, err)
 			if err != nil {
@@ -184,7 +185,7 @@ func TestPFToTunnel(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			pf, err := port.ParsePF(u.exp)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			pt, err := pf.ToTunnel("blee")
 			assert.Equal(t, u.err, err)
 			if err != nil {
@@ -215,7 +216,7 @@ func TestPFString(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			pf, err := port.ParsePF(u.exp)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.e, pf.String())
 		})
 	}

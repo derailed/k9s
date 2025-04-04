@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNSCleanser(t *testing.T) {
-	ns := view.NewNamespace(client.NewGVR("v1/namespaces"))
+	ns := view.NewNamespace(client.NsGVR)
 
-	assert.Nil(t, ns.Init(makeCtx()))
+	require.NoError(t, ns.Init(makeCtx()))
 	assert.Equal(t, "Namespaces", ns.Name())
-	assert.Equal(t, 7, len(ns.Hints()))
+	assert.Len(t, ns.Hints(), 7)
 }

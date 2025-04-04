@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReferenceNew(t *testing.T) {
-	s := view.NewReference(client.NewGVR("references"))
+	s := view.NewReference(client.RefGVR)
 
-	assert.Nil(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx()))
 	assert.Equal(t, "References", s.Name())
-	assert.Equal(t, 4, len(s.Hints()))
+	assert.Len(t, s.Hints(), 4)
 }

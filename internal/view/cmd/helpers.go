@@ -43,17 +43,7 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 	p := NewInterpreter(command)
 	var suggests []string
 	switch {
-	case p.IsCowCmd():
-		fallthrough
-	case p.IsHelpCmd():
-		fallthrough
-	case p.IsAliasCmd():
-		fallthrough
-	case p.IsBailCmd():
-		fallthrough
-	case p.IsDirCmd():
-		fallthrough
-	case p.IsAliasCmd():
+	case p.IsCowCmd(), p.IsHelpCmd(), p.IsAliasCmd(), p.IsBailCmd(), p.IsDirCmd():
 		return nil
 
 	case p.IsXrayCmd():
@@ -109,11 +99,11 @@ func completeNS(s string, nn client.NamespaceNames) []string {
 	return suggests
 }
 
-func completeCtx(s string, cc []string) []string {
+func completeCtx(s string, contexts []string) []string {
 	var suggests []string
-	for _, ctxName := range cc {
+	for _, ctxName := range contexts {
 		if suggest, ok := ShouldAddSuggest(s, ctxName); ok {
-			if len(s) == 0 {
+			if s == "" {
 				suggests = append(suggests, " "+suggest)
 				continue
 			}

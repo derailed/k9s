@@ -22,27 +22,28 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestTableSave(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	assert.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext()))
 	v.SetTitle("k9s-test")
 
-	assert.NoError(t, ensureDumpDir("/tmp/test-dumps"))
+	require.NoError(t, ensureDumpDir("/tmp/test-dumps"))
 	dir := v.app.Config.K9s.ContextScreenDumpDir()
 	c1, _ := os.ReadDir(dir)
 	v.saveCmd(nil)
 
 	c2, _ := os.ReadDir(dir)
-	assert.Equal(t, len(c2), len(c1)+1)
+	assert.Len(t, c2, len(c1)+1)
 }
 
 func TestTableNew(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	assert.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext()))
 
 	data := model1.NewTableDataWithRows(
 		client.NewGVR("test"),
@@ -73,7 +74,7 @@ func TestTableNew(t *testing.T) {
 
 func TestTableViewFilter(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	assert.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext()))
 	v.SetModel(&mockTableModel{})
 	v.Refresh()
 
@@ -85,7 +86,7 @@ func TestTableViewFilter(t *testing.T) {
 
 func TestTableViewSort(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	assert.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext()))
 	v.SetModel(new(mockTableModel))
 
 	uu := map[string]struct {
@@ -113,12 +114,12 @@ func TestTableViewSort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		v.SortColCmd(u.sortCol, true)(nil)
-		assert.Equal(t, len(u.sorted)+1, v.GetRowCount())
+		assert.Len(t, u.sorted, v.GetRowCount()-1)
 		for i, s := range u.sorted {
 			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
 		}
 		v.SortInvertCmd(nil)
-		assert.Equal(t, len(u.reversed)+1, v.GetRowCount())
+		assert.Len(t, u.reversed, v.GetRowCount()-1)
 		for i, s := range u.reversed {
 			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
 		}
@@ -132,40 +133,36 @@ type mockTableModel struct{}
 
 var _ ui.Tabular = (*mockTableModel)(nil)
 
-func (t *mockTableModel) SetViewSetting(context.Context, *config.ViewSetting) {}
-func (t *mockTableModel) SetInstance(string)                                  {}
-func (t *mockTableModel) SetLabelFilter(string)                               {}
-func (t *mockTableModel) GetLabelFilter() string                              { return "" }
-func (t *mockTableModel) Empty() bool                                         { return false }
-func (t *mockTableModel) RowCount() int                                       { return 1 }
-func (t *mockTableModel) HasMetrics() bool                                    { return true }
-func (t *mockTableModel) Peek() *model1.TableData                             { return makeTableData() }
-func (t *mockTableModel) Refresh(context.Context) error                       { return nil }
-func (t *mockTableModel) ClusterWide() bool                                   { return false }
-func (t *mockTableModel) GetNamespace() string                                { return "blee" }
-func (t *mockTableModel) SetNamespace(string)                                 {}
-func (t *mockTableModel) ToggleToast()                                        {}
-func (t *mockTableModel) AddListener(model.TableListener)                     {}
-func (t *mockTableModel) RemoveListener(model.TableListener)                  {}
-func (t *mockTableModel) Watch(context.Context) error                         { return nil }
-func (t *mockTableModel) Get(context.Context, string) (runtime.Object, error) {
+func (*mockTableModel) SetViewSetting(context.Context, *config.ViewSetting) {}
+func (*mockTableModel) SetInstance(string)                                  {}
+func (*mockTableModel) SetLabelFilter(string)                               {}
+func (*mockTableModel) GetLabelFilter() string                              { return "" }
+func (*mockTableModel) Empty() bool                                         { return false }
+func (*mockTableModel) RowCount() int                                       { return 1 }
+func (*mockTableModel) HasMetrics() bool                                    { return true }
+func (*mockTableModel) Peek() *model1.TableData                             { return makeTableData() }
+func (*mockTableModel) Refresh(context.Context) error                       { return nil }
+func (*mockTableModel) ClusterWide() bool                                   { return false }
+func (*mockTableModel) GetNamespace() string                                { return "blee" }
+func (*mockTableModel) SetNamespace(string)                                 {}
+func (*mockTableModel) ToggleToast()                                        {}
+func (*mockTableModel) AddListener(model.TableListener)                     {}
+func (*mockTableModel) RemoveListener(model.TableListener)                  {}
+func (*mockTableModel) Watch(context.Context) error                         { return nil }
+func (*mockTableModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
-
-func (t *mockTableModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
+func (*mockTableModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
 	return nil
 }
-
-func (t *mockTableModel) Describe(context.Context, string) (string, error) {
+func (*mockTableModel) Describe(context.Context, string) (string, error) {
 	return "", nil
 }
-
-func (t *mockTableModel) ToYAML(ctx context.Context, path string) (string, error) {
+func (*mockTableModel) ToYAML(context.Context, string) (string, error) {
 	return "", nil
 }
-
-func (t *mockTableModel) InNamespace(string) bool      { return true }
-func (t *mockTableModel) SetRefreshRate(time.Duration) {}
+func (*mockTableModel) InNamespace(string) bool      { return true }
+func (*mockTableModel) SetRefreshRate(time.Duration) {}
 
 func makeTableData() *model1.TableData {
 	return model1.NewTableDataWithRows(

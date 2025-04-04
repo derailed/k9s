@@ -19,21 +19,22 @@ import (
 	"github.com/derailed/k9s/internal/view"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestAliasNew(t *testing.T) {
-	v := view.NewAlias(client.NewGVR("aliases"))
+	v := view.NewAlias(client.AliGVR)
 
-	assert.Nil(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext()))
 	assert.Equal(t, "Aliases", v.Name())
-	assert.Equal(t, 6, len(v.Hints()))
+	assert.Len(t, v.Hints(), 6)
 }
 
 func TestAliasSearch(t *testing.T) {
-	v := view.NewAlias(client.NewGVR("aliases"))
-	assert.Nil(t, v.Init(makeContext()))
+	v := view.NewAlias(client.AliGVR)
+	require.NoError(t, v.Init(makeContext()))
 	v.GetTable().SetModel(&mockModel{})
 	v.GetTable().Refresh()
 	v.App().Prompt().SetModel(v.GetTable().CmdBuff())
@@ -44,8 +45,8 @@ func TestAliasSearch(t *testing.T) {
 }
 
 func TestAliasGoto(t *testing.T) {
-	v := view.NewAlias(client.NewGVR("aliases"))
-	assert.Nil(t, v.Init(makeContext()))
+	v := view.NewAlias(client.AliGVR)
+	require.NoError(t, v.Init(makeContext()))
 	v.GetTable().Select(0, 0)
 
 	b := buffL{}
@@ -64,12 +65,12 @@ type buffL struct {
 	changed int
 }
 
-func (b *buffL) BufferChanged(_, _ string) {
+func (b *buffL) BufferChanged(string, string) {
 	b.changed++
 }
-func (b *buffL) BufferCompleted(_, _ string) {}
+func (*buffL) BufferCompleted(string, string) {}
 
-func (b *buffL) BufferActive(state bool, kind model.BufferKind) {
+func (b *buffL) BufferActive(bool, model.BufferKind) {
 	b.active++
 }
 
@@ -86,44 +87,44 @@ var (
 	_ ui.Suggester = (*mockModel)(nil)
 )
 
-func (t *mockModel) SetViewSetting(context.Context, *config.ViewSetting) {}
-func (t *mockModel) CurrentSuggestion() (string, bool)                   { return "", false }
-func (t *mockModel) NextSuggestion() (string, bool)                      { return "", false }
-func (t *mockModel) PrevSuggestion() (string, bool)                      { return "", false }
-func (t *mockModel) ClearSuggestions()                                   {}
-func (t *mockModel) SetInstance(string)                                  {}
-func (t *mockModel) SetLabelFilter(string)                               {}
-func (t *mockModel) GetLabelFilter() string                              { return "" }
-func (t *mockModel) Empty() bool                                         { return false }
-func (t *mockModel) RowCount() int                                       { return 1 }
-func (t *mockModel) HasMetrics() bool                                    { return true }
-func (t *mockModel) Peek() *model1.TableData                             { return makeTableData() }
-func (t *mockModel) ClusterWide() bool                                   { return false }
-func (t *mockModel) GetNamespace() string                                { return "blee" }
-func (t *mockModel) SetNamespace(string)                                 {}
-func (t *mockModel) ToggleToast()                                        {}
-func (t *mockModel) AddListener(model.TableListener)                     {}
-func (t *mockModel) RemoveListener(model.TableListener)                  {}
-func (t *mockModel) Watch(context.Context) error                         { return nil }
-func (t *mockModel) Refresh(context.Context) error                       { return nil }
-func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
+func (*mockModel) SetViewSetting(context.Context, *config.ViewSetting) {}
+func (*mockModel) CurrentSuggestion() (string, bool)                   { return "", false }
+func (*mockModel) NextSuggestion() (string, bool)                      { return "", false }
+func (*mockModel) PrevSuggestion() (string, bool)                      { return "", false }
+func (*mockModel) ClearSuggestions()                                   {}
+func (*mockModel) SetInstance(string)                                  {}
+func (*mockModel) SetLabelFilter(string)                               {}
+func (*mockModel) GetLabelFilter() string                              { return "" }
+func (*mockModel) Empty() bool                                         { return false }
+func (*mockModel) RowCount() int                                       { return 1 }
+func (*mockModel) HasMetrics() bool                                    { return true }
+func (*mockModel) Peek() *model1.TableData                             { return makeTableData() }
+func (*mockModel) ClusterWide() bool                                   { return false }
+func (*mockModel) GetNamespace() string                                { return "blee" }
+func (*mockModel) SetNamespace(string)                                 {}
+func (*mockModel) ToggleToast()                                        {}
+func (*mockModel) AddListener(model.TableListener)                     {}
+func (*mockModel) RemoveListener(model.TableListener)                  {}
+func (*mockModel) Watch(context.Context) error                         { return nil }
+func (*mockModel) Refresh(context.Context) error                       { return nil }
+func (*mockModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
 
-func (t *mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
+func (*mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
 	return nil
 }
 
-func (t *mockModel) Describe(context.Context, string) (string, error) {
+func (*mockModel) Describe(context.Context, string) (string, error) {
 	return "", nil
 }
 
-func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
+func (*mockModel) ToYAML(context.Context, string) (string, error) {
 	return "", nil
 }
 
-func (t *mockModel) InNamespace(string) bool      { return true }
-func (t *mockModel) SetRefreshRate(time.Duration) {}
+func (*mockModel) InNamespace(string) bool      { return true }
+func (*mockModel) SetRefreshRate(time.Duration) {}
 
 func makeTableData() *model1.TableData {
 	return model1.NewTableDataWithRows(

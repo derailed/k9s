@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPriorityClassNew(t *testing.T) {
-	s := view.NewPriorityClass(client.NewGVR("scheduling.k8s.io/v1/priorityclasses"))
+	s := view.NewPriorityClass(client.PcGVR)
 
-	assert.Nil(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx()))
 	assert.Equal(t, "PriorityClass", s.Name())
-	assert.Equal(t, 6, len(s.Hints()))
+	assert.Len(t, s.Hints(), 6)
 }

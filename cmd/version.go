@@ -17,7 +17,7 @@ func versionCmd() *cobra.Command {
 		Use:   "version",
 		Short: "Print version/build info",
 		Long:  "Print version/build information",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(*cobra.Command, []string) {
 			printVersion(short)
 		},
 	}
