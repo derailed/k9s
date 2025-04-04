@@ -35,7 +35,7 @@ type TableListener interface {
 
 // Table represents a table model.
 type Table struct {
-	gvr         client.GVR
+	gvr         *client.GVR
 	data        *model1.TableData
 	listeners   []TableListener
 	inUpdate    int32
@@ -47,7 +47,7 @@ type Table struct {
 }
 
 // NewTable returns a new table model.
-func NewTable(gvr client.GVR) *Table {
+func NewTable(gvr *client.GVR) *Table {
 	return &Table{
 		gvr:         gvr,
 		data:        model1.NewTableData(gvr),
@@ -57,9 +57,7 @@ func NewTable(gvr client.GVR) *Table {
 
 func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
 	t.mx.Lock()
-	{
-		t.vs = vs
-	}
+	t.vs = vs
 	t.mx.Unlock()
 
 	if ctx != context.Background() {
@@ -264,7 +262,9 @@ func (t *Table) reconcile(ctx context.Context) error {
 		err error
 	)
 	meta := resourceMeta(t.gvr)
-	meta.DAO.SetIncludeObject(true)
+	if t.vs != nil {
+		meta.DAO.SetIncludeObject(true)
+	}
 	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	if t.instance == "" {
 		oo, err = t.list(ctx, meta.DAO)
@@ -278,7 +278,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	r := meta.Renderer
 	r.SetViewSetting(t.vs)
 
-	return t.data.Reconcile(ctx, meta.Renderer, oo)
+	return t.data.Render(ctx, meta.Renderer, oo)
 }
 
 func (t *Table) fireTableChanged(data *model1.TableData) {

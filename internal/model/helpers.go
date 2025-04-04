@@ -18,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func getMeta(ctx context.Context, gvr client.GVR) (ResourceMeta, error) {
+func getMeta(ctx context.Context, gvr *client.GVR) (ResourceMeta, error) {
 	meta := resourceMeta(gvr)
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
@@ -29,11 +29,11 @@ func getMeta(ctx context.Context, gvr client.GVR) (ResourceMeta, error) {
 	return meta, nil
 }
 
-func resourceMeta(gvr client.GVR) ResourceMeta {
+func resourceMeta(gvr *client.GVR) ResourceMeta {
 	meta, ok := Registry[gvr.String()]
 	if !ok {
 		meta = ResourceMeta{
-			DAO:      new(dao.Dynamic),
+			DAO:      new(dao.Table),
 			Renderer: new(render.Table),
 		}
 	}
@@ -45,7 +45,7 @@ func resourceMeta(gvr client.GVR) ResourceMeta {
 }
 
 // MetaFQN returns a fully qualified resource name.
-func MetaFQN(m metav1.ObjectMeta) string {
+func MetaFQN(m *metav1.ObjectMeta) string {
 	return FQN(m.Namespace, m.Name)
 }
 
@@ -58,9 +58,9 @@ func FQN(ns, n string) string {
 }
 
 // NewExpBackOff returns a new exponential backoff timer.
-func NewExpBackOff(ctx context.Context, start, max time.Duration) backoff.BackOffContext {
+func NewExpBackOff(ctx context.Context, start, maxVal time.Duration) backoff.BackOffContext {
 	bf := backoff.NewExponentialBackOff()
-	bf.InitialInterval, bf.MaxElapsedTime = start, max
+	bf.InitialInterval, bf.MaxElapsedTime = start, maxVal
 	return backoff.WithContext(bf, ctx)
 }
 

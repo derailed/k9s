@@ -7,8 +7,10 @@ import (
 	"log/slog"
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -26,7 +28,7 @@ func TestCustomViewLoad(t *testing.T) {
 
 		"gvr": {
 			path: "testdata/views/views.yaml",
-			key:  "v1/pods",
+			key:  client.PodGVR.String(),
 			e:    []string{"NAMESPACE", "NAME", "AGE", "IP"},
 		},
 
@@ -41,7 +43,7 @@ func TestCustomViewLoad(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			cfg := config.NewCustomView()
 
-			assert.NoError(t, cfg.Load(u.path))
+			require.NoError(t, cfg.Load(u.path))
 			assert.Equal(t, u.e, cfg.Views[u.key].Columns)
 		})
 	}

@@ -18,7 +18,7 @@ func BenchmarkRowCustomize(b *testing.B) {
 	cols := []int{0, 1, 2}
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		_ = row.Customize(cols)
 	}
 }

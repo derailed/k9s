@@ -4,7 +4,9 @@
 package model1
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"math"
 	"sort"
 	"strings"
@@ -15,11 +17,24 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const poolSize = 10
+
 func Hydrate(ns string, oo []runtime.Object, rr Rows, re Renderer) error {
+	pool := NewWorkerPool(context.Background(), poolSize)
 	for i, o := range oo {
-		if err := re.Render(o, ns, &rr[i]); err != nil {
-			return err
-		}
+		pool.Add(func(ctx context.Context) error {
+			select {
+			case <-ctx.Done():
+				slog.Debug("Worker canceled")
+				return nil
+			default:
+				return re.Render(o, ns, &rr[i])
+			}
+		})
+	}
+	errs := pool.Drain()
+	if len(errs) > 0 {
+		return errs[0]
 	}
 
 	return nil
@@ -31,17 +46,28 @@ func GenericHydrate(ns string, table *metav1.Table, rr Rows, re Renderer) error 
 		return fmt.Errorf("expecting generic renderer but got %T", re)
 	}
 	gr.SetTable(ns, table)
+	pool := NewWorkerPool(context.Background(), poolSize)
 	for i, row := range table.Rows {
-		if err := gr.Render(row, ns, &rr[i]); err != nil {
-			return err
-		}
+		pool.Add(func(ctx context.Context) error {
+			select {
+			case <-ctx.Done():
+				slog.Debug("Worker canceled")
+				return nil
+			default:
+				return gr.Render(row, ns, &rr[i])
+			}
+		})
+	}
+	errs := pool.Drain()
+	if len(errs) > 0 {
+		return errs[0]
 	}
 
 	return nil
 }
 
 // IsValid returns true if resource is valid, false otherwise.
-func IsValid(ns string, h Header, r Row) bool {
+func IsValid(_ string, h Header, r Row) bool {
 	if len(r.Fields) == 0 {
 		return true
 	}
@@ -80,7 +106,7 @@ func labelize(labels string) map[string]string {
 }
 
 func durationToSeconds(duration string) int64 {
-	if len(duration) == 0 {
+	if duration == "" {
 		return 0
 	}
 	if duration == NAValue {

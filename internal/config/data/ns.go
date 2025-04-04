@@ -80,7 +80,7 @@ func (n *Namespace) Validate(conn client.Connection) {
 }
 
 // SetActive set the active namespace.
-func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
+func (n *Namespace) SetActive(ns string, _ KubeSettings) error {
 	if n == nil {
 		n = NewActiveNamespace(ns)
 	}
@@ -111,7 +111,7 @@ func (n *Namespace) addFavNS(ns string) {
 
 	nfv := make([]string, 0, MaxFavoritesNS)
 	nfv = append(nfv, ns)
-	for i := 0; i < len(n.Favorites); i++ {
+	for i := range n.Favorites {
 		if i+1 < MaxFavoritesNS {
 			nfv = append(nfv, n.Favorites[i])
 		}

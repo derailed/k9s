@@ -44,7 +44,7 @@ type Log struct {
 	factory      dao.Factory
 	lines        *dao.LogItems
 	listeners    []LogsListener
-	gvr          client.GVR
+	gvr          *client.GVR
 	logOptions   *dao.LogOptions
 	cancelFn     context.CancelFunc
 	mx           sync.RWMutex
@@ -54,7 +54,7 @@ type Log struct {
 }
 
 // NewLog returns a new model.
-func NewLog(gvr client.GVR, opts *dao.LogOptions, flushTimeout time.Duration) *Log {
+func NewLog(gvr *client.GVR, opts *dao.LogOptions, flushTimeout time.Duration) *Log {
 	return &Log{
 		gvr:          gvr,
 		logOptions:   opts,
@@ -63,7 +63,7 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions, flushTimeout time.Duration) *L
 	}
 }
 
-func (l *Log) GVR() client.GVR {
+func (l *Log) GVR() *client.GVR {
 	return l.gvr
 }
 
@@ -95,9 +95,7 @@ func (l *Log) ToggleShowTimestamp(b bool) {
 
 func (l *Log) Head(ctx context.Context) {
 	l.mx.Lock()
-	{
-		l.logOptions.Head = true
-	}
+	l.logOptions.Head = true
 	l.mx.Unlock()
 	l.Restart(ctx)
 }
@@ -110,7 +108,7 @@ func (l *Log) SetSinceSeconds(ctx context.Context, i int64) {
 
 // Configure sets logger configuration.
 func (l *Log) Configure(opts config.Logger) {
-	l.logOptions.Lines = int64(opts.TailCount)
+	l.logOptions.Lines = opts.TailCount
 	l.logOptions.SinceSeconds = opts.SinceSeconds
 }
 
@@ -137,10 +135,8 @@ func (l *Log) Init(f dao.Factory) {
 // Clear the logs.
 func (l *Log) Clear() {
 	l.mx.Lock()
-	{
-		l.lines.Clear()
-		l.lastSent = 0
-	}
+	l.lines.Clear()
+	l.lastSent = 0
 	l.mx.Unlock()
 
 	l.fireLogCleared()
@@ -178,9 +174,7 @@ func (l *Log) Stop() {
 // Set sets the log lines (for testing only!)
 func (l *Log) Set(lines *dao.LogItems) {
 	l.mx.Lock()
-	{
-		l.lines.Merge(lines)
-	}
+	l.lines.Merge(lines)
 	l.mx.Unlock()
 
 	l.fireLogCleared()
@@ -192,9 +186,7 @@ func (l *Log) Set(lines *dao.LogItems) {
 // ClearFilter resets the log filter if any.
 func (l *Log) ClearFilter() {
 	l.mx.Lock()
-	{
-		l.filter = ""
-	}
+	l.filter = ""
 	l.mx.Unlock()
 
 	l.fireLogCleared()
@@ -206,9 +198,7 @@ func (l *Log) ClearFilter() {
 // Filter filters the model using either fuzzy or regexp.
 func (l *Log) Filter(q string) {
 	l.mx.Lock()
-	{
-		l.filter = q
-	}
+	l.filter = q
 	l.mx.Unlock()
 
 	l.fireLogCleared()
@@ -303,9 +293,7 @@ func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
 			l.Append(item)
 			var overflow bool
 			l.mx.RLock()
-			{
-				overflow = int64(l.lines.Len()-l.lastSent) > l.logOptions.Lines
-			}
+			overflow = int64(l.lines.Len()-l.lastSent) > l.logOptions.Lines
 			l.mx.RUnlock()
 			if overflow {
 				l.Notify()
@@ -418,9 +406,7 @@ func (l *Log) fireLogChanged(lines [][]byte) {
 func (l *Log) fireLogCleared() {
 	var ll []LogsListener
 	l.mx.RLock()
-	{
-		ll = l.listeners
-	}
+	ll = l.listeners
 	l.mx.RUnlock()
 	for _, lis := range ll {
 		lis.LogCleared()

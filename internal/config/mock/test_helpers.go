@@ -89,7 +89,7 @@ func (m mockKubeSettings) CurrentContextName() (string, error) {
 func (m mockKubeSettings) CurrentClusterName() (string, error) {
 	return *m.flags.ClusterName, nil
 }
-func (m mockKubeSettings) CurrentNamespaceName() (string, error) {
+func (mockKubeSettings) CurrentNamespaceName() (string, error) {
 	return "default", nil
 }
 func (m mockKubeSettings) GetContext(s string) (*api.Context, error) {
@@ -111,7 +111,7 @@ func (m mockKubeSettings) ContextNames() (map[string]struct{}, error) {
 	return mm, nil
 }
 
-func (m mockKubeSettings) SetProxy(proxy func(*http.Request) (*url.URL, error)) {}
+func (mockKubeSettings) SetProxy(func(*http.Request) (*url.URL, error)) {}
 
 type mockConnection struct {
 	ct string
@@ -124,57 +124,57 @@ func NewMockConnectionWithContext(ct string) mockConnection {
 	return mockConnection{ct: ct}
 }
 
-func (m mockConnection) CanI(ns, gvr, n string, verbs []string) (bool, error) {
+func (mockConnection) CanI(string, *client.GVR, string, []string) (bool, error) {
 	return true, nil
 }
-func (m mockConnection) Config() *client.Config {
+func (mockConnection) Config() *client.Config {
 	return nil
 }
-func (m mockConnection) ConnectionOK() bool {
+func (mockConnection) ConnectionOK() bool {
 	return false
 }
-func (m mockConnection) Dial() (kubernetes.Interface, error) {
+func (mockConnection) Dial() (kubernetes.Interface, error) {
 	return nil, nil
 }
-func (m mockConnection) DialLogs() (kubernetes.Interface, error) {
+func (mockConnection) DialLogs() (kubernetes.Interface, error) {
 	return nil, nil
 }
-func (m mockConnection) SwitchContext(ctx string) error {
+func (mockConnection) SwitchContext(string) error {
 	return nil
 }
-func (m mockConnection) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
+func (mockConnection) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	return nil, nil
 }
-func (m mockConnection) RestConfig() (*restclient.Config, error) {
+func (mockConnection) RestConfig() (*restclient.Config, error) {
 	return nil, nil
 }
-func (m mockConnection) MXDial() (*versioned.Clientset, error) {
+func (mockConnection) MXDial() (*versioned.Clientset, error) {
 	return nil, nil
 }
-func (m mockConnection) DynDial() (dynamic.Interface, error) {
+func (mockConnection) DynDial() (dynamic.Interface, error) {
 	return nil, nil
 }
-func (m mockConnection) HasMetrics() bool {
+func (mockConnection) HasMetrics() bool {
 	return false
 }
-func (m mockConnection) ValidNamespaceNames() (client.NamespaceNames, error) {
+func (mockConnection) ValidNamespaceNames() (client.NamespaceNames, error) {
 	return nil, nil
 }
-func (m mockConnection) IsValidNamespace(string) bool {
+func (mockConnection) IsValidNamespace(string) bool {
 	return true
 }
-func (m mockConnection) ServerVersion() (*version.Info, error) {
+func (mockConnection) ServerVersion() (*version.Info, error) {
 	return nil, nil
 }
-func (m mockConnection) CheckConnectivity() bool {
+func (mockConnection) CheckConnectivity() bool {
 	return false
 }
 func (m mockConnection) ActiveContext() string {
 	return m.ct
 }
-func (m mockConnection) ActiveNamespace() string {
+func (mockConnection) ActiveNamespace() string {
 	return ""
 }
-func (m mockConnection) IsActiveNamespace(string) bool {
+func (mockConnection) IsActiveNamespace(string) bool {
 	return false
 }
