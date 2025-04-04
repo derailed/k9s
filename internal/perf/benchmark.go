@@ -33,14 +33,14 @@ const (
 // Benchmark puts a workload under load.
 type Benchmark struct {
 	canceled bool
-	config   config.BenchConfig
+	config   *config.BenchConfig
 	worker   *requester.Work
 	cancelFn context.CancelFunc
 	mx       sync.RWMutex
 }
 
 // NewBenchmark returns a new benchmark.
-func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, error) {
+func NewBenchmark(base, version string, cfg *config.BenchConfig) (*Benchmark, error) {
 	b := Benchmark{config: cfg}
 	if err := b.init(base, version); err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, err
 func (b *Benchmark) init(base, version string) error {
 	var ctx context.Context
 	ctx, b.cancelFn = context.WithTimeout(context.Background(), benchTimeout)
-	req, err := http.NewRequestWithContext(ctx, b.config.HTTP.Method, base, nil)
+	req, err := http.NewRequestWithContext(ctx, b.config.HTTP.Method, base, http.NoBody)
 	if err != nil {
 		return err
 	}
@@ -133,8 +133,8 @@ func (b *Benchmark) save(cluster, context string, r io.Reader) error {
 		return err
 	}
 	bf := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
-	if err := data.EnsureDirPath(bf, data.DefaultDirMod); err != nil {
-		return err
+	if e := data.EnsureDirPath(bf, data.DefaultDirMod); e != nil {
+		return e
 	}
 
 	f, err := os.Create(bf)
