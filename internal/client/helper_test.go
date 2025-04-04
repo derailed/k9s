@@ -32,7 +32,7 @@ func TestMetaFQN(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.MetaFQN(u.meta))
+			assert.Equal(t, u.e, client.MetaFQN(&u.meta))
 		})
 	}
 }
@@ -60,7 +60,7 @@ func TestCoFQN(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.CoFQN(u.meta, u.co))
+			assert.Equal(t, u.e, client.CoFQN(&u.meta, u.co))
 		})
 	}
 }
