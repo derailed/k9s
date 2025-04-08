@@ -5,6 +5,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -95,6 +96,9 @@ func (a *Aliases) Get(alias string) (*client.GVR, bool) {
 
 // Define declares a new alias.
 func (a *Aliases) Define(gvr *client.GVR, aliases ...string) {
+	if gvr.String() == "deployment" {
+		fmt.Println("!!YO!!")
+	}
 	a.mx.Lock()
 	defer a.mx.Unlock()
 	for _, alias := range aliases {
