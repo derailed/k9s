@@ -12,17 +12,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-colorable"
+	"github.com/spf13/cobra"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/tools/clientcmd/api"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view"
-	"github.com/lmittmann/tint"
-	"github.com/mattn/go-colorable"
-	"github.com/spf13/cobra"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -269,7 +270,7 @@ func initK8sFlags() {
 	rootCmd.Flags().StringVar(
 		k8sFlags.Timeout,
 		"request-timeout",
-		"5s",
+		"",
 		"The length of time to wait before giving up on a single server request",
 	)
 
