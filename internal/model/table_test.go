@@ -17,6 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,7 +25,7 @@ import (
 )
 
 func TestTableRefresh(t *testing.T) {
-	ta := model.NewTable(client.NewGVR("v1/pods"))
+	ta := model.NewTable(client.PodGVR)
 	ta.SetNamespace(client.NamespaceAll)
 
 	l := tableListener{}
@@ -34,7 +35,7 @@ func TestTableRefresh(t *testing.T) {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, f)
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
-	assert.NoError(t, ta.Refresh(ctx))
+	require.NoError(t, ta.Refresh(ctx))
 	data := ta.Peek()
 	assert.Equal(t, 25, data.HeaderCount())
 	assert.Equal(t, 1, data.RowCount())
@@ -44,7 +45,7 @@ func TestTableRefresh(t *testing.T) {
 }
 
 func TestTableNS(t *testing.T) {
-	ta := model.NewTable(client.NewGVR("v1/pods"))
+	ta := model.NewTable(client.PodGVR)
 	ta.SetNamespace("blee")
 
 	assert.Equal(t, "blee", ta.GetNamespace())
@@ -53,7 +54,7 @@ func TestTableNS(t *testing.T) {
 }
 
 func TestTableAddListener(t *testing.T) {
-	ta := model.NewTable(client.NewGVR("v1/pods"))
+	ta := model.NewTable(client.PodGVR)
 	ta.SetNamespace("blee")
 
 	assert.True(t, ta.Empty())
@@ -61,8 +62,8 @@ func TestTableAddListener(t *testing.T) {
 	ta.AddListener(&l)
 }
 
-func TestTableRmListener(t *testing.T) {
-	ta := model.NewTable(client.NewGVR("v1/pods"))
+func TestTableRmListener(*testing.T) {
+	ta := model.NewTable(client.PodGVR)
 	ta.SetNamespace("blee")
 
 	l := tableListener{}
@@ -89,36 +90,36 @@ type tableFactory struct {
 
 var _ dao.Factory = tableFactory{}
 
-func (f tableFactory) Client() client.Connection {
+func (tableFactory) Client() client.Connection {
 	return client.NewTestAPIClient()
 }
 
-func (f tableFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
+func (f tableFactory) Get(*client.GVR, string, bool, labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {
 		return f.rows[0], nil
 	}
 	return nil, nil
 }
 
-func (f tableFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
+func (f tableFactory) List(*client.GVR, string, bool, labels.Selector) ([]runtime.Object, error) {
 	if len(f.rows) > 0 {
 		return f.rows, nil
 	}
 	return nil, nil
 }
 
-func (f tableFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
+func (tableFactory) ForResource(string, *client.GVR) (informers.GenericInformer, error) {
 	return nil, nil
 }
 
-func (f tableFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
+func (tableFactory) CanForResource(string, *client.GVR, []string) (informers.GenericInformer, error) {
 	return nil, nil
 }
-func (f tableFactory) WaitForCacheSync() {}
-func (f tableFactory) Forwarders() watch.Forwarders {
+func (tableFactory) WaitForCacheSync() {}
+func (tableFactory) Forwarders() watch.Forwarders {
 	return nil
 }
-func (f tableFactory) DeleteForwarder(string) {}
+func (tableFactory) DeleteForwarder(string) {}
 
 func makeTableFactory() tableFactory {
 	return tableFactory{}

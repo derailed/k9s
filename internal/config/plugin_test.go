@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPluginLoad(t *testing.T) {
@@ -103,10 +104,10 @@ func TestSinglePluginFileLoad(t *testing.T) {
 	}
 
 	p := NewPlugins()
-	assert.NoError(t, p.load("testdata/plugins/plugins.yaml"))
-	assert.NoError(t, p.loadDir("/random/dir/not/exist"))
+	require.NoError(t, p.load("testdata/plugins/plugins.yaml"))
+	require.NoError(t, p.loadDir("/random/dir/not/exist"))
 
-	assert.Equal(t, 1, len(p.Plugins))
+	assert.Len(t, p.Plugins, 1)
 	v, ok := p.Plugins["blah"]
 
 	assert.True(t, ok)
@@ -169,8 +170,8 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			p := NewPlugins()
-			assert.NoError(t, p.load(u.path))
-			assert.NoError(t, p.loadDir(u.dir))
+			require.NoError(t, p.load(u.path))
+			require.NoError(t, p.loadDir(u.dir))
 			assert.Equal(t, u.ee, p)
 		})
 	}

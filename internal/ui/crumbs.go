@@ -56,7 +56,7 @@ func (c *Crumbs) StackPopped(_, _ model.Component) {
 }
 
 // StackTop indicates the top of the stack.
-func (c *Crumbs) StackTop(top model.Component) {}
+func (*Crumbs) StackTop(model.Component) {}
 
 // Refresh updates view with new crumbs.
 func (c *Crumbs) refresh(crumbs []string) {

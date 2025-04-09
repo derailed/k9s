@@ -9,13 +9,14 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestClusterRoleBindingRender(t *testing.T) {
 	c := render.ClusterRoleBinding{}
 	r := model1.NewRow(5)
 
-	assert.NoError(t, c.Render(load(t, "crb"), "-", &r))
+	require.NoError(t, c.Render(load(t, "crb"), "-", &r))
 	assert.Equal(t, "-/blee", r.ID)
 	assert.Equal(t, model1.Fields{"blee", "blee", "User", "fernand"}, r.Fields[:4])
 }

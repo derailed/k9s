@@ -25,6 +25,29 @@ const (
 	labelNodeRoleSuffix = "kubernetes.io/role"
 )
 
+var defaultNOHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: "ROLE"},
+	model1.HeaderColumn{Name: "ARCH", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "TAINTS"},
+	model1.HeaderColumn{Name: "VERSION"},
+	model1.HeaderColumn{Name: "OS-IMAGE", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "KERNEL", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "INTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "EXTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "PODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "CPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Node renders a K8s Node to screen.
 type Node struct {
 	Base
@@ -32,39 +55,14 @@ type Node struct {
 
 // Header returns a header row.
 func (n Node) Header(_ string) model1.Header {
-	return n.doHeader(n.defaultHeader())
-}
-
-func (Node) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "ROLE"},
-		model1.HeaderColumn{Name: "ARCH", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "TAINTS"},
-		model1.HeaderColumn{Name: "VERSION"},
-		model1.HeaderColumn{Name: "OS-IMAGE", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "KERNEL", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "INTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "EXTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "PODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "%CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "CPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "MEM/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return n.doHeader(defaultNOHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (n Node) Render(o interface{}, ns string, row *model1.Row) error {
+func (n Node) Render(o any, _ string, row *model1.Row) error {
 	nwm, ok := o.(*NodeWithMetrics)
 	if !ok {
-		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
+		return fmt.Errorf("expected NodeWithMetrics, but got %T", o)
 	}
 	if err := n.defaultRow(nwm, row); err != nil {
 		return err
@@ -73,7 +71,7 @@ func (n Node) Render(o interface{}, ns string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := n.specs.realize(nwm.Raw, n.defaultHeader(), row)
+	cols, err := n.specs.realize(nwm.Raw, defaultNOHeader, row)
 	if err != nil {
 		return err
 	}
@@ -168,7 +166,7 @@ type NodeWithMetrics struct {
 }
 
 // GetObjectKind returns a schema object.
-func (n *NodeWithMetrics) GetObjectKind() schema.ObjectKind {
+func (*NodeWithMetrics) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 
@@ -196,7 +194,7 @@ func nodeRoles(node *v1.Node, res []string) {
 	for k, v := range node.Labels {
 		switch {
 		case strings.HasPrefix(k, labelNodeRolePrefix):
-			if role := strings.TrimPrefix(k, labelNodeRolePrefix); len(role) > 0 {
+			if role := strings.TrimPrefix(k, labelNodeRolePrefix); role != "" {
 				res[index] = role
 				index++
 			}
@@ -209,14 +207,14 @@ func nodeRoles(node *v1.Node, res []string) {
 		}
 	}
 
-	if empty(res) {
+	if blank(res) {
 		res[index] = MissingValue
 	}
 }
 
 func getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
 	for _, a := range addrs {
-		// nolint:exhaustive
+		//nolint:exhaustive
 		switch a.Type {
 		case v1.NodeExternalIP:
 			eIP = a.Address
@@ -256,13 +254,4 @@ func status(conds []v1.NodeCondition, exempt bool, res []string) {
 	if exempt {
 		res[index] = "SchedulingDisabled"
 	}
-}
-
-func empty(s []string) bool {
-	for _, v := range s {
-		if len(v) != 0 {
-			return false
-		}
-	}
-	return true
 }

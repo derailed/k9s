@@ -24,7 +24,8 @@ type Component struct {
 	focusFgColor, focusBgColor string
 	seriesColors               []tcell.Color
 	dimmed                     tcell.Style
-	id, legend                 string
+	id                         string
+	legend                     string
 	blur                       func(tcell.Key)
 	mx                         sync.RWMutex
 }
@@ -67,7 +68,7 @@ func (c *Component) SetLegend(l string) {
 // InputHandler returns the handler for this primitive.
 func (c *Component) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return c.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-		// nolint:exhaustive
+		//nolint:exhaustive
 		switch key := event.Key(); key {
 		case tcell.KeyEnter:
 		case tcell.KeyBacktab, tcell.KeyTab:
@@ -80,7 +81,7 @@ func (c *Component) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 }
 
 // IsDial returns true if chart is a dial.
-func (c *Component) IsDial() bool {
+func (*Component) IsDial() bool {
 	return false
 }
 
@@ -117,13 +118,13 @@ func (c *Component) GetSeriesColorNames() []string {
 	return nn
 }
 
-func (c *Component) colorForSeries() (tcell.Color, tcell.Color) {
+func (c *Component) colorForSeries() (cool, fault tcell.Color) {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-
 	if len(c.seriesColors) == 2 {
 		return c.seriesColors[0], c.seriesColors[1]
 	}
+
 	return okColor, faultColor
 }
 

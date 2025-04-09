@@ -52,14 +52,14 @@ func IsClusterScoped(ns string) bool {
 }
 
 // Namespaced converts a resource path to namespace and resource name.
-func Namespaced(p string) (string, string) {
-	ns, n := path.Split(p)
+func Namespaced(p string) (ns, name string) {
+	ns, name = path.Split(p)
 
-	return strings.Trim(ns, "/"), n
+	return strings.Trim(ns, "/"), name
 }
 
 // CoFQN returns a fully qualified container name.
-func CoFQN(m metav1.ObjectMeta, co string) string {
+func CoFQN(m *metav1.ObjectMeta, co string) string {
 	return MetaFQN(m) + ":" + co
 }
 
@@ -72,7 +72,7 @@ func FQN(ns, n string) string {
 }
 
 // MetaFQN returns a fully qualified resource name.
-func MetaFQN(m metav1.ObjectMeta) string {
+func MetaFQN(m *metav1.ObjectMeta) string {
 	if m.Namespace == "" {
 		return FQN(ClusterScope, m.Name)
 	}
@@ -90,6 +90,9 @@ func mustHomeDir() string {
 }
 
 func toHostDir(host string) string {
-	h := strings.Replace(strings.Replace(host, "https://", "", 1), "http://", "", 1)
+	h := strings.Replace(
+		strings.Replace(host, "https://", "", 1),
+		"http://", "", 1,
+	)
 	return toFileName.ReplaceAllString(h, "_")
 }

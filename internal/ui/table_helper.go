@@ -67,7 +67,7 @@ func TrimLabelSelector(s string) string {
 }
 
 // SkinTitle decorates a title.
-func SkinTitle(fmat string, style config.Frame) string {
+func SkinTitle(fmat string, style *config.Frame) string {
 	bgColor := style.Title.BgColor
 	if bgColor == config.DefaultColor {
 		bgColor = config.TransparentColor
@@ -82,7 +82,7 @@ func SkinTitle(fmat string, style config.Frame) string {
 	return fmat
 }
 
-func sortIndicator(sort, asc bool, style config.Table, name string) string {
+func sortIndicator(sort, asc bool, style *config.Table, name string) string {
 	if !sort {
 		return name
 	}

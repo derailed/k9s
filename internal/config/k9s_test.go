@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -94,7 +95,7 @@ func TestK9sMerge(t *testing.T) {
 				UI:                  config.UI{},
 				SkipLatestRevCheck:  false,
 				DisablePodCounting:  false,
-				ShellPod:            config.ShellPod{},
+				ShellPod:            new(config.ShellPod),
 				ImageScans:          config.ImageScans{},
 				Logger:              config.Logger{},
 				Thresholds:          nil,
@@ -135,14 +136,14 @@ func TestContextScreenDumpDir(t *testing.T) {
 	cfg := mock.NewMockConfig()
 	_, err := cfg.K9s.ActivateContext("ct-1-1")
 
-	assert.NoError(t, err)
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
+	require.NoError(t, err)
+	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, "/tmp/k9s-test/screen-dumps/cl-1/ct-1-1", cfg.K9s.ContextScreenDumpDir())
 }
 
 func TestAppScreenDumpDir(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
+	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, "/tmp/k9s-test/screen-dumps", cfg.K9s.AppScreenDumpDir())
 }

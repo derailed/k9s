@@ -17,7 +17,7 @@ type Reference struct {
 }
 
 // NewReference returns a new alias view.
-func NewReference(gvr client.GVR) ResourceViewer {
+func NewReference(gvr *client.GVR) ResourceViewer {
 	r := Reference{
 		ResourceViewer: NewBrowser(gvr),
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNSColorer(t *testing.T) {
@@ -73,7 +74,7 @@ func TestNamespaceRender(t *testing.T) {
 	c := render.Namespace{}
 	r := model1.NewRow(3)
 
-	assert.NoError(t, c.Render(load(t, "ns"), "-", &r))
+	require.NoError(t, c.Render(load(t, "ns"), "-", &r))
 	assert.Equal(t, "-/kube-system", r.ID)
 	assert.Equal(t, model1.Fields{"kube-system", "Active"}, r.Fields[:2])
 }

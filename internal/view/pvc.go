@@ -5,7 +5,6 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 )
@@ -16,7 +15,7 @@ type PersistentVolumeClaim struct {
 }
 
 // NewPersistentVolumeClaim returns a new viewer.
-func NewPersistentVolumeClaim(gvr client.GVR) ResourceViewer {
+func NewPersistentVolumeClaim(gvr *client.GVR) ResourceViewer {
 	v := PersistentVolumeClaim{
 		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
@@ -36,5 +35,5 @@ func (p *PersistentVolumeClaim) bindKeys(aa *ui.KeyActions) {
 }
 
 func (p *PersistentVolumeClaim) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanRefs(evt, p.App(), p.GetTable(), dao.PvcGVR)
+	return scanRefs(evt, p.App(), p.GetTable(), client.PvcGVR)
 }

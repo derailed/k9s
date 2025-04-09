@@ -72,7 +72,7 @@ func (f *Factory) Terminate() {
 }
 
 // List returns a resource collection.
-func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
+func (f *Factory) List(gvr *client.GVR, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
 	if client.IsAllNamespace(ns) {
 		ns = client.BlankNamespace
 	}
@@ -99,7 +99,7 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 }
 
 // HasSynced checks if given informer is up to date.
-func (f *Factory) HasSynced(gvr, ns string) (bool, error) {
+func (f *Factory) HasSynced(gvr *client.GVR, ns string) (bool, error) {
 	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
 	if err != nil {
 		return false, err
@@ -109,7 +109,7 @@ func (f *Factory) HasSynced(gvr, ns string) (bool, error) {
 }
 
 // Get retrieves a given resource.
-func (f *Factory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runtime.Object, error) {
+func (f *Factory) Get(gvr *client.GVR, fqn string, wait bool, _ labels.Selector) (runtime.Object, error) {
 	ns, n := namespaced(fqn)
 	if client.IsAllNamespace(ns) {
 		ns = client.BlankNamespace
@@ -200,7 +200,7 @@ func (f *Factory) isClusterWide() bool {
 }
 
 // CanForResource return an informer is user has access.
-func (f *Factory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
+func (f *Factory) CanForResource(ns string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error) {
 	auth, err := f.Client().CanI(ns, gvr, "", verbs)
 	if err != nil {
 		return nil, err
@@ -213,12 +213,12 @@ func (f *Factory) CanForResource(ns, gvr string, verbs []string) (informers.Gene
 }
 
 // ForResource returns an informer for a given resource.
-func (f *Factory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
+func (f *Factory) ForResource(ns string, gvr *client.GVR) (informers.GenericInformer, error) {
 	fact, err := f.ensureFactory(ns)
 	if err != nil {
 		return nil, err
 	}
-	inf := fact.ForResource(toGVR(gvr))
+	inf := fact.ForResource(gvr.GVR())
 	if inf == nil {
 		slog.Error("No informer found",
 			slogs.GVR, gvr,
@@ -306,7 +306,7 @@ func (f *Factory) ValidatePortForwards() {
 		if len(paths) < 1 {
 			slog.Error("Invalid port-forward path", slogs.Path, tokens[0])
 		}
-		o, err := f.Get("v1/pods", paths[0], false, labels.Everything())
+		o, err := f.Get(client.PodGVR, paths[0], false, labels.Everything())
 		if err != nil {
 			fwd.Stop()
 			delete(f.forwarders, k)

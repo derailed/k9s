@@ -14,7 +14,7 @@ import (
 )
 
 // ShowError pops an error dialog.
-func ShowError(styles config.Dialog, pages *ui.Pages, msg string) {
+func ShowError(styles *config.Dialog, pages *ui.Pages, msg string) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).

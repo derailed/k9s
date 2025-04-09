@@ -9,11 +9,12 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEncodedSecretDescribe(t *testing.T) {
 	var s dao.Secret
-	s.Init(makeFactory(), client.NewGVR("v1/secrets"))
+	s.Init(makeFactory(), client.SecGVR)
 
 	encodedString := `
 Name: bootstrap-token-abcdef
@@ -39,6 +40,6 @@ token-secret:  24 bytes`
 		"token-secret: 0123456789abcdef"
 
 	decodedDescription, err := s.Decode(encodedString, "kube-system/bootstrap-token-abcdef")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, decodedDescription)
 }

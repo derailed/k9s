@@ -18,7 +18,7 @@ import (
 type ReplicaSet struct{}
 
 // Render renders an xray node.
-func (r *ReplicaSet) Render(ctx context.Context, ns string, o interface{}) error {
+func (r *ReplicaSet) Render(ctx context.Context, ns string, o any) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Unstructured, but got %T", o)
@@ -34,7 +34,7 @@ func (r *ReplicaSet) Render(ctx context.Context, ns string, o interface{}) error
 		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	root := NewTreeNode("apps/v1/replicasets", client.FQN(rs.Namespace, rs.Name))
+	root := NewTreeNode(client.RsGVR, client.FQN(rs.Namespace, rs.Name))
 	oo, err := locatePods(ctx, rs.Namespace, rs.Spec.Selector)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (r *ReplicaSet) Render(ctx context.Context, ns string, o interface{}) error
 		return nil
 	}
 
-	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, rs.Namespace)
+	gvr, nsID := client.NsGVR, client.FQN(client.ClusterScope, rs.Namespace)
 	nsn := parent.Find(gvr, nsID)
 	if nsn == nil {
 		nsn = NewTreeNode(gvr, nsID)

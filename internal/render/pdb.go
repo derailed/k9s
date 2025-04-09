@@ -16,6 +16,20 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var defaultPDBHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "MIN-AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "MAX-UNAVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "ALLOWED-DISRUPTIONS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "EXPECTED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // PodDisruptionBudget renders a K8s PodDisruptionBudget to screen.
 type PodDisruptionBudget struct {
 	Base
@@ -23,30 +37,14 @@ type PodDisruptionBudget struct {
 
 // Header returns a header row.
 func (p PodDisruptionBudget) Header(_ string) model1.Header {
-	return p.doHeader(p.defaultHeader())
-}
-
-func (PodDisruptionBudget) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "MIN-AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "MAX-UNAVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "ALLOWED-DISRUPTIONS", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "EXPECTED", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return p.doHeader(defaultPDBHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (p PodDisruptionBudget) Render(o interface{}, ns string, row *model1.Row) error {
+func (p PodDisruptionBudget) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected PodDisruptionBudget, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	if err := p.defaultRow(raw, row); err != nil {
 		return err
@@ -55,7 +53,7 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, row *model1.Row) e
 		return nil
 	}
 
-	cols, err := p.specs.realize(raw, p.defaultHeader(), row)
+	cols, err := p.specs.realize(raw, defaultPDBHeader, row)
 	if err != nil {
 		return err
 	}
@@ -71,7 +69,7 @@ func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model
 		return err
 	}
 
-	r.ID = client.MetaFQN(pdb.ObjectMeta)
+	r.ID = client.MetaFQN(&pdb.ObjectMeta)
 	r.Fields = model1.Fields{
 		pdb.Namespace,
 		pdb.Name,
@@ -89,13 +87,14 @@ func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model
 	return nil
 }
 
-func (PodDisruptionBudget) diagnose(min *intstr.IntOrString, healthy int32) error {
-	if min == nil {
+func (PodDisruptionBudget) diagnose(v *intstr.IntOrString, healthy int32) error {
+	if v == nil {
 		return nil
 	}
-	if min.IntVal > healthy {
-		return fmt.Errorf("expected %d but got %d", min.IntVal, healthy)
+	if v.IntVal > healthy {
+		return fmt.Errorf("expected %d but got %d", v.IntVal, healthy)
 	}
+
 	return nil
 }
 

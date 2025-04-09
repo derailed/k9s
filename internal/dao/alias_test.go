@@ -13,27 +13,28 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAsGVR(t *testing.T) {
 	a := dao.NewAlias(makeFactory())
-	a.Define("v1/pods", "po", "pod", "pods")
-	a.Define("workloads", "workloads", "workload", "wkl")
+	a.Define(client.PodGVR, "po", "pod", "pods")
+	a.Define(client.WkGVR, client.WkGVR.String(), "workload", "wkl")
 
 	uu := map[string]struct {
 		cmd string
 		ok  bool
-		gvr client.GVR
+		gvr *client.GVR
 	}{
 		"ok": {
 			cmd: "pods",
 			ok:  true,
-			gvr: client.NewGVR("v1/pods"),
+			gvr: client.PodGVR,
 		},
 		"ok-short": {
 			cmd: "po",
 			ok:  true,
-			gvr: client.NewGVR("v1/pods"),
+			gvr: client.PodGVR,
 		},
 		"missing": {
 			cmd: "zorg",
@@ -41,7 +42,7 @@ func TestAsGVR(t *testing.T) {
 		"alias": {
 			cmd: "wkl",
 			ok:  true,
-			gvr: client.NewGVR("workloads"),
+			gvr: client.WkGVR,
 		},
 	}
 
@@ -59,27 +60,30 @@ func TestAsGVR(t *testing.T) {
 
 func TestAliasList(t *testing.T) {
 	a := dao.Alias{}
-	a.Init(makeFactory(), client.NewGVR("aliases"))
+	a.Init(makeFactory(), client.AliGVR)
 
 	ctx := context.WithValue(context.Background(), internal.KeyAliases, makeAliases())
 	oo, err := a.List(ctx, "-")
 
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(oo))
-	assert.Equal(t, 2, len(oo[0].(render.AliasRes).Aliases))
+	require.NoError(t, err)
+	assert.Len(t, oo, 2)
+	assert.Len(t, oo[0].(render.AliasRes).Aliases, 2)
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
 
 func makeAliases() *dao.Alias {
+	gvr1 := client.NewGVR("v1/fred")
+	gvr2 := client.NewGVR("v1/blee")
+
 	return &dao.Alias{
 		Aliases: &config.Aliases{
 			Alias: config.Alias{
-				"fred": "v1/fred",
-				"f":    "v1/fred",
-				"blee": "v1/blee",
-				"b":    "v1/blee",
+				"fred": gvr1,
+				"f":    gvr1,
+				"blee": gvr2,
+				"b":    gvr2,
 			},
 		},
 	}

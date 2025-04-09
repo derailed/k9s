@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	keyValRX = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s(.+)\z`)
-	keyRX    = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s*\z`)
+	keyValRX = regexp.MustCompile(`\A(\s*)([\w\-./\s]+):\s(.+)\z`)
+	keyRX    = regexp.MustCompile(`\A(\s*)([\w\-./\s]+):\s*\z`)
 	searchRX = regexp.MustCompile(`<<<("search_\d+")>>>(.+)<<<"">>>`)
 )
 
@@ -93,7 +93,7 @@ func saveYAML(dir, name, raw string) (string, error) {
 			)
 		}
 	}()
-	if _, err := file.Write([]byte(raw)); err != nil {
+	if _, err := file.WriteString(raw); err != nil {
 		return "", err
 	}
 

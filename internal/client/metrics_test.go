@@ -79,7 +79,7 @@ func TestPodsMetrics(t *testing.T) {
 			mmx := make(client.PodsMetrics)
 			m.PodsMetrics(u.metrics, mmx)
 
-			assert.Equal(t, u.eSize, len(mmx))
+			assert.Len(t, mmx, u.eSize)
 			if u.eSize == 0 {
 				return
 			}
@@ -104,7 +104,7 @@ func BenchmarkPodsMetrics(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		m.PodsMetrics(&metrics, mmx)
 	}
 }
@@ -175,7 +175,7 @@ func TestNodesMetrics(t *testing.T) {
 			mmx := make(client.NodesMetrics)
 			m.NodesMetrics(u.nodes, u.metrics, mmx)
 
-			assert.Equal(t, u.eSize, len(mmx))
+			assert.Len(t, mmx, u.eSize)
 			if u.eSize == 0 {
 				return
 			}
@@ -206,7 +206,7 @@ func BenchmarkNodesMetrics(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		m.NodesMetrics(&nodes, &metrics, mmx)
 	}
 }
@@ -290,7 +290,7 @@ func BenchmarkClusterLoad(b *testing.B) {
 	var mx client.ClusterMetrics
 	b.ResetTimer()
 	b.ReportAllocs()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		_ = m.ClusterLoad(&nodes, &metrics, &mx)
 	}
 }

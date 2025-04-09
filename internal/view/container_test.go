@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestContainerNew(t *testing.T) {
-	c := view.NewContainer(client.NewGVR("containers"))
+	c := view.NewContainer(client.CoGVR)
 
-	assert.Nil(t, c.Init(makeCtx()))
+	require.NoError(t, c.Init(makeCtx()))
 	assert.Equal(t, "Containers", c.Name())
-	assert.Equal(t, 19, len(c.Hints()))
+	assert.Len(t, c.Hints(), 19)
 }

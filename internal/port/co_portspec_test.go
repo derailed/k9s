@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal/port"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestContainerPortSpecMatch(t *testing.T) {
@@ -62,7 +63,7 @@ func TestContainerPortSpecMatch(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			pf, err := port.ParsePF(u.ann)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			assert.Equal(t, u.e, u.spec.Match(pf))
 		})
@@ -134,7 +135,7 @@ func TestContainerPortSpecsMatch(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			pf, err := port.ParsePF(u.ann)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.e, u.specs.Match(pf))
 		})
 	}

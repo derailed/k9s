@@ -43,7 +43,7 @@ func (Rbac) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Rbac) Header(ns string) model1.Header {
+func (Rbac) Header(string) model1.Header {
 	h := make(model1.Header, 0, 10)
 	h = append(h,
 		model1.HeaderColumn{Name: "NAME"},
@@ -55,10 +55,10 @@ func (Rbac) Header(ns string) model1.Header {
 }
 
 // Render renders a K8s resource to screen.
-func (r Rbac) Render(o interface{}, ns string, ro *model1.Row) error {
-	p, ok := o.(PolicyRes)
+func (r Rbac) Render(o any, ns string, ro *model1.Row) error {
+	p, ok := o.(*PolicyRes)
 	if !ok {
-		return fmt.Errorf("expecting RuleRes but got %T", o)
+		return fmt.Errorf("expecting PolicyRes but got %T", o)
 	}
 
 	ro.ID = p.Resource
@@ -135,8 +135,8 @@ type RuleRes struct {
 }
 
 // NewRuleRes returns a new rule.
-func NewRuleRes(res, grp string, vv []string) RuleRes {
-	return RuleRes{
+func NewRuleRes(res, grp string, vv []string) *RuleRes {
+	return &RuleRes{
 		Resource: res,
 		Group:    grp,
 		Verbs:    vv,
@@ -144,20 +144,20 @@ func NewRuleRes(res, grp string, vv []string) RuleRes {
 }
 
 // GetObjectKind returns a schema object.
-func (r RuleRes) GetObjectKind() schema.ObjectKind {
+func (*RuleRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 
 // DeepCopyObject returns a container copy.
-func (r RuleRes) DeepCopyObject() runtime.Object {
+func (r *RuleRes) DeepCopyObject() runtime.Object {
 	return r
 }
 
 // Rules represents a collection of rules.
-type Rules []RuleRes
+type Rules []*RuleRes
 
 // Upsert adds a new rule.
-func (rr Rules) Upsert(r RuleRes) Rules {
+func (rr Rules) Upsert(r *RuleRes) Rules {
 	idx, ok := rr.find(r.Resource)
 	if !ok {
 		return append(rr, r)

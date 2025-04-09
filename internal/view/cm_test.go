@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfigMapNew(t *testing.T) {
-	s := view.NewConfigMap(client.NewGVR("v1/configmaps"))
+	s := view.NewConfigMap(client.CmGVR)
 
-	assert.Nil(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx()))
 	assert.Equal(t, "ConfigMaps", s.Name())
-	assert.Equal(t, 7, len(s.Hints()))
+	assert.Len(t, s.Hints(), 7)
 }

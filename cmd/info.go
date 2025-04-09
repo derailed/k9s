@@ -24,7 +24,7 @@ func infoCmd() *cobra.Command {
 	}
 }
 
-func printInfo(cmd *cobra.Command, args []string) error {
+func printInfo(*cobra.Command, []string) error {
 	if err := config.InitLocs(); err != nil {
 		return err
 	}

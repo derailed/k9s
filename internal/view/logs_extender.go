@@ -39,7 +39,7 @@ func (l *LogsExtender) bindKeys(aa *ui.KeyActions) {
 }
 
 func (l *LogsExtender) logsCmd(prev bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(*tcell.EventKey) *tcell.EventKey {
 		path := l.GetTable().GetSelectedItem()
 		if path == "" {
 			return nil
@@ -60,7 +60,7 @@ func isResourcePath(p string) bool {
 
 func (l *LogsExtender) showLogs(path string, prev bool) {
 	ns, _ := client.Namespaced(path)
-	_, err := l.App().factory.CanForResource(ns, "v1/pods", client.ListAccess)
+	_, err := l.App().factory.CanForResource(ns, client.PodGVR, client.ListAccess)
 	if err != nil {
 		l.App().Flash().Err(err)
 		return
@@ -83,7 +83,7 @@ func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOpti
 	opts := dao.LogOptions{
 		Path:          path,
 		Container:     co,
-		Lines:         int64(cfg.TailCount),
+		Lines:         cfg.TailCount,
 		Previous:      prevLogs,
 		ShowTimestamp: cfg.ShowTime,
 	}
@@ -94,13 +94,13 @@ func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOpti
 	return &opts
 }
 
-func podLogOptions(app *App, fqn string, prev bool, m metav1.ObjectMeta, spec v1.PodSpec) *dao.LogOptions {
+func podLogOptions(app *App, fqn string, prev bool, m *metav1.ObjectMeta, spec *v1.PodSpec) *dao.LogOptions {
 	var (
 		cc   = fetchContainers(m, spec, true)
 		cfg  = app.Config.K9s.Logger
 		opts = dao.LogOptions{
 			Path:            fqn,
-			Lines:           int64(cfg.TailCount),
+			Lines:           cfg.TailCount,
 			SinceSeconds:    cfg.SinceSeconds,
 			SingleContainer: len(cc) == 1,
 			ShowTimestamp:   cfg.ShowTime,

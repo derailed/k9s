@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRowEventCustomize(t *testing.T) {
@@ -406,7 +407,7 @@ func TestRowEventsDelete(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.NoError(t, u.re.Delete(u.id))
+			require.NoError(t, u.re.Delete(u.id))
 			assert.Equal(t, u.e, u.re)
 		})
 	}

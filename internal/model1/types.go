@@ -40,7 +40,7 @@ type Renderer interface {
 	IsGeneric() bool
 
 	// Render converts raw resources to tabular data.
-	Render(o interface{}, ns string, row *Row) error
+	Render(o any, ns string, row *Row) error
 
 	// Header returns the resource header.
 	Header(ns string) Header
@@ -61,5 +61,5 @@ type Generic interface {
 	Header(ns string) Header
 
 	// Render renders the resource.
-	Render(o interface{}, ns string, row *Row) error
+	Render(o any, ns string, row *Row) error
 }

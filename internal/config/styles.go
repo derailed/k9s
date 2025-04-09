@@ -20,14 +20,21 @@ type StyleListener interface {
 	StylesChanged(*Styles)
 }
 
+// TextStyle tracks text styles.
 type TextStyle string
 
 const (
+	// TextStyleNormal is the default text style.
 	TextStyleNormal TextStyle = "normal"
-	TextStyleBold   TextStyle = "bold"
-	TextStyleDim    TextStyle = "dim"
+
+	// TextStyleBold is the bold text style.
+	TextStyleBold TextStyle = "bold"
+
+	// TextStyleDim is the dim text style.
+	TextStyleDim TextStyle = "dim"
 )
 
+// ToShortString returns a short string representation of the text style.
 func (ts TextStyle) ToShortString() string {
 	switch ts {
 	case TextStyleNormal:
@@ -283,8 +290,8 @@ func newCharts() Charts {
 		DefaultDialColors:  Colors{Color("palegreen"), Color("orangered")},
 		DefaultChartColors: Colors{Color("palegreen"), Color("orangered")},
 		ResourceColors: map[string]Colors{
-			"cpu": {Color("dodgerblue"), Color("darkslateblue")},
-			"mem": {Color("yellow"), Color("goldenrod")},
+			CPU: {Color("dodgerblue"), Color("darkslateblue")},
+			MEM: {Color("yellow"), Color("goldenrod")},
 		},
 	}
 }

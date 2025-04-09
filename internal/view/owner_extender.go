@@ -75,16 +75,17 @@ func (v *OwnerExtender) findOwnerFor(path string) error {
 	ns, _ := client.Namespaced(path)
 	ownerReferences := u.GetOwnerReferences()
 	if len(ownerReferences) == 1 {
-		return v.jumpOwner(ns, ownerReferences[0])
+		return v.jumpOwner(ns, &ownerReferences[0])
 	} else if len(ownerReferences) > 1 {
 		owners := make([]string, 0, len(ownerReferences))
 		for idx, ownerRef := range ownerReferences {
 			owners = append(owners, fmt.Sprintf("%d: %s", idx, ownerRef.Kind))
 		}
 
-		dialog.ShowSelection(v.App().Styles.Dialog(), v.App().Content.Pages, "Jump To", owners, func(index int) {
+		d := v.App().Styles.Dialog()
+		dialog.ShowSelection(&d, v.App().Content.Pages, "Jump To", owners, func(index int) {
 			if index >= 0 {
-				err = v.jumpOwner(ns, ownerReferences[index])
+				err = v.jumpOwner(ns, &ownerReferences[index])
 			}
 		})
 		return err
@@ -93,7 +94,7 @@ func (v *OwnerExtender) findOwnerFor(path string) error {
 	return errors.Errorf("no owner found")
 }
 
-func (v *OwnerExtender) jumpOwner(ns string, owner metav1.OwnerReference) error {
+func (v *OwnerExtender) jumpOwner(ns string, owner *metav1.OwnerReference) error {
 	gv, err := schema.ParseGroupVersion(owner.APIVersion)
 	if err != nil {
 		return err
@@ -119,7 +120,7 @@ func (v *OwnerExtender) defaultCtx() context.Context {
 	return context.WithValue(context.Background(), internal.KeyFactory, v.App().factory)
 }
 
-func (v *OwnerExtender) asUnstructuredObject(o runtime.Object) (*unstructured.Unstructured, bool) {
+func (*OwnerExtender) asUnstructuredObject(o runtime.Object) (*unstructured.Unstructured, bool) {
 	switch v := o.(type) {
 	case *unstructured.Unstructured:
 		return v, true

@@ -18,7 +18,7 @@ type HelmChart struct {
 }
 
 // NewHelmChart returns a new helm-chart view.
-func NewHelmChart(gvr client.GVR) ResourceViewer {
+func NewHelmChart(gvr *client.GVR) ResourceViewer {
 	c := HelmChart{
 		ResourceViewer: NewValueExtender(NewBrowser(gvr)),
 	}
@@ -33,7 +33,7 @@ func NewHelmChart(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *HelmChart) chartContext(ctx context.Context) context.Context {
+func (*HelmChart) chartContext(ctx context.Context) context.Context {
 	return ctx
 }
 
@@ -45,8 +45,8 @@ func (c *HelmChart) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (c *HelmChart) viewReleases(app *App, model ui.Tabular, _ client.GVR, path string) {
-	v := NewHistory(client.NewGVR("helm-history"))
+func (c *HelmChart) viewReleases(app *App, _ ui.Tabular, _ *client.GVR, _ string) {
+	v := NewHistory(client.HmhGVR)
 	v.SetContextFn(c.helmContext)
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)

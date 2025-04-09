@@ -20,10 +20,7 @@ func TestDeleteDialog(t *testing.T) {
 		assert.Equal(t, propagationOptions[defaultPropagationIdx], p)
 		assert.True(t, f)
 	}
-	caFunc := func() {
-		assert.True(t, true)
-	}
-	ShowDelete(config.Dialog{}, p, "Yo", okFunc, caFunc)
+	ShowDelete(new(config.Dialog), p, "Yo", okFunc, func() {})
 
 	d := p.GetPrimitive(dialogKey).(*tview.ModalForm)
 	assert.NotNil(t, d)

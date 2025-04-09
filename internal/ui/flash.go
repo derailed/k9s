@@ -88,7 +88,7 @@ func (f *Flash) flashEmoji(l model.FlashLevel) string {
 	if f.app.Config.K9s.UI.NoIcons {
 		return ""
 	}
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch l {
 	case model.FlashWarn:
 		return emoDoh
@@ -102,7 +102,7 @@ func (f *Flash) flashEmoji(l model.FlashLevel) string {
 // Helpers...
 
 func flashColor(l model.FlashLevel) tcell.Color {
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch l {
 	case model.FlashWarn:
 		return tcell.ColorOrange

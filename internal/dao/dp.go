@@ -41,7 +41,7 @@ type Deployment struct {
 }
 
 // ListImages lists container images.
-func (d *Deployment) ListImages(ctx context.Context, fqn string) ([]string, error) {
+func (d *Deployment) ListImages(_ context.Context, fqn string) ([]string, error) {
 	dp, err := d.GetInstance(fqn)
 	if err != nil {
 		return nil, err
@@ -52,76 +52,12 @@ func (d *Deployment) ListImages(ctx context.Context, fqn string) ([]string, erro
 
 // Scale a Deployment.
 func (d *Deployment) Scale(ctx context.Context, path string, replicas int32) error {
-	ns, n := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/deployments:scale", n, []string{client.GetVerb, client.UpdateVerb})
-	if err != nil {
-		return err
-	}
-	if !auth {
-		return fmt.Errorf("user is not authorized to scale a deployment")
-	}
-
-	dial, err := d.Client().Dial()
-	if err != nil {
-		return err
-	}
-	scale, err := dial.AppsV1().Deployments(ns).GetScale(ctx, n, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	scale.Spec.Replicas = replicas
-	_, err = dial.AppsV1().Deployments(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
-
-	return err
+	return scaleRes(ctx, d.getFactory(), client.DpGVR, path, replicas)
 }
 
 // Restart a Deployment rollout.
 func (d *Deployment) Restart(ctx context.Context, path string) error {
-	o, err := d.getFactory().Get("apps/v1/deployments", path, true, labels.Everything())
-	if err != nil {
-		return err
-	}
-	var dp appsv1.Deployment
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &dp)
-	if err != nil {
-		return err
-	}
-
-	auth, err := d.Client().CanI(dp.Namespace, "apps/v1/deployments", dp.Name, client.PatchAccess)
-	if err != nil {
-		return err
-	}
-	if !auth {
-		return fmt.Errorf("user is not authorized to restart a deployment")
-	}
-
-	dial, err := d.Client().Dial()
-	if err != nil {
-		return err
-	}
-
-	before, err := runtime.Encode(scheme.Codecs.LegacyCodec(appsv1.SchemeGroupVersion), &dp)
-	if err != nil {
-		return err
-	}
-
-	after, err := polymorphichelpers.ObjectRestarterFn(&dp)
-	if err != nil {
-		return err
-	}
-	diff, err := strategicpatch.CreateTwoWayMergePatch(before, after, dp)
-	if err != nil {
-		return err
-	}
-	_, err = dial.AppsV1().Deployments(dp.Namespace).Patch(
-		ctx,
-		dp.Name,
-		types.StrategicMergePatchType,
-		diff,
-		metav1.PatchOptions{},
-	)
-
-	return err
+	return restartRes[*appsv1.Deployment](ctx, d.getFactory(), client.DpGVR, path)
 }
 
 // TailLogs tail logs for all pods represented by this Deployment.
@@ -149,7 +85,7 @@ func (d *Deployment) Pod(fqn string) (string, error) {
 
 // GetInstance fetch a matching deployment.
 func (d *Deployment) GetInstance(fqn string) (*appsv1.Deployment, error) {
-	o, err := d.Factory.Get(d.GVR(), fqn, true, labels.Everything())
+	o, err := d.Factory.Get(d.gvr, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -164,9 +100,9 @@ func (d *Deployment) GetInstance(fqn string) (*appsv1.Deployment, error) {
 }
 
 // ScanSA scans for serviceaccount refs.
-func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+func (d *Deployment) ScanSA(_ context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.getFactory().List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.getFactory().List(d.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -190,9 +126,9 @@ func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, e
 }
 
 // Scan scans for resource references.
-func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
+func (d *Deployment) Scan(_ context.Context, gvr *client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.getFactory().List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.getFactory().List(d.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +141,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait 
 			return nil, errors.New("expecting Deployment resource")
 		}
 		switch gvr {
-		case CmGVR:
+		case client.CmGVR:
 			if !hasConfigMap(&dp.Spec.Template.Spec, n) {
 				continue
 			}
@@ -213,7 +149,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait 
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case SecGVR:
+		case client.SecGVR:
 			found, err := hasSecret(d.Factory, &dp.Spec.Template.Spec, dp.Namespace, n, wait)
 			if err != nil {
 				slog.Warn("Fail to locate secret",
@@ -229,7 +165,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait 
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case PvcGVR:
+		case client.PvcGVR:
 			if !hasPVC(&dp.Spec.Template.Spec, n) {
 				continue
 			}
@@ -237,7 +173,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait 
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case PcGVR:
+		case client.PcGVR:
 			if !hasPC(&dp.Spec.Template.Spec, n) {
 				continue
 			}
@@ -246,7 +182,6 @@ func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait 
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
 		}
-
 	}
 
 	return refs, nil
@@ -265,7 +200,7 @@ func (d *Deployment) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (d *Deployment) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/deployments", n, client.PatchAccess)
+	auth, err := d.Client().CanI(ns, d.gvr, n, client.PatchAccess)
 	if err != nil {
 		return err
 	}
@@ -290,9 +225,11 @@ func (d *Deployment) SetImages(ctx context.Context, path string, imageSpecs Imag
 	return err
 }
 
+// Helpers...
+
 func hasPVC(spec *v1.PodSpec, name string) bool {
-	for _, v := range spec.Volumes {
-		if v.PersistentVolumeClaim != nil && v.PersistentVolumeClaim.ClaimName == name {
+	for i := range spec.Volumes {
+		if spec.Volumes[i].PersistentVolumeClaim != nil && spec.Volumes[i].PersistentVolumeClaim.ClaimName == name {
 			return true
 		}
 	}
@@ -304,24 +241,24 @@ func hasPC(spec *v1.PodSpec, name string) bool {
 }
 
 func hasConfigMap(spec *v1.PodSpec, name string) bool {
-	for _, c := range spec.InitContainers {
-		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
+	for i := range spec.InitContainers {
+		if containerHasConfigMap(spec.InitContainers[i].EnvFrom, spec.InitContainers[i].Env, name) {
 			return true
 		}
 	}
-	for _, c := range spec.Containers {
-		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
+	for i := range spec.Containers {
+		if containerHasConfigMap(spec.Containers[i].EnvFrom, spec.Containers[i].Env, name) {
 			return true
 		}
 	}
-	for _, c := range spec.EphemeralContainers {
-		if containerHasConfigMap(c.EnvFrom, c.Env, name) {
+	for i := range spec.EphemeralContainers {
+		if containerHasConfigMap(spec.EphemeralContainers[i].EnvFrom, spec.EphemeralContainers[i].Env, name) {
 			return true
 		}
 	}
 
-	for _, v := range spec.Volumes {
-		if cm := v.ConfigMap; cm != nil {
+	for i := range spec.Volumes {
+		if cm := spec.Volumes[i].ConfigMap; cm != nil {
 			if cm.Name == name {
 				return true
 			}
@@ -331,20 +268,20 @@ func hasConfigMap(spec *v1.PodSpec, name string) bool {
 }
 
 func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, error) {
-	for _, c := range spec.InitContainers {
-		if containerHasSecret(c.EnvFrom, c.Env, name) {
+	for i := range spec.InitContainers {
+		if containerHasSecret(spec.InitContainers[i].EnvFrom, spec.InitContainers[i].Env, name) {
 			return true, nil
 		}
 	}
 
-	for _, c := range spec.Containers {
-		if containerHasSecret(c.EnvFrom, c.Env, name) {
+	for i := range spec.Containers {
+		if containerHasSecret(spec.Containers[i].EnvFrom, spec.Containers[i].Env, name) {
 			return true, nil
 		}
 	}
 
-	for _, c := range spec.EphemeralContainers {
-		if containerHasSecret(c.EnvFrom, c.Env, name) {
+	for i := range spec.EphemeralContainers {
+		if containerHasSecret(spec.EphemeralContainers[i].EnvFrom, spec.EphemeralContainers[i].Env, name) {
 			return true, nil
 		}
 	}
@@ -356,7 +293,7 @@ func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, e
 	}
 
 	if saName := spec.ServiceAccountName; saName != "" {
-		o, err := f.Get("v1/serviceaccounts", client.FQN(ns, saName), wait, labels.Everything())
+		o, err := f.Get(client.SaGVR, client.FQN(ns, saName), wait, labels.Everything())
 		if err != nil {
 			return false, err
 		}
@@ -374,13 +311,14 @@ func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, e
 		}
 	}
 
-	for _, v := range spec.Volumes {
-		if sec := v.Secret; sec != nil {
+	for i := range spec.Volumes {
+		if sec := spec.Volumes[i].Secret; sec != nil {
 			if sec.SecretName == name {
 				return true, nil
 			}
 		}
 	}
+
 	return false, nil
 }
 
@@ -418,4 +356,111 @@ func containerHasConfigMap(envFrom []v1.EnvFromSource, env []v1.EnvVar, name str
 	}
 
 	return false
+}
+
+func scaleRes(ctx context.Context, f Factory, gvr *client.GVR, path string, replicas int32) error {
+	ns, n := client.Namespaced(path)
+	auth, err := f.Client().CanI(ns, client.NewGVR(gvr.String()+":scale"), n, []string{client.GetVerb, client.UpdateVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to scale: %s", gvr)
+	}
+
+	dial, err := f.Client().Dial()
+	if err != nil {
+		return err
+	}
+
+	switch gvr {
+	case client.DpGVR:
+		scale, e := dial.AppsV1().Deployments(ns).GetScale(ctx, n, metav1.GetOptions{})
+		if e != nil {
+			return e
+		}
+		scale.Spec.Replicas = replicas
+		_, e = dial.AppsV1().Deployments(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
+		return e
+	case client.StsGVR:
+		scale, e := dial.AppsV1().StatefulSets(ns).GetScale(ctx, n, metav1.GetOptions{})
+		if e != nil {
+			return e
+		}
+		scale.Spec.Replicas = replicas
+		_, e = dial.AppsV1().StatefulSets(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
+		return e
+	default:
+		return fmt.Errorf("unsupported resource for scaling: %s", gvr)
+	}
+}
+
+func restartRes[T runtime.Object](ctx context.Context, f Factory, gvr *client.GVR, path string) error {
+	o, err := f.Get(gvr, path, true, labels.Everything())
+	if err != nil {
+		return err
+	}
+	var r = new(T)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, r)
+	if err != nil {
+		return err
+	}
+
+	ns, n := client.Namespaced(path)
+	auth, err := f.Client().CanI(ns, gvr, n, client.PatchAccess)
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to restart %q", gvr)
+	}
+
+	dial, err := f.Client().Dial()
+	if err != nil {
+		return err
+	}
+
+	before, err := runtime.Encode(scheme.Codecs.LegacyCodec(appsv1.SchemeGroupVersion), *r)
+	if err != nil {
+		return err
+	}
+	after, err := polymorphichelpers.ObjectRestarterFn(*r)
+	if err != nil {
+		return err
+	}
+	diff, err := strategicpatch.CreateTwoWayMergePatch(before, after, *r)
+	if err != nil {
+		return err
+	}
+
+	switch gvr {
+	case client.DpGVR:
+		_, err = dial.AppsV1().Deployments(ns).Patch(
+			ctx,
+			n,
+			types.StrategicMergePatchType,
+			diff,
+			metav1.PatchOptions{},
+		)
+
+	case client.DsGVR:
+		_, err = dial.AppsV1().DaemonSets(ns).Patch(
+			ctx,
+			n,
+			types.StrategicMergePatchType,
+			diff,
+			metav1.PatchOptions{},
+		)
+
+	case client.StsGVR:
+		_, err = dial.AppsV1().StatefulSets(ns).Patch(
+			ctx,
+			n,
+			types.StrategicMergePatchType,
+			diff,
+			metav1.PatchOptions{},
+		)
+	}
+
+	return err
 }

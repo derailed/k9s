@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestContext(t *testing.T) {
-	ctx := view.NewContext(client.NewGVR("contexts"))
+	ctx := view.NewContext(client.CtGVR)
 
-	assert.Nil(t, ctx.Init(makeCtx()))
+	require.NoError(t, ctx.Init(makeCtx()))
 	assert.Equal(t, "Contexts", ctx.Name())
-	assert.Equal(t, 5, len(ctx.Hints()))
+	assert.Len(t, ctx.Hints(), 5)
 }

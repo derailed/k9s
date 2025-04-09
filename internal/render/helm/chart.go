@@ -47,7 +47,7 @@ func (Chart) Header(_ string) model1.Header {
 }
 
 // Render renders a chart to screen.
-func (c Chart) Render(o interface{}, ns string, r *model1.Row) error {
+func (c Chart) Render(o any, _ string, r *model1.Row) error {
 	h, ok := o.(ReleaseRes)
 	if !ok {
 		return fmt.Errorf("expected ReleaseRes, but got %T", o)
@@ -68,7 +68,7 @@ func (c Chart) Render(o interface{}, ns string, r *model1.Row) error {
 	return nil
 }
 
-func (c Chart) diagnose(s string) error {
+func (Chart) diagnose(s string) error {
 	if s != "deployed" {
 		return fmt.Errorf("chart is in an invalid state")
 	}

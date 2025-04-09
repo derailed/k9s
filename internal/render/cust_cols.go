@@ -4,6 +4,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
+	"github.com/itchyny/gojq"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -172,6 +174,13 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			err  error
 		)
 		if unstructured, ok := o.(runtime.Unstructured); ok {
+			if vals, ok := jqParse(cc[idx].Spec, unstructured.UnstructuredContent()); ok {
+				cols[idx] = RenderedCol{
+					Header: cc[idx].Header,
+					Value:  vals,
+				}
+				continue
+			}
 			vals, err = parser.FindResults(unstructured.UnstructuredContent())
 		} else {
 			vals, err = parser.FindResults(reflect.ValueOf(o).Elem().Interface())
@@ -231,4 +240,39 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 	}
 
 	return cols, nil
+}
+
+func isJQSpec(spec string) bool {
+	return len(strings.Split(spec, "|")) > 2
+}
+
+func jqParse(spec string, o map[string]any) (string, bool) {
+	if !isJQSpec(spec) {
+		return "", false
+	}
+
+	exp := spec[1 : len(spec)-1]
+	jq, err := gojq.Parse(exp)
+	if err != nil {
+		slog.Warn("Fail to parse JQ expression", slogs.JQExp, exp, slogs.Error, err)
+		return "", false
+	}
+
+	rr := make([]string, 0, 10)
+	iter := jq.Run(o)
+	for v, ok := iter.Next(); ok; v, ok = iter.Next() {
+		if e, cool := v.(error); cool && e != nil {
+			if errors.Is(e, new(gojq.HaltError)) {
+				break
+			}
+			slog.Error("JQ expression evaluation failed. Check your query", slogs.Error, e)
+			continue
+		}
+		rr = append(rr, fmt.Sprintf("%v", v))
+	}
+	if len(rr) == 0 {
+		return "", false
+	}
+
+	return strings.Join(rr, ","), true
 }

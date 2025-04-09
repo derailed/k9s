@@ -97,9 +97,7 @@ func (s *Stack) Push(c Component) {
 	}
 
 	s.mx.Lock()
-	{
-		s.components = append(s.components, c)
-	}
+	s.components = append(s.components, c)
 	s.mx.Unlock()
 	s.notify(StackPush, c)
 }
@@ -112,12 +110,11 @@ func (s *Stack) Pop() (Component, bool) {
 
 	var c Component
 	s.mx.Lock()
-	{
-		c = s.components[len(s.components)-1]
-		c.Stop()
-		s.components = s.components[:len(s.components)-1]
-	}
+	c = s.components[len(s.components)-1]
+	c.Stop()
+	s.components = s.components[:len(s.components)-1]
 	s.mx.Unlock()
+
 	s.notify(StackPop, c)
 
 	return c, true

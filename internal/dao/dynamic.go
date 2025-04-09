@@ -40,13 +40,11 @@ func (d *Dynamic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 
 func (d *Dynamic) toTable(ctx context.Context, fqn string) ([]runtime.Object, error) {
 	strLabel, _ := ctx.Value(internal.KeyLabels).(string)
-
 	opts := []string{d.gvr.AsResourceName()}
 	ns, n := client.Namespaced(fqn)
 	if n != "" {
 		opts = append(opts, n)
 	}
-
 	allNS := client.IsAllNamespaces(ns)
 	flags := cmdutil.NewMatchVersionFlags(d.getFactory().Client().Config().Flags())
 	f := cmdutil.NewFactory(flags)
@@ -70,7 +68,6 @@ func (d *Dynamic) toTable(ctx context.Context, fqn string) ([]runtime.Object, er
 	if err != nil {
 		return nil, err
 	}
-
 	oo := make([]runtime.Object, 0, len(infos))
 	for _, info := range infos {
 		o, err := decodeIntoTable(info.Object, allNS)
@@ -93,7 +90,6 @@ func decodeIntoTable(obj runtime.Object, allNs bool) (runtime.Object, error) {
 	if isEvent {
 		obj = event.Object.Object
 	}
-
 	if !recognizedTableVersions[obj.GetObjectKind().GroupVersionKind()] {
 		return nil, fmt.Errorf("attempt to decode non-Table object: %v", obj.GetObjectKind().GroupVersionKind())
 	}
@@ -133,7 +129,7 @@ func decodeIntoTable(obj runtime.Object, allNs bool) (runtime.Object, error) {
 			ns = m.GetNamespace()
 		}
 		if allNs {
-			cells := make([]interface{}, 0, len(row.Cells)+1)
+			cells := make([]any, 0, len(row.Cells)+1)
 			cells = append(cells, ns)
 			cells = append(cells, row.Cells...)
 			row.Cells = cells

@@ -98,7 +98,6 @@ func TestIsValid(t *testing.T) {
 			assert.Equal(t, u.e, valid)
 		})
 	}
-
 }
 
 func TestDurationToSecond(t *testing.T) {
@@ -131,7 +130,7 @@ func BenchmarkDurationToSecond(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		durationToSeconds(t)
 	}
 }

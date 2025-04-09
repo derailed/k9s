@@ -21,7 +21,7 @@ import (
 type Pod struct{}
 
 // Render renders an xray node.
-func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
+func (p *Pod) Render(ctx context.Context, ns string, o any) error {
 	pwm, ok := o.(*render.PodWithMetrics)
 	if !ok {
 		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
@@ -38,21 +38,21 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 		return fmt.Errorf("no factory found in context")
 	}
 
-	node := NewTreeNode("v1/pods", client.FQN(po.Namespace, po.Name))
+	node := NewTreeNode(client.PodGVR, client.FQN(po.Namespace, po.Name))
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
 		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	if err := p.containerRefs(ctx, node, po.Namespace, po.Spec); err != nil {
+	if err := p.containerRefs(ctx, node, po.Namespace, &po.Spec); err != nil {
 		return err
 	}
 	p.podVolumeRefs(f, node, po.Namespace, po.Spec.Volumes)
-	if err := p.serviceAccountRef(ctx, f, node, po.Namespace, po.Spec); err != nil {
+	if err := p.serviceAccountRef(ctx, f, node, po.Namespace, &po.Spec); err != nil {
 		return err
 	}
 
-	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, po.Namespace)
+	gvr, nsID := client.NsGVR, client.FQN(client.ClusterScope, po.Namespace)
 	nsn := parent.Find(gvr, nsID)
 	if nsn == nil {
 		nsn = NewTreeNode(gvr, nsID)
@@ -65,9 +65,9 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 
 func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	var re render.Pod
-	phase := re.Phase(&po)
+	phase := re.Phase(po.DeletionTimestamp, &po.Spec, &po.Status)
 	ss := po.Status.ContainerStatuses
-	cr, _, _ := re.Statuses(ss)
+	cr, _, _, _ := re.Statuses(ss)
 	status := OkStatus
 	if cr != len(ss) {
 		status = ToastStatus
@@ -82,20 +82,20 @@ func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	return nil
 }
 
-func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, spec v1.PodSpec) error {
+func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, spec *v1.PodSpec) error {
 	ctx = context.WithValue(ctx, KeyParent, parent)
 	var cre Container
-	for i := 0; i < len(spec.InitContainers); i++ {
+	for i := range len(spec.InitContainers) {
 		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.InitContainers[i]}); err != nil {
 			return err
 		}
 	}
-	for i := 0; i < len(spec.Containers); i++ {
+	for i := range len(spec.Containers) {
 		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.Containers[i]}); err != nil {
 			return err
 		}
 	}
-	for i := 0; i < len(spec.EphemeralContainers); i++ {
+	for i := range len(spec.EphemeralContainers) {
 		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.Containers[i]}); err != nil {
 			return err
 		}
@@ -104,18 +104,18 @@ func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, spec
 	return nil
 }
 
-func (*Pod) serviceAccountRef(ctx context.Context, f dao.Factory, parent *TreeNode, ns string, spec v1.PodSpec) error {
+func (*Pod) serviceAccountRef(ctx context.Context, f dao.Factory, parent *TreeNode, ns string, spec *v1.PodSpec) error {
 	if spec.ServiceAccountName == "" {
 		return nil
 	}
 
-	id := client.FQN(ns, spec.ServiceAccountName)
-	o, err := f.Get("v1/serviceaccounts", id, true, labels.Everything())
+	fqn := client.FQN(ns, spec.ServiceAccountName)
+	o, err := f.Get(client.SaGVR, fqn, true, labels.Everything())
 	if err != nil {
 		return err
 	}
 	if o == nil {
-		addRef(f, parent, "v1/serviceaccounts", id, nil)
+		addRef(f, parent, client.SaGVR, fqn, nil)
 		return nil
 	}
 
@@ -126,22 +126,22 @@ func (*Pod) serviceAccountRef(ctx context.Context, f dao.Factory, parent *TreeNo
 }
 
 func (*Pod) podVolumeRefs(f dao.Factory, parent *TreeNode, ns string, vv []v1.Volume) {
-	for _, v := range vv {
-		sec := v.Secret
+	for i := range vv {
+		sec := vv[i].Secret
 		if sec != nil {
-			addRef(f, parent, "v1/secrets", client.FQN(ns, sec.SecretName), sec.Optional)
+			addRef(f, parent, client.SecGVR, client.FQN(ns, sec.SecretName), sec.Optional)
 			continue
 		}
 
-		cm := v.ConfigMap
+		cm := vv[i].ConfigMap
 		if cm != nil {
-			addRef(f, parent, "v1/configmaps", client.FQN(ns, cm.Name), cm.Optional)
+			addRef(f, parent, client.CmGVR, client.FQN(ns, cm.Name), cm.Optional)
 			continue
 		}
 
-		pvc := v.PersistentVolumeClaim
+		pvc := vv[i].PersistentVolumeClaim
 		if pvc != nil {
-			addRef(f, parent, "v1/persistentvolumeclaims", client.FQN(ns, pvc.ClaimName), nil)
+			addRef(f, parent, client.PvcGVR, client.FQN(ns, pvc.ClaimName), nil)
 		}
 	}
 }

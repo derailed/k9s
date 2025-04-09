@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDaemonSet(t *testing.T) {
-	v := view.NewDaemonSet(client.NewGVR("apps/v1/daemonsets"))
+	v := view.NewDaemonSet(client.DsGVR)
 
-	assert.Nil(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx()))
 	assert.Equal(t, "DaemonSets", v.Name())
-	assert.Equal(t, 17, len(v.Hints()))
+	assert.Len(t, v.Hints(), 17)
 }

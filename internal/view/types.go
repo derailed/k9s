@@ -32,7 +32,7 @@ type (
 	BoostActionsFunc func(ui.KeyActions)
 
 	// EnterFunc represents an enter key action.
-	EnterFunc func(app *App, model ui.Tabular, gvr client.GVR, path string)
+	EnterFunc func(app *App, model ui.Tabular, gvr *client.GVR, path string)
 
 	// LogOptionsFunc returns the active log options.
 	LogOptionsFunc func(bool) (*dao.LogOptions, error)
@@ -86,7 +86,7 @@ type ResourceViewer interface {
 	SetEnvFn(EnvFunc)
 
 	// GVR returns a resource descriptor.
-	GVR() client.GVR
+	GVR() *client.GVR
 
 	// SetContextFn provision a custom context.
 	SetContextFn(ContextFunc)
@@ -127,7 +127,7 @@ type SubjectViewer interface {
 }
 
 // ViewerFunc returns a viewer matching a given gvr.
-type ViewerFunc func(client.GVR) ResourceViewer
+type ViewerFunc func(*client.GVR) ResourceViewer
 
 // MetaViewer represents a registered meta viewer.
 type MetaViewer struct {
@@ -136,4 +136,4 @@ type MetaViewer struct {
 }
 
 // MetaViewers represents a collection of meta viewers.
-type MetaViewers map[client.GVR]MetaViewer
+type MetaViewers map[*client.GVR]MetaViewer

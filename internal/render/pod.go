@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
@@ -18,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/cache"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -46,20 +48,55 @@ const (
 	PhaseEvicted                = "Evicted"
 )
 
+var defaultPodHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "PF"},
+	model1.HeaderColumn{Name: "READY"},
+	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "LAST RESTART", Attrs: model1.Attrs{Align: tview.AlignRight, Time: true, Wide: true}},
+	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
+	model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
+	model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "IP"},
+	model1.HeaderColumn{Name: "NODE"},
+	model1.HeaderColumn{Name: "SERVICE-ACCOUNT", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "NOMINATED NODE", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "READINESS GATES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "QOS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
+const (
+	cacheSize  = 5_000
+	expiration = 5 * time.Minute
+)
+
 // Pod renders a K8s Pod to screen.
 type Pod struct {
 	*Base
+	cache *cache.LRUExpireCache
 }
 
 // NewPod returns a new instance.
 func NewPod() *Pod {
 	return &Pod{
-		Base: new(Base),
+		Base:  new(Base),
+		cache: cache.NewLRUExpireCache(cacheSize),
 	}
 }
 
 // ColorerFunc colors a resource row.
-func (p Pod) ColorerFunc() model1.ColorerFunc {
+func (*Pod) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
@@ -90,42 +127,12 @@ func (p Pod) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (p Pod) Header(_ string) model1.Header {
-	return p.doHeader(p.defaultHeader())
-}
-
-func (Pod) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
-		model1.HeaderColumn{Name: "PF"},
-		model1.HeaderColumn{Name: "READY"},
-		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "LAST RESTART", Attrs: model1.Attrs{Align: tview.AlignRight, Time: true, Wide: true}},
-		model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
-		model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
-		model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "IP"},
-		model1.HeaderColumn{Name: "NODE"},
-		model1.HeaderColumn{Name: "SERVICE-ACCOUNT", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "NOMINATED NODE", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "READINESS GATES", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "QOS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+func (p *Pod) Header(string) model1.Header {
+	return p.doHeader(defaultPodHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
+func (p *Pod) Render(o any, _ string, row *model1.Row) error {
 	pwm, ok := o.(*PodWithMetrics)
 	if !ok {
 		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
@@ -136,9 +143,7 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	if p.specs.isEmpty() {
 		return nil
 	}
-
-	// !BOZO!! Call header 2 times
-	cols, err := p.specs.realize(pwm.Raw, p.defaultHeader(), row)
+	cols, err := p.specs.realize(pwm.Raw, defaultPodHeader, row)
 	if err != nil {
 		return err
 	}
@@ -147,32 +152,49 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	return nil
 }
 
-func (p Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
-	var po v1.Pod
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object, &po); err != nil {
+func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
+	var st v1.PodStatus
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["status"].(map[string]any), &st); err != nil {
 		return err
 	}
+	key := pwm.Raw.GetUID()
+	for _, o := range pwm.Raw.GetOwnerReferences() {
+		if o.Controller != nil && *o.Controller {
+			key = o.UID
+			break
+		}
+	}
 
-	ics := po.Status.InitContainerStatuses
-	_, _, irc := p.Statuses(ics)
-	cs := po.Status.ContainerStatuses
-	cr, _, rc := p.Statuses(cs)
-	lr := p.lastRestart(cs)
+	spec := new(v1.PodSpec)
+	if cspec, ok := p.cache.Get(key); ok {
+		spec = cspec.(*v1.PodSpec)
+	} else {
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["spec"].(map[string]any), spec); err != nil {
+			return err
+		}
+		p.cache.Add(key, spec, expiration)
+	}
+
+	dt := pwm.Raw.GetDeletionTimestamp()
+	_, _, irc, _ := p.Statuses(st.InitContainerStatuses)
+	cr, _, rc, lr := p.Statuses(st.ContainerStatuses)
 
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
 		ccmx = pwm.MX.Containers
 	}
-	c, r := gatherCoMX(&po.Spec, ccmx)
-	phase := p.Phase(&po)
+	c, r := gatherCoMX(spec, ccmx)
+	phase := p.Phase(dt, spec, &st)
 
-	row.ID = client.MetaFQN(po.ObjectMeta)
+	ns, n := pwm.Raw.GetNamespace(), pwm.Raw.GetName()
+
+	row.ID = client.FQN(ns, n)
 	row.Fields = model1.Fields{
-		po.Namespace,
-		po.Name,
-		computeVulScore(po.ObjectMeta, &po.Spec),
+		ns,
+		n,
+		computeVulScore(ns, pwm.Raw.GetLabels(), spec),
 		"●",
-		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
+		strconv.Itoa(cr) + "/" + strconv.Itoa(len(spec.Containers)),
 		phase,
 		strconv.Itoa(rc + irc),
 		ToAge(lr),
@@ -184,21 +206,21 @@ func (p Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		client.ToPercentageStr(c.cpu, r.lcpu),
 		client.ToPercentageStr(c.mem, r.mem),
 		client.ToPercentageStr(c.mem, r.lmem),
-		na(po.Status.PodIP),
-		na(po.Spec.NodeName),
-		na(po.Spec.ServiceAccountName),
-		asNominated(po.Status.NominatedNodeName),
-		asReadinessGate(po),
-		p.mapQOS(po.Status.QOSClass),
-		mapToStr(po.Labels),
-		AsStatus(p.diagnose(phase, cr, len(cs))),
-		ToAge(po.GetCreationTimestamp()),
+		na(st.PodIP),
+		na(spec.NodeName),
+		na(spec.ServiceAccountName),
+		asNominated(st.NominatedNodeName),
+		asReadinessGate(spec, &st),
+		p.mapQOS(st.QOSClass),
+		mapToStr(pwm.Raw.GetLabels()),
+		AsStatus(p.diagnose(phase, cr, len(st.ContainerStatuses))),
+		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (p Pod) diagnose(phase string, cr, ct int) error {
+func (*Pod) diagnose(phase string, cr, ct int) error {
 	if phase == Completed {
 		return nil
 	}
@@ -222,15 +244,15 @@ func asNominated(n string) string {
 	return n
 }
 
-func asReadinessGate(pod v1.Pod) string {
-	if len(pod.Spec.ReadinessGates) == 0 {
+func asReadinessGate(spec *v1.PodSpec, st *v1.PodStatus) string {
+	if len(spec.ReadinessGates) == 0 {
 		return MissingValue
 	}
 
 	var trueConditions int
-	for _, readinessGate := range pod.Spec.ReadinessGates {
+	for _, readinessGate := range spec.ReadinessGates {
 		conditionType := readinessGate.ConditionType
-		for _, condition := range pod.Status.Conditions {
+		for _, condition := range st.Conditions {
 			if condition.Type == conditionType {
 				if condition.Status == "True" {
 					trueConditions++
@@ -240,7 +262,7 @@ func asReadinessGate(pod v1.Pod) string {
 		}
 	}
 
-	return strconv.Itoa(trueConditions) + "/" + strconv.Itoa(len(pod.Spec.ReadinessGates))
+	return strconv.Itoa(trueConditions) + "/" + strconv.Itoa(len(spec.ReadinessGates))
 }
 
 // PodWithMetrics represents a pod and its metrics.
@@ -250,7 +272,7 @@ type PodWithMetrics struct {
 }
 
 // GetObjectKind returns a schema object.
-func (p *PodWithMetrics) GetObjectKind() schema.ObjectKind {
+func (*PodWithMetrics) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 
@@ -276,10 +298,10 @@ func gatherCoMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metric
 	return
 }
 
-func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
+func cosLimits(cc []v1.Container) (cpuQ, memQ resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	for _, c := range cc {
-		limits := c.Resources.Limits
+	for i := range cc {
+		limits := cc[i].Resources.Limits
 		if len(limits) == 0 {
 			continue
 		}
@@ -294,10 +316,10 @@ func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	return *cpu, *mem
 }
 
-func cosRequests(cc []v1.Container) (resource.Quantity, resource.Quantity) {
+func cosRequests(cc []v1.Container) (cpuQ, memQ resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	for _, c := range cc {
-		co := c
+	for i := range cc {
+		co := cc[i]
 		rl := containerRequests(&co)
 		if rl.Cpu() != nil {
 			cpu.Add(*rl.Cpu())
@@ -310,7 +332,7 @@ func cosRequests(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	return *cpu, *mem
 }
 
-func currentRes(ccmx []mv1beta1.ContainerMetrics) (resource.Quantity, resource.Quantity) {
+func currentRes(ccmx []mv1beta1.ContainerMetrics) (cpuQ, memQ resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	if ccmx == nil {
 		return *cpu, *mem
@@ -325,7 +347,7 @@ func currentRes(ccmx []mv1beta1.ContainerMetrics) (resource.Quantity, resource.Q
 }
 
 func (*Pod) mapQOS(class v1.PodQOSClass) string {
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch class {
 	case v1.PodQOSGuaranteed:
 		return "GA"
@@ -337,61 +359,54 @@ func (*Pod) mapQOS(class v1.PodQOSClass) string {
 }
 
 // Statuses reports current pod container statuses.
-func (*Pod) Statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
-	for _, c := range ss {
-		if c.State.Terminated != nil {
+func (*Pod) Statuses(cc []v1.ContainerStatus) (cr, ct, rc int, latest metav1.Time) {
+	for i := range cc {
+		if cc[i].State.Terminated != nil {
 			ct++
 		}
-		if c.Ready {
-			cr = cr + 1
+		if cc[i].Ready {
+			cr++
 		}
-		rc += int(c.RestartCount)
+		rc += int(cc[i].RestartCount)
+
+		if t := cc[i].LastTerminationState.Terminated; t != nil {
+			ts := cc[i].LastTerminationState.Terminated.FinishedAt
+			if latest.IsZero() || ts.After(latest.Time) {
+				latest = ts
+			}
+		}
 	}
 
-	return
-}
-
-// lastRestart returns the last container restart time.
-func (*Pod) lastRestart(ss []v1.ContainerStatus) (latest metav1.Time) {
-	for _, c := range ss {
-		if c.LastTerminationState.Terminated == nil {
-			continue
-		}
-		ts := c.LastTerminationState.Terminated.FinishedAt
-		if latest.IsZero() || ts.After(latest.Time) {
-			latest = ts
-		}
-	}
 	return
 }
 
 // Phase reports the given pod phase.
-func (p *Pod) Phase(po *v1.Pod) string {
-	status := string(po.Status.Phase)
-	if po.Status.Reason != "" {
-		if po.DeletionTimestamp != nil && po.Status.Reason == NodeUnreachablePodReason {
+func (p *Pod) Phase(dt *metav1.Time, spec *v1.PodSpec, st *v1.PodStatus) string {
+	status := string(st.Phase)
+	if st.Reason != "" {
+		if dt != nil && st.Reason == NodeUnreachablePodReason {
 			return "Unknown"
 		}
-		status = po.Status.Reason
+		status = st.Reason
 	}
 
-	status, ok := p.initContainerPhase(po, status)
+	status, ok := p.initContainerPhase(spec, st, status)
 	if ok {
 		return status
 	}
 
-	status, ok = p.containerPhase(po.Status, status)
+	status, ok = p.containerPhase(st, status)
 	if ok && status == Completed {
 		status = Running
 	}
-	if po.DeletionTimestamp == nil {
+	if dt == nil {
 		return status
 	}
 
 	return Terminating
 }
 
-func (*Pod) containerPhase(st v1.PodStatus, status string) (string, bool) {
+func (*Pod) containerPhase(st *v1.PodStatus, status string) (string, bool) {
 	var running bool
 	for i := len(st.ContainerStatuses) - 1; i >= 0; i-- {
 		cs := st.ContainerStatuses[i]
@@ -414,14 +429,15 @@ func (*Pod) containerPhase(st v1.PodStatus, status string) (string, bool) {
 	return status, running
 }
 
-func (*Pod) initContainerPhase(po *v1.Pod, status string) (string, bool) {
-	count := len(po.Spec.InitContainers)
+func (*Pod) initContainerPhase(spec *v1.PodSpec, pst *v1.PodStatus, status string) (string, bool) {
+	count := len(spec.InitContainers)
 	rs := make(map[string]bool, count)
-	for _, c := range po.Spec.InitContainers {
-		rs[c.Name] = restartableInitCO(c.RestartPolicy)
+	for i := range spec.InitContainers {
+		co := spec.InitContainers[i]
+		rs[co.Name] = restartableInitCO(co.RestartPolicy)
 	}
-	for i, cs := range po.Status.InitContainerStatuses {
-		if s := checkInitContainerStatus(cs, i, count, rs[cs.Name]); s != "" {
+	for i := range pst.InitContainerStatuses {
+		if s := checkInitContainerStatus(&pst.InitContainerStatuses[i], i, count, rs[pst.InitContainerStatuses[i].Name]); s != "" {
 			return s, true
 		}
 	}
@@ -432,7 +448,7 @@ func (*Pod) initContainerPhase(po *v1.Pod, status string) (string, bool) {
 // ----------------------------------------------------------------------------
 // Helpers..
 
-func checkInitContainerStatus(cs v1.ContainerStatus, count, initCount int, restartable bool) string {
+func checkInitContainerStatus(cs *v1.ContainerStatus, count, initCount int, restartable bool) string {
 	switch {
 	case cs.State.Terminated != nil:
 		if cs.State.Terminated.ExitCode == 0 {
@@ -486,7 +502,7 @@ func PodStatus(pod *v1.Pod) string {
 				reason = "Init:" + container.State.Terminated.Reason
 			}
 			initializing = true
-		case container.State.Waiting != nil && len(container.State.Waiting.Reason) > 0 && container.State.Waiting.Reason != "PodInitializing":
+		case container.State.Waiting != nil && container.State.Waiting.Reason != "" && container.State.Waiting.Reason != "PodInitializing":
 			reason = "Init:" + container.State.Waiting.Reason
 			initializing = true
 		default:
@@ -499,17 +515,18 @@ func PodStatus(pod *v1.Pod) string {
 		var hasRunning bool
 		for i := len(pod.Status.ContainerStatuses) - 1; i >= 0; i-- {
 			container := pod.Status.ContainerStatuses[i]
-			if container.State.Waiting != nil && container.State.Waiting.Reason != "" {
+			switch {
+			case container.State.Waiting != nil && container.State.Waiting.Reason != "":
 				reason = container.State.Waiting.Reason
-			} else if container.State.Terminated != nil && container.State.Terminated.Reason != "" {
+			case container.State.Terminated != nil && container.State.Terminated.Reason != "":
 				reason = container.State.Terminated.Reason
-			} else if container.State.Terminated != nil && container.State.Terminated.Reason == "" {
+			case container.State.Terminated != nil && container.State.Terminated.Reason == "":
 				if container.State.Terminated.Signal != 0 {
 					reason = fmt.Sprintf("Signal:%d", container.State.Terminated.Signal)
 				} else {
 					reason = fmt.Sprintf("ExitCode:%d", container.State.Terminated.ExitCode)
 				}
-			} else if container.Ready && container.State.Running != nil {
+			case container.Ready && container.State.Running != nil:
 				hasRunning = true
 			}
 		}
@@ -548,7 +565,8 @@ func restartableInitCO(p *v1.ContainerRestartPolicy) bool {
 
 func filterSidecarCO(cc []v1.Container) []v1.Container {
 	rcc := make([]v1.Container, 0, len(cc))
-	for _, c := range cc {
+	for i := range cc {
+		c := cc[i]
 		if c.RestartPolicy != nil && *c.RestartPolicy == v1.ContainerRestartPolicyAlways {
 			rcc = append(rcc, c)
 		}

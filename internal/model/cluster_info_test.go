@@ -17,7 +17,7 @@ func init() {
 
 func TestClusterMetaDelta(t *testing.T) {
 	uu := map[string]struct {
-		o, n model.ClusterMeta
+		o, n *model.ClusterMeta
 		e    bool
 	}{
 		"empty": {
@@ -45,7 +45,7 @@ func TestClusterMetaDelta(t *testing.T) {
 
 // Helpers...
 
-func makeClusterMeta(cluster string) model.ClusterMeta {
+func makeClusterMeta(cluster string) *model.ClusterMeta {
 	m := model.NewClusterMeta()
 	m.Cluster = cluster
 	m.Cpu, m.Mem = 10, 20

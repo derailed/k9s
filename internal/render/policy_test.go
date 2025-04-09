@@ -10,11 +10,12 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPolicyResMerge(t *testing.T) {
 	uu := map[string]struct {
-		p1, p2, e render.PolicyRes
+		p1, p2, e *render.PolicyRes
 		err       error
 	}{
 		"simple": {
@@ -58,7 +59,7 @@ func TestPolicyRender(t *testing.T) {
 		Verbs:          []string{"get", "list", "watch"},
 	}
 
-	assert.Nil(t, p.Render(o, "fred", &r))
+	require.NoError(t, p.Render(&o, "fred", &r))
 	assert.Equal(t, "blee/res", r.ID)
 	assert.Equal(t, model1.Fields{
 		"blee",

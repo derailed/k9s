@@ -99,7 +99,7 @@ func TestPromptColor(t *testing.T) {
 		model.AddListener(prompt)
 
 		model.SetActive(true)
-		assert.Equal(t, prompt.GetBorderColor(), testCase.expectedColor)
+		assert.Equal(t, testCase.expectedColor, prompt.GetBorderColor())
 	}
 }
 
@@ -146,6 +146,6 @@ func TestPromptStyleChanged(t *testing.T) {
 		prompt.StylesChanged(newStyles)
 
 		model.SetActive(true)
-		assert.Equal(t, prompt.GetBorderColor(), testCase.expectedColor)
+		assert.Equal(t, testCase.expectedColor, prompt.GetBorderColor())
 	}
 }

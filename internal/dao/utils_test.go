@@ -20,14 +20,14 @@ import (
 )
 
 type testFactory struct {
-	inventory map[string]map[string][]runtime.Object
+	inventory map[string]map[*client.GVR][]runtime.Object
 }
 
 func makeFactory() dao.Factory {
 	return &testFactory{
-		inventory: map[string]map[string][]runtime.Object{
+		inventory: map[string]map[*client.GVR][]runtime.Object{
 			"kube-system": {
-				"v1/secrets": {
+				client.SecGVR: {
 					load("secret"),
 				},
 			},
@@ -37,10 +37,10 @@ func makeFactory() dao.Factory {
 
 var _ dao.Factory = &testFactory{}
 
-func (f *testFactory) Client() client.Connection {
+func (*testFactory) Client() client.Connection {
 	return nil
 }
-func (f *testFactory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runtime.Object, error) {
+func (f *testFactory) Get(gvr *client.GVR, fqn string, _ bool, _ labels.Selector) (runtime.Object, error) {
 	ns, po := path.Split(fqn)
 	ns = strings.Trim(ns, "/")
 
@@ -52,21 +52,21 @@ func (f *testFactory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runt
 
 	return nil, nil
 }
-func (f *testFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
+func (f *testFactory) List(gvr *client.GVR, ns string, _ bool, _ labels.Selector) ([]runtime.Object, error) {
 	return f.inventory[ns][gvr], nil
 }
 
-func (f *testFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
+func (*testFactory) ForResource(string, *client.GVR) (informers.GenericInformer, error) {
 	return nil, nil
 }
-func (f *testFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
+func (*testFactory) CanForResource(string, *client.GVR, []string) (informers.GenericInformer, error) {
 	return nil, nil
 }
-func (f *testFactory) WaitForCacheSync() {}
-func (f *testFactory) Forwarders() watch.Forwarders {
+func (*testFactory) WaitForCacheSync() {}
+func (*testFactory) Forwarders() watch.Forwarders {
 	return nil
 }
-func (f *testFactory) DeleteForwarder(string) {}
+func (*testFactory) DeleteForwarder(string) {}
 
 func load(n string) *unstructured.Unstructured {
 	raw, _ := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))

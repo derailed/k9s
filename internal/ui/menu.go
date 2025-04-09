@@ -47,8 +47,8 @@ func NewMenu(styles *config.Styles) *Menu {
 func (m *Menu) StylesChanged(s *config.Styles) {
 	m.styles = s
 	m.SetBackgroundColor(s.BgColor())
-	for row := 0; row < m.GetRowCount(); row++ {
-		for col := 0; col < m.GetColumnCount(); col++ {
+	for row := range m.GetRowCount() {
+		for col := range m.GetColumnCount() {
 			if c := m.GetCell(row, col); c != nil {
 				c.BackgroundColor = s.BgColor()
 			}
@@ -62,7 +62,7 @@ func (m *Menu) StackPushed(c model.Component) {
 }
 
 // StackPopped notifies a component was removed.
-func (m *Menu) StackPopped(o, top model.Component) {
+func (m *Menu) StackPopped(_, top model.Component) {
 	if top != nil {
 		m.HydrateMenu(top.Hints())
 	} else {
@@ -85,15 +85,15 @@ func (m *Menu) HydrateMenu(hh model.MenuHints) {
 	if m.hasDigits(hh) {
 		colCount++
 	}
-	for row := 0; row < maxRows; row++ {
+	for row := range maxRows {
 		table[row] = make(model.MenuHints, colCount)
 	}
 	t := m.buildMenuTable(hh, table, colCount)
 
-	for row := 0; row < len(t); row++ {
-		for col := 0; col < len(t[row]); col++ {
+	for row := range t {
+		for col := range len(t[row]) {
 			c := tview.NewTableCell(t[row][col])
-			if len(t[row][col]) == 0 {
+			if t[row][col] == "" {
 				c = tview.NewTableCell("")
 			}
 			c.SetBackgroundColor(m.styles.BgColor())
@@ -102,7 +102,7 @@ func (m *Menu) HydrateMenu(hh model.MenuHints) {
 	}
 }
 
-func (m *Menu) hasDigits(hh model.MenuHints) bool {
+func (*Menu) hasDigits(hh model.MenuHints) bool {
 	for _, h := range hh {
 		if !h.Visible {
 			continue
@@ -160,12 +160,13 @@ func (m *Menu) formatMenu(h model.MenuHint, size int) string {
 	if h.Mnemonic == "" || h.Description == "" {
 		return ""
 	}
+	styles := m.styles.Frame()
 	i, err := strconv.Atoi(h.Mnemonic)
 	if err == nil {
-		return formatNSMenu(i, h.Description, m.styles.Frame())
+		return formatNSMenu(i, h.Description, &styles)
 	}
 
-	return formatPlainMenu(h, size, m.styles.Frame())
+	return formatPlainMenu(h, size, &styles)
 }
 
 // ----------------------------------------------------------------------------
@@ -195,7 +196,7 @@ func ToMnemonic(s string) string {
 	return "<" + keyConv(strings.ToLower(s)) + ">"
 }
 
-func formatNSMenu(i int, name string, styles config.Frame) string {
+func formatNSMenu(i int, name string, styles *config.Frame) string {
 	fmat := strings.Replace(menuIndexFmt, "[key", "["+styles.Menu.NumKeyColor.String(), 1)
 	fmat = strings.ReplaceAll(fmat, ":bg:", ":"+styles.Title.BgColor.String()+":")
 	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor.String(), 1)
@@ -204,7 +205,7 @@ func formatNSMenu(i int, name string, styles config.Frame) string {
 	return fmt.Sprintf(fmat, i, name)
 }
 
-func formatPlainMenu(h model.MenuHint, size int, styles config.Frame) string {
+func formatPlainMenu(h model.MenuHint, size int, styles *config.Frame) string {
 	menuFmt := " [key:-:b]%-" + strconv.Itoa(size+2) + "s [fg:-:fgstyle]%s "
 	fmat := strings.Replace(menuFmt, "[key", "["+styles.Menu.KeyColor.String(), 1)
 	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor.String(), 1)

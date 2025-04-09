@@ -22,7 +22,7 @@ import (
 
 // Describe tracks describable resources.
 type Describe struct {
-	gvr         client.GVR
+	gvr         *client.GVR
 	inUpdate    int32
 	path        string
 	query       string
@@ -33,7 +33,7 @@ type Describe struct {
 }
 
 // NewDescribe returns a new describe resource model.
-func NewDescribe(gvr client.GVR, path string) *Describe {
+func NewDescribe(gvr *client.GVR, path string) *Describe {
 	return &Describe{
 		gvr:         gvr,
 		path:        path,
@@ -42,7 +42,7 @@ func NewDescribe(gvr client.GVR, path string) *Describe {
 }
 
 // GVR returns the resource gvr.
-func (d *Describe) GVR() client.GVR {
+func (d *Describe) GVR() *client.GVR {
 	return d.gvr
 }
 
@@ -52,7 +52,7 @@ func (d *Describe) GetPath() string {
 }
 
 // SetOptions toggle model options.
-func (d *Describe) SetOptions(context.Context, ViewerToggleOpts) {}
+func (*Describe) SetOptions(context.Context, ViewerToggleOpts) {}
 
 // Filter filters the model.
 func (d *Describe) Filter(q string) {
@@ -91,7 +91,7 @@ func (d *Describe) fireResourceFailed(err error) {
 }
 
 // ClearFilter clear out the filter.
-func (d *Describe) ClearFilter() {
+func (*Describe) ClearFilter() {
 }
 
 // Peek returns current model state.
@@ -172,11 +172,7 @@ func (d *Describe) reconcile(ctx context.Context) error {
 }
 
 // Describe describes a given resource.
-func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (string, error) {
-	defer func(t time.Time) {
-		slog.Debug("Describe model elapsed", slogs.Elapsed, time.Since(t))
-	}(time.Now())
-
+func (d *Describe) describe(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	meta, err := getMeta(ctx, gvr)
 	if err != nil {
 		return "", err

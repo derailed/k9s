@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSecretNew(t *testing.T) {
-	s := view.NewSecret(client.NewGVR("v1/secrets"))
+	s := view.NewSecret(client.SecGVR)
 
-	assert.Nil(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx()))
 	assert.Equal(t, "Secrets", s.Name())
-	assert.Equal(t, 8, len(s.Hints()))
+	assert.Len(t, s.Hints(), 8)
 }

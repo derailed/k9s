@@ -9,13 +9,14 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 func TestContextHeader(t *testing.T) {
 	var c render.Context
 
-	assert.Equal(t, 4, len(c.Header("")))
+	assert.Len(t, c.Header(""), 4)
 }
 
 func TestContextRender(t *testing.T) {
@@ -48,7 +49,7 @@ func TestContextRender(t *testing.T) {
 			row := model1.NewRow(4)
 			err := r.Render(uc.ctx, "", &row)
 
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, uc.e, row)
 		})
 	}
@@ -59,6 +60,6 @@ func TestContextRender(t *testing.T) {
 
 type config struct{}
 
-func (k config) CurrentContextName() (string, error) {
+func (config) CurrentContextName() (string, error) {
 	return "fred", nil
 }

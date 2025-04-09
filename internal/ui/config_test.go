@@ -17,19 +17,20 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func TestSkinnedContext(t *testing.T) {
-	assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/k9s-test"))
-	assert.NoError(t, config.InitLocs())
-	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
+	require.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/k9s-test"))
+	require.NoError(t, config.InitLocs())
+	defer require.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
 
 	sf := filepath.Join("..", "config", "testdata", "skins", "black-and-wtf.yaml")
 	raw, err := os.ReadFile(sf)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	tf := filepath.Join(config.AppSkinsDir, "black-and-wtf.yaml")
-	assert.NoError(t, os.WriteFile(tf, raw, data.DefaultFileMod))
+	require.NoError(t, os.WriteFile(tf, raw, data.DefaultFileMod))
 
 	var cfg ui.Configurator
 	cfg.Config = mock.NewMockConfig()
@@ -43,7 +44,7 @@ func TestSkinnedContext(t *testing.T) {
 		mock.NewMockConnection(),
 		mock.NewMockKubeSettings(&flags))
 	_, err = cfg.Config.K9s.ActivateContext("ct-1-1")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	cfg.Config.K9s.UI = config.UI{Skin: "black-and-wtf"}
 	cfg.RefreshStyles(newMockSynchronizer())
 	assert.True(t, cfg.HasSkin())
@@ -52,12 +53,12 @@ func TestSkinnedContext(t *testing.T) {
 }
 
 func TestBenchConfig(t *testing.T) {
-	assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
-	assert.NoError(t, config.InitLocs())
-	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
+	require.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
+	require.NoError(t, config.InitLocs())
+	defer require.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
 
-	bc, error := config.EnsureBenchmarksCfgFile("cl-1", "ct-1")
-	assert.NoError(t, error)
+	bc, err := config.EnsureBenchmarksCfgFile("cl-1", "ct-1")
+	require.NoError(t, err)
 	assert.Equal(t, "/tmp/test-config/clusters/cl-1/ct-1/benchmarks.yaml", bc)
 }
 
@@ -69,10 +70,10 @@ func newMockSynchronizer() synchronizer {
 	return synchronizer{}
 }
 
-func (s synchronizer) Flash() *model.Flash {
+func (synchronizer) Flash() *model.Flash {
 	return model.NewFlash(100 * time.Millisecond)
 }
-func (s synchronizer) Logo() *ui.Logo         { return nil }
-func (s synchronizer) UpdateClusterInfo()     {}
-func (s synchronizer) QueueUpdateDraw(func()) {}
-func (s synchronizer) QueueUpdate(func())     {}
+func (synchronizer) Logo() *ui.Logo         { return nil }
+func (synchronizer) UpdateClusterInfo()     {}
+func (synchronizer) QueueUpdateDraw(func()) {}
+func (synchronizer) QueueUpdate(func())     {}

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -61,7 +62,7 @@ type Pulse struct {
 	*tview.Grid
 
 	app      *App
-	gvr      client.GVR
+	gvr      *client.GVR
 	model    *model.Pulse
 	cancelFn context.CancelFunc
 	actions  *ui.KeyActions
@@ -69,7 +70,7 @@ type Pulse struct {
 }
 
 // NewPulse returns a new alias view.
-func NewPulse(gvr client.GVR) ResourceViewer {
+func NewPulse(gvr *client.GVR) ResourceViewer {
 	return &Pulse{
 		Grid:    tview.NewGrid(),
 		model:   model.NewPulse(gvr.String()),
@@ -77,9 +78,9 @@ func NewPulse(gvr client.GVR) ResourceViewer {
 	}
 }
 
-func (p *Pulse) SetCommand(*cmd.Interpreter)      {}
-func (p *Pulse) SetFilter(string)                 {}
-func (p *Pulse) SetLabelFilter(map[string]string) {}
+func (*Pulse) SetCommand(*cmd.Interpreter)      {}
+func (*Pulse) SetFilter(string)                 {}
+func (*Pulse) SetLabelFilter(map[string]string) {}
 
 // Init initializes the view.
 func (p *Pulse) Init(ctx context.Context) error {
@@ -93,19 +94,19 @@ func (p *Pulse) Init(ctx context.Context) error {
 	}
 
 	p.charts = []Graphable{
-		p.makeGA(image.Point{X: 0, Y: 0}, image.Point{X: 2, Y: 2}, "apps/v1/deployments"),
-		p.makeGA(image.Point{X: 0, Y: 2}, image.Point{X: 2, Y: 2}, "apps/v1/replicasets"),
-		p.makeGA(image.Point{X: 0, Y: 4}, image.Point{X: 2, Y: 2}, "apps/v1/statefulsets"),
-		p.makeGA(image.Point{X: 0, Y: 6}, image.Point{X: 2, Y: 2}, "apps/v1/daemonsets"),
-		p.makeSP(image.Point{X: 2, Y: 0}, image.Point{X: 3, Y: 2}, "v1/pods"),
-		p.makeSP(image.Point{X: 2, Y: 2}, image.Point{X: 3, Y: 2}, "v1/events"),
-		p.makeSP(image.Point{X: 2, Y: 4}, image.Point{X: 3, Y: 2}, "batch/v1/jobs"),
-		p.makeSP(image.Point{X: 2, Y: 6}, image.Point{X: 3, Y: 2}, "v1/persistentvolumes"),
+		p.makeGA(image.Point{X: 0, Y: 0}, image.Point{X: 2, Y: 2}, client.DpGVR),
+		p.makeGA(image.Point{X: 0, Y: 2}, image.Point{X: 2, Y: 2}, client.RsGVR),
+		p.makeGA(image.Point{X: 0, Y: 4}, image.Point{X: 2, Y: 2}, client.StsGVR),
+		p.makeGA(image.Point{X: 0, Y: 6}, image.Point{X: 2, Y: 2}, client.DsGVR),
+		p.makeSP(image.Point{X: 2, Y: 0}, image.Point{X: 3, Y: 2}, client.PodGVR),
+		p.makeSP(image.Point{X: 2, Y: 2}, image.Point{X: 3, Y: 2}, client.EvGVR),
+		p.makeSP(image.Point{X: 2, Y: 4}, image.Point{X: 3, Y: 2}, client.JobGVR),
+		p.makeSP(image.Point{X: 2, Y: 6}, image.Point{X: 3, Y: 2}, client.PvGVR),
 	}
 	if p.app.Conn().HasMetrics() {
 		p.charts = append(p.charts,
-			p.makeSP(image.Point{X: 5, Y: 0}, image.Point{X: 2, Y: 4}, "cpu"),
-			p.makeSP(image.Point{X: 5, Y: 4}, image.Point{X: 2, Y: 4}, "mem"),
+			p.makeSP(image.Point{X: 5, Y: 0}, image.Point{X: 2, Y: 4}, client.CpuGVR),
+			p.makeSP(image.Point{X: 5, Y: 4}, image.Point{X: 2, Y: 4}, client.MemGVR),
 		)
 	}
 	p.bindKeys()
@@ -166,24 +167,23 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 		nn[1] = "gray"
 	}
 
-	gvr := client.NewGVR(c.GVR)
 	switch c.GVR {
-	case "cpu":
+	case client.CpuGVR:
 		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
 		v.SetLegend(fmt.Sprintf(cpuFmt,
-			cases.Title(language.Und, cases.NoLower).String(gvr.R()),
-			p.app.Config.K9s.Thresholds.SeverityColor("cpu", perc),
+			cases.Title(language.Und, cases.NoLower).String(c.GVR.R()),
+			p.app.Config.K9s.Thresholds.SeverityColor(config.CPU, perc),
 			render.PrintPerc(perc),
 			nn[0],
 			render.AsThousands(c.Tally(health.S1)),
 			nn[1],
 			render.AsThousands(c.Tally(health.S2)),
 		))
-	case "mem":
+	case client.MemGVR:
 		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
 		v.SetLegend(fmt.Sprintf(memFmt,
-			cases.Title(language.Und, cases.NoLower).String(gvr.R()),
-			p.app.Config.K9s.Thresholds.SeverityColor("memory", perc),
+			cases.Title(language.Und, cases.NoLower).String(c.GVR.R()),
+			p.app.Config.K9s.Thresholds.SeverityColor(config.MEM, perc),
 			render.PrintPerc(perc),
 			nn[0],
 			render.AsThousands(c.Tally(health.S1)),
@@ -192,7 +192,7 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 		))
 	default:
 		v.SetLegend(fmt.Sprintf(genFmat,
-			cases.Title(language.Und, cases.NoLower).String(gvr.R()),
+			cases.Title(language.Und, cases.NoLower).String(c.GVR.R()),
 			nn[0],
 			c.Tally(health.S1),
 			nn[1],
@@ -215,7 +215,8 @@ func (p *Pulse) bindKeys() {
 	}))
 
 	for i, v := range p.charts {
-		t := cases.Title(language.Und, cases.NoLower).String(client.NewGVR(v.ID()).R())
+		tt := strings.Split(v.ID(), "/")
+		t := cases.Title(language.Und, cases.NoLower).String(tt[len(tt)-1])
 		p.actions.Add(ui.NumKeys[i], ui.NewKeyAction(t, p.sparkFocusCmd(i), true))
 	}
 }
@@ -255,15 +256,15 @@ func (p *Pulse) Stop() {
 }
 
 // Refresh updates the view.
-func (p *Pulse) Refresh() {}
+func (*Pulse) Refresh() {}
 
 // GVR returns a resource descriptor.
-func (p *Pulse) GVR() client.GVR {
+func (p *Pulse) GVR() *client.GVR {
 	return p.gvr
 }
 
 // Name returns the component name.
-func (p *Pulse) Name() string {
+func (*Pulse) Name() string {
 	return pulseTitle
 }
 
@@ -273,19 +274,19 @@ func (p *Pulse) App() *App {
 }
 
 // SetInstance sets specific resource instance.
-func (p *Pulse) SetInstance(string) {}
+func (*Pulse) SetInstance(string) {}
 
 // SetEnvFn sets the custom environment function.
-func (p *Pulse) SetEnvFn(EnvFunc) {}
+func (*Pulse) SetEnvFn(EnvFunc) {}
 
 // AddBindKeysFn sets up extra key bindings.
-func (p *Pulse) AddBindKeysFn(BindKeysFunc) {}
+func (*Pulse) AddBindKeysFn(BindKeysFunc) {}
 
 // SetContextFn sets custom context.
-func (p *Pulse) SetContextFn(ContextFunc) {}
+func (*Pulse) SetContextFn(ContextFunc) {}
 
 // GetTable return the view table if any.
-func (p *Pulse) GetTable() *Table {
+func (*Pulse) GetTable() *Table {
 	return nil
 }
 
@@ -300,26 +301,26 @@ func (p *Pulse) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (p *Pulse) ExtraHints() map[string]string {
+func (*Pulse) ExtraHints() map[string]string {
 	return nil
 }
 
 func (p *Pulse) sparkFocusCmd(i int) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(*tcell.EventKey) *tcell.EventKey {
 		p.app.SetFocus(p.charts[i])
 		return nil
 	}
 }
 
-func (p *Pulse) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (p *Pulse) enterCmd(*tcell.EventKey) *tcell.EventKey {
 	v := p.App().GetFocus()
 	s, ok := v.(Graphable)
 	if !ok {
 		return nil
 	}
-	res := client.NewGVR(s.ID()).R()
-	if res == "cpu" || res == "mem" {
-		res = "pod"
+	res := s.ID()
+	if res == client.CpuGVR.String() || res == client.MemGVR.String() {
+		res = client.PodGVR.String()
 	}
 	p.App().gotoResource(res+" all", "", false, true)
 
@@ -327,7 +328,7 @@ func (p *Pulse) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *Pulse) nextFocusCmd(direction int) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(*tcell.EventKey) *tcell.EventKey {
 		v := p.app.GetFocus()
 		index := findIndex(p.charts, v)
 		p.GetItem(index).Focus = false
@@ -340,16 +341,16 @@ func (p *Pulse) nextFocusCmd(direction int) func(evt *tcell.EventKey) *tcell.Eve
 	}
 }
 
-func (p *Pulse) makeSP(loc image.Point, span image.Point, gvr string) *tchart.SparkLine {
-	s := tchart.NewSparkLine(gvr)
+func (p *Pulse) makeSP(loc, span image.Point, gvr *client.GVR) *tchart.SparkLine {
+	s := tchart.NewSparkLine(gvr.String())
 	s.SetBackgroundColor(p.app.Styles.Charts().BgColor.Color())
 	s.SetBorderPadding(0, 1, 0, 1)
-	if cc, ok := p.app.Styles.Charts().ResourceColors[gvr]; ok {
+	if cc, ok := p.app.Styles.Charts().ResourceColors[gvr.String()]; ok {
 		s.SetSeriesColors(cc.Colors()...)
 	} else {
 		s.SetSeriesColors(p.app.Styles.Charts().DefaultChartColors.Colors()...)
 	}
-	s.SetLegend(fmt.Sprintf(" %s ", cases.Title(language.Und, cases.NoLower).String(client.NewGVR(gvr).R())))
+	s.SetLegend(fmt.Sprintf(" %s ", cases.Title(language.Und, cases.NoLower).String(gvr.R())))
 	s.SetInputCapture(p.keyboard)
 	s.SetMultiSeries(true)
 	p.AddItem(s, loc.X, loc.Y, span.X, span.Y, 0, 0, true)
@@ -357,17 +358,15 @@ func (p *Pulse) makeSP(loc image.Point, span image.Point, gvr string) *tchart.Sp
 	return s
 }
 
-func (p *Pulse) makeGA(loc image.Point, span image.Point, gvr string) *tchart.Gauge {
-	g := tchart.NewGauge(gvr)
-	// g.SetResolution(3)
+func (p *Pulse) makeGA(loc, span image.Point, gvr *client.GVR) *tchart.Gauge {
+	g := tchart.NewGauge(gvr.String())
 	g.SetBackgroundColor(p.app.Styles.Charts().BgColor.Color())
-	// g.SetBorderPadding(0, 1, 0, 1)
-	if cc, ok := p.app.Styles.Charts().ResourceColors[gvr]; ok {
+	if cc, ok := p.app.Styles.Charts().ResourceColors[gvr.String()]; ok {
 		g.SetSeriesColors(cc.Colors()...)
 	} else {
 		g.SetSeriesColors(p.app.Styles.Charts().DefaultDialColors.Colors()...)
 	}
-	g.SetLegend(fmt.Sprintf(" %s ", cases.Title(language.Und, cases.NoLower).String(client.NewGVR(gvr).R())))
+	g.SetLegend(fmt.Sprintf(" %s ", cases.Title(language.Und, cases.NoLower).String(gvr.R())))
 	g.SetInputCapture(p.keyboard)
 	p.AddItem(g, loc.X, loc.Y, span.X, span.Y, 0, 0, true)
 
@@ -398,9 +397,9 @@ func findIndex(pp []Graphable, p tview.Primitive) int {
 	return 0
 }
 
-func findIndexGVR(pp []Graphable, gvr string) (int, bool) {
+func findIndexGVR(pp []Graphable, gvr *client.GVR) (int, bool) {
 	for i, v := range pp {
-		if v.ID() == gvr {
+		if v.ID() == gvr.String() {
 			return i, true
 		}
 	}

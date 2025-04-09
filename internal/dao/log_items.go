@@ -171,25 +171,25 @@ func (l *LogItems) DumpDebug(m string) {
 }
 
 // Filter filters out log items based on given filter.
-func (l *LogItems) Filter(index int, q string, showTime bool) ([]int, [][]int, error) {
+func (l *LogItems) Filter(index int, q string, showTime bool) (matches []int, indices [][]int, err error) {
 	if q == "" {
-		return nil, nil, nil
+		return
 	}
 	if f, ok := internal.IsFuzzySelector(q); ok {
-		mm, ii := l.fuzzyFilter(index, f, showTime)
-		return mm, ii, nil
+		matches, indices = l.fuzzyFilter(index, f, showTime)
+		return
 	}
-	matches, indices, err := l.filterLogs(index, q, showTime)
+	matches, indices, err = l.filterLogs(index, q, showTime)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 
 	return matches, indices, nil
 }
 
-func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]int) {
+func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) (matches []int, indices [][]int) {
 	q = strings.TrimSpace(q)
-	matches, indices := make([]int, 0, len(l.items)), make([][]int, 0, 10)
+	matches, indices = make([]int, 0, len(l.items)), make([][]int, 0, len(l.items))
 	mm := fuzzy.Find(q, l.StrLines(index, showTime))
 	for _, m := range mm {
 		matches = append(matches, m.Index)
@@ -199,7 +199,7 @@ func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]i
 	return matches, indices
 }
 
-func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]int, error) {
+func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int, indices [][]int, err error) {
 	var invert bool
 	if internal.IsInverseSelector(q) {
 		invert = true
@@ -209,7 +209,7 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]in
 	if err != nil {
 		return nil, nil, err
 	}
-	matches, indices := make([]int, 0, len(l.items)), make([][]int, 0, 10)
+	matches, indices = make([]int, 0, len(l.items)), make([][]int, 0, len(l.items))
 	ll := make([][]byte, len(l.items[index:]))
 	l.Lines(index, showTime, ll)
 	for i, line := range ll {

@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -28,12 +29,12 @@ import (
 
 func TestContainerList(t *testing.T) {
 	c := dao.Container{}
-	c.Init(makePodFactory(), client.NewGVR("containers"))
+	c.Init(makePodFactory(), client.CoGVR)
 
 	ctx := context.WithValue(context.Background(), internal.KeyPath, "fred/p1")
 	oo, err := c.List(ctx, "")
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(oo))
+	require.NoError(t, err)
+	assert.Len(t, oo, 1)
 }
 
 // ----------------------------------------------------------------------------
@@ -45,58 +46,58 @@ func makeConn() *conn {
 	return &conn{}
 }
 
-func (c *conn) Config() *client.Config                                { return nil }
-func (c *conn) Dial() (kubernetes.Interface, error)                   { return nil, nil }
-func (c *conn) DialLogs() (kubernetes.Interface, error)               { return nil, nil }
-func (c *conn) ConnectionOK() bool                                    { return true }
-func (c *conn) SwitchContext(ctx string) error                        { return nil }
-func (c *conn) CachedDiscovery() (*disk.CachedDiscoveryClient, error) { return nil, nil }
-func (c *conn) RestConfig() (*restclient.Config, error)               { return nil, nil }
-func (c *conn) MXDial() (*versioned.Clientset, error)                 { return nil, nil }
-func (c *conn) DynDial() (dynamic.Interface, error)                   { return nil, nil }
-func (c *conn) HasMetrics() bool                                      { return false }
-func (c *conn) CheckConnectivity() bool                               { return false }
-func (c *conn) IsNamespaced(n string) bool                            { return false }
-func (c *conn) SupportsResource(group string) bool                    { return false }
-func (c *conn) ValidNamespaces() ([]v1.Namespace, error)              { return nil, nil }
-func (c *conn) SupportsRes(grp string, versions []string) (string, bool, error) {
-	return "", false, nil
-}
-func (c *conn) ServerVersion() (*version.Info, error)                { return nil, nil }
-func (c *conn) CurrentNamespaceName() (string, error)                { return "", nil }
-func (c *conn) CanI(ns, gvr, n string, verbs []string) (bool, error) { return true, nil }
-func (c *conn) ActiveContext() string                                { return "" }
-func (c *conn) ActiveNamespace() string                              { return "" }
-func (c *conn) IsValidNamespace(string) bool                         { return true }
-func (c *conn) ValidNamespaceNames() (client.NamespaceNames, error)  { return nil, nil }
-func (c *conn) IsActiveNamespace(string) bool                        { return false }
+func (*conn) Config() *client.Config                                   { return nil }
+func (*conn) Dial() (kubernetes.Interface, error)                      { return nil, nil }
+func (*conn) DialLogs() (kubernetes.Interface, error)                  { return nil, nil }
+func (*conn) ConnectionOK() bool                                       { return true }
+func (*conn) SwitchContext(string) error                               { return nil }
+func (*conn) CachedDiscovery() (*disk.CachedDiscoveryClient, error)    { return nil, nil }
+func (*conn) RestConfig() (*restclient.Config, error)                  { return nil, nil }
+func (*conn) MXDial() (*versioned.Clientset, error)                    { return nil, nil }
+func (*conn) DynDial() (dynamic.Interface, error)                      { return nil, nil }
+func (*conn) HasMetrics() bool                                         { return false }
+func (*conn) CheckConnectivity() bool                                  { return false }
+func (*conn) IsNamespaced(string) bool                                 { return false }
+func (*conn) SupportsResource(string) bool                             { return false }
+func (*conn) ValidNamespaces() ([]v1.Namespace, error)                 { return nil, nil }
+func (*conn) SupportsRes(string, []string) (a string, b bool, e error) { return "", false, nil }
+func (*conn) ServerVersion() (*version.Info, error)                    { return nil, nil }
+func (*conn) CurrentNamespaceName() (string, error)                    { return "", nil }
+func (*conn) CanI(string, *client.GVR, string, []string) (bool, error) { return true, nil }
+func (*conn) ActiveContext() string                                    { return "" }
+func (*conn) ActiveNamespace() string                                  { return "" }
+func (*conn) IsValidNamespace(string) bool                             { return true }
+func (*conn) ValidNamespaceNames() (client.NamespaceNames, error)      { return nil, nil }
+func (*conn) IsActiveNamespace(string) bool                            { return false }
 
 type podFactory struct{}
 
 var _ dao.Factory = &testFactory{}
 
-func (f podFactory) Client() client.Connection {
+func (podFactory) Client() client.Connection {
 	return makeConn()
 }
 
-func (f podFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
-	var m map[string]interface{}
+func (podFactory) Get(*client.GVR, string, bool, labels.Selector) (runtime.Object, error) {
+	var m map[string]any
 	if err := yaml.Unmarshal([]byte(poYaml()), &m); err != nil {
 		return nil, err
 	}
 	return &unstructured.Unstructured{Object: m}, nil
 }
 
-func (f podFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
+func (podFactory) List(*client.GVR, string, bool, labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }
-func (f podFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) { return nil, nil }
-func (f podFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
+func (podFactory) ForResource(string, *client.GVR) (informers.GenericInformer, error) {
 	return nil, nil
 }
-func (f podFactory) WaitForCacheSync()            {}
-func (f podFactory) Forwarders() watch.Forwarders { return nil }
-func (f podFactory) DeleteForwarder(string)       {}
+func (podFactory) CanForResource(string, *client.GVR, []string) (informers.GenericInformer, error) {
+	return nil, nil
+}
+func (podFactory) WaitForCacheSync()            {}
+func (podFactory) Forwarders() watch.Forwarders { return nil }
+func (podFactory) DeleteForwarder(string)       {}
 
 func makePodFactory() dao.Factory {
 	return podFactory{}

@@ -18,7 +18,7 @@ type User struct {
 }
 
 // NewUser returns a new subject viewer.
-func NewUser(gvr client.GVR) ResourceViewer {
+func NewUser(gvr *client.GVR) ResourceViewer {
 	u := User{ResourceViewer: NewBrowser(gvr)}
 	u.AddBindKeysFn(u.bindKeys)
 	u.SetContextFn(u.subjectCtx)
@@ -34,7 +34,7 @@ func (u *User) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (u *User) subjectCtx(ctx context.Context) context.Context {
+func (*User) subjectCtx(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeySubjectKind, "User")
 }
 

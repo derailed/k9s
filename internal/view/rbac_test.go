@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRbacNew(t *testing.T) {
-	v := view.NewRbac(client.NewGVR("rbac"))
+	v := view.NewRbac(client.RbacGVR)
 
-	assert.Nil(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx()))
 	assert.Equal(t, "Rbac", v.Name())
-	assert.Equal(t, 5, len(v.Hints()))
+	assert.Len(t, v.Hints(), 5)
 }

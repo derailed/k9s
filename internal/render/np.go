@@ -15,6 +15,21 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultNPHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "POD-SELECTOR"},
+	model1.HeaderColumn{Name: "ING-SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "ING-PORTS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "ING-BLOCK", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "EGR-SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "EGR-PORTS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "EGR-BLOCK", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // NetworkPolicy renders a K8s NetworkPolicy to screen.
 type NetworkPolicy struct {
 	Base
@@ -22,31 +37,14 @@ type NetworkPolicy struct {
 
 // Header returns a header row.
 func (p NetworkPolicy) Header(_ string) model1.Header {
-	return p.doHeader(p.defaultHeader())
-}
-
-func (NetworkPolicy) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "POD-SELECTOR"},
-		model1.HeaderColumn{Name: "ING-SELECTOR", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "ING-PORTS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "ING-BLOCK", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "EGR-SELECTOR", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "EGR-PORTS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "EGR-BLOCK", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return p.doHeader(defaultNPHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (p NetworkPolicy) Render(o interface{}, ns string, row *model1.Row) error {
+func (p NetworkPolicy) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected NetworkPolicy, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	if err := p.defaultRow(raw, row); err != nil {
 		return err
@@ -55,7 +53,7 @@ func (p NetworkPolicy) Render(o interface{}, ns string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := p.specs.realize(raw, p.defaultHeader(), row)
+	cols, err := p.specs.realize(raw, defaultNPHeader, row)
 	if err != nil {
 		return err
 	}
@@ -64,7 +62,7 @@ func (p NetworkPolicy) Render(o interface{}, ns string, row *model1.Row) error {
 	return nil
 }
 
-func (n NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
+func (NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var np netv1.NetworkPolicy
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &np)
 	if err != nil {
@@ -81,7 +79,7 @@ func (n NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row)
 	if len(np.Spec.PodSelector.MatchExpressions) > 0 {
 		podSel += "::" + expToStr(np.Spec.PodSelector.MatchExpressions)
 	}
-	r.ID = client.MetaFQN(np.ObjectMeta)
+	r.ID = client.MetaFQN(&np.ObjectMeta)
 	r.Fields = model1.Fields{
 		np.Namespace,
 		np.Name,
@@ -102,7 +100,7 @@ func (n NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row)
 
 // Helpers...
 
-func ingress(ii []netv1.NetworkPolicyIngressRule) (string, string, string) {
+func ingress(ii []netv1.NetworkPolicyIngressRule) (port, selector, block string) {
 	var ports, sels, blocks []string
 	for _, i := range ii {
 		if p := portsToStr(i.Ports); p != "" {
@@ -119,7 +117,7 @@ func ingress(ii []netv1.NetworkPolicyIngressRule) (string, string, string) {
 	return strings.Join(ports, ","), strings.Join(sels, ","), strings.Join(blocks, ",")
 }
 
-func egress(ee []netv1.NetworkPolicyEgressRule) (string, string, string) {
+func egress(ee []netv1.NetworkPolicyEgressRule) (port, selector, block string) {
 	var ports, sels, blocks []string
 	for _, e := range ee {
 		if p := portsToStr(e.Ports); p != "" {
@@ -151,7 +149,7 @@ func portsToStr(pp []netv1.NetworkPolicyPort) string {
 	return strings.Join(ports, ",")
 }
 
-func peersToStr(pp []netv1.NetworkPolicyPeer) (string, string) {
+func peersToStr(pp []netv1.NetworkPolicyPeer) (selector, ip string) {
 	sels := make([]string, 0, len(pp))
 	ips := make([]string, 0, len(pp))
 	for _, p := range pp {

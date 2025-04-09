@@ -24,7 +24,7 @@ func (Dir) IsGeneric() bool {
 
 // ColorerFunc colors a resource row.
 func (Dir) ColorerFunc() model1.ColorerFunc {
-	return func(ns string, _ model1.Header, re *model1.RowEvent) tcell.Color {
+	return func(string, model1.Header, *model1.RowEvent) tcell.Color {
 		return tcell.ColorCadetBlue
 	}
 }
@@ -32,7 +32,7 @@ func (Dir) ColorerFunc() model1.ColorerFunc {
 func (Dir) SetViewSetting(*config.ViewSetting) {}
 
 // Header returns a header row.
-func (Dir) Header(ns string) model1.Header {
+func (Dir) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 	}
@@ -40,7 +40,7 @@ func (Dir) Header(ns string) model1.Header {
 
 // Render renders a K8s resource to screen.
 // BOZO!! Pass in a row with pre-alloc fields??
-func (Dir) Render(o interface{}, ns string, r *model1.Row) error {
+func (Dir) Render(o any, _ string, r *model1.Row) error {
 	d, ok := o.(DirRes)
 	if !ok {
 		return fmt.Errorf("expected DirRes, but got %T", o)

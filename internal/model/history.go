@@ -48,7 +48,7 @@ func (h *History) Back() bool {
 	}
 
 	h.previousCommandIndex = h.activeCommandIndex
-	h.activeCommandIndex = h.activeCommandIndex - 1
+	h.activeCommandIndex--
 	return true
 }
 
@@ -64,7 +64,7 @@ func (h *History) Forward() bool {
 	}
 
 	h.previousCommandIndex = h.activeCommandIndex
-	h.activeCommandIndex = h.activeCommandIndex + 1
+	h.activeCommandIndex++
 	return true
 }
 

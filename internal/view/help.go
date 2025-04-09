@@ -39,7 +39,7 @@ type Help struct {
 // NewHelp returns a new help viewer.
 func NewHelp(app *App) *Help {
 	return &Help{
-		Table: NewTable(client.NewGVR("help")),
+		Table: NewTable(client.HlpGVR),
 		hints: app.Content.Top().Hints,
 	}
 }
@@ -154,7 +154,7 @@ func (h *Help) addExtras(extras map[string]string, col, size int) {
 	}
 }
 
-func (h *Help) showNav() model.MenuHints {
+func (*Help) showNav() model.MenuHints {
 	return model.MenuHints{
 		{
 			Mnemonic:    "g",
@@ -224,7 +224,7 @@ func (h *Help) showHotKeys() (model.MenuHints, error) {
 	return mm, nil
 }
 
-func (h *Help) showGeneral() model.MenuHints {
+func (*Help) showGeneral() model.MenuHints {
 	return model.MenuHints{
 		{
 			Mnemonic:    "?",
@@ -341,8 +341,8 @@ func (h *Help) updateStyle() {
 		info    = style.Foreground(h.app.Styles.K9s.Help.FgColor.Color())
 		heading = style.Foreground(h.app.Styles.K9s.Help.SectionColor.Color())
 	)
-	for col := 0; col < h.GetColumnCount(); col++ {
-		for row := 0; row < h.GetRowCount(); row++ {
+	for col := range h.GetColumnCount() {
+		for row := range h.GetRowCount() {
 			c := h.GetCell(row, col)
 			if c == nil {
 				continue
@@ -384,7 +384,7 @@ func (h *Help) titleCell(title string) *tview.TableCell {
 	return c
 }
 
-func padCellWithRef(s string, width int, ref interface{}) *tview.TableCell {
+func padCellWithRef(s string, width int, ref any) *tview.TableCell {
 	return padCell(s, width).SetReference(ref)
 }
 

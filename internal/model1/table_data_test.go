@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func init() {
@@ -329,7 +330,7 @@ func TestTableDataUpdate(t *testing.T) {
 func TestTableDataDelete(t *testing.T) {
 	uu := map[string]struct {
 		re, e *RowEvents
-		kk    map[string]struct{}
+		kk    sets.Set[string]
 	}{
 		"ordered": {
 			re: NewRowEventsWithEvts(
@@ -337,7 +338,7 @@ func TestTableDataDelete(t *testing.T) {
 				RowEvent{Row: Row{ID: "B", Fields: Fields{"0", "2", "3"}}},
 				RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "2", "3"}}},
 			),
-			kk: map[string]struct{}{"A": {}, "C": {}},
+			kk: sets.New[string]("A", "C"),
 			e: NewRowEventsWithEvts(
 				RowEvent{Row: Row{ID: "A", Fields: Fields{"1", "2", "3"}}},
 				RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "2", "3"}}},
@@ -350,7 +351,7 @@ func TestTableDataDelete(t *testing.T) {
 				RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "2", "3"}}},
 				RowEvent{Row: Row{ID: "D", Fields: Fields{"10", "2", "3"}}},
 			),
-			kk: map[string]struct{}{"C": {}, "A": {}},
+			kk: sets.New[string]("C", "A"),
 			e: NewRowEventsWithEvts(
 				RowEvent{Row: Row{ID: "A", Fields: Fields{"1", "2", "3"}}},
 				RowEvent{Row: Row{ID: "C", Fields: Fields{"10", "2", "3"}}},

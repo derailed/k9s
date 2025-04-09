@@ -29,7 +29,7 @@ func TestMetaFQN(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, model.MetaFQN(u.meta))
+			assert.Equal(t, u.e, model.MetaFQN(&u.meta))
 		})
 	}
 }

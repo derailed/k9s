@@ -26,8 +26,8 @@ type ShellPod struct {
 }
 
 // NewShellPod returns a new instance.
-func NewShellPod() ShellPod {
-	return ShellPod{
+func NewShellPod() *ShellPod {
+	return &ShellPod{
 		Image:     defaultDockerShellImage,
 		Namespace: "default",
 		Limits:    defaultLimits(),
@@ -35,15 +35,13 @@ func NewShellPod() ShellPod {
 }
 
 // Validate validates the configuration.
-func (s ShellPod) Validate() ShellPod {
+func (s *ShellPod) Validate() {
 	if s.Image == "" {
 		s.Image = defaultDockerShellImage
 	}
 	if len(s.Limits) == 0 {
 		s.Limits = defaultLimits()
 	}
-
-	return s
 }
 
 func defaultLimits() Limits {

@@ -37,7 +37,7 @@ func NewTree() *Tree {
 }
 
 // Init initializes the view.
-func (t *Tree) Init(ctx context.Context) error {
+func (t *Tree) Init(context.Context) error {
 	t.BindKeys()
 	t.SetBorder(true)
 	t.SetBorderAttributes(tcell.AttrBold)
@@ -85,7 +85,7 @@ func (t *Tree) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (t *Tree) ExtraHints() map[string]string {
+func (*Tree) ExtraHints() map[string]string {
 	return nil
 }
 
@@ -105,11 +105,11 @@ func (t *Tree) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (t *Tree) noopCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (*Tree) noopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (t *Tree) toggleCollapseCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Tree) toggleCollapseCmd(*tcell.EventKey) *tcell.EventKey {
 	t.expandNodes = !t.expandNodes
 	t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 		if parent != nil {

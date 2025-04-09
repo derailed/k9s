@@ -10,12 +10,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func mustMap(o runtime.Object, field string) map[string]interface{} {
+func mustMap(o runtime.Object, field string) map[string]any {
 	u, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		panic("no unstructured")
 	}
-	m, ok := u.Object[field].(map[string]interface{})
+	m, ok := u.Object[field].(map[string]any)
 	if !ok {
 		panic(fmt.Sprintf("map extract failed for %q", field))
 	}
@@ -23,20 +23,20 @@ func mustMap(o runtime.Object, field string) map[string]interface{} {
 	return m
 }
 
-func mustSlice(o runtime.Object, field string) []interface{} {
+func mustSlice(o runtime.Object, field string) []any {
 	u, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return []interface{}{}
+		return nil
 	}
-	s, ok := u.Object[field].([]interface{})
+	s, ok := u.Object[field].([]any)
 	if !ok {
-		return []interface{}{}
+		return nil
 	}
 
 	return s
 }
 
-func mustField(o map[string]interface{}, field string) interface{} {
+func mustField(o map[string]any, field string) any {
 	f, ok := o[field]
 	if !ok {
 		panic(fmt.Sprintf("no field for %q", field))

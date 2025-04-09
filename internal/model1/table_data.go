@@ -19,6 +19,7 @@ import (
 	"github.com/sahilm/fuzzy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // SortFn represent a function that can sort columnar data.
@@ -48,26 +49,26 @@ type TableData struct {
 	header    Header
 	rowEvents *RowEvents
 	namespace string
-	gvr       client.GVR
+	gvr       *client.GVR
 	mx        sync.RWMutex
 }
 
 // NewTableData returns a new table.
-func NewTableData(gvr client.GVR) *TableData {
+func NewTableData(gvr *client.GVR) *TableData {
 	return &TableData{
 		gvr:       gvr,
 		rowEvents: NewRowEvents(10),
 	}
 }
 
-func NewTableDataFull(gvr client.GVR, ns string, h Header, re *RowEvents) *TableData {
+func NewTableDataFull(gvr *client.GVR, ns string, h Header, re *RowEvents) *TableData {
 	t := NewTableDataWithRows(gvr, h, re)
 	t.namespace = ns
 
 	return t
 }
 
-func NewTableDataWithRows(gvr client.GVR, h Header, re *RowEvents) *TableData {
+func NewTableDataWithRows(gvr *client.GVR, h Header, re *RowEvents) *TableData {
 	t := NewTableData(gvr)
 	t.header, t.rowEvents = h, re
 
@@ -130,7 +131,7 @@ func (t *TableData) HeaderCount() int {
 	return len(t.header)
 }
 
-func (t *TableData) HeadCol(n string, w bool) (HeaderColumn, int) {
+func (t *TableData) HeadCol(n string, w bool) (header HeaderColumn, idx int) {
 	idx, ok := t.header.IndexOf(n, w)
 	if !ok {
 		return HeaderColumn{}, -1
@@ -242,15 +243,13 @@ func (t *TableData) GetNamespace() string {
 
 func (t *TableData) Reset(ns string) {
 	t.mx.Lock()
-	{
-		t.namespace = ns
-	}
+	t.namespace = ns
 	t.mx.Unlock()
 
 	t.Clear()
 }
 
-func (t *TableData) Reconcile(ctx context.Context, r Renderer, oo []runtime.Object) error {
+func (t *TableData) Render(_ context.Context, r Renderer, oo []runtime.Object) error {
 	var rows Rows
 	if len(oo) > 0 {
 		if r.IsGeneric() {
@@ -425,32 +424,30 @@ func (t *TableData) SetHeader(ns string, h Header) {
 // Update computes row deltas and update the table data.
 func (t *TableData) Update(rows Rows) {
 	empty := t.Empty()
-	kk := make(map[string]struct{}, len(rows))
+	kk := sets.New[string]()
 	var blankDelta DeltaRow
 	t.mx.Lock()
-	{
-		for _, row := range rows {
-			kk[row.ID] = struct{}{}
-			if empty {
-				t.rowEvents.Add(NewRowEvent(EventAdd, row))
-				continue
-			}
-			if index, ok := t.rowEvents.FindIndex(row.ID); ok {
-				ev, ok := t.rowEvents.At(index)
-				if !ok {
-					continue
-				}
-				delta := NewDeltaRow(ev.Row, row, t.header)
-				if delta.IsBlank() {
-					ev.Kind, ev.Deltas, ev.Row = EventUnchanged, blankDelta, row
-					t.rowEvents.Set(index, ev)
-				} else {
-					t.rowEvents.Set(index, NewRowEventWithDeltas(row, delta))
-				}
-				continue
-			}
+	for _, row := range rows {
+		kk.Insert(row.ID)
+		if empty {
 			t.rowEvents.Add(NewRowEvent(EventAdd, row))
+			continue
 		}
+		if index, ok := t.rowEvents.FindIndex(row.ID); ok {
+			ev, ok := t.rowEvents.At(index)
+			if !ok {
+				continue
+			}
+			delta := NewDeltaRow(ev.Row, row, t.header)
+			if delta.IsBlank() {
+				ev.Kind, ev.Deltas, ev.Row = EventUnchanged, blankDelta, row
+				t.rowEvents.Set(index, ev)
+			} else {
+				t.rowEvents.Set(index, NewRowEventWithDeltas(row, delta))
+			}
+			continue
+		}
+		t.rowEvents.Add(NewRowEvent(EventAdd, row))
 	}
 	t.mx.Unlock()
 
@@ -460,28 +457,28 @@ func (t *TableData) Update(rows Rows) {
 }
 
 // Delete removes items in cache that are no longer valid.
-func (t *TableData) Delete(newKeys map[string]struct{}) {
+func (t *TableData) Delete(newKeys sets.Set[string]) {
 	t.mx.Lock()
-	{
-		victims := make([]string, 0, 10)
-		t.rowEvents.Range(func(_ int, e RowEvent) bool {
-			if _, ok := newKeys[e.Row.ID]; !ok {
-				victims = append(victims, e.Row.ID)
-			} else {
-				delete(newKeys, e.Row.ID)
-			}
-			return true
-		})
-		for _, id := range victims {
-			if err := t.rowEvents.Delete(id); err != nil {
-				slog.Error("Table delete failed",
-					slogs.Error, err,
-					slogs.Message, id,
-				)
-			}
+	defer t.mx.Unlock()
+
+	victims := sets.New[string]()
+	t.rowEvents.Range(func(_ int, e RowEvent) bool {
+		if newKeys.Has(e.Row.ID) {
+			delete(newKeys, e.Row.ID)
+		} else {
+			victims.Insert(e.Row.ID)
+		}
+		return true
+	})
+
+	for _, id := range victims.UnsortedList() {
+		if err := t.rowEvents.Delete(id); err != nil {
+			slog.Error("Table delete failed",
+				slogs.Error, err,
+				slogs.Message, id,
+			)
 		}
 	}
-	t.mx.Unlock()
 }
 
 // Diff checks if two tables are equal.

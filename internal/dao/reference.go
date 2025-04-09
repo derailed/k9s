@@ -21,13 +21,13 @@ type Reference struct {
 }
 
 // List collects all references.
-func (r *Reference) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	gvr, ok := ctx.Value(internal.KeyGVR).(client.GVR)
+func (r *Reference) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+	gvr, ok := ctx.Value(internal.KeyGVR).(*client.GVR)
 	if !ok {
 		return nil, errors.New("no context for gvr found")
 	}
 	switch gvr {
-	case SaGVR:
+	case client.SaGVR:
 		return r.ScanSA(ctx)
 	default:
 		return r.Scan(ctx)
@@ -35,7 +35,7 @@ func (r *Reference) List(ctx context.Context, ns string) ([]runtime.Object, erro
 }
 
 // Get fetch a given reference.
-func (r *Reference) Get(ctx context.Context, path string) (runtime.Object, error) {
+func (*Reference) Get(context.Context, string) (runtime.Object, error) {
 	panic("NYI")
 }
 

@@ -18,7 +18,7 @@ import (
 type DaemonSet struct{}
 
 // Render renders an xray node.
-func (d *DaemonSet) Render(ctx context.Context, ns string, o interface{}) error {
+func (d *DaemonSet) Render(ctx context.Context, ns string, o any) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Unstructured, but got %T", o)
@@ -34,7 +34,7 @@ func (d *DaemonSet) Render(ctx context.Context, ns string, o interface{}) error 
 		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	root := NewTreeNode("apps/v1/daemonsets", client.FQN(ds.Namespace, ds.Name))
+	root := NewTreeNode(client.DsGVR, client.FQN(ds.Namespace, ds.Name))
 	oo, err := locatePods(ctx, ds.Namespace, ds.Spec.Selector)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (d *DaemonSet) Render(ctx context.Context, ns string, o interface{}) error 
 	if root.IsLeaf() {
 		return nil
 	}
-	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, ds.Namespace)
+	gvr, nsID := client.NsGVR, client.FQN(client.ClusterScope, ds.Namespace)
 	nsn := parent.Find(gvr, nsID)
 	if nsn == nil {
 		nsn = NewTreeNode(gvr, nsID)

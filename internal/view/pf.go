@@ -29,7 +29,7 @@ type PortForward struct {
 }
 
 // NewPortForward returns a new viewer.
-func NewPortForward(gvr client.GVR) ResourceViewer {
+func NewPortForward(gvr *client.GVR) ResourceViewer {
 	p := PortForward{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -60,8 +60,8 @@ func (p *PortForward) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	b := NewBenchmark(client.NewGVR("benchmarks"))
+func (p *PortForward) showBenchCmd(*tcell.EventKey) *tcell.EventKey {
+	b := NewBenchmark(client.BeGVR)
 	b.SetContextFn(p.getContext)
 	if err := p.App().inject(b, false); err != nil {
 		p.App().Flash().Err(err)
@@ -80,7 +80,7 @@ func (p *PortForward) getContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyPath, path)
 }
 
-func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (p *PortForward) toggleBenchCmd(*tcell.EventKey) *tcell.EventKey {
 	if p.bench != nil {
 		p.App().Status(model.FlashErr, "Benchmark Canceled!")
 		p.bench.Cancel()
@@ -103,7 +103,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	base := ui.TrimCell(p.GetTable().SelectTable, r, col)
 	var err error
-	p.bench, err = perf.NewBenchmark(base, p.App().version, cfg)
+	p.bench, err = perf.NewBenchmark(base, p.App().version, &cfg)
 	if err != nil {
 		p.App().Flash().Errf("Bench failed %v", err)
 		p.App().ClearStatus(false)
@@ -171,10 +171,11 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	dialog.ShowConfirm(p.App().Styles.Dialog(), p.App().Content.Pages, "Delete", msg, func() {
+	d := p.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, p.App().Content.Pages, "Delete", msg, func() {
 		for _, s := range selections {
 			var pf dao.PortForward
-			pf.Init(p.App().factory, client.NewGVR("portforwards"))
+			pf.Init(p.App().factory, client.PfGVR)
 			if err := pf.Delete(context.Background(), s, nil, dao.DefaultGrace); err != nil {
 				p.App().Flash().Err(err)
 				return

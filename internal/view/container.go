@@ -27,7 +27,7 @@ type Container struct {
 }
 
 // NewContainer returns a new container view.
-func NewContainer(gvr client.GVR) ResourceViewer {
+func NewContainer(gvr *client.GVR) ResourceViewer {
 	c := Container{}
 	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.logOptions)
 	c.SetEnvFn(c.k9sEnv)
@@ -59,7 +59,7 @@ func (c *Container) decorateRows(data *model1.TableData) {
 }
 
 // Name returns the component name.
-func (c *Container) Name() string { return containerTitle }
+func (*Container) Name() string { return containerTitle }
 
 func (c *Container) bindDangerousKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
@@ -115,7 +115,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 	opts := dao.LogOptions{
 		Path:            c.GetTable().Path,
 		Container:       path,
-		Lines:           int64(cfg.TailCount),
+		Lines:           cfg.TailCount,
 		SinceSeconds:    cfg.SinceSeconds,
 		SingleContainer: true,
 		ShowTimestamp:   cfg.ShowTime,
@@ -125,7 +125,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (c *Container) viewLogs(app *App, model ui.Tabular, gvr client.GVR, path string) {
+func (c *Container) viewLogs(*App, ui.Tabular, *client.GVR, string) {
 	c.ResourceViewer.(*LogsExtender).showLogs(c.GetTable().Path, false)
 }
 
@@ -141,7 +141,7 @@ func (c *Container) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 		c.App().Flash().Errf("no port-forward defined")
 		return nil
 	}
-	pf := NewPortForward(client.NewGVR("portforwards"))
+	pf := NewPortForward(client.PfGVR)
 	pf.SetContextFn(c.portForwardContext)
 	if err := c.App().inject(pf, false); err != nil {
 		c.App().Flash().Err(err)

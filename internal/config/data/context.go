@@ -68,7 +68,7 @@ func (c *Context) GetClusterName() string {
 }
 
 // Validate ensures a context config is tip top.
-func (c *Context) Validate(conn client.Connection, contextName, clusterName string) {
+func (c *Context) Validate(conn client.Connection, _, clusterName string) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 

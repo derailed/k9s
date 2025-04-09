@@ -23,7 +23,7 @@ func IsBoolSet(b *bool) bool {
 }
 
 func isStringSet(s *string) bool {
-	return s != nil && len(*s) > 0
+	return s != nil && *s != ""
 }
 
 func isYamlFile(file string) bool {

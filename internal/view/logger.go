@@ -58,10 +58,10 @@ func (l *Logger) Init(_ context.Context) error {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (l *Logger) BufferChanged(_, _ string) {}
+func (*Logger) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
-func (l *Logger) BufferCompleted(_, _ string) {}
+func (*Logger) BufferCompleted(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
 func (l *Logger) BufferActive(state bool, k model.BufferKind) {
@@ -87,7 +87,7 @@ func (l *Logger) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 // StylesChanged notifies the skin changed.
-func (l *Logger) StylesChanged(s *config.Styles) {
+func (l *Logger) StylesChanged(*config.Styles) {
 	l.SetBackgroundColor(l.app.Styles.BgColor())
 	l.SetTextColor(l.app.Styles.FgColor())
 	l.SetBorderFocusColor(l.app.Styles.Frame().Border.FocusColor.Color())
@@ -107,7 +107,7 @@ func (l *Logger) Actions() *ui.KeyActions {
 func (l *Logger) Name() string { return l.title }
 
 // Start starts the view updater.
-func (l *Logger) Start() {}
+func (*Logger) Start() {}
 
 // Stop terminates the updater.
 func (l *Logger) Stop() {
@@ -120,7 +120,7 @@ func (l *Logger) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (l *Logger) ExtraHints() map[string]string {
+func (*Logger) ExtraHints() map[string]string {
 	return nil
 }
 
@@ -133,7 +133,7 @@ func (l *Logger) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (l *Logger) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (l *Logger) eraseCmd(*tcell.EventKey) *tcell.EventKey {
 	if !l.cmdBuff.IsActive() {
 		return nil
 	}
@@ -153,7 +153,7 @@ func (l *Logger) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (l *Logger) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (l *Logger) saveCmd(*tcell.EventKey) *tcell.EventKey {
 	if path, err := saveYAML(l.app.Config.K9s.ContextScreenDumpDir(), l.title, l.GetText(true)); err != nil {
 		l.app.Flash().Err(err)
 	} else {

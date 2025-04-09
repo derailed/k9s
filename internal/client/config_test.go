@@ -12,8 +12,11 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
+
+var kubeConfig = "./testdata/config"
 
 func init() {
 	slog.SetDefault(slog.New(slog.DiscardHandler))
@@ -45,8 +48,6 @@ func TestCallTimeout(t *testing.T) {
 }
 
 func TestConfigCurrentContext(t *testing.T) {
-	kubeConfig := "./testdata/config"
-
 	uu := map[string]struct {
 		context string
 		e       string
@@ -70,14 +71,14 @@ func TestConfigCurrentContext(t *testing.T) {
 			}
 			cfg := client.NewConfig(flags)
 			ctx, err := cfg.CurrentContextName()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.e, ctx)
 		})
 	}
 }
 
 func TestConfigCurrentCluster(t *testing.T) {
-	name, kubeConfig := "blee", "./testdata/config"
+	name := "blee"
 	uu := map[string]struct {
 		flags   *genericclioptions.ConfigFlags
 		cluster string
@@ -102,14 +103,14 @@ func TestConfigCurrentCluster(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			cfg := client.NewConfig(u.flags)
 			ct, err := cfg.CurrentClusterName()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.cluster, ct)
 		})
 	}
 }
 
 func TestConfigCurrentUser(t *testing.T) {
-	name, kubeConfig := "blee", "./testdata/config"
+	name := "blee"
 	uu := map[string]struct {
 		flags *genericclioptions.ConfigFlags
 		user  string
@@ -129,14 +130,13 @@ func TestConfigCurrentUser(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			cfg := client.NewConfig(u.flags)
 			ctx, err := cfg.CurrentUserName()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.user, ctx)
 		})
 	}
 }
 
 func TestConfigCurrentNamespace(t *testing.T) {
-	kubeConfig := "./testdata/config"
 	bleeNS, bleeCTX := "blee", "blee"
 	uu := map[string]struct {
 		flags     *genericclioptions.ConfigFlags
@@ -162,7 +162,7 @@ func TestConfigCurrentNamespace(t *testing.T) {
 			cfg := client.NewConfig(u.flags)
 			ns, err := cfg.CurrentNamespaceName()
 			if ns != "" {
-				assert.Nil(t, err)
+				require.NoError(t, err)
 			}
 			assert.Equal(t, u.namespace, ns)
 		})
@@ -170,7 +170,6 @@ func TestConfigCurrentNamespace(t *testing.T) {
 }
 
 func TestConfigGetContext(t *testing.T) {
-	kubeConfig := "./testdata/config"
 	uu := map[string]struct {
 		cluster string
 		err     error
@@ -201,7 +200,7 @@ func TestConfigGetContext(t *testing.T) {
 }
 
 func TestConfigSwitchContext(t *testing.T) {
-	cluster, kubeConfig := "duh", "./testdata/config"
+	cluster := "duh"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig: &kubeConfig,
 		Context:    &cluster,
@@ -209,14 +208,14 @@ func TestConfigSwitchContext(t *testing.T) {
 
 	cfg := client.NewConfig(&flags)
 	err := cfg.SwitchContext("blee")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	ctx, err := cfg.CurrentContextName()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "blee", ctx)
 }
 
 func TestConfigAccess(t *testing.T) {
-	context, kubeConfig := "duh", "./testdata/config"
+	context := "duh"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig: &kubeConfig,
 		Context:    &context,
@@ -224,12 +223,12 @@ func TestConfigAccess(t *testing.T) {
 
 	cfg := client.NewConfig(&flags)
 	acc, err := cfg.ConfigAccess()
-	assert.Nil(t, err)
-	assert.True(t, len(acc.GetDefaultFilename()) > 0)
+	require.NoError(t, err)
+	assert.NotEmpty(t, acc.GetDefaultFilename())
 }
 
 func TestConfigContextNames(t *testing.T) {
-	cluster, kubeConfig := "duh", "./testdata/config"
+	cluster := "duh"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig: &kubeConfig,
 		Context:    &cluster,
@@ -237,12 +236,12 @@ func TestConfigContextNames(t *testing.T) {
 
 	cfg := client.NewConfig(&flags)
 	cc, err := cfg.ContextNames()
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(cc))
+	require.NoError(t, err)
+	assert.Len(t, cc, 3)
 }
 
 func TestConfigContexts(t *testing.T) {
-	context, kubeConfig := "duh", "./testdata/config"
+	context := "duh"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig: &kubeConfig,
 		Context:    &context,
@@ -250,39 +249,38 @@ func TestConfigContexts(t *testing.T) {
 
 	cfg := client.NewConfig(&flags)
 	cc, err := cfg.Contexts()
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(cc))
+	require.NoError(t, err)
+	assert.Len(t, cc, 3)
 }
 
 func TestConfigDelContext(t *testing.T) {
-	assert.NoError(t, cp("./testdata/config.2", "./testdata/config.1"))
+	require.NoError(t, cp("./testdata/config.2", "./testdata/config.1"))
 
-	context, kubeConfig := "duh", "./testdata/config.1"
+	context, kubeCfg := "duh", "./testdata/config.1"
 	flags := genericclioptions.ConfigFlags{
-		KubeConfig: &kubeConfig,
+		KubeConfig: &kubeCfg,
 		Context:    &context,
 	}
 
 	cfg := client.NewConfig(&flags)
 	err := cfg.DelContext("fred")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	cc, err := cfg.ContextNames()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(cc))
+	require.NoError(t, err)
+	assert.Len(t, cc, 1)
 	_, ok := cc["blee"]
 	assert.True(t, ok)
 }
 
 func TestConfigRestConfig(t *testing.T) {
-	kubeConfig := "./testdata/config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig: &kubeConfig,
 	}
 
 	cfg := client.NewConfig(&flags)
 	rc, err := cfg.RESTConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "https://localhost:3002", rc.Host)
 }
 
@@ -294,12 +292,12 @@ func TestConfigBadConfig(t *testing.T) {
 
 	cfg := client.NewConfig(&flags)
 	_, err := cfg.RESTConfig()
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 // Helpers...
 
-func cp(src string, dst string) error {
+func cp(src, dst string) error {
 	data, err := os.ReadFile(src)
 	if err != nil {
 		return err

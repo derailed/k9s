@@ -52,7 +52,7 @@ func (c) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, 
 	return nil
 }
 func (c) SetRect(int, int, int, int)       {}
-func (c) GetRect() (int, int, int, int)    { return 0, 0, 0, 0 }
+func (c) GetRect() (a, b, c, d int)        { return 0, 0, 0, 0 }
 func (c c) GetFocusable() tview.Focusable  { return c }
 func (c) Focus(func(tview.Primitive))      {}
 func (c) Blur()                            {}

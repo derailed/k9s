@@ -83,7 +83,7 @@ func (p *PortForwardExtender) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	pf := NewPortForward(client.NewGVR("portforwards"))
+	pf := NewPortForward(client.PfGVR)
 	pf.SetContextFn(p.portForwardContext)
 	if err := p.App().inject(pf, false); err != nil {
 		p.App().Flash().Err(err)
@@ -209,9 +209,9 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 	return nil
 }
 
-func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort, map[string]string, error) {
+func fetchPodPorts(f *watch.Factory, path string) (ports map[string][]v1.ContainerPort, anns map[string]string, err error) {
 	slog.Debug("Fetching ports on pod", slogs.FQN, path)
-	o, err := f.Get("v1/pods", path, true, labels.Everything())
+	o, err := f.Get(client.PodGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -223,8 +223,8 @@ func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort
 	}
 
 	pp := make(map[string][]v1.ContainerPort, len(pod.Spec.Containers))
-	for _, co := range pod.Spec.Containers {
-		pp[co.Name] = co.Ports
+	for i := range pod.Spec.Containers {
+		pp[pod.Spec.Containers[i].Name] = pod.Spec.Containers[i].Ports
 	}
 
 	return pp, pod.Annotations, nil

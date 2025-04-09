@@ -64,7 +64,7 @@ func (s *ImageExtender) bindKeys(aa *ui.KeyActions) {
 	aa.Add(ui.KeyI, ui.NewKeyAction("Set Image", s.setImageCmd, false))
 }
 
-func (s *ImageExtender) setImageCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (s *ImageExtender) setImageCmd(*tcell.EventKey) *tcell.EventKey {
 	path := s.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil
@@ -102,10 +102,12 @@ func (s *ImageExtender) makeSetImageForm(fqn string) (*tview.Form, error) {
 	}
 
 	formContainerLines := make([]*imageFormSpec, 0, len(podSpec.InitContainers)+len(podSpec.Containers))
-	for _, spec := range podSpec.InitContainers {
+	for i := range podSpec.InitContainers {
+		spec := podSpec.InitContainers[i]
 		formContainerLines = append(formContainerLines, &imageFormSpec{init: true, name: spec.Name, dockerImage: spec.Image})
 	}
-	for _, spec := range podSpec.Containers {
+	for i := range podSpec.Containers {
+		spec := podSpec.Containers[i]
 		formContainerLines = append(formContainerLines, &imageFormSpec{name: spec.Name, dockerImage: spec.Image})
 	}
 
@@ -148,7 +150,7 @@ func (s *ImageExtender) makeSetImageForm(fqn string) (*tview.Form, error) {
 		})
 	}
 
-	for i := 0; i < f.GetButtonCount(); i++ {
+	for i := range f.GetButtonCount() {
 		f.GetButton(i).
 			SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color()).
 			SetLabelColorActivated(styles.ButtonFocusFgColor.Color())

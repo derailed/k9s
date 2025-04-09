@@ -32,7 +32,7 @@ type HelmChart struct {
 }
 
 // List returns a collection of resources.
-func (h *HelmChart) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+func (h *HelmChart) List(_ context.Context, ns string) ([]runtime.Object, error) {
 	cfg, err := ensureHelmConfig(h.Client().Config().Flags(), ns)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (h *HelmChart) Describe(path string) (string, error) {
 }
 
 // ToYAML returns the chart manifest.
-func (h *HelmChart) ToYAML(path string, showManaged bool) (string, error) {
+func (h *HelmChart) ToYAML(path string, _ bool) (string, error) {
 	ns, n := client.Namespaced(path)
 	cfg, err := ensureHelmConfig(h.Client().Config().Flags(), ns)
 	if err != nil {
@@ -164,7 +164,7 @@ func ensureHelmConfig(flags *genericclioptions.ConfigFlags, ns string) (*action.
 	return cfg, err
 }
 
-func helmLogger(fmat string, args ...interface{}) {
+func helmLogger(fmat string, args ...any) {
 	slog.Debug("Log",
 		slogs.Log, fmt.Sprintf(fmat, args...),
 		slogs.Subsys, "helm",

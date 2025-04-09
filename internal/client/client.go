@@ -88,12 +88,11 @@ func (a *APIClient) ConnectionOK() bool {
 	return a.connOK
 }
 
-func makeSAR(ns, gvr, name string) *authorizationv1.SelfSubjectAccessReview {
+func makeSAR(ns string, gvr *GVR, name string) *authorizationv1.SelfSubjectAccessReview {
 	if ns == ClusterScope {
 		ns = BlankNamespace
 	}
-	spec := NewGVR(gvr)
-	res := spec.GVR()
+	res := gvr.GVR()
 	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
@@ -101,15 +100,15 @@ func makeSAR(ns, gvr, name string) *authorizationv1.SelfSubjectAccessReview {
 				Group:       res.Group,
 				Version:     res.Version,
 				Resource:    res.Resource,
-				Subresource: spec.SubResource(),
+				Subresource: gvr.SubResource(),
 				Name:        name,
 			},
 		},
 	}
 }
 
-func makeCacheKey(ns, gvr, n string, vv []string) string {
-	return ns + ":" + gvr + ":" + n + "::" + strings.Join(vv, ",")
+func makeCacheKey(ns string, gvr *GVR, n string, vv []string) string {
+	return ns + ":" + gvr.String() + ":" + n + "::" + strings.Join(vv, ",")
 }
 
 // ActiveContext returns the current context name.
@@ -147,7 +146,7 @@ func (a *APIClient) clearCache() {
 }
 
 // CanI checks if user has access to a certain resource.
-func (a *APIClient) CanI(ns, gvr, name string, verbs []string) (auth bool, err error) {
+func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth bool, err error) {
 	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
@@ -265,7 +264,7 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 		}
 	}
 
-	ok, err := a.CanI(ClusterScope, "v1/namespaces", "", ListAccess)
+	ok, err := a.CanI(ClusterScope, NsGVR, "", ListAccess)
 	if !ok || err != nil {
 		return nil, fmt.Errorf("user not authorized to list all namespaces")
 	}
@@ -281,8 +280,8 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 		return nil, err
 	}
 	nns := make(NamespaceNames, len(nn.Items))
-	for _, n := range nn.Items {
-		nns[n.Name] = struct{}{}
+	for i := range nn.Items {
+		nns[nn.Items[i].Name] = struct{}{}
 	}
 	a.cache.Add(cacheNSKey, nns, cacheExpiry)
 
@@ -457,11 +456,11 @@ func (a *APIClient) Dial() (kubernetes.Interface, error) {
 	if err != nil {
 		return nil, err
 	}
-	if c, err := kubernetes.NewForConfig(cfg); err != nil {
+	c, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
 		return nil, err
-	} else {
-		a.setClient(c)
 	}
+	a.setClient(c)
 
 	return a.getClient(), nil
 }
@@ -586,7 +585,7 @@ func (a *APIClient) reset() {
 	a.setConnOK(true)
 }
 
-func (a *APIClient) checkCacheBool(key string) (state bool, ok bool) {
+func (a *APIClient) checkCacheBool(key string) (state, ok bool) {
 	v, found := a.cache.Get(key)
 	if !found {
 		return
@@ -617,11 +616,11 @@ func (a *APIClient) supportsMetricsResources() error {
 	if err != nil {
 		return err
 	}
-	for _, grp := range apiGroups.Groups {
-		if grp.Name != metricsapi.GroupName {
+	for i := range apiGroups.Groups {
+		if apiGroups.Groups[i].Name != metricsapi.GroupName {
 			continue
 		}
-		if checkMetricsVersion(grp) {
+		if checkMetricsVersion(&(apiGroups.Groups[i])) {
 			supported = true
 			return nil
 		}
@@ -630,7 +629,7 @@ func (a *APIClient) supportsMetricsResources() error {
 	return metricsUnsupportedErr
 }
 
-func checkMetricsVersion(grp metav1.APIGroup) bool {
+func checkMetricsVersion(grp *metav1.APIGroup) bool {
 	for _, v := range grp.Versions {
 		for _, supportedVersion := range supportedMetricsAPIVersions {
 			if v.Version == supportedVersion {

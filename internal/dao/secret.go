@@ -40,7 +40,7 @@ func (s *Secret) SetDecodeData(b bool) {
 // Decode removes the encoded part from the secret's description and appends the
 // secret's decoded data.
 func (s *Secret) Decode(encodedDescription, path string) (string, error) {
-	o, err := s.getFactory().Get(s.GVR(), path, true, labels.Everything())
+	o, err := s.getFactory().Get(s.gvr, path, true, labels.Everything())
 	if err != nil {
 		return "", err
 	}
@@ -71,7 +71,6 @@ func (s *Secret) Decode(encodedDescription, path string) (string, error) {
 	}
 
 	return body + "\n" + strings.Join(decodedSecrets, "\n"), nil
-
 }
 
 // ExtractSecrets takes an unstructured object and attempts to convert it into a

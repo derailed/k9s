@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -83,7 +84,7 @@ func TestGenericRender(t *testing.T) {
 			re.SetTable(u.ns, u.table)
 
 			assert.Equal(t, u.eHeader, re.Header(u.ns))
-			assert.Nil(t, re.Render(u.table.Rows[0], u.ns, &r))
+			require.NoError(t, re.Render(u.table.Rows[0], u.ns, &r))
 			assert.Equal(t, u.eID, r.ID)
 			assert.Equal(t, u.eFields, r.Fields)
 		})
@@ -130,7 +131,7 @@ func TestGenericCustRender(t *testing.T) {
 			re.SetTable(u.ns, u.table)
 
 			assert.Equal(t, u.eHeader, re.Header(u.ns))
-			assert.Nil(t, re.Render(u.table.Rows[0], u.ns, &r))
+			require.NoError(t, re.Render(u.table.Rows[0], u.ns, &r))
 			assert.Equal(t, u.eID, r.ID)
 			assert.Equal(t, u.eFields, r.Fields)
 		})
@@ -152,17 +153,17 @@ func makeNSGeneric() *metav1beta1.Table {
 			{
 				Object: runtime.RawExtension{
 					Object: &unstructured.Unstructured{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"kind":       "fred",
 							"apiVersion": "v1",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"namespace": "ns1",
 								"name":      "fred",
 							},
 						},
 					},
 				},
-				Cells: []interface{}{
+				Cells: []any{
 					"ns1",
 					"c1",
 					"c2",
@@ -184,16 +185,16 @@ func makeNoNSGeneric() *metav1beta1.Table {
 			{
 				Object: runtime.RawExtension{
 					Object: &unstructured.Unstructured{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"kind":       "fred",
 							"apiVersion": "v1",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name": "fred",
 							},
 						},
 					},
 				},
-				Cells: []interface{}{
+				Cells: []any{
 					"c1",
 					"c2",
 					"c3",
@@ -214,16 +215,16 @@ func makeAgeGeneric() *metav1beta1.Table {
 			{
 				Object: runtime.RawExtension{
 					Object: &unstructured.Unstructured{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"kind":       "fred",
 							"apiVersion": "v1",
-							"metadata": map[string]interface{}{
+							"metadata": map[string]any{
 								"name": "fred",
 							},
 						},
 					},
 				},
-				Cells: []interface{}{
+				Cells: []any{
 					"c1",
 					"2d",
 					"c2",

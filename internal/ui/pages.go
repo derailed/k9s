@@ -87,7 +87,7 @@ func (p *Pages) StackPushed(c model.Component) {
 }
 
 // StackPopped notifies a component was removed.
-func (p *Pages) StackPopped(o, top model.Component) {
+func (p *Pages) StackPopped(o, _ model.Component) {
 	p.delete(o)
 }
 

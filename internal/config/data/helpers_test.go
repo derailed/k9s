@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSanitizeFileName(t *testing.T) {
@@ -65,27 +66,27 @@ func TestHelperInList(t *testing.T) {
 func TestEnsureDirPathNone(t *testing.T) {
 	const mod = 0744
 
-	dir := filepath.Join("/tmp", "k9s-test")
+	dir := filepath.Join(os.TempDir(), "k9s-test")
 	_ = os.Remove(dir)
 
 	path := filepath.Join(dir, "duh.yaml")
-	assert.NoError(t, data.EnsureDirPath(path, mod))
+	require.NoError(t, data.EnsureDirPath(path, mod))
 
 	p, err := os.Stat(dir)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "drwxr--r--", p.Mode().String())
 }
 
 func TestEnsureDirPathNoOpt(t *testing.T) {
 	var mod os.FileMode = 0744
-	dir := filepath.Join("/tmp", "k9s-test")
-	assert.NoError(t, os.RemoveAll(dir))
-	assert.NoError(t, os.Mkdir(dir, mod))
+	dir := filepath.Join(os.TempDir(), "k9s-test")
+	require.NoError(t, os.RemoveAll(dir))
+	require.NoError(t, os.Mkdir(dir, mod))
 
 	path := filepath.Join(dir, "duh.yaml")
-	assert.NoError(t, data.EnsureDirPath(path, mod))
+	require.NoError(t, data.EnsureDirPath(path, mod))
 
 	p, err := os.Stat(dir)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "drwxr--r--", p.Mode().String())
 }

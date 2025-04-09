@@ -59,9 +59,9 @@ func NewDetails(app *App, title, subject, contentType string, searchable bool) *
 	return &d
 }
 
-func (d *Details) SetCommand(*cmd.Interpreter)      {}
-func (d *Details) SetFilter(string)                 {}
-func (d *Details) SetLabelFilter(map[string]string) {}
+func (*Details) SetCommand(*cmd.Interpreter)      {}
+func (*Details) SetFilter(string)                 {}
+func (*Details) SetLabelFilter(map[string]string) {}
 
 // Init initializes the viewer.
 func (d *Details) Init(_ context.Context) error {
@@ -120,7 +120,7 @@ func (d *Details) TextFiltered(lines []string, matches fuzzy.Matches) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (d *Details) BufferChanged(_, _ string) {}
+func (*Details) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
 func (d *Details) BufferCompleted(text, _ string) {
@@ -161,9 +161,9 @@ func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 // StylesChanged notifies the skin changed.
 func (d *Details) StylesChanged(s *config.Styles) {
-	d.SetBackgroundColor(d.app.Styles.BgColor())
-	d.text.SetTextColor(d.app.Styles.FgColor())
-	d.SetBorderFocusColor(d.app.Styles.Frame().Border.FocusColor.Color())
+	d.SetBackgroundColor(s.BgColor())
+	d.text.SetTextColor(s.FgColor())
+	d.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
 	d.TextChanged(d.model.Peek())
 }
 
@@ -192,7 +192,7 @@ func (d *Details) Actions() *ui.KeyActions {
 func (d *Details) Name() string { return d.title }
 
 // Start starts the view updater.
-func (d *Details) Start() {}
+func (*Details) Start() {}
 
 // Stop terminates the updater.
 func (d *Details) Stop() {
@@ -205,7 +205,7 @@ func (d *Details) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (d *Details) ExtraHints() map[string]string {
+func (*Details) ExtraHints() map[string]string {
 	return nil
 }
 
@@ -262,7 +262,7 @@ func (d *Details) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (d *Details) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (d *Details) filterCmd(*tcell.EventKey) *tcell.EventKey {
 	d.model.Filter(d.cmdBuff.GetText())
 	d.cmdBuff.SetActive(false)
 	d.updateTitle()
@@ -279,7 +279,7 @@ func (d *Details) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (d *Details) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (d *Details) eraseCmd(*tcell.EventKey) *tcell.EventKey {
 	if !d.cmdBuff.IsActive() {
 		return nil
 	}
@@ -304,7 +304,7 @@ func (d *Details) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (d *Details) saveCmd(*tcell.EventKey) *tcell.EventKey {
 	if path, err := saveYAML(d.app.Config.K9s.ContextScreenDumpDir(), d.title, d.text.GetText(true)); err != nil {
 		d.app.Flash().Err(err)
 	} else {
@@ -320,9 +320,12 @@ func (d *Details) updateTitle() {
 	}
 	fmat := fmt.Sprintf(detailsTitleFmt, d.title, d.subject)
 
-	buff := d.cmdBuff.GetText()
+	var (
+		buff   = d.cmdBuff.GetText()
+		styles = d.app.Styles.Frame()
+	)
 	if buff == "" {
-		d.SetTitle(ui.SkinTitle(fmat, d.app.Styles.Frame()))
+		d.SetTitle(ui.SkinTitle(fmat, &styles))
 		return
 	}
 
@@ -330,5 +333,5 @@ func (d *Details) updateTitle() {
 		buff += fmt.Sprintf("[%d:%d]", d.currentRegion+1, d.maxRegions)
 	}
 	fmat += fmt.Sprintf(ui.SearchFmt, buff)
-	d.SetTitle(ui.SkinTitle(fmat, d.app.Styles.Frame()))
+	d.SetTitle(ui.SkinTitle(fmat, &styles))
 }

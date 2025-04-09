@@ -11,9 +11,8 @@ import (
 )
 
 var (
-	inverseRx = regexp.MustCompile(`\A\!`)
-	fuzzyRx   = regexp.MustCompile(`\A-f\s?([\w-]+)\b`)
-	labelRx   = regexp.MustCompile(`\A\-l`)
+	fuzzyRx = regexp.MustCompile(`\A-f\s?([\w-]+)\b`)
+	labelRx = regexp.MustCompile(`\A\-l`)
 )
 
 // Helpers...
@@ -23,7 +22,7 @@ func IsInverseSelector(s string) bool {
 	if s == "" {
 		return false
 	}
-	return inverseRx.MatchString(s)
+	return s[0] == '!'
 }
 
 // IsLabelSelector checks if query is a label query.

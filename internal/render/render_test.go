@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -17,11 +17,11 @@ import (
 
 func load(t testing.TB, n string) *unstructured.Unstructured {
 	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	var o unstructured.Unstructured
 	err = json.Unmarshal(raw, &o)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return &o
 }

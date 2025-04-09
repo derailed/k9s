@@ -45,7 +45,7 @@ func TestCutSet(t *testing.T) {
 				s.Add(m)
 			}
 			s.cutSet(u.w)
-			assert.Equal(t, u.e, len(s.data))
+			assert.Len(t, s.data, u.e)
 		})
 	}
 }

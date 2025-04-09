@@ -6,6 +6,12 @@ package config
 const (
 	defaultRefreshRate  = 2
 	defaultMaxConnRetry = 5
+
+	// CPU tracks cpu usage.
+	CPU = "cpu"
+
+	// MEM tracks memory usage.
+	MEM = "memory"
 )
 
 // UI tracks ui specific configs.

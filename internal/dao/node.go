@@ -102,8 +102,8 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 	}
 
 	if !cordoned {
-		if err = n.ToggleCordon(path, true); err != nil {
-			return err
+		if e := n.ToggleCordon(path, true); e != nil {
+			return e
 		}
 	}
 
@@ -168,7 +168,13 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 
 	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)
-
+	var pods []runtime.Object
+	if shouldCountPods {
+		pods, err = n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
+		if err != nil {
+			slog.Error("Unable to list pods", slogs.Error, err)
+		}
+	}
 	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
@@ -180,7 +186,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		_, name := client.Namespaced(fqn)
 		podCount := -1
 		if shouldCountPods {
-			podCount, err = n.CountPods(name)
+			podCount, err = n.CountPods(pods, name)
 			if err != nil {
 				slog.Error("Unable to get pods count",
 					slogs.ResName, name,
@@ -199,21 +205,16 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 }
 
 // CountPods counts the pods scheduled on a given node.
-func (n *Node) CountPods(nodeName string) (int, error) {
+func (*Node) CountPods(oo []runtime.Object, nodeName string) (int, error) {
 	var count int
-	oo, err := n.getFactory().List("v1/pods", client.BlankNamespace, false, labels.Everything())
-	if err != nil {
-		return 0, err
-	}
-
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
-			return count, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+			return count, fmt.Errorf("expecting *Unstructured but got `%T", o)
 		}
-		spec, ok := u.Object["spec"].(map[string]interface{})
+		spec, ok := u.Object["spec"].(map[string]any)
 		if !ok {
-			return count, fmt.Errorf("expecting interface map but got `%T", o)
+			return count, fmt.Errorf("expecting spec interface map but got `%T", o)
 		}
 		if node, ok := spec["nodeName"]; ok && node == nodeName {
 			count++
@@ -225,7 +226,7 @@ func (n *Node) CountPods(nodeName string) (int, error) {
 
 // GetPods returns all pods running on given node.
 func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
-	oo, err := n.getFactory().List("v1/pods", client.BlankNamespace, false, labels.Everything())
+	oo, err := n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -258,9 +259,9 @@ func (n *Node) ensureCordoned(path string) (bool, error) {
 // Helpers...
 
 // FetchNode retrieves a node.
-func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
+func FetchNode(_ context.Context, f Factory, path string) (*v1.Node, error) {
 	_, n := client.Namespaced(path)
-	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", n, client.GetAccess)
+	auth, err := f.Client().CanI(client.ClusterScope, client.NodeGVR, n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +269,7 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	o, err := f.Get("v1/nodes", client.FQN(client.ClusterScope, path), true, labels.Everything())
+	o, err := f.Get(client.NodeGVR, client.FQN(client.ClusterScope, path), true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -283,8 +284,8 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 }
 
 // FetchNodes retrieves all nodes.
-func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList, error) {
-	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", "", client.ListAccess)
+func FetchNodes(_ context.Context, f Factory, _ string) (*v1.NodeList, error) {
+	auth, err := f.Client().CanI(client.ClusterScope, client.NodeGVR, "", client.ListAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +293,7 @@ func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList,
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	oo, err := f.List("v1/nodes", "", false, labels.Everything())
+	oo, err := f.List(client.NodeGVR, "", false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ type ConfigMap struct {
 }
 
 // NewConfigMap returns a new viewer.
-func NewConfigMap(gvr client.GVR) ResourceViewer {
+func NewConfigMap(gvr *client.GVR) ResourceViewer {
 	s := ConfigMap{
 		ResourceViewer: NewOwnerExtender(
 			NewBrowser(gvr),
@@ -35,10 +35,10 @@ func (s *ConfigMap) bindKeys(aa *ui.KeyActions) {
 }
 
 func (s *ConfigMap) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanRefs(evt, s.App(), s.GetTable(), dao.CmGVR)
+	return scanRefs(evt, s.App(), s.GetTable(), client.CmGVR)
 }
 
-func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr client.GVR) *tcell.EventKey {
+func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr *client.GVR) *tcell.EventKey {
 	path := t.GetSelectedItem()
 	if path == "" {
 		return evt
@@ -55,7 +55,7 @@ func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr client.GVR) *tcell.Even
 		return nil
 	}
 	a.Flash().Infof("Viewing references for %s::%s", gvr, path)
-	view := NewReference(client.NewGVR("references"))
+	view := NewReference(client.RefGVR)
 	view.SetContextFn(refContext(gvr, path, false))
 	if err := a.inject(view, false); err != nil {
 		a.Flash().Err(err)
@@ -64,7 +64,7 @@ func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr client.GVR) *tcell.Even
 	return nil
 }
 
-func refContext(gvr client.GVR, path string, wait bool) ContextFunc {
+func refContext(gvr *client.GVR, path string, wait bool) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		ctx = context.WithValue(ctx, internal.KeyGVR, gvr)

@@ -6,7 +6,9 @@ package config
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCustomView_getVS(t *testing.T) {
@@ -22,14 +24,14 @@ func TestCustomView_getVS(t *testing.T) {
 		},
 
 		"gvr": {
-			gvr: "v1/pods",
+			gvr: client.PodGVR.String(),
 			e: &ViewSetting{
 				Columns: []string{"NAMESPACE", "NAME", "AGE", "IP"},
 			},
 		},
 
 		"gvr+ns": {
-			gvr: "v1/pods",
+			gvr: client.PodGVR.String(),
 			ns:  "default",
 			e: &ViewSetting{
 				Columns: []string{"NAME", "IP", "AGE"},
@@ -37,7 +39,7 @@ func TestCustomView_getVS(t *testing.T) {
 		},
 
 		"rx": {
-			gvr: "v1/pods",
+			gvr: client.PodGVR.String(),
 			ns:  "ns-fred",
 			e: &ViewSetting{
 				Columns: []string{"AGE", "NAME", "IP"},
@@ -52,7 +54,7 @@ func TestCustomView_getVS(t *testing.T) {
 		},
 
 		"toast-no-ns": {
-			gvr: "v1/pods",
+			gvr: client.PodGVR.String(),
 			ns:  "zorg",
 			e: &ViewSetting{
 				Columns: []string{"NAMESPACE", "NAME", "AGE", "IP"},
@@ -60,13 +62,13 @@ func TestCustomView_getVS(t *testing.T) {
 		},
 
 		"toast-no-res": {
-			gvr: "v1/services",
+			gvr: client.SvcGVR.String(),
 			ns:  "zorg",
 		},
 	}
 
 	v := NewCustomView()
-	assert.NoError(t, v.Load("testdata/views/views.yaml"))
+	require.NoError(t, v.Load("testdata/views/views.yaml"))
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, v.getVS(u.gvr, u.ns))

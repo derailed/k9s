@@ -31,7 +31,7 @@ type App struct {
 }
 
 // NewApp returns a new app.
-func NewApp(cfg *config.Config, context string) *App {
+func NewApp(cfg *config.Config, _ string) *App {
 	a := App{
 		Application:  tview.NewApplication(),
 		actions:      NewKeyActions(),
@@ -96,13 +96,13 @@ func (a *App) SetRunning(f bool) {
 }
 
 // BufferCompleted indicates input was accepted.
-func (a *App) BufferCompleted(_, _ string) {}
+func (*App) BufferCompleted(_, _ string) {}
 
 // BufferChanged indicates the buffer was changed.
-func (a *App) BufferChanged(_, _ string) {}
+func (*App) BufferChanged(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
-func (a *App) BufferActive(state bool, kind model.BufferKind) {
+func (a *App) BufferActive(state bool, _ model.BufferKind) {
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		return
@@ -117,7 +117,7 @@ func (a *App) BufferActive(state bool, kind model.BufferKind) {
 }
 
 // SuggestionChanged notifies of update to command suggestions.
-func (a *App) SuggestionChanged(ss []string) {}
+func (*App) SuggestionChanged([]string) {}
 
 // StylesChanged notifies the skin changed.
 func (a *App) StylesChanged(s *config.Styles) {
@@ -174,7 +174,7 @@ func (a *App) ResetCmd() {
 	a.cmdBuff.Reset()
 }
 
-func (a *App) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (a *App) saveCmd(*tcell.EventKey) *tcell.EventKey {
 	if err := a.Config.Save(true); err != nil {
 		a.Flash().Err(err)
 	}

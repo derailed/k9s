@@ -86,47 +86,37 @@ func (c *Interpreter) IsCowCmd() bool {
 
 // IsHelpCmd returns true if help cmd is detected.
 func (c *Interpreter) IsHelpCmd() bool {
-	_, ok := helpCmd[c.cmd]
-	return ok
+	return helpCmd.Has(c.cmd)
 }
 
 // IsBailCmd returns true if quit cmd is detected.
 func (c *Interpreter) IsBailCmd() bool {
-	_, ok := bailCmd[c.cmd]
-	return ok
+	return bailCmd.Has(c.cmd)
 }
 
 // IsAliasCmd returns true if alias cmd is detected.
 func (c *Interpreter) IsAliasCmd() bool {
-	_, ok := aliasCmd[c.cmd]
-	return ok
+	return aliasCmd.Has(c.cmd)
 }
 
 // IsXrayCmd returns true if xray cmd is detected.
 func (c *Interpreter) IsXrayCmd() bool {
-	_, ok := xrayCmd[c.cmd]
-
-	return ok
+	return xrayCmd.Has(c.cmd)
 }
 
 // IsContextCmd returns true if context cmd is detected.
 func (c *Interpreter) IsContextCmd() bool {
-	_, ok := contextCmd[c.cmd]
-
-	return ok
+	return contextCmd.Has(c.cmd)
 }
 
 // IsNamespaceCmd returns true if ns cmd is detected.
 func (c *Interpreter) IsNamespaceCmd() bool {
-	_, ok := namespaceCmd[c.cmd]
-
-	return ok
+	return namespaceCmd.Has(c.cmd)
 }
 
 // IsDirCmd returns true if dir cmd is detected.
 func (c *Interpreter) IsDirCmd() bool {
-	_, ok := dirCmd[c.cmd]
-	return ok
+	return dirCmd.Has(c.cmd)
 }
 
 // IsRBACCmd returns true if rbac cmd is detected.
@@ -169,37 +159,40 @@ func (c *Interpreter) CowArg() (string, bool) {
 }
 
 // RBACArgs returns the subject and topic is any.
-func (c *Interpreter) RBACArgs() (string, string, bool) {
+func (c *Interpreter) RBACArgs() (subject, verb string, ok bool) {
 	if !c.IsRBACCmd() {
-		return "", "", false
+		return
 	}
 	tt := rbacRX.FindStringSubmatch(c.line)
 	if len(tt) < 3 {
-		return "", "", false
+		return
 	}
+	subject, verb, ok = tt[1], tt[2], true
 
-	return tt[1], tt[2], true
+	return
 }
 
 // XRayArgs return the gvr and ns if any.
-func (c *Interpreter) XrayArgs() (string, string, bool) {
+func (c *Interpreter) XrayArgs() (cmd, namespace string, ok bool) {
 	if !c.IsXrayCmd() {
-		return "", "", false
+		return
 	}
 	gvr, ok1 := c.args[topicKey]
 	if !ok1 {
-		return "", "", false
+		return
 	}
 
 	ns, ok2 := c.args[nsKey]
 	switch {
 	case ok1 && ok2:
-		return gvr, ns, true
+		cmd, namespace, ok = gvr, ns, true
 	case ok1 && !ok2:
-		return gvr, "", true
+		cmd, namespace, ok = gvr, "", true
 	default:
-		return "", "", false
+		return
 	}
+
+	return
 }
 
 // FilterArg returns the current filter if any.

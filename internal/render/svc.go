@@ -16,6 +16,20 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Header returns a header row.
+var defaultSVCHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "TYPE"},
+	model1.HeaderColumn{Name: "CLUSTER-IP"},
+	model1.HeaderColumn{Name: "EXTERNAL-IP"},
+	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "PORTS", Attrs: model1.Attrs{Wide: false}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Service renders a K8s Service to screen.
 type Service struct {
 	Base
@@ -23,40 +37,22 @@ type Service struct {
 
 // Header returns a header row.
 func (s Service) Header(_ string) model1.Header {
-	return s.doHeader(s.defaultHeader())
-}
-
-// Header returns a header row.
-func (Service) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "TYPE"},
-		model1.HeaderColumn{Name: "CLUSTER-IP"},
-		model1.HeaderColumn{Name: "EXTERNAL-IP"},
-		model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "PORTS", Attrs: model1.Attrs{Wide: false}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return s.doHeader(defaultSVCHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (s Service) Render(o interface{}, ns string, row *model1.Row) error {
+func (s Service) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected Service, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
-
 	if err := s.defaultRow(raw, row); err != nil {
 		return err
 	}
 	if s.specs.isEmpty() {
 		return nil
 	}
-
-	cols, err := s.specs.realize(raw, s.defaultHeader(), row)
+	cols, err := s.specs.realize(raw, defaultSVCHeader, row)
 	if err != nil {
 		return err
 	}
@@ -72,7 +68,7 @@ func (s Service) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error
 		return err
 	}
 
-	r.ID = client.MetaFQN(svc.ObjectMeta)
+	r.ID = client.MetaFQN(&svc.ObjectMeta)
 	r.Fields = model1.Fields{
 		svc.Namespace,
 		svc.Name,
@@ -107,19 +103,17 @@ func getSvcExtIPS(svc *v1.Service) []string {
 	results := []string{}
 
 	switch svc.Spec.Type {
-	case v1.ServiceTypeClusterIP:
-		fallthrough
-	case v1.ServiceTypeNodePort:
+	case v1.ServiceTypeNodePort, v1.ServiceTypeClusterIP:
 		return svc.Spec.ExternalIPs
 	case v1.ServiceTypeLoadBalancer:
 		lbIps := lbIngressIP(svc.Status.LoadBalancer)
 		if len(svc.Spec.ExternalIPs) > 0 {
-			if len(lbIps) > 0 {
+			if lbIps != "" {
 				results = append(results, lbIps)
 			}
 			return append(results, svc.Spec.ExternalIPs...)
 		}
-		if len(lbIps) > 0 {
+		if lbIps != "" {
 			results = append(results, lbIps)
 		}
 	case v1.ServiceTypeExternalName:
@@ -133,9 +127,9 @@ func lbIngressIP(s v1.LoadBalancerStatus) string {
 	ingress := s.Ingress
 	result := []string{}
 	for i := range ingress {
-		if len(ingress[i].IP) > 0 {
+		if ingress[i].IP != "" {
 			result = append(result, ingress[i].IP)
-		} else if len(ingress[i].Hostname) > 0 {
+		} else if ingress[i].Hostname != "" {
 			result = append(result, ingress[i].Hostname)
 		}
 	}
@@ -159,7 +153,7 @@ func toIPs(svcType v1.ServiceType, ips []string) string {
 func ToPorts(pp []v1.ServicePort) string {
 	ports := make([]string, len(pp))
 	for i, p := range pp {
-		if len(p.Name) > 0 {
+		if p.Name != "" {
 			ports[i] = p.Name + ":"
 		}
 		ports[i] += strconv.Itoa(int(p.Port)) +

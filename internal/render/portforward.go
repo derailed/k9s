@@ -44,13 +44,13 @@ type PortForward struct {
 
 // ColorerFunc colors a resource row.
 func (PortForward) ColorerFunc() model1.ColorerFunc {
-	return func(ns string, _ model1.Header, re *model1.RowEvent) tcell.Color {
+	return func(string, model1.Header, *model1.RowEvent) tcell.Color {
 		return tcell.ColorSkyblue
 	}
 }
 
 // Header returns a header row.
-func (PortForward) Header(ns string) model1.Header {
+func (PortForward) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
@@ -65,7 +65,7 @@ func (PortForward) Header(ns string) model1.Header {
 }
 
 // Render renders a K8s resource to screen.
-func (f PortForward) Render(o interface{}, gvr string, r *model1.Row) error {
+func (PortForward) Render(o any, _ string, r *model1.Row) error {
 	pf, ok := o.(ForwardRes)
 	if !ok {
 		return fmt.Errorf("expecting a ForwardRes but got %T", o)
@@ -127,7 +127,7 @@ type ForwardRes struct {
 }
 
 // GetObjectKind returns a schema object.
-func (f ForwardRes) GetObjectKind() schema.ObjectKind {
+func (ForwardRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 

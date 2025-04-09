@@ -63,7 +63,7 @@ func (*Cow) InCmdMode() bool {
 
 func (c *Cow) talk() {
 	says := c.says
-	if len(says) == 0 {
+	if says == "" {
 		says = "Nothing to report here. Please move along..."
 	}
 	x, _, w, _ := c.GetRect()
@@ -73,9 +73,11 @@ func (c *Cow) talk() {
 func cowTalk(says string, w int) string {
 	msg := fmt.Sprintf("[red::]< [::b]Ruroh? %s[::-] >", says)
 	buff := make([]string, 0, len(cow)+3)
-	buff = append(buff, "[red::] "+strings.Repeat("─", len(says)+8))
-	buff = append(buff, strings.TrimSuffix(msg, "\n"))
-	buff = append(buff, " "+strings.Repeat("─", len(says)+8))
+	buff = append(buff,
+		"[red::] "+strings.Repeat("─", len(says)+8),
+		strings.TrimSuffix(msg, "\n"),
+		" "+strings.Repeat("─", len(says)+8),
+	)
 	rCount := w/2 - 8
 	if rCount < 0 {
 		rCount = w / 2
@@ -101,9 +103,9 @@ func (c *Cow) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 // StylesChanged notifies the skin changes.
 func (c *Cow) StylesChanged(s *config.Styles) {
-	c.SetBackgroundColor(c.app.Styles.BgColor())
-	c.SetTextColor(c.app.Styles.FgColor())
-	c.SetBorderFocusColor(c.app.Styles.Frame().Border.FocusColor.Color())
+	c.SetBackgroundColor(s.BgColor())
+	c.SetTextColor(s.FgColor())
+	c.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
 }
 
 func (c *Cow) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -116,10 +118,10 @@ func (c *Cow) Actions() *ui.KeyActions {
 }
 
 // Name returns the component name.
-func (c *Cow) Name() string { return "cow" }
+func (*Cow) Name() string { return "cow" }
 
 // Start starts the view updater.
-func (c *Cow) Start() {}
+func (*Cow) Start() {}
 
 // Stop terminates the updater.
 func (c *Cow) Stop() {
@@ -132,7 +134,7 @@ func (c *Cow) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (c *Cow) ExtraHints() map[string]string {
+func (*Cow) ExtraHints() map[string]string {
 	return nil
 }
 

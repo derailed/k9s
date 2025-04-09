@@ -19,7 +19,7 @@ type ServiceAccount struct {
 }
 
 // NewServiceAccount returns a new viewer.
-func NewServiceAccount(gvr client.GVR) ResourceViewer {
+func NewServiceAccount(gvr *client.GVR) ResourceViewer {
 	s := ServiceAccount{
 		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
@@ -36,12 +36,12 @@ func (s *ServiceAccount) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (s *ServiceAccount) subjectCtx(ctx context.Context) context.Context {
+func (*ServiceAccount) subjectCtx(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeySubjectKind, sa)
 }
 
 func (s *ServiceAccount) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanSARefs(evt, s.App(), s.GetTable(), dao.SaGVR)
+	return scanSARefs(evt, s.App(), s.GetTable(), client.SaGVR)
 }
 
 func (s *ServiceAccount) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -56,7 +56,7 @@ func (s *ServiceAccount) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr client.GVR) *tcell.EventKey {
+func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr *client.GVR) *tcell.EventKey {
 	path := t.GetSelectedItem()
 	if path == "" {
 		return evt
@@ -73,7 +73,7 @@ func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr client.GVR) *tcell.Ev
 		return nil
 	}
 	a.Flash().Infof("Viewing references for %s::%s", gvr, path)
-	view := NewReference(client.NewGVR("references"))
+	view := NewReference(client.RefGVR)
 	view.SetContextFn(refContext(gvr, path, false))
 	if err := a.inject(view, false); err != nil {
 		a.Flash().Err(err)

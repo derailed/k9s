@@ -21,21 +21,19 @@ type ConfigMap struct {
 
 // Header returns a header row.
 func (m ConfigMap) Header(_ string) model1.Header {
-	return m.doHeader(m.defaultHeader())
+	return m.doHeader(defaultCMHeader)
 }
 
-func (ConfigMap) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "DATA"},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+var defaultCMHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "DATA"},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
-func (m ConfigMap) Render(o interface{}, ns string, row *model1.Row) error {
+func (m ConfigMap) Render(o any, _ string, row *model1.Row) error {
 	if err := m.defaultRow(o, row); err != nil {
 		return err
 	}
@@ -43,7 +41,7 @@ func (m ConfigMap) Render(o interface{}, ns string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := m.specs.realize(o.(*unstructured.Unstructured), m.defaultHeader(), row)
+	cols, err := m.specs.realize(o.(*unstructured.Unstructured), defaultCMHeader, row)
 	if err != nil {
 		return err
 	}
@@ -53,10 +51,10 @@ func (m ConfigMap) Render(o interface{}, ns string, row *model1.Row) error {
 }
 
 // Render renders a K8s resource to screen.
-func (ConfigMap) defaultRow(o interface{}, r *model1.Row) error {
+func (ConfigMap) defaultRow(o any, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected ConfigMap, but got %T", o)
+		return fmt.Errorf("expected *Unstructured, but got %T", o)
 	}
 	var cm v1.ConfigMap
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cm)

@@ -10,12 +10,13 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func Test_activeConfig(t *testing.T) {
-	assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
-	assert.NoError(t, config.InitLocs())
+	require.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
+	require.NoError(t, config.InitLocs())
 
 	cl, ct := "cl-1", "ct-1-1"
 	uu := map[string]struct {
@@ -45,7 +46,7 @@ func Test_activeConfig(t *testing.T) {
 			cfg := u.cfg
 			if cfg.Config != nil {
 				_, err := cfg.Config.K9s.ActivateContext(ct)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			cl, ct, ok := cfg.activeConfig()
 			assert.Equal(t, u.ok, ok)

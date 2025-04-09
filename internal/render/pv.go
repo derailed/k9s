@@ -24,7 +24,7 @@ type PersistentVolume struct {
 }
 
 // ColorerFunc colors a resource row.
-func (p PersistentVolume) ColorerFunc() model1.ColorerFunc {
+func (PersistentVolume) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
@@ -49,41 +49,37 @@ func (p PersistentVolume) ColorerFunc() model1.ColorerFunc {
 
 // Header returns a header row.
 func (p PersistentVolume) Header(_ string) model1.Header {
-	return p.doHeader(p.defaultHeader())
+	return p.doHeader(defaultPVHeader)
 }
 
-func (PersistentVolume) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "CAPACITY", Attrs: model1.Attrs{Capacity: true}},
-		model1.HeaderColumn{Name: "ACCESS MODES"},
-		model1.HeaderColumn{Name: "RECLAIM POLICY"},
-		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "CLAIM"},
-		model1.HeaderColumn{Name: "STORAGECLASS"},
-		model1.HeaderColumn{Name: "REASON"},
-		model1.HeaderColumn{Name: "VOLUMEMODE", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+var defaultPVHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "CAPACITY", Attrs: model1.Attrs{Capacity: true}},
+	model1.HeaderColumn{Name: "ACCESS MODES"},
+	model1.HeaderColumn{Name: "RECLAIM POLICY"},
+	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: "CLAIM"},
+	model1.HeaderColumn{Name: "STORAGECLASS"},
+	model1.HeaderColumn{Name: "REASON"},
+	model1.HeaderColumn{Name: "VOLUMEMODE", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
-func (p PersistentVolume) Render(o interface{}, ns string, row *model1.Row) error {
+func (p PersistentVolume) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected PersistentVolume, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
-
 	if err := p.defaultRow(raw, row); err != nil {
 		return err
 	}
 	if p.specs.isEmpty() {
 		return nil
 	}
-
-	cols, err := p.specs.realize(raw, p.defaultHeader(), row)
+	cols, err := p.specs.realize(raw, defaultPVHeader, row)
 	if err != nil {
 		return err
 	}
@@ -114,7 +110,7 @@ func (p PersistentVolume) defaultRow(raw *unstructured.Unstructured, r *model1.R
 
 	size := pv.Spec.Capacity[v1.ResourceStorage]
 
-	r.ID = client.MetaFQN(pv.ObjectMeta)
+	r.ID = client.MetaFQN(&pv.ObjectMeta)
 	r.Fields = model1.Fields{
 		pv.Name,
 		size.String(),

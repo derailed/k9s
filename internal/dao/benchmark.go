@@ -30,17 +30,17 @@ type Benchmark struct {
 }
 
 // Delete nukes a resource.
-func (b *Benchmark) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
+func (*Benchmark) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	return os.Remove(path)
 }
 
 // Get returns a resource.
-func (b *Benchmark) Get(context.Context, string) (runtime.Object, error) {
+func (*Benchmark) Get(context.Context, string) (runtime.Object, error) {
 	panic("NYI")
 }
 
 // List returns a collection of resources.
-func (b *Benchmark) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+func (*Benchmark) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	dir, ok := ctx.Value(internal.KeyDir).(string)
 	if !ok {
 		return nil, errors.New("no benchmark dir found in context")

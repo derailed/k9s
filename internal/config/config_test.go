@@ -18,6 +18,7 @@ import (
 	"github.com/derailed/k9s/internal/config/mock"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -54,16 +55,16 @@ func TestConfigSave(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			c := mock.NewMockConfig()
 			_, err := c.K9s.ActivateContext(u.ct)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			if u.flags != nil {
 				c.K9s.Override(u.k9sFlags)
-				assert.NoError(t, c.Refine(u.flags, u.k9sFlags, client.NewConfig(u.flags)))
+				require.NoError(t, c.Refine(u.flags, u.k9sFlags, client.NewConfig(u.flags)))
 			}
-			assert.NoError(t, c.Save(true))
+			require.NoError(t, c.Save(true))
 			bb, err := os.ReadFile(config.AppConfigFile)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			ee, err := os.ReadFile("testdata/configs/default.yaml")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, string(ee), string(bb))
 		})
 	}
@@ -115,7 +116,7 @@ func TestSetActiveView(t *testing.T) {
 			c := mock.NewMockConfig()
 			_, _ = c.K9s.ActivateContext(u.ct)
 			if u.flags != nil {
-				assert.NoError(t, c.Refine(u.flags, nil, client.NewConfig(u.flags)))
+				require.NoError(t, c.Refine(u.flags, nil, client.NewConfig(u.flags)))
 				c.K9s.Override(u.k9sFlags)
 			}
 			c.SetActiveView(u.view)
@@ -158,7 +159,7 @@ func TestActiveContextName(t *testing.T) {
 			c := mock.NewMockConfig()
 			_, _ = c.K9s.ActivateContext(u.ct)
 			if u.flags != nil {
-				assert.NoError(t, c.Refine(u.flags, nil, client.NewConfig(u.flags)))
+				require.NoError(t, c.Refine(u.flags, nil, client.NewConfig(u.flags)))
 				c.K9s.Override(u.k9sFlags)
 			}
 			assert.Equal(t, u.e, c.ActiveContextName())
@@ -206,7 +207,7 @@ func TestActiveView(t *testing.T) {
 			c := mock.NewMockConfig()
 			_, _ = c.K9s.ActivateContext(u.ct)
 			if u.flags != nil {
-				assert.NoError(t, c.Refine(u.flags, nil, client.NewConfig(u.flags)))
+				require.NoError(t, c.Refine(u.flags, nil, client.NewConfig(u.flags)))
 				c.K9s.Override(u.k9sFlags)
 			}
 			assert.Equal(t, u.e, c.ActiveView())
@@ -349,7 +350,7 @@ func TestConfigActivateContext(t *testing.T) {
 				assert.Equal(t, u.err, err.Error())
 				return
 			}
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.cl, ct.ClusterName)
 		})
 	}
@@ -393,9 +394,9 @@ func TestConfigCurrentContext(t *testing.T) {
 			cfg := mock.NewMockConfig()
 
 			err := cfg.Refine(u.flags, nil, client.NewConfig(u.flags))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			ct, err := cfg.CurrentContext()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.cluster, ct.ClusterName)
 			assert.Equal(t, u.namespace, ct.Namespace.Active)
 		})
@@ -408,7 +409,7 @@ func TestConfigRefine(t *testing.T) {
 		cl1           = "cl-1"
 		ct2           = "ct-1-2"
 		ns1, ns2, nsx = "ns-1", "ns-2", "ns-x"
-		true          = true
+		trueVal       = true
 	)
 
 	uu := map[string]struct {
@@ -465,7 +466,7 @@ func TestConfigRefine(t *testing.T) {
 				Namespace:  &ns2,
 			},
 			k9sFlags: &config.Flags{
-				AllNamespaces: &true,
+				AllNamespaces: &trueVal,
 			},
 			cluster:   "cl-1",
 			context:   "ct-1-1",
@@ -516,7 +517,7 @@ func TestConfigRefine(t *testing.T) {
 			if err != nil {
 				assert.Equal(t, u.err, err.Error())
 			} else {
-				assert.Nil(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, u.context, cfg.K9s.ActiveContextName())
 				assert.Equal(t, u.namespace, cfg.ActiveNamespace())
 			}
@@ -528,14 +529,14 @@ func TestConfigValidate(t *testing.T) {
 	cfg := mock.NewMockConfig()
 	cfg.SetConnection(mock.NewMockConnection())
 
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
+	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	cfg.Validate("ct-1-1", "cl-1")
 }
 
 func TestConfigLoad(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
+	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
 	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
 	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
@@ -544,13 +545,13 @@ func TestConfigLoad(t *testing.T) {
 func TestConfigLoadCrap(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.NotNil(t, cfg.Load("testdata/configs/k9s_not_there.yaml", true))
+	assert.Error(t, cfg.Load("testdata/configs/k9s_not_there.yaml", true))
 }
 
 func TestConfigSaveFile(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
+	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.ReadOnly = true
@@ -559,28 +560,28 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.UI.UseFullGVRTitle = true
 	cfg.Validate("ct-1-1", "cl-1")
 
-	path := filepath.Join("/tmp", "k9s.yaml")
-	assert.NoError(t, cfg.SaveFile(path))
+	path := filepath.Join(os.TempDir(), "k9s.yaml")
+	require.NoError(t, cfg.SaveFile(path))
 	raw, err := os.ReadFile(path)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	ee, err := os.ReadFile("testdata/configs/expected.yaml")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, string(ee), string(raw))
 }
 
 func TestConfigReset(t *testing.T) {
 	cfg := mock.NewMockConfig()
-	assert.Nil(t, cfg.Load("testdata/configs/k9s.yaml", true))
+	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	cfg.Reset()
 	cfg.Validate("ct-1-1", "cl-1")
 
-	path := filepath.Join("/tmp", "k9s.yaml")
-	assert.NoError(t, cfg.SaveFile(path))
+	path := filepath.Join(os.TempDir(), "k9s.yaml")
+	require.NoError(t, cfg.SaveFile(path))
 
 	bb, err := os.ReadFile(path)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	ee, err := os.ReadFile("testdata/configs/k9s.yaml")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, string(ee), string(bb))
 }
 

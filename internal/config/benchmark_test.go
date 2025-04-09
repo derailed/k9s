@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBenchEmpty(t *testing.T) {
@@ -55,11 +56,11 @@ func TestBenchLoad(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			b, err := NewBench(u.file)
 
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.c, b.Benchmarks.Defaults.C)
 			assert.Equal(t, u.n, b.Benchmarks.Defaults.N)
-			assert.Equal(t, u.svcCount, len(b.Benchmarks.Services))
-			assert.Equal(t, u.coCount, len(b.Benchmarks.Containers))
+			assert.Len(t, b.Benchmarks.Services, u.svcCount)
+			assert.Len(t, b.Benchmarks.Containers, u.coCount)
 		})
 	}
 }
@@ -105,8 +106,8 @@ func TestBenchServiceLoad(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			b, err := NewBench("testdata/benchmarks/b_good.yaml")
 
-			assert.Nil(t, err)
-			assert.Equal(t, 2, len(b.Benchmarks.Services))
+			require.NoError(t, err)
+			assert.Len(t, b.Benchmarks.Services, 2)
 			svc := b.Benchmarks.Services[u.key]
 			assert.Equal(t, u.c, svc.C)
 			assert.Equal(t, u.n, svc.N)
@@ -123,16 +124,16 @@ func TestBenchServiceLoad(t *testing.T) {
 
 func TestBenchReLoad(t *testing.T) {
 	b, err := NewBench("testdata/benchmarks/b_containers.yaml")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, 2, b.Benchmarks.Defaults.C)
-	assert.NoError(t, b.Reload("testdata/benchmarks/b_containers_1.yaml"))
+	require.NoError(t, b.Reload("testdata/benchmarks/b_containers_1.yaml"))
 	assert.Equal(t, 20, b.Benchmarks.Defaults.C)
 }
 
 func TestBenchLoadToast(t *testing.T) {
 	_, err := NewBench("testdata/toast.yaml")
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 func TestBenchContainerLoad(t *testing.T) {
@@ -176,8 +177,8 @@ func TestBenchContainerLoad(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			b, err := NewBench("testdata/benchmarks/b_containers.yaml")
 
-			assert.Nil(t, err)
-			assert.Equal(t, 2, len(b.Benchmarks.Services))
+			require.NoError(t, err)
+			assert.Len(t, b.Benchmarks.Services, 2)
 			co := b.Benchmarks.Containers[u.key]
 			assert.Equal(t, u.c, co.C)
 			assert.Equal(t, u.n, co.N)

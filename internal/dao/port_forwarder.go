@@ -122,7 +122,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 	p.path, p.tunnel, p.age = path, tt, time.Now()
 
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods", n, client.GetAccess)
+	auth, err := p.Client().CanI(ns, client.PodGVR, n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 
 	podName := strings.Split(n, "|")[0]
 	var res Pod
-	res.Init(p, client.NewGVR("v1/pods"))
+	res.Init(p, client.PodGVR)
 	pod, err := res.GetInstance(client.FQN(ns, podName))
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 		return nil, fmt.Errorf("unable to forward port because pod is not running. Current status=%v", pod.Status.Phase)
 	}
 
-	auth, err = p.Client().CanI(ns, "v1/pods:portforward", "", []string{client.CreateVerb})
+	auth, err = p.Client().CanI(ns, client.PodGVR.WithSubResource("portforward"), "", []string{client.CreateVerb})
 	if err != nil {
 		return nil, err
 	}

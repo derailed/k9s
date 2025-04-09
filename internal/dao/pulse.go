@@ -16,6 +16,6 @@ type Pulse struct {
 }
 
 // List lists out pulses.
-func (h *Pulse) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+func (*Pulse) List(context.Context, string) ([]runtime.Object, error) {
 	return nil, fmt.Errorf("NYI")
 }

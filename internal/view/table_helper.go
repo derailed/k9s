@@ -22,7 +22,7 @@ import (
 func computeFilename(dumpPath, ns, title, path string) (string, error) {
 	now := time.Now().UnixNano()
 
-	dir := filepath.Join(dumpPath)
+	dir := dumpPath
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}

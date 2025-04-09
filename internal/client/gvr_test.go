@@ -15,15 +15,15 @@ import (
 
 func TestGVRSort(t *testing.T) {
 	gg := client.GVRs{
-		client.NewGVR("v1/pods"),
-		client.NewGVR("v1/services"),
-		client.NewGVR("apps/v1/deployments"),
+		client.PodGVR,
+		client.SvcGVR,
+		client.DpGVR,
 	}
 	sort.Sort(gg)
 	assert.Equal(t, client.GVRs{
-		client.NewGVR("v1/pods"),
-		client.NewGVR("v1/services"),
-		client.NewGVR("apps/v1/deployments"),
+		client.PodGVR,
+		client.SvcGVR,
+		client.DpGVR,
 	}, gg)
 }
 
@@ -54,9 +54,9 @@ func TestGVR(t *testing.T) {
 		gvr string
 		e   schema.GroupVersionResource
 	}{
-		"full": {"apps/v1/deployments", schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}},
-		"core": {"v1/pods", schema.GroupVersionResource{Version: "v1", Resource: "pods"}},
-		"bork": {"users", schema.GroupVersionResource{Resource: "users"}},
+		"full": {client.DpGVR.String(), schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}},
+		"core": {client.PodGVR.String(), schema.GroupVersionResource{Version: "v1", Resource: "pods"}},
+		"bork": {client.UsrGVR.String(), schema.GroupVersionResource{Resource: "users"}},
 	}
 
 	for k := range uu {
@@ -72,9 +72,9 @@ func TestAsGV(t *testing.T) {
 		gvr string
 		e   schema.GroupVersion
 	}{
-		"full": {"apps/v1/deployments", schema.GroupVersion{Group: "apps", Version: "v1"}},
-		"core": {"v1/pods", schema.GroupVersion{Version: "v1"}},
-		"bork": {"users", schema.GroupVersion{}},
+		"full": {client.DpGVR.String(), schema.GroupVersion{Group: "apps", Version: "v1"}},
+		"core": {client.PodGVR.String(), schema.GroupVersion{Version: "v1"}},
+		"bork": {client.UsrGVR.String(), schema.GroupVersion{}},
 	}
 
 	for k := range uu {
@@ -90,8 +90,8 @@ func TestNewGVR(t *testing.T) {
 		g, v, r string
 		e       string
 	}{
-		"full": {"apps", "v1", "deployments", "apps/v1/deployments"},
-		"core": {"", "v1", "pods", "v1/pods"},
+		"full": {"apps", "v1", "deployments", client.DpGVR.String()},
+		"core": {"", "v1", "pods", client.PodGVR.String()},
 	}
 
 	for k := range uu {
@@ -107,9 +107,9 @@ func TestGVRAsResourceName(t *testing.T) {
 		gvr string
 		e   string
 	}{
-		"full":  {"apps/v1/deployments", "deployments.v1.apps"},
-		"core":  {"v1/pods", "pods"},
-		"k9s":   {"users", "users"},
+		"full":  {client.DpGVR.String(), "deployments.v1.apps"},
+		"core":  {client.PodGVR.String(), "pods"},
+		"k9s":   {client.UsrGVR.String(), "users"},
 		"empty": {"", ""},
 	}
 
@@ -126,9 +126,9 @@ func TestToR(t *testing.T) {
 		gvr string
 		e   string
 	}{
-		"full":  {"apps/v1/deployments", "deployments"},
-		"core":  {"v1/pods", "pods"},
-		"k9s":   {"users", "users"},
+		"full":  {client.DpGVR.String(), "deployments"},
+		"core":  {client.PodGVR.String(), "pods"},
+		"k9s":   {client.UsrGVR.String(), "users"},
 		"empty": {"", ""},
 	}
 
@@ -145,9 +145,9 @@ func TestToG(t *testing.T) {
 		gvr string
 		e   string
 	}{
-		"full":  {"apps/v1/deployments", "apps"},
-		"core":  {"v1/pods", ""},
-		"k9s":   {"users", ""},
+		"full":  {client.DpGVR.String(), "apps"},
+		"core":  {client.PodGVR.String(), ""},
+		"k9s":   {client.UsrGVR.String(), ""},
 		"empty": {"", ""},
 	}
 
@@ -164,9 +164,9 @@ func TestToV(t *testing.T) {
 		gvr string
 		e   string
 	}{
-		"full":  {"apps/v1/deployments", "v1"},
+		"full":  {client.DpGVR.String(), "v1"},
 		"core":  {"v1beta1/pods", "v1beta1"},
-		"k9s":   {"users", ""},
+		"k9s":   {client.UsrGVR.String(), ""},
 		"empty": {"", ""},
 	}
 
@@ -182,9 +182,9 @@ func TestToString(t *testing.T) {
 	uu := map[string]struct {
 		gvr string
 	}{
-		"full":  {"apps/v1/deployments"},
+		"full":  {client.DpGVR.String()},
 		"core":  {"v1beta1/pods"},
-		"k9s":   {"users"},
+		"k9s":   {client.UsrGVR.String()},
 		"empty": {""},
 	}
 

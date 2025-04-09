@@ -12,7 +12,7 @@ import (
 )
 
 // Describe describes a resource.
-func Describe(c client.Connection, gvr client.GVR, path string) (string, error) {
+func Describe(c client.Connection, gvr *client.GVR, path string) (string, error) {
 	mapper := RestMapper{Connection: c}
 	m, err := mapper.ToRESTMapper()
 	if err != nil {

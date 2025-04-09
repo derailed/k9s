@@ -15,7 +15,7 @@ type Event struct {
 }
 
 // NewEvent returns a new alias view.
-func NewEvent(gvr client.GVR) ResourceViewer {
+func NewEvent(gvr *client.GVR) ResourceViewer {
 	e := Event{
 		ResourceViewer: NewBrowser(gvr),
 	}

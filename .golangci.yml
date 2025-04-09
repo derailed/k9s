@@ -1,7 +1,7 @@
 version: "2"
 
 run:
-  concurrency: 8
+  allow-parallel-runners: true
 
   # timeout for analysis, e.g. 30s, 5m, default is 1m
   timeout: 5m
@@ -10,137 +10,305 @@ run:
   issues-exit-code: 1
   tests: true
 
+linters:
+  enable:
+    - sloglint
+    - bodyclose
+    - copyloopvar
+    - depguard
+    - errcheck
+    - errorlint
+    - gocheckcompilerdirectives
+    - gocritic
+    - godox
+    - goprintffuncname
+    - gosec
+    - govet
+    - intrange
+    - ineffassign
+    - misspell
+    - noctx
+    - nolintlint
+    - revive
+    - staticcheck
+    - testifylint
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+    - gocyclo
+    - funlen
+    - goconst
+    - dogsled
+    - lll
+    # - dupl
+    # - gochecknoinits
+    # - mnd
+
+  settings:
+    dogsled:
+      max-blank-identifiers: 3
+
+    gosec:
+      excludes:
+        - G109
+        - G115
+        - G204
+        - G303
+
+    sloglint:
+      no-mixed-args: true
+      kv-only: true
+      attr-only: false
+      no-global: ""
+      context: ""
+      static-msg: false
+      no-raw-keys: true
+      key-naming-case: camel
+      forbidden-keys:
+        - time
+        - level
+        - msg
+        - source
+      args-on-sep-lines: false
+
+    depguard:
+      rules:
+        logger:
+          deny:
+            # logging is allowed only by logutils.Log,
+            - pkg: "github.com/sirupsen/logrus"
+              desc: logging is allowed only by logutils.Log.
+            - pkg: "github.com/pkg/errors"
+              desc: Should be replaced by standard lib errors package.
+            - pkg: "github.com/instana/testify"
+              desc: It's a fork of github.com/stretchr/testify.
+          files:
+            - "!**/pkg/logutils/**.go"
+
+    dupl:
+      threshold: 100
+
+    funlen:
+      lines: -1
+      statements: 60
+
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+      ignore-strings: 'blee|duh|cl-1|ct-1-1'
+
+    # gocritic:
+    #   enabled-tags:
+    #     - diagnostic
+    #     - experimental
+    #     - opinionated
+    #     - performance
+    #     - style
+    #   disabled-checks:
+    #     - dupImport # https://github.com/go-critic/go-critic/issues/845
+    #     - ifElseChain
+    #     - octalLiteral
+    #     - whyNoLint
+
+    gocyclo:
+      min-complexity: 35
+
+    godox:
+      keywords:
+        - FIXME
+
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - return
+      ignored-numbers:
+        - '0'
+        - '1'
+        - '2'
+        - '3'
+      ignored-functions:
+        - strings.SplitN
+
+    govet:
+      settings:
+        printf:
+          funcs:
+            - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Infof
+            - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Warnf
+            - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Errorf
+            - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Fatalf
+      enable:
+        - nilness
+        - shadow
+
+    errorlint:
+      asserts: false
+
+    lll:
+      line-length: 170
+
+    misspell:
+      locale: US
+      ignore-rules:
+        - "importas"
+
+    nolintlint:
+      allow-unused: false
+      require-explanation: false
+      require-specific: true
+
+    revive:
+      rules:
+        - name: indent-error-flow
+        - name: unexported-return
+          disabled: true
+        - name: unused-parameter
+        - name: unused-receiver
+
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+      - legacy
+    paths:
+      - test/testdata_etc # test files
+      - internal/go # extracted from Go code
+      - internal/x # extracted from x/tools code
+      - pkg/goformatters/gci/internal # extracted from gci code
+      - pkg/goanalysis/runner_checker.go # extracted from x/tools code
+    rules:
+      - path: (.+)_test\.go
+        linters:
+          - dupl
+          - mnd
+          - lll
+
+      # Based on existing code, the modifications should be limited to make maintenance easier.
+      - path: pkg/golinters/unused/unused.go
+        linters: [gocritic]
+        text: "rangeValCopy: each iteration copies 160 bytes \\(consider pointers or indexing\\)"
+
+      # Related to the result of computation but divided multiple times by 1024.
+      - path: test/bench/bench_test.go
+        linters: [gosec]
+        text: "G115: integer overflow conversion uint64 -> int"
+
+      # The files created during the tests don't need to be secured.
+      - path: scripts/website/expand_templates/linters_test.go
+        linters: [gosec]
+        text: "G306: Expect WriteFile permissions to be 0600 or less"
+
+      # Related to migration command.
+      - path: pkg/commands/internal/migrate/two/
+        linters:
+          - lll
+
+      # Related to migration command.
+      - path: pkg/commands/internal/migrate/
+        linters:
+          - gocritic
+        text: "hugeParam:"
+
+      # The codes are close but this is not duplication.
+      - path: pkg/commands/(formatters|linters).go
+        linters:
+          - dupl
+
 formatters:
   enable:
     - gci
     - gofmt
-    # - gofumpt
     - goimports
-    # - golines
-
-linters:
-  # disable-all: true
-  enable:
-   - sloglint
+  settings:
+    gofmt:
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+    goimports:
+      local-prefixes:
+        - github.com/golangci/golangci-lint/v2
   exclusions:
-    generated: lax
     paths:
-      - third_party$
-      - builtin$
-      - examples$
-      - \\.(generated\\.deepcopy|pb)\\.go$
+      - test/testdata_etc # test files
+      - internal/go # extracted from Go code
+      - internal/x # extracted from x/tools code
+      - pkg/goformatters/gci/internal # extracted from gci code
+      - pkg/goanalysis/runner_checker.go # extracted from x/tools code
 
-settings:
-  gocyclo:
-    min-complexity: 35
+# linters:
+#   default: none
+#   enable:
+#    - sloglint
 
-  govet:
-    enable:
-      - nilness
+#   exclusions:
+#     generated: lax
+#     paths:
+#       - third_party$
+#       - builtin$
+#       - examples$
+#       - \\.(generated\\.deepcopy|pb)\\.go$
 
-  goimports:
-    local-prefixes: github.com/derailed/k9s
+#   settings:
+#     gocyclo:
+#       min-complexity: 35
 
-  unused:
-    parameters-are-used: true
-    local-variables-are-used: true
-    field-writes-are-uses: true
-    post-statements-are-reads: true
-    exported-fields-are-used: true
-    generated-is-used: true
+#     govet:
+#       enable:
+#         - nilness
 
-  goheader:
-    values:
-      regexp:
-        PROJECT: 'K9s'
-    template: |-
-      SPDX-License-Identifier: Apache-2.0
-      Copyright Authors of {{ PROJECT }}
+#     goimports:
+#       local-prefixes: github.com/derailed/k9s
 
-  gosec:
-    includes:
-      - G402
+#     unused:
+#       parameters-are-used: true
+#       local-variables-are-used: true
+#       field-writes-are-uses: true
+#       post-statements-are-reads: true
+#       exported-fields-are-used: true
+#       generated-is-used: true
 
-  sloglint:
-    # Enforce not mixing key-value pairs and attributes.
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-mixed-arguments
-    # Default: true
-    no-mixed-args: true
-    # Enforce using key-value pairs only (overrides no-mixed-args, incompatible with attr-only).
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#key-value-pairs-only
-    # Default: false
-    kv-only: true
-    # Enforce using attributes only (overrides no-mixed-args, incompatible with kv-only).
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#attributes-only
-    # Default: false
-    attr-only: false
-    # Enforce not using global loggers.
-    # Values:
-    # - "": disabled
-    # - "all": report all global loggers
-    # - "default": report only the default slog logger
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-global
-    # Default: ""
-    no-global: ""
-    # Enforce using methods that accept a context.
-    # Values:
-    # - "": disabled
-    # - "all": report all contextless calls
-    # - "scope": report only if a context exists in the scope of the outermost function
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#context-only
-    # Default: ""
-    context: ""
-    # Enforce using static values for log messages.
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#static-messages
-    # Default: false
-    static-msg: false
-    # Enforce using constants instead of raw keys.
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#no-raw-keys
-    # Default: false
-    no-raw-keys: true
-    # Enforce a single key naming convention.
-    # Values: snake, kebab, camel, pascal
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#key-naming-convention
-    # Default: ""
-    key-naming-case: camel
-    # Enforce not using specific keys.
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#forbidden-keys
-    # Default: []
-    forbidden-keys:
-      - time
-      - level
-      - msg
-      - source
-    # Enforce putting arguments on separate lines.
-    # https://github.com/go-simpler/sloglint?tab=readme-ov-file#arguments-on-separate-lines
-    # Default: false
-    args-on-sep-lines: false
+#     goheader:
+#       values:
+#         regexp:
+#           PROJECT: 'K9s'
+#       template: |-
+#         SPDX-License-Identifier: Apache-2.0
+#         Copyright Authors of {{ PROJECT }}
+
+#     gosec:
+#       includes:
+#         - G402
 
 
-issues:
 
-  # default is true. Enables skipping of directories:
-  #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
-  # exclude-dirs-use-default: true
+# issues:
 
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  # exclude-rules:
-  #   - linters: [staticcheck]
-  #     text: "SA1019"                  # this is rule for deprecated method
+#   # default is true. Enables skipping of directories:
+#   #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
+#   # exclude-dirs-use-default: true
 
-  #   - linters: [staticcheck]
-  #     text: "SA9003: empty branch"
+#   # Excluding configuration per-path, per-linter, per-text and per-source
+#   # exclude-rules:
+#   #   - linters: [staticcheck]
+#   #     text: "SA1019"                  # this is rule for deprecated method
 
-  #   - linters: [staticcheck]
-  #     text: "SA2001: empty critical section"
+#   #   - linters: [staticcheck]
+#   #     text: "SA9003: empty branch"
 
-  #   - linters: [err113]
-  #     text: "do not define dynamic errors, use wrapped static errors instead" # This rule to avoid opinionated check fmt.Errorf("text")
-  #   # Skip goimports check on generated files
-  #   - path: \\.(generated\\.deepcopy|pb)\\.go$
-  #     linters:
-  #       - goimports
-  #   # Skip goheader check on files imported and modified from upstream k8s
-  #   - path: "pkg/ipam/(cidrset|service)/.+\\.go"
-  #     linters:
-  #       - goheader
+#   #   - linters: [staticcheck]
+#   #     text: "SA2001: empty critical section"
+
+#   #   - linters: [err113]
+#   #     text: "do not define dynamic errors, use wrapped static errors instead" # This rule to avoid opinionated check fmt.Errorf("text")
+#   #   # Skip goimports check on generated files
+#   #   - path: \\.(generated\\.deepcopy|pb)\\.go$
+#   #     linters:
+#   #       - goimports
+#   #   # Skip goheader check on files imported and modified from upstream k8s
+#   #   - path: "pkg/ipam/(cidrset|service)/.+\\.go"
+#   #     linters:
+#   #       - goheader

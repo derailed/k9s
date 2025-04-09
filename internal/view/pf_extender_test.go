@@ -45,8 +45,8 @@ func TestEnsurePodPortFwdAllowed(t *testing.T) {
 			f := testFactory{}
 			if u.podExists {
 				f.expectedGet = &unstructured.Unstructured{
-					Object: map[string]interface{}{
-						"status": map[string]interface{}{
+					Object: map[string]any{
+						"status": map[string]any{
 							"phase": u.podPhase,
 						},
 					},
@@ -69,34 +69,27 @@ type testFactory struct {
 
 var _ dao.Factory = testFactory{}
 
-func (t testFactory) Client() client.Connection {
+func (testFactory) Client() client.Connection {
 	return nil
 }
-
-func (t testFactory) Get(string, string, bool, labels.Selector) (runtime.Object, error) {
+func (t testFactory) Get(*client.GVR, string, bool, labels.Selector) (runtime.Object, error) {
 	if t.expectedGet != nil {
 		return t.expectedGet, nil
 	}
 
 	return nil, errors.New("not found")
 }
-
-func (t testFactory) List(string, string, bool, labels.Selector) ([]runtime.Object, error) {
+func (testFactory) List(*client.GVR, string, bool, labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }
-
-func (t testFactory) ForResource(string, string) (informers.GenericInformer, error) {
+func (testFactory) ForResource(string, *client.GVR) (informers.GenericInformer, error) {
 	return nil, nil
 }
-
-func (t testFactory) CanForResource(string, string, []string) (informers.GenericInformer, error) {
+func (testFactory) CanForResource(string, *client.GVR, []string) (informers.GenericInformer, error) {
 	return nil, nil
 }
-
-func (t testFactory) Forwarders() watch.Forwarders {
+func (testFactory) Forwarders() watch.Forwarders {
 	return nil
 }
-
-func (t testFactory) WaitForCacheSync() {}
-
-func (t testFactory) DeleteForwarder(string) {}
+func (testFactory) WaitForCacheSync()      {}
+func (testFactory) DeleteForwarder(string) {}

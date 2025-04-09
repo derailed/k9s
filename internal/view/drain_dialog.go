@@ -80,7 +80,7 @@ func ShowDrain(view ResourceViewer, sels []string, opts dao.DrainOptions, okFn D
 	}
 	path += "?"
 	modal.SetText(path)
-	modal.SetDoneFunc(func(_ int, b string) {
+	modal.SetDoneFunc(func(int, string) {
 		DismissDrain(view, pages)
 	})
 

@@ -133,7 +133,7 @@ func TestK8sEnv(t *testing.T) {
 	c := client.NewConfig(&flags)
 	env := k8sEnv(c)
 
-	assert.Equal(t, 5, len(env))
+	assert.Len(t, env, 5)
 	assert.Equal(t, cl, env["CLUSTER"])
 	assert.Equal(t, ctx, env["CONTEXT"])
 	assert.Equal(t, u, env["USER"])
@@ -160,7 +160,7 @@ func TestK9sEnv(t *testing.T) {
 	}
 	env := defaultEnv(c, "fred/blee", h, &r)
 
-	assert.Equal(t, 10, len(env))
+	assert.Len(t, env, 10)
 	assert.Equal(t, cl, env["CLUSTER"])
 	assert.Equal(t, ctx, env["CONTEXT"])
 	assert.Equal(t, u, env["USER"])
@@ -241,7 +241,7 @@ func TestUrlFor(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, urlFor(u.cfg, u.port))
+			assert.Equal(t, u.e, urlFor(&u.cfg, u.port))
 		})
 	}
 }

@@ -15,6 +15,20 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultDSHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "UP-TO-DATE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // DaemonSet renders a K8s DaemonSet to screen.
 type DaemonSet struct {
 	Base
@@ -22,31 +36,14 @@ type DaemonSet struct {
 
 // Header returns a header row.
 func (d DaemonSet) Header(_ string) model1.Header {
-	return d.doHeader(d.defaultHeader())
-}
-
-// Header returns a header row.
-func (DaemonSet) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
-		model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "UP-TO-DATE", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return d.doHeader(defaultDSHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (d DaemonSet) Render(o interface{}, ns string, row *model1.Row) error {
+func (d DaemonSet) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected Deployment, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	if err := d.defaultRow(raw, row); err != nil {
 		return err
@@ -54,9 +51,7 @@ func (d DaemonSet) Render(o interface{}, ns string, row *model1.Row) error {
 	if d.specs.isEmpty() {
 		return nil
 	}
-
-	// !BOZO!! Call header 2 times
-	cols, err := d.specs.realize(raw, d.defaultHeader(), row)
+	cols, err := d.specs.realize(raw, defaultDSHeader, row)
 	if err != nil {
 		return err
 	}
@@ -73,11 +68,11 @@ func (d DaemonSet) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 		return err
 	}
 
-	r.ID = client.MetaFQN(ds.ObjectMeta)
+	r.ID = client.MetaFQN(&ds.ObjectMeta)
 	r.Fields = model1.Fields{
 		ds.Namespace,
 		ds.Name,
-		computeVulScore(ds.ObjectMeta, &ds.Spec.Template.Spec),
+		computeVulScore(ds.Namespace, ds.Labels, &ds.Spec.Template.Spec),
 		strconv.Itoa(int(ds.Status.DesiredNumberScheduled)),
 		strconv.Itoa(int(ds.Status.CurrentNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberReady)),

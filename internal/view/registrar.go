@@ -21,133 +21,127 @@ func loadCustomViewers() MetaViewers {
 }
 
 func helmViewers(vv MetaViewers) {
-	vv[client.NewGVR("helm")] = MetaViewer{
+	vv[client.HmGVR] = MetaViewer{
 		viewerFn: NewHelmChart,
 	}
 }
 
 func coreViewers(vv MetaViewers) {
-	vv[client.NewGVR("v1/namespaces")] = MetaViewer{
+	vv[client.NsGVR] = MetaViewer{
 		viewerFn: NewNamespace,
 	}
-	vv[client.NewGVR("v1/events")] = MetaViewer{
+	vv[client.EvGVR] = MetaViewer{
 		viewerFn: NewEvent,
 	}
-	vv[client.NewGVR("v1/pods")] = MetaViewer{
+	vv[client.PodGVR] = MetaViewer{
 		viewerFn: NewPod,
 	}
-	vv[client.NewGVR("v1/services")] = MetaViewer{
+	vv[client.SvcGVR] = MetaViewer{
 		viewerFn: NewService,
 	}
-	vv[client.NewGVR("v1/nodes")] = MetaViewer{
+	vv[client.NodeGVR] = MetaViewer{
 		viewerFn: NewNode,
 	}
-	vv[client.NewGVR("v1/secrets")] = MetaViewer{
+	vv[client.SecGVR] = MetaViewer{
 		viewerFn: NewSecret,
 	}
-	vv[client.NewGVR("scheduling.k8s.io/v1/priorityclasses")] = MetaViewer{
+	vv[client.PcGVR] = MetaViewer{
 		viewerFn: NewPriorityClass,
 	}
-	vv[client.NewGVR("v1/configmaps")] = MetaViewer{
+	vv[client.CmGVR] = MetaViewer{
 		viewerFn: NewConfigMap,
 	}
-	vv[client.NewGVR("v1/serviceaccounts")] = MetaViewer{
+	vv[client.SaGVR] = MetaViewer{
 		viewerFn: NewServiceAccount,
 	}
-	vv[client.NewGVR("v1/persistentvolumeclaims")] = MetaViewer{
+	vv[client.PvcGVR] = MetaViewer{
 		viewerFn: NewPersistentVolumeClaim,
 	}
 }
 
 func miscViewers(vv MetaViewers) {
-	vv[client.NewGVR("workloads")] = MetaViewer{
+	vv[client.WkGVR] = MetaViewer{
 		viewerFn: NewWorkload,
 	}
-	vv[client.NewGVR("contexts")] = MetaViewer{
+	vv[client.CtGVR] = MetaViewer{
 		viewerFn: NewContext,
 	}
-	vv[client.NewGVR("containers")] = MetaViewer{
+	vv[client.CoGVR] = MetaViewer{
 		viewerFn: NewContainer,
 	}
-	vv[client.NewGVR("scans")] = MetaViewer{
+	vv[client.ScGVR] = MetaViewer{
 		viewerFn: NewImageScan,
 	}
-	vv[client.NewGVR("portforwards")] = MetaViewer{
+	vv[client.PfGVR] = MetaViewer{
 		viewerFn: NewPortForward,
 	}
-	vv[client.NewGVR("screendumps")] = MetaViewer{
+	vv[client.SdGVR] = MetaViewer{
 		viewerFn: NewScreenDump,
 	}
-	vv[client.NewGVR("benchmarks")] = MetaViewer{
+	vv[client.BeGVR] = MetaViewer{
 		viewerFn: NewBenchmark,
 	}
-	vv[client.NewGVR("aliases")] = MetaViewer{
+	vv[client.AliGVR] = MetaViewer{
 		viewerFn: NewAlias,
 	}
-	vv[client.NewGVR("references")] = MetaViewer{
+	vv[client.RefGVR] = MetaViewer{
 		viewerFn: NewReference,
 	}
-	vv[client.NewGVR("pulses")] = MetaViewer{
+	vv[client.PuGVR] = MetaViewer{
 		viewerFn: NewPulse,
 	}
 }
 
 func appsViewers(vv MetaViewers) {
-	vv[client.NewGVR("apps/v1/deployments")] = MetaViewer{
+	vv[client.DpGVR] = MetaViewer{
 		viewerFn: NewDeploy,
 	}
-	vv[client.NewGVR("apps/v1/replicasets")] = MetaViewer{
+	vv[client.RsGVR] = MetaViewer{
 		viewerFn: NewReplicaSet,
 	}
-	vv[client.NewGVR("apps/v1/statefulsets")] = MetaViewer{
+	vv[client.StsGVR] = MetaViewer{
 		viewerFn: NewStatefulSet,
 	}
-	vv[client.NewGVR("apps/v1/daemonsets")] = MetaViewer{
-		viewerFn: NewDaemonSet,
-	}
-	vv[client.NewGVR("apps/v1/daemonsets")] = MetaViewer{
+	vv[client.DsGVR] = MetaViewer{
 		viewerFn: NewDaemonSet,
 	}
 }
 
 func rbacViewers(vv MetaViewers) {
-	vv[client.NewGVR("rbac")] = MetaViewer{
+	vv[client.RbacGVR] = MetaViewer{
 		enterFn: showRules,
 	}
-	vv[client.NewGVR("users")] = MetaViewer{
+	vv[client.UsrGVR] = MetaViewer{
 		viewerFn: NewUser,
 	}
-	vv[client.NewGVR("groups")] = MetaViewer{
+	vv[client.GrpGVR] = MetaViewer{
 		viewerFn: NewGroup,
 	}
-	vv[client.NewGVR("rbac.authorization.k8s.io/v1/clusterroles")] = MetaViewer{
+	vv[client.CrGVR] = MetaViewer{
 		enterFn: showRules,
 	}
-	vv[client.NewGVR("rbac.authorization.k8s.io/v1/roles")] = MetaViewer{
+	vv[client.CrbGVR] = MetaViewer{
 		enterFn: showRules,
 	}
-	vv[client.NewGVR("rbac.authorization.k8s.io/v1/clusterrolebindings")] = MetaViewer{
+	vv[client.RoGVR] = MetaViewer{
 		enterFn: showRules,
 	}
-	vv[client.NewGVR("rbac.authorization.k8s.io/v1/rolebindings")] = MetaViewer{
+	vv[client.RobGVR] = MetaViewer{
 		enterFn: showRules,
 	}
 }
 
 func batchViewers(vv MetaViewers) {
-	vv[client.NewGVR("batch/v1beta1/cronjobs")] = MetaViewer{
+	vv[client.CjGVR] = MetaViewer{
 		viewerFn: NewCronJob,
 	}
-	vv[client.NewGVR("batch/v1/cronjobs")] = MetaViewer{
-		viewerFn: NewCronJob,
-	}
-	vv[client.NewGVR("batch/v1/jobs")] = MetaViewer{
+	vv[client.JobGVR] = MetaViewer{
 		viewerFn: NewJob,
 	}
 }
 
 func crdViewers(vv MetaViewers) {
-	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
+	vv[client.CrdGVR] = MetaViewer{
 		viewerFn: NewCRD,
 	}
 }

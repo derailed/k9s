@@ -15,7 +15,7 @@ type PortChecker func(PortTunnel) bool
 type PFAnns []*PFAnn
 
 // ToPortSpec returns a container port and local port definitions.
-func (aa PFAnns) ToPortSpec(pp ContainerPortSpecs) (string, string) {
+func (aa PFAnns) ToPortSpec(pp ContainerPortSpecs) (ports, localPorts string) {
 	specs, lps := make([]string, 0, len(aa)), make([]string, 0, len(aa))
 	for _, a := range aa {
 		specs = append(specs, a.AsSpec())
@@ -32,7 +32,7 @@ func (aa PFAnns) ToPortSpec(pp ContainerPortSpecs) (string, string) {
 	return strings.Join(specs, ","), strings.Join(lps, ",")
 }
 
-func (aa PFAnns) ToTunnels(address string, pp ContainerPortSpecs, available PortChecker) (PortTunnels, error) {
+func (aa PFAnns) ToTunnels(address string, _ ContainerPortSpecs, available PortChecker) (PortTunnels, error) {
 	pts := make(PortTunnels, 0, len(aa))
 	for _, a := range aa {
 		pt, err := a.ToTunnel(address)

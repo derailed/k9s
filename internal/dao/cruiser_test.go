@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -24,20 +25,20 @@ func TestCruiserSlice(t *testing.T) {
 	o := loadJSON(t, "crb")
 
 	s := mustSlice(o, "subjects")
-	assert.Equal(t, 1, len(s))
-	assert.Equal(t, "fernand", mustField(s[0].(map[string]interface{}), "name"))
-	assert.Equal(t, "User", mustField(s[0].(map[string]interface{}), "kind"))
+	assert.Len(t, s, 1)
+	assert.Equal(t, "fernand", mustField(s[0].(map[string]any), "name"))
+	assert.Equal(t, "User", mustField(s[0].(map[string]any), "kind"))
 }
 
 // Helpers...
 
-func loadJSON(t assert.TestingT, n string) *unstructured.Unstructured {
+func loadJSON(t require.TestingT, n string) *unstructured.Unstructured {
 	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	var o unstructured.Unstructured
 	err = json.Unmarshal(raw, &o)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return &o
 }

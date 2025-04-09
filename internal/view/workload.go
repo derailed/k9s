@@ -26,7 +26,7 @@ type Workload struct {
 }
 
 // NewWorkload returns a new viewer.
-func NewWorkload(gvr client.GVR) ResourceViewer {
+func NewWorkload(gvr *client.GVR) ResourceViewer {
 	w := Workload{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -67,17 +67,17 @@ func (w *Workload) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func parsePath(path string) (client.GVR, string, bool) {
+func parsePath(path string) (*client.GVR, string, bool) {
 	tt := strings.Split(path, "|")
 	if len(tt) != 3 {
 		slog.Error("Unable to parse workload path", slogs.Path, path)
-		return client.NewGVR(""), client.FQN("", ""), false
+		return client.NoGVR, client.FQN("", ""), false
 	}
 
 	return client.NewGVR(tt[0]), client.FQN(tt[1], tt[2]), true
 }
 
-func (w *Workload) showRes(app *App, _ ui.Tabular, _ client.GVR, path string) {
+func (*Workload) showRes(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	gvr, fqn, ok := parsePath(path)
 	if !ok {
 		app.Flash().Err(fmt.Errorf("unable to parse path: %q", path))
@@ -105,7 +105,7 @@ func (w *Workload) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (w *Workload) defaultContext(gvr client.GVR, fqn string) context.Context {
+func (w *Workload) defaultContext(gvr *client.GVR, fqn string) context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, w.App().factory)
 	ctx = context.WithValue(ctx, internal.KeyGVR, gvr)
 	if fqn != "" {
@@ -148,7 +148,8 @@ func (w *Workload) resourceDelete(selections []string, msg string) {
 		}
 		w.GetTable().Start()
 	}
-	dialog.ShowDelete(w.App().Styles.Dialog(), w.App().Content.Pages, msg, okFn, func() {})
+	d := w.App().Styles.Dialog()
+	dialog.ShowDelete(&d, w.App().Content.Pages, msg, okFn, func() {})
 }
 
 func (w *Workload) describeCmd(evt *tcell.EventKey) *tcell.EventKey {

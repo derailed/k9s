@@ -297,7 +297,7 @@ func TestHeaderClone(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			c := u.h.Clone()
-			assert.Equal(t, len(u.h), len(c))
+			assert.Len(t, u.h, len(c))
 			if len(u.h) > 0 {
 				u.h[0].Name = "blee"
 				assert.Equal(t, "A", c[0].Name)

@@ -28,24 +28,17 @@ import (
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func aliasesFor(m v1.APIResource, aa []string) map[string]struct{} {
-	rr := make(map[string]struct{})
-	rr[m.Name] = struct{}{}
-	for _, a := range aa {
-		rr[a] = struct{}{}
-	}
-	if m.ShortNames != nil {
-		for _, a := range m.ShortNames {
-			rr[a] = struct{}{}
-		}
-	}
+func aliases(m *v1.APIResource, aa sets.Set[string]) sets.Set[string] {
+	ss := sets.New(aa.UnsortedList()...)
+	ss.Insert(m.ShortNames...)
 	if m.SingularName != "" {
-		rr[m.SingularName] = struct{}{}
+		ss.Insert(m.SingularName)
 	}
 
-	return rr
+	return ss
 }
 
 func clipboardWrite(text string) error {
@@ -74,10 +67,10 @@ func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.E
 	}
 }
 
-func parsePFAnn(s string) (string, string, bool) {
+func parsePFAnn(s string) (port, lport string, ok bool) {
 	tokens := strings.Split(s, ":")
 	if len(tokens) != 2 {
-		return "", "", false
+		return
 	}
 
 	return tokens[0], tokens[1], true
@@ -134,7 +127,7 @@ func defaultEnv(c *client.Config, path string, header model1.Header, row *model1
 	return env
 }
 
-func describeResource(app *App, m ui.Tabular, gvr client.GVR, path string) {
+func describeResource(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
 	v := NewLiveView(app, "Describe", model.NewDescribe(gvr, path))
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
@@ -151,7 +144,7 @@ func toLabelsStr(labels map[string]string) string {
 }
 
 func showPods(app *App, path, labelSel, fieldSel string) {
-	v := NewPod(client.NewGVR("v1/pods"))
+	v := NewPod(client.PodGVR)
 	v.SetContextFn(podCtx(app, path, fieldSel))
 	v.SetLabelFilter(cmd.ToLabels(labelSel))
 
@@ -209,7 +202,7 @@ func containerID(path, co string) string {
 }
 
 // UrlFor computes fq url for a given benchmark configuration.
-func urlFor(cfg config.BenchConfig, port string) string {
+func urlFor(cfg *config.BenchConfig, port string) string {
 	host := "localhost"
 	if cfg.HTTP.Host != "" {
 		host = cfg.HTTP.Host
@@ -234,12 +227,12 @@ func decorateCpuMemHeaderRows(app *App, data *model1.TableData) {
 	for colIndex, header := range data.Header() {
 		var check string
 		if header.Name == "%CPU/L" {
-			check = "cpu"
+			check = config.CPU
 		}
 		if header.Name == "%MEM/L" {
-			check = "memory"
+			check = config.MEM
 		}
-		if len(check) == 0 {
+		if check == "" {
 			continue
 		}
 		data.RowsRange(func(_ int, re model1.RowEvent) bool {
@@ -258,7 +251,7 @@ func decorateCpuMemHeaderRows(app *App, data *model1.TableData) {
 				return true
 			}
 			color := app.Config.K9s.Thresholds.SeverityColor(check, n)
-			if len(color) > 0 {
+			if color != "" {
 				re.Row.Fields[colIndex] = "[" + color + "::b]" + re.Row.Fields[colIndex]
 			}
 

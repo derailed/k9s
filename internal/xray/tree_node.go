@@ -54,14 +54,16 @@ type TreeRef string
 
 // NodeSpec represents a node resource specification.
 type NodeSpec struct {
-	GVRs, Paths, Statuses []string
+	GVRs            client.GVRs
+	Paths, Statuses []string
 }
 
 // ParentGVR returns the parent GVR.
-func (s NodeSpec) ParentGVR() *string {
+func (s NodeSpec) ParentGVR() *client.GVR {
 	if len(s.GVRs) > 1 {
-		return &s.GVRs[1]
+		return s.GVRs[1]
 	}
+
 	return nil
 }
 
@@ -74,7 +76,7 @@ func (s NodeSpec) ParentPath() *string {
 }
 
 // GVR returns the current GVR.
-func (s NodeSpec) GVR() string {
+func (s NodeSpec) GVR() *client.GVR {
 	return s.GVRs[0]
 }
 
@@ -95,7 +97,12 @@ func (s NodeSpec) AsPath() string {
 
 // AsGVR returns a gvr hierarchy as string.
 func (s NodeSpec) AsGVR() string {
-	return strings.Join(s.GVRs, PathSeparator)
+	ss := make([]string, 0, len(s.GVRs))
+	for _, gvr := range s.GVRs {
+		ss = append(ss, gvr.R())
+	}
+
+	return strings.Join(ss, PathSeparator)
 }
 
 // AsStatus returns a status hierarchy as string.
@@ -129,14 +136,15 @@ func (c ChildNodes) Less(i, j int) bool {
 
 // TreeNode represents a resource tree node.
 type TreeNode struct {
-	GVR, ID  string
+	GVR      *client.GVR
+	ID       string
 	Children ChildNodes
 	Parent   *TreeNode
 	Extras   map[string]string
 }
 
 // NewTreeNode returns a new instance.
-func NewTreeNode(gvr, id string) *TreeNode {
+func NewTreeNode(gvr *client.GVR, id string) *TreeNode {
 	return &TreeNode{
 		GVR:    gvr,
 		ID:     id,
@@ -150,9 +158,9 @@ func (t *TreeNode) CountChildren() int {
 }
 
 // Count all the nodes from this node.
-func (t *TreeNode) Count(gvr string) int {
+func (t *TreeNode) Count(gvr *client.GVR) int {
 	counter := 0
-	if t.GVR == gvr || gvr == "" {
+	if t.GVR == gvr || gvr == client.NoGVR {
 		counter++
 	}
 	for _, c := range t.Children {
@@ -192,17 +200,18 @@ func (t *TreeNode) Sort() {
 
 // Spec returns this node specification.
 func (t *TreeNode) Spec() NodeSpec {
-	var GVRs, Paths, Statuses []string
+	var gvrs client.GVRs
+	var paths, statuses []string
 	for parent := t; parent != nil; parent = parent.Parent {
-		GVRs = append(GVRs, parent.GVR)
-		Paths = append(Paths, parent.ID)
-		Statuses = append(Statuses, parent.Extras[StatusKey])
+		gvrs = append(gvrs, parent.GVR)
+		paths = append(paths, parent.ID)
+		statuses = append(statuses, parent.Extras[StatusKey])
 	}
 
 	return NodeSpec{
-		GVRs:     GVRs,
-		Paths:    Paths,
-		Statuses: Statuses,
+		GVRs:     gvrs,
+		Paths:    paths,
+		Statuses: statuses,
 	}
 }
 
@@ -221,12 +230,12 @@ func (t *TreeNode) Flatten() []NodeSpec {
 
 // Blank returns true if this node is unset.
 func (t *TreeNode) Blank() bool {
-	return t.GVR == "" && t.ID == ""
+	return t.GVR == client.NoGVR && t.ID == ""
 }
 
 // Hydrate hydrates a full tree bases on a collection of specifications.
 func Hydrate(specs []NodeSpec) *TreeNode {
-	root := NewTreeNode("", "")
+	root := NewTreeNode(client.NoGVR, "")
 	nav := root
 	for _, spec := range specs {
 		for i := len(spec.Paths) - 1; i >= 0; i-- {
@@ -325,7 +334,7 @@ func (t *TreeNode) Clear() {
 }
 
 // Find locates a node given a gvr/id spec.
-func (t *TreeNode) Find(gvr, id string) *TreeNode {
+func (t *TreeNode) Find(gvr *client.GVR, id string) *TreeNode {
 	if t.GVR == gvr && t.ID == id {
 		return t
 	}
@@ -377,8 +386,8 @@ func dumpStdOut(n *TreeNode, level int) {
 	}
 }
 
-func category(gvr string) string {
-	meta, err := dao.MetaAccess.MetaFor(client.NewGVR(gvr))
+func category(gvr *client.GVR) string {
+	meta, err := dao.MetaAccess.MetaFor(gvr)
 	if err != nil {
 		return ""
 	}
@@ -470,32 +479,32 @@ func (t TreeNode) toEmojiTitle() (title string) {
 	return
 }
 
-func toEmoji(gvr string) string {
+func toEmoji(gvr *client.GVR) string {
 	if e := v1Emoji(gvr); e != "" {
 		return e
 	}
 	if e := appsEmoji(gvr); e != "" {
 		return e
 	}
-	if e := issueEmoji(gvr); e != "" {
+	if e := issueEmoji(gvr.String()); e != "" {
 		return e
 	}
 	switch gvr {
-	case "autoscaling/v1/horizontalpodautoscalers":
+	case client.HpaGVR:
 		return "♎️"
-	case "rbac.authorization.k8s.io/v1/clusterrolebindings", "rbac.authorization.k8s.io/v1/clusterroles":
+	case client.CrGVR, client.CrbGVR:
 		return "👩‍"
-	case "rbac.authorization.k8s.io/v1/rolebindings", "rbac.authorization.k8s.io/v1/roles":
+	case client.RoGVR, client.RobGVR:
 		return "👨🏻‍"
-	case "networking.k8s.io/v1/networkpolicies":
+	case client.NpGVR:
 		return "📕"
-	case "policy/v1/poddisruptionbudgets":
+	case client.PdbGVR:
 		return "🏷 "
-	case "policy/v1beta1/podsecuritypolicies":
+	case client.PspGVR:
 		return "👮‍♂️"
-	case "containers":
+	case client.CoGVR:
 		return "🐳"
-	case "report":
+	case client.NewGVR("report"):
 		return "🧼"
 	default:
 		return "📎"
@@ -517,40 +526,40 @@ func issueEmoji(gvr string) string {
 	}
 }
 
-func v1Emoji(gvr string) string {
+func v1Emoji(gvr *client.GVR) string {
 	switch gvr {
-	case "v1/namespaces":
+	case client.NsGVR:
 		return "🗂 "
-	case "v1/nodes":
+	case client.NodeGVR:
 		return "🖥 "
-	case "v1/pods":
+	case client.PodGVR:
 		return "🚛"
-	case "v1/services":
+	case client.SvcGVR:
 		return "💁‍♀️"
-	case "v1/serviceaccounts":
+	case client.SaGVR:
 		return "💳"
-	case "v1/persistentvolumes":
+	case client.PvGVR:
 		return "📚"
-	case "v1/persistentvolumeclaims":
+	case client.PvcGVR:
 		return "🎟 "
-	case "v1/secrets":
+	case client.SecGVR:
 		return "🔒"
-	case "v1/configmaps":
+	case client.CmGVR:
 		return "🗺 "
 	default:
 		return ""
 	}
 }
 
-func appsEmoji(gvr string) string {
+func appsEmoji(gvr *client.GVR) string {
 	switch gvr {
-	case "apps/v1/deployments":
+	case client.DpGVR:
 		return "🪂"
-	case "apps/v1/statefulsets":
+	case client.StsGVR:
 		return "🎎"
-	case "apps/v1/daemonsets":
+	case client.DsGVR:
 		return "😈"
-	case "apps/v1/replicasets":
+	case client.RsGVR:
 		return "👯‍♂️"
 	default:
 		return ""
@@ -559,24 +568,24 @@ func appsEmoji(gvr string) string {
 
 // EmojiInfo returns emoji help.
 func EmojiInfo() map[string]string {
-	GVRs := []string{
-		"containers",
-		"v1/namespaces",
-		"v1/pods",
-		"v1/services",
-		"v1/serviceaccounts",
-		"v1/persistentvolumes",
-		"v1/persistentvolumeclaims",
-		"v1/secrets",
-		"v1/configmaps",
-		"apps/v1/deployments",
-		"apps/v1/statefulsets",
-		"apps/v1/daemonsets",
+	gvrs := []*client.GVR{
+		client.CoGVR,
+		client.NsGVR,
+		client.PodGVR,
+		client.SvcGVR,
+		client.SaGVR,
+		client.PvGVR,
+		client.PvcGVR,
+		client.SecGVR,
+		client.CmGVR,
+		client.DpGVR,
+		client.StsGVR,
+		client.DsGVR,
 	}
 
-	m := make(map[string]string, len(GVRs))
-	for _, g := range GVRs {
-		m[client.NewGVR(g).R()] = toEmoji(g)
+	m := make(map[string]string, len(gvrs))
+	for _, gvr := range gvrs {
+		m[gvr.R()] = toEmoji(gvr)
 	}
 
 	return m

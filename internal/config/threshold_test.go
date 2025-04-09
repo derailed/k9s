@@ -48,32 +48,37 @@ func TestLevelFor(t *testing.T) {
 		e config.SeverityLevel
 	}{
 		"normal": {
-			k: "cpu",
+			k: config.CPU,
 			v: 0,
 			e: config.SeverityLow,
 		},
 		"4": {
-			k: "cpu",
+			k: config.CPU,
 			v: 71,
 			e: config.SeverityMedium,
 		},
 		"3": {
-			k: "cpu",
+			k: config.CPU,
 			v: 75,
 			e: config.SeverityMedium,
 		},
 		"2": {
-			k: "cpu",
+			k: config.CPU,
 			v: 80,
 			e: config.SeverityMedium,
 		},
 		"1": {
-			k: "cpu",
+			k: config.CPU,
 			v: 100,
 			e: config.SeverityHigh,
 		},
 		"over": {
-			k: "cpu",
+			k: config.CPU,
+			v: 150,
+			e: config.SeverityLow,
+		},
+		"over-mem": {
+			k: config.MEM,
 			v: 150,
 			e: config.SeverityLow,
 		},

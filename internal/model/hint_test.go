@@ -37,7 +37,7 @@ func TestHint(t *testing.T) {
 			h.SetHints(u.hh)
 
 			assert.Equal(t, u.e, l.count)
-			assert.Equal(t, u.e, len(h.Peek()))
+			assert.Len(t, h.Peek(), u.e)
 		})
 	}
 }

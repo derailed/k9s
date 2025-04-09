@@ -16,14 +16,7 @@ func TestConfirmDialog(t *testing.T) {
 	a := tview.NewApplication()
 	p := ui.NewPages()
 	a.SetRoot(p, false)
-
-	ackFunc := func() {
-		assert.True(t, true)
-	}
-	caFunc := func() {
-		assert.True(t, true)
-	}
-	ShowConfirm(config.Dialog{}, p, "Blee", "Yo", ackFunc, caFunc)
+	ShowConfirm(new(config.Dialog), p, "Blee", "Yo", func() {}, func() {})
 
 	d := p.GetPrimitive(dialogKey).(*tview.ModalForm)
 	assert.NotNil(t, d)

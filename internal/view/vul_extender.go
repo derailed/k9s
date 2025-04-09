@@ -34,8 +34,8 @@ func (v *VulnerabilityExtender) bindKeys(aa *ui.KeyActions) {
 	}
 }
 
-func (v *VulnerabilityExtender) showVulCmd(evt *tcell.EventKey) *tcell.EventKey {
-	isv := NewImageScan(client.NewGVR("scans"))
+func (v *VulnerabilityExtender) showVulCmd(*tcell.EventKey) *tcell.EventKey {
+	isv := NewImageScan(client.ScGVR)
 	isv.SetContextFn(v.selContext)
 	if err := v.App().inject(isv, false); err != nil {
 		v.App().Flash().Err(err)

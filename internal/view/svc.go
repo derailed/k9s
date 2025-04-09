@@ -33,7 +33,7 @@ type Service struct {
 }
 
 // NewService returns a new viewer.
-func NewService(gvr client.GVR) ResourceViewer {
+func NewService(gvr *client.GVR) ResourceViewer {
 	s := Service{
 		ResourceViewer: NewPortForwardExtender(
 			NewOwnerExtender(
@@ -56,7 +56,7 @@ func (s *Service) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (s *Service) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
+func (s *Service) showPods(a *App, _ ui.Tabular, _ *client.GVR, path string) {
 	var res dao.Service
 	res.Init(a.factory, s.GVR())
 
@@ -77,14 +77,14 @@ func (s *Service) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
 	showPods(a, path, toLabelsStr(svc.Spec.Selector), "")
 }
 
-func (s *Service) checkSvc(svc *v1.Service) error {
+func (*Service) checkSvc(svc *v1.Service) error {
 	if svc.Spec.Type != "NodePort" && svc.Spec.Type != "LoadBalancer" {
 		return errors.New("you must select a reachable service")
 	}
 	return nil
 }
 
-func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
+func (*Service) getExternalPort(svc *v1.Service) (string, error) {
 	if svc.Spec.Type == "LoadBalancer" {
 		return "", nil
 	}
@@ -140,7 +140,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		s.App().Flash().Err(err)
 		return nil
 	}
-	if err := s.runBenchmark(port, cfg); err != nil {
+	if err := s.runBenchmark(port, &cfg); err != nil {
 		s.App().Flash().Errf("Benchmark failed %v", err)
 		s.App().ClearStatus(false)
 		s.bench = nil
@@ -150,7 +150,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 // BOZO!! Refactor used by forwards.
-func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
+func (s *Service) runBenchmark(port string, cfg *config.BenchConfig) error {
 	if cfg.HTTP.Host == "" {
 		return fmt.Errorf("invalid benchmark host %q", cfg.HTTP.Host)
 	}
@@ -209,7 +209,7 @@ func clearStatus(app *App) {
 }
 
 func fetchService(f dao.Factory, path string) (*v1.Service, error) {
-	o, err := f.Get("v1/services", path, true, labels.Everything())
+	o, err := f.Get(client.SvcGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

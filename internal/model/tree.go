@@ -35,7 +35,7 @@ type TreeListener interface {
 
 // Tree represents a tree model.
 type Tree struct {
-	gvr         client.GVR
+	gvr         *client.GVR
 	namespace   string
 	root        *xray.TreeNode
 	listeners   []TreeListener
@@ -45,7 +45,7 @@ type Tree struct {
 }
 
 // NewTree returns a new model.
-func NewTree(gvr client.GVR) *Tree {
+func NewTree(gvr *client.GVR) *Tree {
 	return &Tree{
 		gvr:         gvr,
 		refreshRate: 2 * time.Second,
@@ -133,7 +133,7 @@ func (t *Tree) Peek() *xray.TreeNode {
 }
 
 // Describe describes a given resource.
-func (t *Tree) Describe(ctx context.Context, gvr, path string) (string, error) {
+func (t *Tree) Describe(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	meta, err := t.getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -148,7 +148,7 @@ func (t *Tree) Describe(ctx context.Context, gvr, path string) (string, error) {
 }
 
 // ToYAML returns a resource yaml.
-func (t *Tree) ToYAML(ctx context.Context, gvr, path string) (string, error) {
+func (t *Tree) ToYAML(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	meta, err := t.getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -210,8 +210,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	}
 
 	ns := client.CleanseNamespace(t.namespace)
-	res := t.gvr.R()
-	root := xray.NewTreeNode(res, res)
+	root := xray.NewTreeNode(t.gvr, t.gvr.R())
 	ctx = context.WithValue(ctx, xray.KeyParent, root)
 	if _, ok := meta.TreeRenderer.(*xray.Generic); ok {
 		table, ok := oo[0].(*metav1.Table)
@@ -264,13 +263,13 @@ func (t *Tree) fireTreeLoadFailed(err error) {
 	}
 }
 
-func (t *Tree) getMeta(ctx context.Context, gvr string) (ResourceMeta, error) {
+func (t *Tree) getMeta(ctx context.Context, gvr *client.GVR) (ResourceMeta, error) {
 	meta := t.resourceMeta()
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
-	meta.DAO.Init(factory, client.NewGVR(gvr))
+	meta.DAO.Init(factory, gvr)
 
 	return meta, nil
 }
@@ -294,10 +293,15 @@ func treeHydrate(ctx context.Context, ns string, oo []runtime.Object, re TreeRen
 	if re == nil {
 		return fmt.Errorf("no tree renderer defined for this resource")
 	}
+	pool := internal.NewWorkerPool(ctx, internal.DefaultPoolSize)
 	for _, o := range oo {
-		if err := re.Render(ctx, ns, o); err != nil {
-			return err
-		}
+		pool.Add(func(_ context.Context) error {
+			return re.Render(ctx, ns, o)
+		})
+	}
+	errs := pool.Drain()
+	if len(errs) > 0 {
+		return errs[0]
 	}
 
 	return nil

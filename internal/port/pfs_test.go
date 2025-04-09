@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/port"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -100,7 +101,7 @@ func TestPFsToTunnel(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			pfs, err := port.ParsePFs(u.exp)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			pts, err := pfs.ToTunnels("fred", u.specs, f)
 			assert.Equal(t, u.e, err)
 			if err != nil {

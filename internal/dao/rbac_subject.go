@@ -23,7 +23,7 @@ type Subject struct {
 }
 
 // List returns a collection of subjects.
-func (s *Subject) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+func (s *Subject) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	kind, ok := ctx.Value(internal.KeySubjectKind).(string)
 	if !ok {
 		return nil, errors.New("expecting a SubjectKind")
@@ -57,15 +57,15 @@ func (s *Subject) listClusterRoleBindings(kind string) (render.Subjects, error) 
 	}
 
 	oo := make(render.Subjects, 0, len(crbs))
-	for _, crb := range crbs {
-		for _, su := range crb.Subjects {
+	for i := range crbs {
+		for _, su := range crbs[i].Subjects {
 			if su.Kind != kind {
 				continue
 			}
 			oo = oo.Upsert(render.SubjectRes{
 				Name:          su.Name,
 				Kind:          "ClusterRoleBinding",
-				FirstLocation: crb.Name,
+				FirstLocation: crbs[i].Name,
 			})
 		}
 	}
@@ -80,15 +80,15 @@ func (s *Subject) listRoleBindings(kind string) (render.Subjects, error) {
 	}
 
 	oo := make(render.Subjects, 0, len(rbs))
-	for _, rb := range rbs {
-		for _, su := range rb.Subjects {
+	for i := range rbs {
+		for _, su := range rbs[i].Subjects {
 			if su.Kind != kind {
 				continue
 			}
 			oo = oo.Upsert(render.SubjectRes{
 				Name:          su.Name,
 				Kind:          "RoleBinding",
-				FirstLocation: rb.Name,
+				FirstLocation: rbs[i].Name,
 			})
 		}
 	}

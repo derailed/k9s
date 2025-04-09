@@ -21,7 +21,7 @@ type Deploy struct {
 }
 
 // NewDeploy returns a new deployment view.
-func NewDeploy(gvr client.GVR) ResourceViewer {
+func NewDeploy(gvr *client.GVR) ResourceViewer {
 	var d Deploy
 	d.ResourceViewer = NewPortForwardExtender(
 		NewVulnerabilityExtender(
@@ -60,10 +60,10 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	return podLogOptions(d.App(), path, prev, dp.ObjectMeta, dp.Spec.Template.Spec), nil
+	return podLogOptions(d.App(), path, prev, &dp.ObjectMeta, &dp.Spec.Template.Spec), nil
 }
 
-func (d *Deploy) showPods(app *App, model ui.Tabular, gvr client.GVR, fqn string) {
+func (d *Deploy) showPods(app *App, _ ui.Tabular, _ *client.GVR, fqn string) {
 	dp, err := d.getInstance(fqn)
 	if err != nil {
 		app.Flash().Err(err)

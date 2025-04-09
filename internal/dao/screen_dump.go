@@ -25,12 +25,12 @@ type ScreenDump struct {
 }
 
 // Delete a ScreenDump.
-func (d *ScreenDump) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
+func (*ScreenDump) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	return os.Remove(path)
 }
 
 // List returns a collection of screen dumps.
-func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+func (*ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	dir, ok := ctx.Value(internal.KeyDir).(string)
 	if !ok {
 		return nil, errors.New("no screendump dir found in context")

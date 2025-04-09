@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewStyle(t *testing.T) {
@@ -38,7 +39,7 @@ func TestColor(t *testing.T) {
 
 func TestSkinHappy(t *testing.T) {
 	s := config.NewStyles()
-	assert.Nil(t, s.Load("../../skins/black-and-wtf.yaml"))
+	require.NoError(t, s.Load("../../skins/black-and-wtf.yaml"))
 	s.Update()
 
 	assert.Equal(t, "#ffffff", s.Body().FgColor.String())

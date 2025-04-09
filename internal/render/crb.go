@@ -13,6 +13,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultCRBHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "CLUSTERROLE"},
+	model1.HeaderColumn{Name: "SUBJECT-KIND"},
+	model1.HeaderColumn{Name: "SUBJECTS"},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // ClusterRoleBinding renders a K8s ClusterRoleBinding to screen.
 type ClusterRoleBinding struct {
 	Base
@@ -20,26 +29,14 @@ type ClusterRoleBinding struct {
 
 // Header returns a header row.
 func (c ClusterRoleBinding) Header(_ string) model1.Header {
-	return c.doHeader(c.defaultHeader())
-}
-
-// Header returns a header rbw.
-func (ClusterRoleBinding) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "CLUSTERROLE"},
-		model1.HeaderColumn{Name: "SUBJECT-KIND"},
-		model1.HeaderColumn{Name: "SUBJECTS"},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return c.doHeader(defaultCRBHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (c ClusterRoleBinding) Render(o interface{}, ns string, row *model1.Row) error {
+func (c ClusterRoleBinding) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected ClusterRoleBinding, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	if err := c.defaultRow(raw, row); err != nil {
 		return err
@@ -48,8 +45,7 @@ func (c ClusterRoleBinding) Render(o interface{}, ns string, row *model1.Row) er
 		return nil
 	}
 
-	// !BOZO!! Call header 2 times
-	cols, err := c.specs.realize(raw, c.defaultHeader(), row)
+	cols, err := c.specs.realize(raw, defaultCRBHeader, row)
 	if err != nil {
 		return err
 	}

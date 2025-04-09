@@ -48,7 +48,7 @@ func (g *Gauge) SetResolution(n int) {
 }
 
 // IsDial returns true if chart is a dial.
-func (g *Gauge) IsDial() bool {
+func (*Gauge) IsDial() bool {
 	return true
 }
 
@@ -81,12 +81,12 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 	style = style.Foreground(tcell.ColorYellow)
 	sc.SetContent(mid.X, mid.Y, '⠔', nil, style)
 
-	max := g.data.MaxDigits()
-	if max < g.resolution {
-		max = g.resolution
+	maxD := g.data.MaxDigits()
+	if maxD < g.resolution {
+		maxD = g.resolution
 	}
 	var (
-		fmat = "%" + fmt.Sprintf(gaugeFmt, max)
+		fmat = "%" + fmt.Sprintf(gaugeFmt, maxD)
 		o    = image.Point{X: mid.X, Y: mid.Y - 1}
 	)
 
@@ -118,7 +118,7 @@ func (g *Gauge) drawNum(sc tcell.Screen, o image.Point, n number, style tcell.St
 	if significant {
 		style = g.dimmed
 	}
-	for i := 0; i < len(n.str); i++ {
+	for i := range len(n.str) {
 		if n.str[i] == '0' && !significant {
 			g.drawDial(sc, dm.Print(int(n.str[i]-48)), o, g.dimmed)
 		} else {
@@ -134,8 +134,8 @@ func (g *Gauge) drawNum(sc tcell.Screen, o image.Point, n number, style tcell.St
 }
 
 func (g *Gauge) drawDial(sc tcell.Screen, m Matrix, o image.Point, style tcell.Style) {
-	for r := 0; r < len(m); r++ {
-		for c := 0; c < len(m[r]); c++ {
+	for r := range m {
+		for c := range m[r] {
 			dot := m[r][c]
 			if dot == dots[0] {
 				sc.SetContent(o.X+c, o.Y+r, dots[1], nil, g.dimmed)
@@ -167,7 +167,7 @@ func computeDelta(d1, d2 int64) delta {
 
 func printDelta(sc tcell.Screen, d delta, o image.Point, s tcell.Style) {
 	s = s.Dim(false)
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch d {
 	case DeltaLess:
 		sc.SetContent(o.X-1, o.Y+1, '↓', nil, s)

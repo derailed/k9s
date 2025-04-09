@@ -20,6 +20,6 @@ func TestKeyActionsHints(t *testing.T) {
 
 	hh := kk.Hints()
 
-	assert.Equal(t, 3, len(hh))
+	assert.Len(t, hh, 3)
 	assert.Equal(t, model.MenuHint{Mnemonic: "b", Description: "blee", Visible: true}, hh[0])
 }
