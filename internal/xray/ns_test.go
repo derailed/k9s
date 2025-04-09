@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNamespaceRender(t *testing.T) {
@@ -30,11 +32,11 @@ func TestNamespaceRender(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			o := load(t, u.file)
-			root := xray.NewTreeNode("namespaces", "namespaces")
+			root := xray.NewTreeNode(client.NsGVR, "namespaces")
 			ctx := context.WithValue(context.Background(), xray.KeyParent, root)
 			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
 
-			assert.Nil(t, re.Render(ctx, "", o))
+			require.NoError(t, re.Render(ctx, "", o))
 			assert.Equal(t, u.level1, root.CountChildren())
 		})
 	}

@@ -32,15 +32,15 @@ func NewPulseHealth(f dao.Factory) *PulseHealth {
 
 // List returns a canned collection of resources health.
 func (h *PulseHealth) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	gvrs := []string{
-		"v1/pods",
-		"v1/events",
-		"apps/v1/replicasets",
-		"apps/v1/deployments",
-		"apps/v1/statefulsets",
-		"apps/v1/daemonsets",
-		"batch/v1/jobs",
-		"v1/persistentvolumes",
+	gvrs := []*client.GVR{
+		client.PodGVR,
+		client.EvGVR,
+		client.RsGVR,
+		client.DpGVR,
+		client.StsGVR,
+		client.DsGVR,
+		client.CjGVR,
+		client.PcGVR,
 	}
 
 	hh := make([]runtime.Object, 0, 10)
@@ -89,11 +89,11 @@ func (h *PulseHealth) checkMetrics(ctx context.Context) (health.Checks, error) {
 		tcpu += m.TotalCPU
 		tmem += m.TotalMEM
 	}
-	c1 := health.NewCheck("cpu")
+	c1 := health.NewCheck(client.CpuGVR)
 	c1.Set(health.S1, ccpu)
 	c1.Set(health.S2, acpu)
 	c1.Set(health.S3, tcpu)
-	c2 := health.NewCheck("mem")
+	c2 := health.NewCheck(client.MemGVR)
 	c2.Set(health.S1, cmem)
 	c2.Set(health.S2, amem)
 	c2.Set(health.S3, tmem)
@@ -101,19 +101,19 @@ func (h *PulseHealth) checkMetrics(ctx context.Context) (health.Checks, error) {
 	return health.Checks{c1, c2}, nil
 }
 
-func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check, error) {
-	meta, ok := Registry[gvr]
+func (h *PulseHealth) check(ctx context.Context, ns string, gvr *client.GVR) (*health.Check, error) {
+	meta, ok := Registry[gvr.String()]
 	if !ok {
 		meta = ResourceMeta{
-			DAO:      &dao.Table{},
-			Renderer: &render.Table{},
+			DAO:      new(dao.Table),
+			Renderer: new(render.Table),
 		}
 	}
 	if meta.DAO == nil {
 		meta.DAO = &dao.Resource{}
 	}
 
-	meta.DAO.Init(h.factory, client.NewGVR(gvr))
+	meta.DAO.Init(h.factory, gvr)
 	oo, err := meta.DAO.List(ctx, ns)
 	if err != nil {
 		return nil, err

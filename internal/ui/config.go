@@ -83,6 +83,7 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 	if err := w.Add(config.AppViewsFile); err != nil {
 		return err
 	}
+	slog.Debug("Loading custom views", slogs.FileName, config.AppViewsFile)
 
 	return c.RefreshCustomViews()
 }
@@ -182,7 +183,7 @@ func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error 
 	if !ok {
 		return nil
 	}
-	ctConfigFile := filepath.Join(config.AppContextConfig(cl, ct))
+	ctConfigFile := config.AppContextConfig(cl, ct)
 	slog.Debug("ConfigWatcher watching", slogs.FileName, ctConfigFile)
 
 	return w.Add(ctConfigFile)
@@ -214,7 +215,7 @@ func (c *Configurator) activeSkin() (string, bool) {
 	return skin, skin != ""
 }
 
-func (c *Configurator) activeConfig() (cluster string, context string, ok bool) {
+func (c *Configurator) activeConfig() (cluster, context string, ok bool) {
 	if c.Config == nil || c.Config.K9s == nil {
 		return
 	}
@@ -254,7 +255,7 @@ func (c *Configurator) RefreshStyles(s synchronizer) {
 	}
 }
 
-func (c *Configurator) loadSkinFile(s synchronizer) {
+func (c *Configurator) loadSkinFile(synchronizer) {
 	skin, ok := c.activeSkin()
 	if !ok {
 		slog.Debug("No custom skin found. Using stock skin")

@@ -17,7 +17,7 @@ func NewView() *View {
 
 // Validate a view configuration.
 func (v *View) Validate() {
-	if len(v.Active) == 0 {
+	if v.Active == "" {
 		v.Active = DefaultView
 	}
 }

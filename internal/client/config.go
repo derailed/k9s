@@ -77,7 +77,7 @@ func (c *Config) clientConfig() clientcmd.ClientConfig {
 	return c.flags.ToRawKubeConfigLoader()
 }
 
-func (c *Config) reset() {}
+func (*Config) reset() {}
 
 // SwitchContext changes the kubeconfig context to a new cluster.
 func (c *Config) SwitchContext(name string) error {
@@ -221,17 +221,17 @@ func (c *Config) DelContext(n string) error {
 }
 
 // RenameContext renames a context.
-func (c *Config) RenameContext(old string, new string) error {
+func (c *Config) RenameContext(oldCtx, newCtx string) error {
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return err
 	}
 
-	if _, ok := cfg.Contexts[new]; ok {
-		return fmt.Errorf("context with name %s already exists", new)
+	if _, ok := cfg.Contexts[newCtx]; ok {
+		return fmt.Errorf("context with name %s already exists", newCtx)
 	}
-	cfg.Contexts[new] = cfg.Contexts[old]
-	delete(cfg.Contexts, old)
+	cfg.Contexts[newCtx] = cfg.Contexts[oldCtx]
+	delete(cfg.Contexts, oldCtx)
 	acc, err := c.ConfigAccess()
 	if err != nil {
 		return err
@@ -243,8 +243,8 @@ func (c *Config) RenameContext(old string, new string) error {
 	if err != nil {
 		return err
 	}
-	if current == old {
-		return c.SwitchContext(new)
+	if current == oldCtx {
+		return c.SwitchContext(newCtx)
 	}
 
 	return nil
@@ -344,9 +344,9 @@ func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 // Helpers...
 
 func isSet(s *string) bool {
-	return s != nil && len(*s) != 0
+	return s != nil && *s != ""
 }
 
-func areSet(s *[]string) bool {
-	return s != nil && len(*s) != 0
+func areSet(ss *[]string) bool {
+	return ss != nil && len(*ss) != 0
 }

@@ -21,7 +21,7 @@ type Job struct {
 }
 
 // NewJob returns a new viewer.
-func NewJob(gvr client.GVR) ResourceViewer {
+func NewJob(gvr *client.GVR) ResourceViewer {
 	var j Job
 
 	j.ResourceViewer = NewVulnerabilityExtender(
@@ -35,8 +35,8 @@ func NewJob(gvr client.GVR) ResourceViewer {
 	return &j
 }
 
-func (*Job) showPods(app *App, model ui.Tabular, gvr client.GVR, path string) {
-	o, err := app.factory.Get(gvr.String(), path, true, labels.Everything())
+func (*Job) showPods(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
+	o, err := app.factory.Get(gvr, path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -62,12 +62,12 @@ func (j *Job) logOptions(prev bool) (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	return podLogOptions(j.App(), path, prev, job.ObjectMeta, job.Spec.Template.Spec), nil
+	return podLogOptions(j.App(), path, prev, &job.ObjectMeta, &job.Spec.Template.Spec), nil
 }
 
 func (j *Job) getInstance(fqn string) (*batchv1.Job, error) {
 	var job dao.Job
-	job.Init(j.App().factory, client.NewGVR("batch/v1/jobs"))
+	job.Init(j.App().factory, client.JobGVR)
 
 	return job.GetInstance(fqn)
 }

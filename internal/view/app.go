@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"os/signal"
 	"runtime"
@@ -93,7 +94,7 @@ func (a *App) ConOK() bool {
 }
 
 // Init initializes the application.
-func (a *App) Init(version string, rate int) error {
+func (a *App) Init(version string, _ int) error {
 	a.version = model.NormalizeVersion(version)
 
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
@@ -139,7 +140,7 @@ func (a *App) Init(version string, rate int) error {
 	return nil
 }
 
-func (a *App) stopImgScanner() {
+func (*App) stopImgScanner() {
 	if vul.ImgScanner != nil {
 		vul.ImgScanner.Stop()
 	}
@@ -173,7 +174,7 @@ func (a *App) layout(ctx context.Context) {
 	}
 }
 
-func (a *App) initSignals() {
+func (*App) initSignals() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP)
 
@@ -198,8 +199,8 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 		}
 
 		ls := strings.ToLower(s)
-		for _, k := range a.command.alias.Keys() {
-			if suggest, ok := cmd.ShouldAddSuggest(ls, k); ok {
+		for alias := range maps.Keys(a.command.alias.Alias) {
+			if suggest, ok := cmd.ShouldAddSuggest(ls, alias); ok {
 				entries = append(entries, suggest)
 			}
 		}
@@ -253,7 +254,7 @@ func (a *App) bindKeys() {
 	}))
 }
 
-func (a *App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
+func (*App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
 	slog.Debug("GOR", slogs.GOR, runtime.NumGoroutine())
 	bb := make([]byte, 5_000_000)
 	runtime.Stack(bb, true)
@@ -401,7 +402,7 @@ func (a *App) refreshCluster(context.Context) error {
 		c.Stop()
 	}
 
-	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), int32(a.Config.K9s.MaxConnRetry)
+	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), a.Config.K9s.MaxConnRetry
 	if count >= maxConnRetry {
 		slog.Error("Conn check failed. Bailing out!",
 			slogs.Retry, count,
@@ -601,7 +602,7 @@ func (a *App) setIndicator(l model.FlashLevel, msg string) {
 }
 
 // PrevCmd pops the command stack.
-func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (a *App) PrevCmd(*tcell.EventKey) *tcell.EventKey {
 	if !a.Content.IsLast() {
 		a.Content.Pop()
 	}
@@ -646,7 +647,8 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) cowCmd(msg string) {
-	dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, msg)
+	d := a.Styles.Dialog()
+	dialog.ShowError(&d, a.Content.Pages, msg)
 }
 
 func (a *App) dirCmd(path string, pushCmd bool) error {
@@ -739,30 +741,31 @@ func (a *App) lastCommand(evt *tcell.EventKey) *tcell.EventKey {
 	if len(cmds) < 1 {
 		a.App.Flash().Warn("No previous view to switch to")
 		return evt
-	} else {
-		a.cmdHistory.Last()
-		a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
 	}
+	a.cmdHistory.Last()
+	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+
 	return nil
 }
 
-func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (a *App) aliasCmd(*tcell.EventKey) *tcell.EventKey {
 	if a.Content.Top() != nil && a.Content.Top().Name() == aliasTitle {
 		a.Content.Pop()
 		return nil
 	}
 
-	if err := a.inject(NewAlias(client.NewGVR("aliases")), false); err != nil {
+	if err := a.inject(NewAlias(client.AliGVR), false); err != nil {
 		a.Flash().Err(err)
 	}
 
 	return nil
 }
 
-func (a *App) gotoResource(c, path string, clearStack bool, pushCmd bool) {
+func (a *App) gotoResource(c, path string, clearStack, pushCmd bool) {
 	err := a.command.run(cmd.NewInterpreter(c), path, clearStack, pushCmd)
 	if err != nil {
-		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
+		d := a.Styles.Dialog()
+		dialog.ShowError(&d, a.Content.Pages, err.Error())
 	}
 }
 

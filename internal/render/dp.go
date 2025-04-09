@@ -17,13 +17,25 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultDPHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "UP-TO-DATE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Deployment renders a K8s Deployment to screen.
 type Deployment struct {
 	Base
 }
 
 // ColorerFunc colors a resource row.
-func (d Deployment) ColorerFunc() model1.ColorerFunc {
+func (Deployment) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
@@ -43,28 +55,14 @@ func (d Deployment) ColorerFunc() model1.ColorerFunc {
 
 // Header returns a header row.
 func (d Deployment) Header(_ string) model1.Header {
-	return d.doHeader(d.defaultHeader())
-}
-
-func (Deployment) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
-		model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "UP-TO-DATE", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return d.doHeader(defaultDPHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (d Deployment) Render(o interface{}, ns string, row *model1.Row) error {
+func (d Deployment) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected Deployment, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	if err := d.defaultRow(raw, row); err != nil {
 		return err
@@ -72,9 +70,7 @@ func (d Deployment) Render(o interface{}, ns string, row *model1.Row) error {
 	if d.specs.isEmpty() {
 		return nil
 	}
-
-	// !BOZO!! Call header 2 times
-	cols, err := d.specs.realize(raw, d.defaultHeader(), row)
+	cols, err := d.specs.realize(raw, defaultDPHeader, row)
 	if err != nil {
 		return err
 	}
@@ -91,11 +87,11 @@ func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) er
 		return err
 	}
 
-	r.ID = client.MetaFQN(dp.ObjectMeta)
+	r.ID = client.MetaFQN(&dp.ObjectMeta)
 	r.Fields = model1.Fields{
 		dp.Namespace,
 		dp.Name,
-		computeVulScore(dp.ObjectMeta, &dp.Spec.Template.Spec),
+		computeVulScore(dp.Namespace, dp.Labels, &dp.Spec.Template.Spec),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)) + "/" + strconv.Itoa(int(dp.Status.Replicas)),
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),

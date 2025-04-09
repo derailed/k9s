@@ -26,20 +26,14 @@ const (
 	DegradedStatus = "DEGRADED"
 )
 
-var (
-	SaGVR   = client.NewGVR("v1/serviceaccounts")
-	PvcGVR  = client.NewGVR("v1/persistentvolumeclaims")
-	PcGVR   = client.NewGVR("scheduling.k8s.io/v1/priorityclasses")
-	CmGVR   = client.NewGVR("v1/configmaps")
-	SecGVR  = client.NewGVR("v1/secrets")
-	PodGVR  = client.NewGVR("v1/pods")
-	SvcGVR  = client.NewGVR("v1/services")
-	DsGVR   = client.NewGVR("apps/v1/daemonsets")
-	StsGVR  = client.NewGVR("apps/v1/statefulSets")
-	DpGVR   = client.NewGVR("apps/v1/deployments")
-	RsGVR   = client.NewGVR("apps/v1/replicasets")
-	resList = []client.GVR{PodGVR, SvcGVR, DsGVR, StsGVR, DpGVR, RsGVR}
-)
+var resList = []*client.GVR{
+	client.PodGVR,
+	client.SvcGVR,
+	client.DsGVR,
+	client.StsGVR,
+	client.DpGVR,
+	client.RsGVR,
+}
 
 // Workload tracks a select set of resources in a given namespace.
 type Workload struct {
@@ -47,9 +41,9 @@ type Workload struct {
 }
 
 func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, grace Grace) error {
-	gvr, _ := ctx.Value(internal.KeyGVR).(client.GVR)
+	gvr, _ := ctx.Value(internal.KeyGVR).(*client.GVR)
 	ns, n := client.Namespaced(path)
-	auth, err := w.Client().CanI(ns, gvr.String(), n, []string{client.DeleteVerb})
+	auth, err := w.Client().CanI(ns, gvr, n, []string{client.DeleteVerb})
 	if err != nil {
 		return err
 	}
@@ -81,7 +75,7 @@ func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.
 	return dial.Namespace(ns).Delete(ctx, n, opts)
 }
 
-func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav1.Table, error) {
+func (a *Workload) fetch(ctx context.Context, gvr *client.GVR, ns string) (*metav1.Table, error) {
 	a.gvr = gvr
 	oo, err := a.Table.List(ctx, ns)
 	if err != nil {
@@ -121,13 +115,13 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 					ns, ts = m.GetNamespace(), m.CreationTimestamp
 				}
 			}
-			stat := status(gvr, r, table.ColumnDefinitions)
-			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []interface{}{
+			stat := status(gvr, &r, table.ColumnDefinitions)
+			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []any{
 				gvr.String(),
 				ns,
 				r.Cells[indexOf("Name", table.ColumnDefinitions)],
 				stat,
-				readiness(gvr, r, table.ColumnDefinitions),
+				readiness(gvr, &r, table.ColumnDefinitions),
 				validity(stat),
 				ts,
 			}}})
@@ -139,34 +133,34 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 
 // Helpers...
 
-func readiness(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
+func readiness(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
-	case PodGVR, DpGVR, StsGVR:
+	case client.PodGVR, client.DpGVR, client.StsGVR:
 		return r.Cells[indexOf("Ready", h)].(string)
-	case RsGVR, DsGVR:
+	case client.RsGVR, client.DsGVR:
 		c := r.Cells[indexOf("Ready", h)].(int64)
 		d := r.Cells[indexOf("Desired", h)].(int64)
 		return fmt.Sprintf("%d/%d", c, d)
-	case SvcGVR:
+	case client.SvcGVR:
 		return ""
 	}
 
 	return render.NAValue
 }
 
-func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
+func status(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
-	case PodGVR:
+	case client.PodGVR:
 		if status := r.Cells[indexOf("Status", h)]; status == render.PhaseCompleted {
 			return StatusOK
 		} else if !isReady(r.Cells[indexOf("Ready", h)].(string)) || status != render.PhaseRunning {
 			return DegradedStatus
 		}
-	case DpGVR, StsGVR:
+	case client.DpGVR, client.StsGVR:
 		if !isReady(r.Cells[indexOf("Ready", h)].(string)) {
 			return DegradedStatus
 		}
-	case RsGVR, DsGVR:
+	case client.RsGVR, client.DsGVR:
 		rd, ok1 := r.Cells[indexOf("Ready", h)].(int64)
 		de, ok2 := r.Cells[indexOf("Desired", h)].(int64)
 		if ok1 && ok2 {
@@ -182,7 +176,7 @@ func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition)
 				return DegradedStatus
 			}
 		}
-	case SvcGVR:
+	case client.SvcGVR:
 	default:
 		return render.MissingValue
 	}

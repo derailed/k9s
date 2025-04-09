@@ -91,7 +91,7 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 
 	rect := s.asRect()
 	s.cutSet(rect.Dx())
-	max := s.computeMax()
+	maxVal := s.computeMax()
 
 	cX, idx := rect.Min.X+1, 0
 	if len(s.data)*2 < rect.Dx() {
@@ -100,7 +100,7 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 		idx = len(s.data) - rect.Dx()/2
 	}
 
-	scale := float64(len(sparks)*(rect.Dy()-pad)) / float64(max)
+	scale := float64(len(sparks)*(rect.Dy()-pad)) / float64(maxVal)
 	c1, c2 := s.colorForSeries()
 	for _, d := range s.data[idx:] {
 		b := toBlocks(d, scale)
@@ -124,7 +124,7 @@ func (s *SparkLine) drawBlock(r image.Rectangle, screen tcell.Screen, x, y int, 
 	style := tcell.StyleDefault.Foreground(c).Background(s.bgColor)
 
 	zeroY := r.Max.Y - r.Dy()
-	for i := 0; i < b.full; i++ {
+	for range b.full {
 		screen.SetContent(x, y, sparks[len(sparks)-1], nil, style)
 		y--
 		if y <= zeroY {
@@ -147,15 +147,15 @@ func (s *SparkLine) cutSet(width int) {
 }
 
 func (s *SparkLine) computeMax() int64 {
-	var max int64
+	var maxVal int64
 	for _, d := range s.data {
 		m := d.Max()
-		if max < m {
-			max = m
+		if maxVal < m {
+			maxVal = m
 		}
 	}
 
-	return max
+	return maxVal
 }
 
 func toBlocks(m Metric, scale float64) blocks {

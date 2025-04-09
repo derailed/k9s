@@ -14,8 +14,8 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/view/cmd"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var _ Accessor = (*Alias)(nil)
@@ -32,22 +32,18 @@ func NewAlias(f Factory) *Alias {
 	a := Alias{
 		Aliases: config.NewAliases(),
 	}
-	a.Init(f, client.NewGVR("aliases"))
+	a.Init(f, client.AliGVR)
 
 	return &a
 }
 
-func (a *Alias) AliasesFor(s string) []string {
-	return a.Aliases.AliasesFor(s)
-}
-
-// Check verifies an alias is defined for this command.
-func (a *Alias) Check(cmd string) (string, bool) {
-	return a.Aliases.Get(cmd)
+// AliasesFor returns a set of aliases for a given gvr.
+func (a *Alias) AliasesFor(gvr *client.GVR) sets.Set[string] {
+	return a.Aliases.AliasesFor(gvr)
 }
 
 // List returns a collection of aliases.
-func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+func (*Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	aa, ok := ctx.Value(internal.KeyAliases).(*Alias)
 	if !ok {
 		return nil, fmt.Errorf("expecting *Alias but got %T", ctx.Value(internal.KeyAliases))
@@ -66,24 +62,19 @@ func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 }
 
 // AsGVR returns a matching gvr if it exists.
-func (a *Alias) AsGVR(c string) (client.GVR, string, bool) {
-	exp, ok := a.Aliases.Get(c)
-	if !ok {
-		return client.NoGVR, "", ok
-	}
-	p := cmd.NewInterpreter(exp)
-	if strings.Contains(p.Cmd(), "/") {
-		return client.NewGVR(p.Cmd()), "", true
-	}
-	if gvr, ok := a.Aliases.Get(p.Cmd()); ok {
-		return client.NewGVR(gvr), exp, true
+func (a *Alias) AsGVR(alias string) (*client.GVR, string, bool) {
+	gvr, ok := a.Aliases.Get(alias)
+	if ok {
+		if pgvr := MetaAccess.Lookup(alias); pgvr != client.NoGVR {
+			return pgvr, "", ok
+		}
 	}
 
-	return client.NoGVR, "", false
+	return gvr, "", ok
 }
 
 // Get fetch a resource.
-func (a *Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
+func (*Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, errors.New("nyi")
 }
 
@@ -109,25 +100,21 @@ func (a *Alias) load(path string) error {
 		if IsK9sMeta(meta) {
 			continue
 		}
-
-		gvrStr := gvr.String()
 		if IsCRD(meta) {
 			crdGVRS = append(crdGVRS, gvr)
 			continue
 		}
-
-		a.Define(gvrStr, gvr.AsResourceName())
+		a.Define(gvr, gvr.AsResourceName())
 
 		// Allow single shot commands for k8s resources only!
 		if isStandardGroup(gvr.GVSub()) {
-			a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
-			a.Define(gvrStr, meta.SingularName)
-
+			a.Define(gvr, meta.Name)
+			a.Define(gvr, meta.SingularName)
 		}
 		if len(meta.ShortNames) > 0 {
-			a.Define(gvrStr, meta.ShortNames...)
+			a.Define(gvr, meta.ShortNames...)
 		}
-		a.Define(gvrStr, gvrStr)
+		a.Define(gvr, gvr.String())
 	}
 
 	for _, gvr := range crdGVRS {
@@ -135,15 +122,14 @@ func (a *Alias) load(path string) error {
 		if err != nil {
 			return err
 		}
-		gvrStr := gvr.String()
-		a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
-		a.Define(gvrStr, meta.SingularName)
+		a.Define(gvr, strings.ToLower(meta.Kind), meta.Name)
+		a.Define(gvr, meta.SingularName)
 
 		if len(meta.ShortNames) > 0 {
-			a.Define(gvrStr, meta.ShortNames...)
+			a.Define(gvr, meta.ShortNames...)
 		}
-		a.Define(gvrStr, gvrStr)
-		a.Define(gvrStr, meta.Name+"."+meta.Group)
+		a.Define(gvr, gvr.String())
+		a.Define(gvr, meta.Name+"."+meta.Group)
 	}
 
 	return nil

@@ -173,7 +173,7 @@ func newNoOpForwarder() noOpForwarder {
 	return noOpForwarder{}
 }
 
-func (noOpForwarder) Start(path string, tunnel port.PortTunnel) (*portforward.PortForwarder, error) {
+func (noOpForwarder) Start(string, port.PortTunnel) (*portforward.PortForwarder, error) {
 	return nil, nil
 }
 func (noOpForwarder) Stop()                      {}

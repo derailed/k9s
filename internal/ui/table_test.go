@@ -70,35 +70,35 @@ type mockModel struct{}
 
 var _ ui.Tabular = &mockModel{}
 
-func (t *mockModel) SetViewSetting(context.Context, *config.ViewSetting)          {}
-func (t *mockModel) SetInstance(string)                                           {}
-func (t *mockModel) SetLabelFilter(string)                                        {}
-func (t *mockModel) GetLabelFilter() string                                       { return "" }
-func (t *mockModel) Empty() bool                                                  { return false }
-func (t *mockModel) RowCount() int                                                { return 1 }
-func (t *mockModel) HasMetrics() bool                                             { return true }
-func (t *mockModel) Peek() *model1.TableData                                      { return makeTableData() }
-func (t *mockModel) Refresh(context.Context) error                                { return nil }
-func (t *mockModel) ClusterWide() bool                                            { return false }
-func (t *mockModel) GetNamespace() string                                         { return "blee" }
-func (t *mockModel) SetNamespace(string)                                          {}
-func (t *mockModel) ToggleToast()                                                 {}
-func (t *mockModel) AddListener(model.TableListener)                              {}
-func (t *mockModel) RemoveListener(model.TableListener)                           {}
-func (t *mockModel) Watch(context.Context) error                                  { return nil }
-func (t *mockModel) Get(ctx context.Context, path string) (runtime.Object, error) { return nil, nil }
-func (t *mockModel) InNamespace(string) bool                                      { return true }
-func (t *mockModel) SetRefreshRate(time.Duration)                                 {}
+func (*mockModel) SetViewSetting(context.Context, *config.ViewSetting) {}
+func (*mockModel) SetInstance(string)                                  {}
+func (*mockModel) SetLabelFilter(string)                               {}
+func (*mockModel) GetLabelFilter() string                              { return "" }
+func (*mockModel) Empty() bool                                         { return false }
+func (*mockModel) RowCount() int                                       { return 1 }
+func (*mockModel) HasMetrics() bool                                    { return true }
+func (*mockModel) Peek() *model1.TableData                             { return makeTableData() }
+func (*mockModel) Refresh(context.Context) error                       { return nil }
+func (*mockModel) ClusterWide() bool                                   { return false }
+func (*mockModel) GetNamespace() string                                { return "blee" }
+func (*mockModel) SetNamespace(string)                                 {}
+func (*mockModel) ToggleToast()                                        {}
+func (*mockModel) AddListener(model.TableListener)                     {}
+func (*mockModel) RemoveListener(model.TableListener)                  {}
+func (*mockModel) Watch(context.Context) error                         { return nil }
+func (*mockModel) Get(context.Context, string) (runtime.Object, error) { return nil, nil }
+func (*mockModel) InNamespace(string) bool                             { return true }
+func (*mockModel) SetRefreshRate(time.Duration)                        {}
 
-func (t *mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
+func (*mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
 	return nil
 }
 
-func (t *mockModel) Describe(context.Context, string) (string, error) {
+func (*mockModel) Describe(context.Context, string) (string, error) {
 	return "", nil
 }
 
-func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
+func (*mockModel) ToYAML(context.Context, string) (string, error) {
 	return "", nil
 }
 

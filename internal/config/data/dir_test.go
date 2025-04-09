@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -68,12 +69,12 @@ func TestDirLoad(t *testing.T) {
 
 			ks := mock.NewMockKubeSettings(u.flags)
 			if strings.Index(u.dir, "/tmp") == 0 {
-				assert.NoError(t, mock.EnsureDir(u.dir))
+				require.NoError(t, mock.EnsureDir(u.dir))
 			}
 
 			d := data.NewDir(u.dir)
 			ct, err := ks.CurrentContext()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			if err != nil {
 				return
 			}

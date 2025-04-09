@@ -10,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -44,7 +45,7 @@ func TestAugmentRow(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			data, err := os.ReadFile(u.file)
 
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			fields := make(model1.Fields, 8)
 			b := Benchmark{}
 			b.augmentRow(fields, string(data))

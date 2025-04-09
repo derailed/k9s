@@ -18,7 +18,7 @@ type StatefulSet struct {
 }
 
 // NewStatefulSet returns a new viewer.
-func NewStatefulSet(gvr client.GVR) ResourceViewer {
+func NewStatefulSet(gvr *client.GVR) ResourceViewer {
 	var s StatefulSet
 	s.ResourceViewer = NewPortForwardExtender(
 		NewVulnerabilityExtender(
@@ -49,14 +49,14 @@ func (s *StatefulSet) logOptions(prev bool) (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	return podLogOptions(s.App(), path, prev, sts.ObjectMeta, sts.Spec.Template.Spec), nil
+	return podLogOptions(s.App(), path, prev, &sts.ObjectMeta, &sts.Spec.Template.Spec), nil
 }
 
 func (s *StatefulSet) bindKeys(aa *ui.KeyActions) {
 	aa.Add(ui.KeyShiftR, ui.NewKeyAction("Sort Ready", s.GetTable().SortColCmd(readyCol, true), false))
 }
 
-func (s *StatefulSet) showPods(app *App, _ ui.Tabular, _ client.GVR, path string) {
+func (s *StatefulSet) showPods(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	i, err := s.getInstance(path)
 	if err != nil {
 		app.Flash().Err(err)

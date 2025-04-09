@@ -28,7 +28,7 @@ func (c *Context) config() *client.Config {
 }
 
 // Get a Context.
-func (c *Context) Get(ctx context.Context, path string) (runtime.Object, error) {
+func (c *Context) Get(_ context.Context, path string) (runtime.Object, error) {
 	co, err := c.config().GetContext(path)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (c *Context) Get(ctx context.Context, path string) (runtime.Object, error) 
 }
 
 // List all Contexts on the current cluster.
-func (c *Context) List(_ context.Context, _ string) ([]runtime.Object, error) {
+func (c *Context) List(context.Context, string) ([]runtime.Object, error) {
 	ctxs, err := c.config().Contexts()
 	if err != nil {
 		return nil, err

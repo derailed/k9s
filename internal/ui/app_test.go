@@ -36,7 +36,7 @@ func TestAppResetCmd(t *testing.T) {
 
 	a.ResetCmd()
 
-	assert.Equal(t, "", a.CmdBuff().GetText())
+	assert.Empty(t, a.CmdBuff().GetText())
 }
 
 func TestAppHasCmd(t *testing.T) {

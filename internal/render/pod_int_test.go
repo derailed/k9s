@@ -17,7 +17,7 @@ import (
 )
 
 func Test_checkInitContainerStatus(t *testing.T) {
-	true := true
+	trueVal := true
 	uu := map[string]struct {
 		status       v1.ContainerStatus
 		e            string
@@ -30,7 +30,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 		"restart": {
 			status: v1.ContainerStatus{
 				Name:    "ic1",
-				Started: &true,
+				Started: &trueVal,
 				State:   v1.ContainerState{},
 			},
 			restart: true,
@@ -39,7 +39,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 		"no-restart": {
 			status: v1.ContainerStatus{
 				Name:    "ic1",
-				Started: &true,
+				Started: &trueVal,
 				State:   v1.ContainerState{},
 			},
 			e: "Init:0/0",
@@ -125,7 +125,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, checkInitContainerStatus(u.status, u.count, u.total, u.restart))
+			assert.Equal(t, u.e, checkInitContainerStatus(&u.status, u.count, u.total, u.restart))
 		})
 	}
 }
@@ -267,7 +267,7 @@ func Test_containerPhase(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			s, ok := p.containerPhase(u.status, "")
+			s, ok := p.containerPhase(&u.status, "")
 			assert.Equal(t, u.ok, ok)
 			assert.Equal(t, u.e, s)
 		})
@@ -427,7 +427,8 @@ func Test_lastRestart(t *testing.T) {
 	var p Pod
 	for name, u := range uu {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, u.expected, p.lastRestart(u.containerStatuses))
+			_, _, _, lr := p.Statuses(u.containerStatuses)
+			assert.Equal(t, u.expected, lr)
 		})
 	}
 }
@@ -618,7 +619,7 @@ func makeRes(c, m string) v1.ResourceList {
 	}
 }
 
-func makeCoMX(n string, c, m string) mv1beta1.ContainerMetrics {
+func makeCoMX(n, c, m string) mv1beta1.ContainerMetrics {
 	return mv1beta1.ContainerMetrics{
 		Name:  n,
 		Usage: makeRes(c, m),

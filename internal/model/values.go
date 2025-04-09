@@ -22,7 +22,7 @@ import (
 // Values tracks Helm values representations.
 type Values struct {
 	factory   dao.Factory
-	gvr       client.GVR
+	gvr       *client.GVR
 	inUpdate  int32
 	path      string
 	query     string
@@ -33,7 +33,7 @@ type Values struct {
 }
 
 // NewValues return a new Helm values resource model.
-func NewValues(gvr client.GVR, path string) *Values {
+func NewValues(gvr *client.GVR, path string) *Values {
 	return &Values{
 		gvr:       gvr,
 		path:      path,
@@ -71,7 +71,7 @@ func (v *Values) getValues() ([]string, error) {
 }
 
 // GVR returns the resource gvr.
-func (v *Values) GVR() client.GVR {
+func (v *Values) GVR() *client.GVR {
 	return v.gvr
 }
 
@@ -186,24 +186,20 @@ func (v *Values) updater(ctx context.Context) {
 	}
 }
 
-func (v *Values) refresh(ctx context.Context) error {
+func (v *Values) refresh(context.Context) error {
 	if !atomic.CompareAndSwapInt32(&v.inUpdate, 0, 1) {
 		slog.Debug("Dropping update...")
-		return nil
+		return fmt.Errorf("reconcile in progress. Dropping update")
 	}
 	defer atomic.StoreInt32(&v.inUpdate, 0)
 
-	if err := v.reconcile(ctx); err != nil {
-		return err
-	}
+	v.reconcile()
 
 	return nil
 }
 
-func (v *Values) reconcile(_ context.Context) error {
+func (v *Values) reconcile() {
 	v.fireResourceChanged(v.lines, v.filter(v.query, v.lines))
-
-	return nil
 }
 
 // AddListener adds a new model listener.

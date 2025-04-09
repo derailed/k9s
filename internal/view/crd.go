@@ -14,7 +14,7 @@ type CRD struct {
 }
 
 // NewCRD returns a new viewer.
-func NewCRD(gvr client.GVR) ResourceViewer {
+func NewCRD(gvr *client.GVR) ResourceViewer {
 	s := CRD{
 		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
@@ -32,7 +32,7 @@ func (s *CRD) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (s *CRD) showCRD(app *App, _ ui.Tabular, _ client.GVR, path string) {
+func (*CRD) showCRD(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	_, crd := client.Namespaced(path)
 	app.gotoResource(crd, "", false, true)
 }

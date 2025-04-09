@@ -29,7 +29,6 @@ import (
 	"github.com/anchore/syft/syft"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/slogs"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var ImgScanner *imageScanner
@@ -60,8 +59,8 @@ func NewImageScanner(cfg config.ImageScans, l *slog.Logger) *imageScanner {
 	}
 }
 
-func (s *imageScanner) ShouldExcludes(m metav1.ObjectMeta) bool {
-	return s.config.ShouldExclude(m.Namespace, m.Labels)
+func (s *imageScanner) ShouldExcludes(ns string, lbls map[string]string) bool {
+	return s.config.ShouldExclude(ns, lbls)
 }
 
 // GetScan fetch scan for a given image. Returns ok=false when not found.
@@ -100,8 +99,8 @@ func (s *imageScanner) Init(name, version string) {
 		return
 	}
 
-	if err := validateDBLoad(err, s.dbStatus); err != nil {
-		s.log.Error("VulDb validate failed", slogs.Error, err)
+	if e := validateDBLoad(err, s.dbStatus); e != nil {
+		s.log.Error("VulDb validate failed", slogs.Error, e)
 		return
 	}
 
@@ -168,7 +167,7 @@ func (s *imageScanner) scanWorker(ctx context.Context, img string) {
 
 func (s *imageScanner) scan(_ context.Context, img string, sc *Scan) error {
 	defer func(t time.Time) {
-		s.log.Debug("Time to run vulscan",
+		s.log.Debug("[Vulscan] perf",
 			slogs.Image, img,
 			slogs.Elapsed, time.Since(t),
 		)

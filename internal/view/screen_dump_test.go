@@ -9,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestScreenDumpNew(t *testing.T) {
-	po := view.NewScreenDump(client.NewGVR("screendumps"))
+	po := view.NewScreenDump(client.SdGVR)
 
-	assert.Nil(t, po.Init(makeCtx()))
+	require.NoError(t, po.Init(makeCtx()))
 	assert.Equal(t, "ScreenDumps", po.Name())
-	assert.Equal(t, 5, len(po.Hints()))
+	assert.Len(t, po.Hints(), 5)
 }

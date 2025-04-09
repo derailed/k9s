@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLiveViewSetText(t *testing.T) {
@@ -20,7 +21,7 @@ apiVersion: v1
 `
 
 	v := NewLiveView(NewApp(mock.NewMockConfig()), "fred", nil)
-	assert.NoError(t, v.Init(context.Background()))
+	require.NoError(t, v.Init(context.Background()))
 	v.text.SetText(colorizeYAML(config.Yaml{}, s))
 
 	assert.Equal(t, s, sanitizeEsc(v.text.GetText(true)))

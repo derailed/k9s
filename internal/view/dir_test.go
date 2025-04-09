@@ -8,12 +8,13 @@ import (
 
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDir(t *testing.T) {
 	v := view.NewDir("/fred")
 
-	assert.Nil(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx()))
 	assert.Equal(t, "Directory", v.Name())
-	assert.Equal(t, 7, len(v.Hints()))
+	assert.Len(t, v.Hints(), 7)
 }

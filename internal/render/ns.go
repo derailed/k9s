@@ -16,13 +16,21 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultNSHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Namespace renders a K8s Namespace to screen.
 type Namespace struct {
 	Base
 }
 
 // ColorerFunc colors a resource row.
-func (n Namespace) ColorerFunc() model1.ColorerFunc {
+func (Namespace) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 		if c == model1.ErrColor {
@@ -41,24 +49,14 @@ func (n Namespace) ColorerFunc() model1.ColorerFunc {
 
 // Header returns a header row.
 func (n Namespace) Header(_ string) model1.Header {
-	return n.doHeader(n.defaultHeader())
-}
-
-func (Namespace) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return n.doHeader(defaultNSHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (n Namespace) Render(o interface{}, ns string, row *model1.Row) error {
+func (n Namespace) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected NetworkPolicy, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	if err := n.defaultRow(raw, row); err != nil {
 		return err
@@ -67,7 +65,7 @@ func (n Namespace) Render(o interface{}, ns string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := n.specs.realize(raw, n.defaultHeader(), row)
+	cols, err := n.specs.realize(raw, defaultNSHeader, row)
 	if err != nil {
 		return err
 	}
@@ -83,7 +81,7 @@ func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 		return err
 	}
 
-	r.ID = client.MetaFQN(ns.ObjectMeta)
+	r.ID = client.MetaFQN(&ns.ObjectMeta)
 	r.Fields = model1.Fields{
 		ns.Name,
 		string(ns.Status.Phase),
