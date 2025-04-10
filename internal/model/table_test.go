@@ -76,6 +76,8 @@ type tableListener struct {
 	count, errs int
 }
 
+func (*tableListener) TableNoData(*model1.TableData) {}
+
 func (l *tableListener) TableDataChanged(*model1.TableData) {
 	l.count++
 }

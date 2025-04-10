@@ -18,10 +18,13 @@ import (
 
 func TestAsGVR(t *testing.T) {
 	a := dao.NewAlias(makeFactory())
-	a.Define(client.PodGVR, "po", "pod", "pods")
+	a.Define(client.PodGVR, "po", "pipo", "pod")
+	a.Define(client.PodGVR, client.PodGVR.String())
+	a.Define(client.PodGVR, client.PodGVR.AsResourceName())
 	a.Define(client.WkGVR, client.WkGVR.String(), "workload", "wkl")
 	a.Define(client.NewGVR("pod default"), "pp")
-	a.Define(client.NewGVR("pod default @fred"), "ppc")
+	a.Define(client.NewGVR("pipo default"), "ppo")
+	a.Define(client.NewGVR("pod default app=fred @fred"), "ppc")
 
 	uu := map[string]struct {
 		cmd string
@@ -29,14 +32,26 @@ func TestAsGVR(t *testing.T) {
 		gvr *client.GVR
 		exp string
 	}{
-		"ok": {
+		"gvr": {
+			cmd: "v1/pods",
+			ok:  true,
+			gvr: client.PodGVR,
+		},
+
+		"r": {
 			cmd: "pods",
 			ok:  true,
 			gvr: client.PodGVR,
 		},
 
-		"ok-short": {
+		"alias1": {
 			cmd: "po",
+			ok:  true,
+			gvr: client.PodGVR,
+		},
+
+		"alias-2": {
+			cmd: "pipo",
 			ok:  true,
 			gvr: client.PodGVR,
 		},
@@ -45,14 +60,21 @@ func TestAsGVR(t *testing.T) {
 			cmd: "zorg",
 		},
 
-		"alias": {
+		"no-args": {
 			cmd: "wkl",
 			ok:  true,
 			gvr: client.WkGVR,
 		},
 
-		"ns-alias": {
+		"ns-arg": {
 			cmd: "pp",
+			ok:  true,
+			gvr: client.PodGVR,
+			exp: "default",
+		},
+
+		"ns-inception": {
+			cmd: "ppo",
 			ok:  true,
 			gvr: client.PodGVR,
 			exp: "default",
@@ -62,7 +84,7 @@ func TestAsGVR(t *testing.T) {
 			cmd: "ppc",
 			ok:  true,
 			gvr: client.PodGVR,
-			exp: "default @fred",
+			exp: "default app=fred @fred",
 		},
 	}
 

@@ -84,16 +84,14 @@ func (a *Aliases) Resolve(command string) (*client.GVR, string, bool) {
 	if !ok {
 		return nil, "", false
 	}
-	if agvr.IsCommand() {
-		p := cmd.NewInterpreter(agvr.String())
-		gvr, ok := a.Get(p.Cmd())
-		if !ok {
-			return nil, "", false
-		}
-		return gvr, p.Args(), true
+
+	p := cmd.NewInterpreter(agvr.String())
+	gvr, ok := a.Get(p.Cmd())
+	if !ok {
+		return agvr, "", true
 	}
 
-	return agvr, "", true
+	return gvr, p.Args(), true
 }
 
 // Get retrieves an alias.
