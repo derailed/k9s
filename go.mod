@@ -12,7 +12,7 @@ require (
 	github.com/derailed/tcell/v2 v2.3.1-rc.4
 	github.com/derailed/tview v0.8.5
 	github.com/fatih/color v1.18.0
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/fvbommel/sortorder v1.1.0
 	github.com/go-errors/errors v1.5.1
 	github.com/itchyny/gojq v0.12.17
