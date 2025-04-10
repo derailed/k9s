@@ -26,6 +26,9 @@ const initRefreshRate = 300 * time.Millisecond
 
 // TableListener represents a table model listener.
 type TableListener interface {
+	// TableNoData notifies listener no data was found.
+	TableNoData(*model1.TableData)
+
 	// TableDataChanged notifies the model data changed.
 	TableDataChanged(*model1.TableData)
 
@@ -232,7 +235,12 @@ func (t *Table) refresh(ctx context.Context) error {
 	if err := t.reconcile(ctx); err != nil {
 		return err
 	}
-	t.fireTableChanged(t.Peek())
+	data := t.Peek()
+	if data.RowCount() == 0 {
+		t.fireNoData(data)
+	} else {
+		t.fireTableChanged(data)
+	}
 
 	return nil
 }
@@ -289,6 +297,17 @@ func (t *Table) fireTableChanged(data *model1.TableData) {
 
 	for _, l := range ll {
 		l.TableDataChanged(data)
+	}
+}
+
+func (t *Table) fireNoData(data *model1.TableData) {
+	var ll []TableListener
+	t.mx.RLock()
+	ll = t.listeners
+	t.mx.RUnlock()
+
+	for _, l := range ll {
+		l.TableNoData(data)
 	}
 }
 

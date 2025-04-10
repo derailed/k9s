@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -39,6 +40,7 @@ type Browser struct {
 	cancelFn   context.CancelFunc
 	mx         sync.RWMutex
 	updating   bool
+	firstView  atomic.Int32
 }
 
 // NewBrowser returns a new browser.
@@ -279,6 +281,36 @@ func (b *Browser) Aliases() sets.Set[string] {
 // ----------------------------------------------------------------------------
 // Model Protocol...
 
+// TableNoData notifies view no data is available.
+func (b *Browser) TableNoData(data *model1.TableData) {
+	var cancel context.CancelFunc
+	b.mx.RLock()
+	cancel = b.cancelFn
+	b.mx.RUnlock()
+
+	if !b.app.ConOK() || cancel == nil || !b.app.IsRunning() {
+		return
+	}
+	if b.firstView.Load() == 0 {
+		b.firstView.Add(1)
+		return
+	}
+
+	cdata := b.Update(data, b.app.Conn().HasMetrics())
+	b.app.QueueUpdateDraw(func() {
+		if b.getUpdating() {
+			return
+		}
+		b.setUpdating(true)
+		defer b.setUpdating(false)
+		if b.GetColumnCount() == 0 {
+			b.app.Flash().Warnf("No resources found for %s in namespace %s", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+		}
+		b.refreshActions()
+		b.UpdateUI(cdata, data)
+	})
+}
+
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(data *model1.TableData) {
 	var cancel context.CancelFunc
@@ -297,6 +329,9 @@ func (b *Browser) TableDataChanged(data *model1.TableData) {
 		}
 		b.setUpdating(true)
 		defer b.setUpdating(false)
+		if b.GetColumnCount() == 0 {
+			b.app.Flash().Infof("Viewing %s in namespace %s", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+		}
 		b.refreshActions()
 		b.UpdateUI(cdata, data)
 	})
@@ -488,7 +523,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	b.setNamespace(ns)
-	b.app.Flash().Infof("Viewing namespace `%s`...", ns)
+	b.app.Flash().Infof("Viewing %s in namespace `%s`...", b.GVR(), client.PrintNamespace(ns))
 	b.refresh()
 	b.UpdateTitle()
 	b.SelectRow(1, 0, true)
@@ -528,7 +563,7 @@ func (b *Browser) defaultContext() context.Context {
 }
 
 func (b *Browser) refreshActions() {
-	if b.App().Content.Top() != nil && b.App().Content.Top().Name() != b.Name() {
+	if top := b.App().Content.Top(); top != nil && top.Name() != b.Name() {
 		return
 	}
 	aa := ui.NewKeyActionsFromMap(ui.KeyMap{

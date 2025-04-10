@@ -22,6 +22,14 @@ func IsClusterWide(ns string) bool {
 	return ns == NamespaceAll || ns == BlankNamespace || ns == ClusterScope
 }
 
+func PrintNamespace(ns string) string {
+	if IsAllNamespaces(ns) {
+		return "all"
+	}
+
+	return ns
+}
+
 // CleanseNamespace ensures all ns maps to blank.
 func CleanseNamespace(ns string) string {
 	if IsAllNamespace(ns) {
