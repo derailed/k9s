@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_sort(t *testing.T) {
@@ -73,14 +74,14 @@ func makeTable(t *testing.T, path string) *table {
 	defer func() {
 		_ = f.Close()
 	}()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	sc := bufio.NewScanner(f)
 	var tt table
 	for sc.Scan() {
 		ff := strings.Fields(sc.Text())
 		tt.addRow(newRow(ff...))
 	}
-	assert.NoError(t, sc.Err())
+	require.NoError(t, sc.Err())
 
 	return &tt
 }

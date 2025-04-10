@@ -11,6 +11,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+var defaultGENHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Generic renders a K8s generic resource to screen.
 type Generic struct {
 	Base
@@ -18,34 +25,22 @@ type Generic struct {
 
 // Header returns a header row.
 func (m Generic) Header(_ string) model1.Header {
-	return m.doHeader(m.defaultHeader())
-}
-
-// Header returns a header rbw.
-func (Generic) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return m.doHeader(defaultGENHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (m Generic) Render(o interface{}, ns string, row *model1.Row) error {
+func (m Generic) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected *Unstructured, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
-
 	if err := m.defaultRow(raw, row); err != nil {
 		return err
 	}
 	if m.specs.isEmpty() {
 		return nil
 	}
-
-	cols, err := m.specs.realize(o.(*unstructured.Unstructured), m.defaultHeader(), row)
+	cols, err := m.specs.realize(o.(*unstructured.Unstructured), defaultGENHeader, row)
 	if err != nil {
 		return err
 	}

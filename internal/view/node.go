@@ -25,7 +25,7 @@ type Node struct {
 }
 
 // NewNode returns a new node view.
-func NewNode(gvr client.GVR) ResourceViewer {
+func NewNode(gvr *client.GVR) ResourceViewer {
 	n := Node{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -91,7 +91,7 @@ func (n *Node) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (n *Node) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
+func (n *Node) showPods(a *App, _ ui.Tabular, _ *client.GVR, path string) {
 	showPods(a, n.GetTable().GetSelectedItem(), client.BlankNamespace, "spec.nodeName="+path)
 }
 
@@ -156,7 +156,8 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 		} else {
 			msg += fmt.Sprintf("(%d) marked %s?", len(sels), n.GVR().R())
 		}
-		dialog.ShowConfirm(n.App().Styles.Dialog(), n.App().Content.Pages, title, msg, func() {
+		d := n.App().Styles.Dialog()
+		dialog.ShowConfirm(&d, n.App().Content.Pages, title, msg, func() {
 			res, err := dao.AccessorFor(n.App().factory, n.GVR())
 			if err != nil {
 				n.App().Flash().Err(err)

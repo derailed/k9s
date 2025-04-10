@@ -14,7 +14,7 @@ import (
 type promptAction func(ctx context.Context)
 
 // ShowPrompt pops a prompt dialog.
-func ShowPrompt(styles config.Dialog, pages *ui.Pages, title, msg string, action promptAction, cancel cancelFunc) {
+func ShowPrompt(styles *config.Dialog, pages *ui.Pages, title, msg string, action promptAction, cancel cancelFunc) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -31,7 +31,7 @@ func ShowPrompt(styles config.Dialog, pages *ui.Pages, title, msg string, action
 		cancel()
 	})
 
-	for i := 0; i < f.GetButtonCount(); i++ {
+	for i := range f.GetButtonCount() {
 		b := f.GetButton(i)
 		if b == nil {
 			continue

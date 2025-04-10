@@ -32,7 +32,7 @@ type Job struct {
 }
 
 // ListImages lists container images.
-func (j *Job) ListImages(ctx context.Context, fqn string) ([]string, error) {
+func (j *Job) ListImages(_ context.Context, fqn string) ([]string, error) {
 	job, err := j.GetInstance(fqn)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // TailLogs tail logs for all pods represented by this Job.
 func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
-	o, err := j.getFactory().Get(j.gvrStr(), opts.Path, true, labels.Everything())
+	o, err := j.getFactory().Get(j.gvr, opts.Path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 }
 
 func (j *Job) GetInstance(fqn string) (*batchv1.Job, error) {
-	o, err := j.getFactory().Get(j.gvrStr(), fqn, true, labels.Everything())
+	o, err := j.getFactory().Get(j.gvr, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -108,9 +108,9 @@ func (j *Job) GetInstance(fqn string) (*batchv1.Job, error) {
 }
 
 // ScanSA scans for serviceaccount refs.
-func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+func (j *Job) ScanSA(_ context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := j.getFactory().List(j.GVR(), ns, wait, labels.Everything())
+	oo, err := j.getFactory().List(j.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -134,9 +134,9 @@ func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 }
 
 // Scan scans for resource references.
-func (j *Job) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
+func (j *Job) Scan(_ context.Context, gvr *client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := j.getFactory().List(j.GVR(), ns, wait, labels.Everything())
+	oo, err := j.getFactory().List(j.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (j *Job) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (
 			return nil, errors.New("expecting Job resource")
 		}
 		switch gvr {
-		case CmGVR:
+		case client.CmGVR:
 			if !hasConfigMap(&job.Spec.Template.Spec, n) {
 				continue
 			}
@@ -157,7 +157,7 @@ func (j *Job) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
-		case SecGVR:
+		case client.SecGVR:
 			found, err := hasSecret(j.Factory, &job.Spec.Template.Spec, job.Namespace, n, wait)
 			if err != nil {
 				slog.Warn("Locate secret failed",
@@ -173,7 +173,7 @@ func (j *Job) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
-		case PcGVR:
+		case client.PcGVR:
 			if !hasPC(&job.Spec.Template.Spec, n) {
 				continue
 			}

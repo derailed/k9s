@@ -19,7 +19,7 @@ import (
 type ServiceAccount struct{}
 
 // Render renders an xray node.
-func (s *ServiceAccount) Render(ctx context.Context, ns string, o interface{}) error {
+func (s *ServiceAccount) Render(ctx context.Context, ns string, o any) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("ServiceAccount render expecting *Unstructured, but got %T", o)
@@ -35,7 +35,7 @@ func (s *ServiceAccount) Render(ctx context.Context, ns string, o interface{}) e
 	if !ok {
 		return fmt.Errorf("no factory found in context")
 	}
-	node := NewTreeNode("v1/serviceaccounts", client.FQN(sa.Namespace, sa.Name))
+	node := NewTreeNode(client.SaGVR, client.FQN(sa.Namespace, sa.Name))
 
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
@@ -44,10 +44,10 @@ func (s *ServiceAccount) Render(ctx context.Context, ns string, o interface{}) e
 	parent.Add(node)
 
 	for _, sec := range sa.Secrets {
-		addRef(f, node, "v1/secrets", client.FQN(sa.Namespace, sec.Name), nil)
+		addRef(f, node, client.SecGVR, client.FQN(sa.Namespace, sec.Name), nil)
 	}
 	for _, sec := range sa.ImagePullSecrets {
-		addRef(f, node, "v1/secrets", client.FQN(sa.Namespace, sec.Name), nil)
+		addRef(f, node, client.SecGVR, client.FQN(sa.Namespace, sec.Name), nil)
 	}
 
 	auto, _ := ctx.Value(KeySAAutomount).(*bool)

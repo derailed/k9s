@@ -178,8 +178,8 @@ func initXDGLocs() error {
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
 
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
-	if err := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); err != nil {
-		slog.Warn("No skins dir detected", slogs.Error, err)
+	if e := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); e != nil {
+		slog.Warn("No skins dir detected", slogs.Error, e)
 	}
 
 	AppDumpsDir, err = xdg.StateFile(filepath.Join(AppName, "screen-dumps"))

@@ -114,16 +114,16 @@ func (p *Plugins) load(path string) error {
 		if err := yaml.Unmarshal(bb, &oo); err != nil {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
-		for k, v := range oo.Plugins {
-			p.Plugins[k] = v
+		for k := range oo.Plugins {
+			p.Plugins[k] = oo.Plugins[k]
 		}
 	case json.PluginMultiSchema:
 		var oo plugins
 		if err := yaml.Unmarshal(bb, &oo); err != nil {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
-		for k, v := range oo {
-			p.Plugins[k] = v
+		for k := range oo {
+			p.Plugins[k] = oo[k]
 		}
 	}
 

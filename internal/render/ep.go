@@ -15,6 +15,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultEPHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "ENDPOINTS"},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Endpoints renders a K8s Endpoints to screen.
 type Endpoints struct {
 	Base
@@ -22,28 +29,18 @@ type Endpoints struct {
 
 // Header returns a header row.
 func (e Endpoints) Header(_ string) model1.Header {
-	return e.doHeader(e.defaultHeader())
-}
-
-// Header returns a header row.
-func (Endpoints) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "ENDPOINTS"},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return e.doHeader(defaultEPHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (e Endpoints) Render(o interface{}, ns string, row *model1.Row) error {
+func (e Endpoints) Render(o any, ns string, row *model1.Row) error {
 	if err := e.defaultRow(o, ns, row); err != nil {
 		return err
 	}
 	if e.specs.isEmpty() {
 		return nil
 	}
-	cols, err := e.specs.realize(o.(*unstructured.Unstructured), e.defaultHeader(), row)
+	cols, err := e.specs.realize(o.(*unstructured.Unstructured), defaultEPHeader, row)
 	if err != nil {
 		return err
 	}
@@ -52,10 +49,10 @@ func (e Endpoints) Render(o interface{}, ns string, row *model1.Row) error {
 	return nil
 }
 
-func (e Endpoints) defaultRow(o interface{}, ns string, r *model1.Row) error {
+func (e Endpoints) defaultRow(o any, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected Endpoints, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	var ep v1.Endpoints
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ep)
@@ -63,7 +60,7 @@ func (e Endpoints) defaultRow(o interface{}, ns string, r *model1.Row) error {
 		return err
 	}
 
-	r.ID = client.MetaFQN(ep.ObjectMeta)
+	r.ID = client.MetaFQN(&ep.ObjectMeta)
 	r.Fields = make(model1.Fields, 0, len(e.Header(ns)))
 	r.Fields = model1.Fields{
 		ep.Namespace,
@@ -91,16 +88,16 @@ func toEPs(ss []v1.EndpointSubset) string {
 }
 
 func portsToStrs(pp []v1.EndpointPort, ss []string) {
-	for i := 0; i < len(pp); i++ {
+	for i := range pp {
 		ss[i] = strconv.Itoa(int(pp[i].Port))
 	}
 }
 
-func processIPs(aa []string, pp []string, addrs []v1.EndpointAddress) {
+func processIPs(aa, pp []string, addrs []v1.EndpointAddress) {
 	const maxIPs = 3
 	var i int
 	for _, a := range addrs {
-		if len(a.IP) == 0 {
+		if a.IP == "" {
 			continue
 		}
 		if len(pp) == 0 {

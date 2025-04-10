@@ -41,7 +41,7 @@ func (r *RestartExtender) bindKeys(aa *ui.KeyActions) {
 	))
 }
 
-func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (r *RestartExtender) restartCmd(*tcell.EventKey) *tcell.EventKey {
 	paths := r.GetTable().GetSelectedItems()
 	if len(paths) == 0 || paths[0] == "" {
 		return nil
@@ -53,7 +53,8 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(paths) > 1 {
 		msg = fmt.Sprintf("Restart %d %s?", len(paths), r.GVR().R())
 	}
-	dialog.ShowConfirm(r.App().Styles.Dialog(), r.App().Content.Pages, "Confirm Restart", msg, func() {
+	d := r.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm Restart", msg, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), r.App().Conn().Config().CallTimeout())
 		defer cancel()
 		for _, path := range paths {

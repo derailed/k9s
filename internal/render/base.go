@@ -15,9 +15,7 @@ import (
 type DecoratorFunc func(string) string
 
 // AgeDecorator represents a timestamped as human column.
-var AgeDecorator = func(a string) string {
-	return toAgeHuman(a)
-}
+var AgeDecorator = toAgeHuman
 
 type Base struct {
 	vs         *config.ViewSetting

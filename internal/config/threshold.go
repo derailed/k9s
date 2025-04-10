@@ -55,14 +55,14 @@ type Threshold map[string]*Severity
 // NewThreshold returns a new threshold.
 func NewThreshold() Threshold {
 	return Threshold{
-		"cpu":    NewSeverity(),
-		"memory": NewSeverity(),
+		CPU: NewSeverity(),
+		MEM: NewSeverity(),
 	}
 }
 
 // Validate a namespace is setup correctly.
 func (t Threshold) Validate() Threshold {
-	for _, k := range []string{"cpu", "memory"} {
+	for _, k := range []string{CPU, MEM} {
 		v, ok := t[k]
 		if !ok {
 			t[k] = NewSeverity()
@@ -92,7 +92,7 @@ func (t Threshold) LevelFor(k string, v int) SeverityLevel {
 
 // SeverityColor returns a defcon level associated level.
 func (t *Threshold) SeverityColor(k string, v int) string {
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch t.LevelFor(k, v) {
 	case SeverityHigh:
 		return "red"

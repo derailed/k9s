@@ -17,7 +17,7 @@ func TestNewLogoView(t *testing.T) {
 
 	const elogo = "[#ffa500::b] ____  __ ________       \n[#ffa500::b]|    |/  /   __   \\______\n[#ffa500::b]|       /\\____    /  ___/\n[#ffa500::b]|    \\   \\  /    /\\___  \\\n[#ffa500::b]|____|\\__ \\/____//____  /\n[#ffa500::b]         \\/           \\/ \n"
 	assert.Equal(t, elogo, v.Logo().GetText(false))
-	assert.Equal(t, "", v.Status().GetText(false))
+	assert.Empty(t, v.Status().GetText(false))
 }
 
 func TestLogoStatus(t *testing.T) {

@@ -52,7 +52,7 @@ func NewModalList(title string, list *tview.List) *ModalList {
 func (m *ModalList) Draw(screen tcell.Screen) {
 	// Calculate the width of this modal.
 	width := 0
-	for i := 0; i < m.list.GetItemCount(); i++ {
+	for i := range m.list.GetItemCount() {
 		main, secondary := m.list.GetItemText(i)
 		width = max(width, len(main)+len(secondary)+2)
 	}

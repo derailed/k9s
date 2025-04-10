@@ -51,7 +51,7 @@ func (s *Service) Pod(fqn string) (string, error) {
 
 // GetInstance returns a service instance.
 func (s *Service) GetInstance(fqn string) (*v1.Service, error) {
-	o, err := s.getFactory().Get(s.gvrStr(), fqn, true, labels.Everything())
+	o, err := s.getFactory().Get(s.gvr, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *Service) GetInstance(fqn string) (*v1.Service, error) {
 // Helpers...
 
 func podFromSelector(f Factory, ns string, sel map[string]string) (string, error) {
-	oo, err := f.List("v1/pods", ns, true, labels.Set(sel).AsSelector())
+	oo, err := f.List(client.PodGVR, ns, true, labels.Set(sel).AsSelector())
 	if err != nil {
 		return "", err
 	}

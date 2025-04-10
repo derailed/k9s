@@ -16,20 +16,19 @@ import (
 type NonResource struct {
 	Factory
 
-	gvr        client.GVR
+	gvr        *client.GVR
 	mx         sync.RWMutex
 	includeObj bool
 }
 
 // Init initializes the resource.
-func (n *NonResource) Init(f Factory, gvr client.GVR) {
+func (n *NonResource) Init(f Factory, gvr *client.GVR) {
 	n.mx.Lock()
-	{
-		n.Factory, n.gvr = f, gvr
-	}
+	n.Factory, n.gvr = f, gvr
 	n.mx.Unlock()
 }
 
+// SetIncludeObject sets if resource object should be included in the api server response.
 func (n *NonResource) SetIncludeObject(f bool) {
 	n.includeObj = f
 }
@@ -57,6 +56,6 @@ func (n *NonResource) GVR() string {
 }
 
 // Get returns the given resource.
-func (n *NonResource) Get(context.Context, string) (runtime.Object, error) {
+func (*NonResource) Get(context.Context, string) (runtime.Object, error) {
 	return nil, fmt.Errorf("nyi")
 }

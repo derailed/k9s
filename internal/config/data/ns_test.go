@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNSValidate(t *testing.T) {
@@ -41,7 +42,7 @@ func TestNsValidateMaxNS(t *testing.T) {
 	ns.Favorites = allNS
 
 	ns.Validate(mock.NewMockConnection())
-	assert.Equal(t, data.MaxFavoritesNS, len(ns.Favorites))
+	assert.Len(t, ns.Favorites, data.MaxFavoritesNS)
 }
 
 func TestNSSetActive(t *testing.T) {
@@ -61,7 +62,7 @@ func TestNSSetActive(t *testing.T) {
 	ns := data.NewNamespace()
 	for _, u := range uu {
 		err := ns.SetActive(u.ns, mk)
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, u.ns, ns.Active)
 		assert.Equal(t, u.fav, ns.Favorites)
 	}

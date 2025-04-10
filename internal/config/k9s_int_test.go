@@ -7,13 +7,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_k9sOverrides(t *testing.T) {
 	var (
-		true = true
-		cmd  = "po"
-		dir  = "/tmp/blee"
+		trueVal = true
+		cmd     = "po"
+		dir     = "/tmp/blee"
 	)
 
 	uu := map[string]struct {
@@ -71,15 +72,15 @@ func Test_k9sOverrides(t *testing.T) {
 					Headless:         false,
 					Logoless:         false,
 					Crumbsless:       false,
-					manualHeadless:   &true,
-					manualLogoless:   &true,
-					manualCrumbsless: &true,
-					manualSplashless: &true,
+					manualHeadless:   &trueVal,
+					manualLogoless:   &trueVal,
+					manualCrumbsless: &trueVal,
+					manualSplashless: &trueVal,
 				},
 				SkipLatestRevCheck:  false,
 				DisablePodCounting:  false,
 				manualRefreshRate:   100,
-				manualReadOnly:      &true,
+				manualReadOnly:      &trueVal,
 				manualCommand:       &cmd,
 				manualScreenDumpDir: &dir,
 			},
@@ -123,7 +124,7 @@ func Test_screenDumpDirOverride(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			cfg := NewConfig(nil)
-			assert.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
+			require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 
 			cfg.K9s.manualScreenDumpDir = &u.dir
 			assert.Equal(t, u.e, cfg.K9s.AppScreenDumpDir())

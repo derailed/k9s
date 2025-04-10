@@ -54,7 +54,7 @@ func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
 	}
 }
 
-func (s *ScaleExtender) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (s *ScaleExtender) scaleCmd(*tcell.EventKey) *tcell.EventKey {
 	paths := s.GetTable().GetSelectedItems()
 	if len(paths) == 0 {
 		return nil
@@ -137,7 +137,7 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 		// read the replicas directly from the CRD.
 		if meta, _ := dao.MetaAccess.MetaFor(s.GVR()); dao.IsScalable(meta) {
 			replicas, err := s.replicasFromScaleSubresource(fqns[0])
-			if err == nil && len(replicas) != 0 {
+			if err == nil && replicas != "" {
 				factor = replicas
 			}
 		}
@@ -163,7 +163,7 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 		SetLabelColor(styles.LabelFgColor.Color()).
 		SetFieldTextColor(styles.FieldFgColor.Color())
 
-	f.AddInputField("Replicas:", factor, 4, func(textToCheck string, lastChar rune) bool {
+	f.AddInputField("Replicas:", factor, 4, func(textToCheck string, _ rune) bool {
 		_, err := strconv.Atoi(textToCheck)
 		return err == nil
 	}, func(changed string) {
@@ -180,7 +180,7 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 		defer cancel()
 		for _, fqn := range fqns {
-			if err := s.scale(ctx, fqn, count); err != nil {
+			if err := s.scale(ctx, fqn, int32(count)); err != nil {
 				slog.Error("Unable to scale resource", slogs.FQN, fqn)
 				s.App().Flash().Err(err)
 				return
@@ -195,14 +195,14 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 	f.AddButton("Cancel", func() {
 		s.dismissDialog()
 	})
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if b := f.GetButton(i); b != nil {
 			b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
 			b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
 		}
 	}
 
-	for i := 0; i < f.GetButtonCount(); i++ {
+	for i := range f.GetButtonCount() {
 		f.GetButton(i).
 			SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color()).
 			SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
@@ -215,7 +215,7 @@ func (s *ScaleExtender) dismissDialog() {
 	s.App().Content.RemovePage(scaleDialogKey)
 }
 
-func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int) error {
+func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int32) error {
 	res, err := dao.AccessorFor(s.App().factory, s.GVR())
 	if err != nil {
 		return err
@@ -225,5 +225,5 @@ func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int) er
 		return fmt.Errorf("expecting a scalable resource for %q", s.GVR())
 	}
 
-	return scaler.Scale(ctx, path, int32(replicas))
+	return scaler.Scale(ctx, path, replicas)
 }

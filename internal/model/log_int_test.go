@@ -27,10 +27,9 @@ func TestUpdateLogs(t *testing.T) {
 	defer cancel()
 	go m.updateLogs(ctx, c)
 
-	for i := 0; i < 2*size; i++ {
+	for i := range 2 * size {
 		c <- dao.NewLogItemFromString("line" + strconv.Itoa(i))
 	}
-
 	time.Sleep(2 * time.Second)
 	assert.Equal(t, size, v.count)
 }
@@ -51,7 +50,7 @@ func BenchmarkUpdateLogs(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		c <- item
 	}
 	close(c)
@@ -78,8 +77,8 @@ func newMockLogView() *mockLogView {
 func (t *mockLogView) LogChanged(ll [][]byte) {
 	t.count += len(ll)
 }
-func (t *mockLogView) LogStop()            {}
-func (t *mockLogView) LogCanceled()        {}
-func (t *mockLogView) LogResume()          {}
-func (t *mockLogView) LogCleared()         {}
-func (t *mockLogView) LogFailed(err error) {}
+func (*mockLogView) LogStop()        {}
+func (*mockLogView) LogCanceled()    {}
+func (*mockLogView) LogResume()      {}
+func (*mockLogView) LogCleared()     {}
+func (*mockLogView) LogFailed(error) {}

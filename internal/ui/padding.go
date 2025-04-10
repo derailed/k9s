@@ -40,7 +40,7 @@ func ComputeMaxColumns(pads MaxyPad, sortColName string, t *model1.TableData) {
 
 // IsASCII checks if table cell has all ascii characters.
 func IsASCII(s string) bool {
-	for i := 0; i < len(s); i++ {
+	for i := range s {
 		if s[i] > unicode.MaxASCII {
 			return false
 		}

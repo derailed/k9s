@@ -8,9 +8,11 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPodRender(t *testing.T) {
@@ -44,13 +46,13 @@ func TestPodRender(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			o := load(t, u.file)
-			root := xray.NewTreeNode("pods", "pods")
+			root := xray.NewTreeNode(client.PodGVR, "pods")
 			ctx := context.WithValue(context.Background(), xray.KeyParent, root)
 			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
 
-			assert.Nil(t, re.Render(ctx, "", &render.PodWithMetrics{Raw: o}))
+			require.NoError(t, re.Render(ctx, "", &render.PodWithMetrics{Raw: o}))
 			assert.Equal(t, u.children, root.CountChildren())
-			assert.Equal(t, u.count, root.Count(""))
+			assert.Equal(t, u.count, root.Count(client.NoGVR))
 		})
 	}
 }

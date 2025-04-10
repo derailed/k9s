@@ -35,7 +35,7 @@ type PFAnn struct {
 }
 
 func ParsePlainPF(ann string) (*PFAnn, error) {
-	if len(ann) == 0 {
+	if ann == "" {
 		return nil, fmt.Errorf("invalid annotation %q", ann)
 	}
 	var pf PFAnn
@@ -43,7 +43,7 @@ func ParsePlainPF(ann string) (*PFAnn, error) {
 	if len(mm) < 3 {
 		return nil, fmt.Errorf("invalid plain port-forward %s", ann)
 	}
-	if len(mm[2]) == 0 {
+	if mm[2] == "" {
 		pf.ContainerPort = intstr.Parse(mm[1])
 		pf.LocalPort = mm[1]
 		return &pf, nil

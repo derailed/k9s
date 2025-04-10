@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +31,7 @@ func TestTreeNodeCount(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.root.Count(""))
+			assert.Equal(t, u.e, u.root.Count(client.NoGVR))
 		})
 	}
 }
@@ -99,12 +100,12 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"flat_simple": {
 			spec: []xray.NodeSpec{
 				{
-					GVRs:     []string{"containers", "v1/pods"},
+					GVRs:     []*client.GVR{client.CoGVR, client.PodGVR},
 					Paths:    []string{"c1", "default/p1"},
 					Statuses: threeOK,
 				},
 				{
-					GVRs:     []string{"containers", "v1/pods"},
+					GVRs:     []*client.GVR{client.CoGVR, client.PodGVR},
 					Paths:    []string{"c2", "default/p1"},
 					Statuses: threeOK,
 				},
@@ -114,12 +115,12 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"flat_complex": {
 			spec: []xray.NodeSpec{
 				{
-					GVRs:     []string{"v1/secrets", "containers", "v1/pods"},
+					GVRs:     []*client.GVR{client.SecGVR, client.CoGVR, client.PodGVR},
 					Paths:    []string{"s1", "c1", "default/p1"},
 					Statuses: threeOK,
 				},
 				{
-					GVRs:     []string{"v1/secrets", "containers", "v1/pods"},
+					GVRs:     []*client.GVR{client.SecGVR, client.CoGVR, client.PodGVR},
 					Paths:    []string{"s2", "c2", "default/p1"},
 					Statuses: threeOK,
 				},
@@ -129,47 +130,47 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"complex1": {
 			spec: []xray.NodeSpec{
 				{
-					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.SecGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"default/default-token-rr22g", "default/nginx-6b866d578b-c6tcn", "default/nginx", "-/default", "deployments"},
 					Statuses: fiveOK,
 				},
 				{
-					GVRs:     []string{"v1/configmaps", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.CmGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"kube-system/coredns", "kube-system/coredns-6955765f44-89q2p", "kube-system/coredns", "-/kube-system", "deployments"},
 					Statuses: fiveOK,
 				},
 				{
-					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.SecGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"kube-system/coredns-token-5cq9j", "kube-system/coredns-6955765f44-89q2p", "kube-system/coredns", "-/kube-system", "deployments"},
 					Statuses: fiveOK,
 				},
 				{
-					GVRs:     []string{"v1/configmaps", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.CmGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"kube-system/coredns", "kube-system/coredns-6955765f44-r9j9t", "kube-system/coredns", "-/kube-system", "deployments"},
 					Statuses: fiveOK,
 				},
 				{
-					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.SecGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"kube-system/coredns-token-5cq9j", "kube-system/coredns-6955765f44-r9j9t", "kube-system/coredns", "-/kube-system", "deployments"},
 					Statuses: fiveOK,
 				},
 				{
-					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.SecGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"kube-system/default-token-thzt8", "kube-system/metrics-server-6754dbc9df-88bk4", "kube-system/metrics-server", "-/kube-system", "deployments"},
 					Statuses: fiveOK,
 				},
 				{
-					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.SecGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"kube-system/nginx-ingress-token-kff5q", "kube-system/nginx-ingress-controller-6fc5bcc8c9-cwp55", "kube-system/nginx-ingress-controller", "-/kube-system", "deployments"},
 					Statuses: fiveOK,
 				},
 				{
-					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.SecGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"kubernetes-dashboard/kubernetes-dashboard-token-d6rt4", "kubernetes-dashboard/dashboard-metrics-scraper-7b64584c5c-c7b56", "kubernetes-dashboard/dashboard-metrics-scraper", "-/kubernetes-dashboard", "deployments"},
 					Statuses: fiveOK,
 				},
 				{
-					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					GVRs:     []*client.GVR{client.SecGVR, client.PodGVR, client.DpGVR, client.NsGVR, client.DpGVR},
 					Paths:    []string{"kubernetes-dashboard/kubernetes-dashboard-token-d6rt4", "kubernetes-dashboard/kubernetes-dashboard-79d9cd965-b4c7d", "kubernetes-dashboard/kubernetes-dashboard", "-/kubernetes-dashboard", "deployments"},
 					Statuses: fiveOK,
 				},
@@ -196,12 +197,12 @@ func TestTreeNodeFlatten(t *testing.T) {
 			root: root1(),
 			e: []xray.NodeSpec{
 				{
-					GVRs:     []string{"containers", "v1/pods"},
+					GVRs:     []*client.GVR{client.CoGVR, client.PodGVR},
 					Paths:    []string{"c1", "default/p1"},
 					Statuses: []string{"ok", "ok"},
 				},
 				{
-					GVRs:     []string{"containers", "v1/pods"},
+					GVRs:     []*client.GVR{client.CoGVR, client.PodGVR},
 					Paths:    []string{"c2", "default/p1"},
 					Statuses: []string{"ok", "ok"},
 				},
@@ -211,12 +212,12 @@ func TestTreeNodeFlatten(t *testing.T) {
 			root: root2(),
 			e: []xray.NodeSpec{
 				{
-					GVRs:     []string{"v1/secrets", "containers", "v1/pods"},
+					GVRs:     []*client.GVR{client.SecGVR, client.CoGVR, client.PodGVR},
 					Paths:    []string{"s1", "c1", "default/p1"},
 					Statuses: []string{"ok", "ok", "ok"},
 				},
 				{
-					GVRs:     []string{"v1/secrets", "containers", "v1/pods"},
+					GVRs:     []*client.GVR{client.SecGVR, client.CoGVR, client.PodGVR},
 					Paths:    []string{"s2", "c2", "default/p1"},
 					Statuses: []string{"ok", "ok", "ok"},
 				},
@@ -243,8 +244,8 @@ func TestTreeNodeDiff(t *testing.T) {
 			n2: &xray.TreeNode{},
 		},
 		"same": {
-			n1: xray.NewTreeNode("v1/pods", "default/p1"),
-			n2: xray.NewTreeNode("v1/pods", "default/p1"),
+			n1: xray.NewTreeNode(client.PodGVR, "default/p1"),
+			n2: xray.NewTreeNode(client.PodGVR, "default/p1"),
 		},
 	}
 
@@ -257,8 +258,8 @@ func TestTreeNodeDiff(t *testing.T) {
 }
 
 func TestTreeNodeClone(t *testing.T) {
-	n := xray.NewTreeNode("v1/pods", "default/p1")
-	c1 := xray.NewTreeNode("containers", "c1")
+	n := xray.NewTreeNode(client.PodGVR, "default/p1")
+	c1 := xray.NewTreeNode(client.CoGVR, "c1")
 	n.Add(c1)
 
 	c := n.ShallowClone()
@@ -266,9 +267,9 @@ func TestTreeNodeClone(t *testing.T) {
 }
 
 func TestTreeNodeRoot(t *testing.T) {
-	n := xray.NewTreeNode("v1/pods", "default/p1")
-	c1 := xray.NewTreeNode("containers", "c1")
-	c2 := xray.NewTreeNode("containers", "c2")
+	n := xray.NewTreeNode(client.PodGVR, "default/p1")
+	c1 := xray.NewTreeNode(client.CoGVR, "c1")
+	c2 := xray.NewTreeNode(client.CoGVR, "c2")
 	n.Add(c1)
 	n.Add(c2)
 
@@ -283,9 +284,9 @@ func TestTreeNodeRoot(t *testing.T) {
 }
 
 func TestTreeNodeLevel(t *testing.T) {
-	n := xray.NewTreeNode("v1/pods", "default/p1")
-	c1 := xray.NewTreeNode("containers", "c1")
-	c2 := xray.NewTreeNode("containers", "c2")
+	n := xray.NewTreeNode(client.PodGVR, "default/p1")
+	c1 := xray.NewTreeNode(client.CoGVR, "c1")
+	c2 := xray.NewTreeNode(client.CoGVR, "c2")
 	n.Add(c1)
 	n.Add(c2)
 
@@ -295,9 +296,9 @@ func TestTreeNodeLevel(t *testing.T) {
 }
 
 func TestTreeNodeMaxDepth(t *testing.T) {
-	n := xray.NewTreeNode("v1/pods", "default/p1")
-	c1 := xray.NewTreeNode("containers", "c1")
-	c2 := xray.NewTreeNode("containers", "c2")
+	n := xray.NewTreeNode(client.PodGVR, "default/p1")
+	c1 := xray.NewTreeNode(client.CoGVR, "c1")
+	c2 := xray.NewTreeNode(client.CoGVR, "c2")
 	n.Add(c1)
 	n.Add(c2)
 
@@ -308,9 +309,9 @@ func TestTreeNodeMaxDepth(t *testing.T) {
 // Helpers...
 
 func root1() *xray.TreeNode {
-	n := xray.NewTreeNode("v1/pods", "default/p1")
-	c1 := xray.NewTreeNode("containers", "c1")
-	c2 := xray.NewTreeNode("containers", "c2")
+	n := xray.NewTreeNode(client.PodGVR, "default/p1")
+	c1 := xray.NewTreeNode(client.CoGVR, "c1")
+	c2 := xray.NewTreeNode(client.CoGVR, "c2")
 	n.Add(c1)
 	n.Add(c2)
 
@@ -318,23 +319,23 @@ func root1() *xray.TreeNode {
 }
 
 func diff1() *xray.TreeNode {
-	n := xray.NewTreeNode("v1/pods", "default/p1")
-	c1 := xray.NewTreeNode("containers", "c1")
+	n := xray.NewTreeNode(client.PodGVR, "default/p1")
+	c1 := xray.NewTreeNode(client.CoGVR, "c1")
 	n.Add(c1)
 
 	return n
 }
 
 func root2() *xray.TreeNode {
-	c1 := xray.NewTreeNode("containers", "c1")
-	s1 := xray.NewTreeNode("v1/secrets", "s1")
+	c1 := xray.NewTreeNode(client.CoGVR, "c1")
+	s1 := xray.NewTreeNode(client.SecGVR, "s1")
 	c1.Add(s1)
 
-	c2 := xray.NewTreeNode("containers", "c2")
-	s2 := xray.NewTreeNode("v1/secrets", "s2")
+	c2 := xray.NewTreeNode(client.CoGVR, "c2")
+	s2 := xray.NewTreeNode(client.SecGVR, "s2")
 	c2.Add(s2)
 
-	n := xray.NewTreeNode("v1/pods", "default/p1")
+	n := xray.NewTreeNode(client.PodGVR, "default/p1")
 	n.Add(c1)
 	n.Add(c2)
 
@@ -342,99 +343,99 @@ func root2() *xray.TreeNode {
 }
 
 func diff2() *xray.TreeNode {
-	n := xray.NewTreeNode("v1/pods", "default/p1")
-	c1 := xray.NewTreeNode("containers", "c2")
+	n := xray.NewTreeNode(client.PodGVR, "default/p1")
+	c1 := xray.NewTreeNode(client.CoGVR, "c2")
 	n.Add(c1)
 
-	s1 := xray.NewTreeNode("v1/secrets", "s2")
+	s1 := xray.NewTreeNode(client.SecGVR, "s2")
 	c1.Add(s1)
 
 	return n
 }
 
 func root3() *xray.TreeNode {
-	n := xray.NewTreeNode("apps/v1/deployments", "deployments")
+	n := xray.NewTreeNode(client.DpGVR, "deployments")
 
-	ns1 := xray.NewTreeNode("v1/namespaces", "-/default")
+	ns1 := xray.NewTreeNode(client.NsGVR, "-/default")
 	n.Add(ns1)
 	{
-		d1 := xray.NewTreeNode("apps/v1/deployments", "default/nginx")
+		d1 := xray.NewTreeNode(client.DpGVR, "default/nginx")
 		ns1.Add(d1)
 		{
-			p1 := xray.NewTreeNode("v1/pods", "default/nginx-6b866d578b-c6tcn")
+			p1 := xray.NewTreeNode(client.PodGVR, "default/nginx-6b866d578b-c6tcn")
 			d1.Add(p1)
 			{
-				s1 := xray.NewTreeNode("v1/secrets", "default/default-token-rr22g")
+				s1 := xray.NewTreeNode(client.SecGVR, "default/default-token-rr22g")
 				p1.Add(s1)
 			}
 		}
 	}
 
-	ns2 := xray.NewTreeNode("v1/namespaces", "-/kube-system")
+	ns2 := xray.NewTreeNode(client.NsGVR, "-/kube-system")
 	n.Add(ns2)
 	{
-		d2 := xray.NewTreeNode("apps/v1/deployments", "kube-system/coredns")
+		d2 := xray.NewTreeNode(client.DpGVR, "kube-system/coredns")
 		ns2.Add(d2)
 		{
-			p2 := xray.NewTreeNode("v1/pods", "kube-system/coredns-6955765f44-89q2p")
+			p2 := xray.NewTreeNode(client.PodGVR, "kube-system/coredns-6955765f44-89q2p")
 			d2.Add(p2)
 			{
-				c1 := xray.NewTreeNode("v1/configmaps", "kube-system/coredns")
+				c1 := xray.NewTreeNode(client.CmGVR, "kube-system/coredns")
 				p2.Add(c1)
-				s2 := xray.NewTreeNode("v1/secrets", "kube-system/coredns-token-5cq9j")
+				s2 := xray.NewTreeNode(client.SecGVR, "kube-system/coredns-token-5cq9j")
 				p2.Add(s2)
 			}
-			p3 := xray.NewTreeNode("v1/pods", "kube-system/coredns-6955765f44-r9j9t")
+			p3 := xray.NewTreeNode(client.PodGVR, "kube-system/coredns-6955765f44-r9j9t")
 			d2.Add(p3)
 			{
-				c2 := xray.NewTreeNode("v1/configmaps", "kube-system/coredns")
+				c2 := xray.NewTreeNode(client.CmGVR, "kube-system/coredns")
 				p3.Add(c2)
-				s3 := xray.NewTreeNode("v1/secrets", "kube-system/coredns-token-5cq9j")
+				s3 := xray.NewTreeNode(client.SecGVR, "kube-system/coredns-token-5cq9j")
 				p3.Add(s3)
 			}
 		}
-		d3 := xray.NewTreeNode("apps/v1/deployments", "kube-system/metrics-server")
+		d3 := xray.NewTreeNode(client.DpGVR, "kube-system/metrics-server")
 		ns2.Add(d3)
 		{
-			p3 := xray.NewTreeNode("v1/pods", "kube-system/metrics-server-6754dbc9df-88bk4")
+			p3 := xray.NewTreeNode(client.PodGVR, "kube-system/metrics-server-6754dbc9df-88bk4")
 			d3.Add(p3)
 			{
-				s4 := xray.NewTreeNode("v1/secrets", "kube-system/default-token-thzt8")
+				s4 := xray.NewTreeNode(client.SecGVR, "kube-system/default-token-thzt8")
 				p3.Add(s4)
 			}
 		}
-		d4 := xray.NewTreeNode("apps/v1/deployments", "kube-system/nginx-ingress-controller")
+		d4 := xray.NewTreeNode(client.DpGVR, "kube-system/nginx-ingress-controller")
 		ns2.Add(d4)
 		{
-			p4 := xray.NewTreeNode("v1/pods", "kube-system/nginx-ingress-controller-6fc5bcc8c9-cwp55")
+			p4 := xray.NewTreeNode(client.PodGVR, "kube-system/nginx-ingress-controller-6fc5bcc8c9-cwp55")
 			d4.Add(p4)
 			{
-				s5 := xray.NewTreeNode("v1/secrets", "kube-system/nginx-ingress-token-kff5q")
+				s5 := xray.NewTreeNode(client.SecGVR, "kube-system/nginx-ingress-token-kff5q")
 				p4.Add(s5)
 			}
 		}
 	}
 
-	ns3 := xray.NewTreeNode("v1/namespaces", "-/kubernetes-dashboard")
+	ns3 := xray.NewTreeNode(client.NsGVR, "-/kubernetes-dashboard")
 	n.Add(ns3)
 	{
-		d5 := xray.NewTreeNode("apps/v1/deployments", "kubernetes-dashboard/dashboard-metrics-scraper")
+		d5 := xray.NewTreeNode(client.DpGVR, "kubernetes-dashboard/dashboard-metrics-scraper")
 		ns3.Add(d5)
 		{
-			p5 := xray.NewTreeNode("v1/pods", "kubernetes-dashboard/dashboard-metrics-scraper-7b64584c5c-c7b56")
+			p5 := xray.NewTreeNode(client.PodGVR, "kubernetes-dashboard/dashboard-metrics-scraper-7b64584c5c-c7b56")
 			d5.Add(p5)
 			{
-				s6 := xray.NewTreeNode("v1/secrets", "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4")
+				s6 := xray.NewTreeNode(client.SecGVR, "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4")
 				p5.Add(s6)
 			}
 		}
-		d6 := xray.NewTreeNode("apps/v1/deployments", "kubernetes-dashboard/kubernetes-dashboard")
+		d6 := xray.NewTreeNode(client.DpGVR, "kubernetes-dashboard/kubernetes-dashboard")
 		ns3.Add(d6)
 		{
-			p6 := xray.NewTreeNode("v1/pods", "kubernetes-dashboard/kubernetes-dashboard-79d9cd965-b4c7d")
+			p6 := xray.NewTreeNode(client.PodGVR, "kubernetes-dashboard/kubernetes-dashboard-79d9cd965-b4c7d")
 			d6.Add(p6)
 			{
-				s6 := xray.NewTreeNode("v1/secrets", "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4")
+				s6 := xray.NewTreeNode(client.SecGVR, "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4")
 				p6.Add(s6)
 			}
 		}
@@ -444,27 +445,27 @@ func root3() *xray.TreeNode {
 }
 
 func diff3() *xray.TreeNode {
-	n := xray.NewTreeNode("apps/v1/deployments", "deployments")
-	ns2 := xray.NewTreeNode("v1/namespaces", "-/kube-system")
+	n := xray.NewTreeNode(client.DpGVR, "deployments")
+	ns2 := xray.NewTreeNode(client.NsGVR, "-/kube-system")
 	n.Add(ns2)
 	{
-		d2 := xray.NewTreeNode("apps/v1/deployments", "kube-system/coredns")
+		d2 := xray.NewTreeNode(client.DpGVR, "kube-system/coredns")
 		ns2.Add(d2)
 		{
-			p2 := xray.NewTreeNode("v1/pods", "kube-system/coredns-6955765f44-89q2p")
+			p2 := xray.NewTreeNode(client.PodGVR, "kube-system/coredns-6955765f44-89q2p")
 			d2.Add(p2)
 			{
-				c1 := xray.NewTreeNode("v1/configmaps", "kube-system/coredns")
+				c1 := xray.NewTreeNode(client.CmGVR, "kube-system/coredns")
 				p2.Add(c1)
-				s2 := xray.NewTreeNode("v1/secrets", "kube-system/coredns-token-5cq9j")
+				s2 := xray.NewTreeNode(client.SecGVR, "kube-system/coredns-token-5cq9j")
 				p2.Add(s2)
 			}
-			p3 := xray.NewTreeNode("v1/pods", "kube-system/coredns-6955765f44-r9j9t")
+			p3 := xray.NewTreeNode(client.PodGVR, "kube-system/coredns-6955765f44-r9j9t")
 			d2.Add(p3)
 			{
-				c2 := xray.NewTreeNode("v1/configmaps", "kube-system/coredns")
+				c2 := xray.NewTreeNode(client.CmGVR, "kube-system/coredns")
 				p3.Add(c2)
-				s3 := xray.NewTreeNode("v1/secrets", "kube-system/coredns-token-5cq9j")
+				s3 := xray.NewTreeNode(client.SecGVR, "kube-system/coredns-token-5cq9j")
 				p3.Add(s3)
 			}
 		}

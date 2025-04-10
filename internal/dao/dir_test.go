@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewDir(t *testing.T) {
@@ -17,6 +18,6 @@ func TestNewDir(t *testing.T) {
 	ctx := context.WithValue(context.Background(), internal.KeyPath, "testdata/dir")
 	oo, err := d.List(ctx, "")
 
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(oo))
+	require.NoError(t, err)
+	assert.Len(t, oo, 2)
 }

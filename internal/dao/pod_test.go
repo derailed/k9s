@@ -51,7 +51,7 @@ func TestGetDefaultContainer(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			container, ok := GetDefaultContainer(u.po.ObjectMeta, u.po.Spec)
+			container, ok := GetDefaultContainer(&u.po.ObjectMeta, &u.po.Spec)
 			assert.Equal(t, u.wantContainer, container)
 			assert.Equal(t, u.wantOk, ok)
 		})

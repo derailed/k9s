@@ -17,7 +17,7 @@ type HorizontalPodAutoscaler struct {
 }
 
 // ColorerFunc colors a resource row.
-func (hpa HorizontalPodAutoscaler) ColorerFunc() model1.ColorerFunc {
+func (*HorizontalPodAutoscaler) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 

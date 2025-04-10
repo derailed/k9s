@@ -27,14 +27,14 @@ type Dir struct {
 // NewDir returns a new set of aliases.
 func NewDir(f Factory) *Dir {
 	var a Dir
-	a.Init(f, client.NewGVR("dir"))
+	a.Init(f, client.DirGVR)
 	return &a
 }
 
 var yamlRX = regexp.MustCompile(`.*\.(yml|yaml|json)`)
 
 // List returns a collection of aliases.
-func (a *Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+func (*Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	dir, ok := ctx.Value(internal.KeyPath).(string)
 	if !ok {
 		return nil, errors.New("no dir in context")
@@ -60,6 +60,6 @@ func (a *Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 }
 
 // Get fetch a resource.
-func (a *Dir) Get(_ context.Context, _ string) (runtime.Object, error) {
+func (*Dir) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, errors.New("nyi")
 }

@@ -21,7 +21,7 @@ type ImageScan struct {
 	NonResource
 }
 
-func (is *ImageScan) listImages(ctx context.Context, gvr client.GVR, path string) ([]string, error) {
+func (is *ImageScan) listImages(ctx context.Context, gvr *client.GVR, path string) ([]string, error) {
 	res, err := AccessorFor(is.Factory, gvr)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (is *ImageScan) List(ctx context.Context, _ string) ([]runtime.Object, erro
 	if !ok {
 		return nil, fmt.Errorf("no context path for %q", is.gvr)
 	}
-	gvr, ok := ctx.Value(internal.KeyGVR).(client.GVR)
+	gvr, ok := ctx.Value(internal.KeyGVR).(*client.GVR)
 	if !ok {
 		return nil, fmt.Errorf("no context gvr for %q", is.gvr)
 	}
