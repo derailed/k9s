@@ -29,7 +29,7 @@ import (
 
 func TestTableSave(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 	v.SetTitle("k9s-test")
 
 	require.NoError(t, ensureDumpDir("/tmp/test-dumps"))
@@ -43,7 +43,7 @@ func TestTableSave(t *testing.T) {
 
 func TestTableNew(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 
 	data := model1.NewTableDataWithRows(
 		client.NewGVR("test"),
@@ -74,7 +74,7 @@ func TestTableNew(t *testing.T) {
 
 func TestTableViewFilter(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 	v.SetModel(&mockTableModel{})
 	v.Refresh()
 
@@ -86,7 +86,7 @@ func TestTableViewFilter(t *testing.T) {
 
 func TestTableViewSort(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 	v.SetModel(new(mockTableModel))
 
 	uu := map[string]struct {
@@ -199,8 +199,8 @@ func makeTableData() *model1.TableData {
 	)
 }
 
-func makeContext() context.Context {
-	a := NewApp(mock.NewMockConfig())
+func makeContext(t *testing.T) context.Context {
+	a := NewApp(mock.NewMockConfig(t))
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
 }

@@ -15,7 +15,7 @@ import (
 func TestPortForwardNew(t *testing.T) {
 	pf := view.NewPortForward(client.PfGVR)
 
-	require.NoError(t, pf.Init(makeCtx()))
+	require.NoError(t, pf.Init(makeCtx(t)))
 	assert.Equal(t, "PortForwards", pf.Name())
 	assert.Len(t, pf.Hints(), 10)
 }

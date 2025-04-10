@@ -5,7 +5,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/k9s/internal/slogs"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -79,26 +79,35 @@ func (a *Aliases) Clear() {
 	}
 }
 
+func (a *Aliases) Resolve(command string) (*client.GVR, string, bool) {
+	agvr, ok := a.Get(command)
+	if !ok {
+		return nil, "", false
+	}
+	if agvr.IsCommand() {
+		p := cmd.NewInterpreter(agvr.String())
+		gvr, ok := a.Get(p.Cmd())
+		if !ok {
+			return nil, "", false
+		}
+		return gvr, p.Args(), true
+	}
+
+	return agvr, "", true
+}
+
 // Get retrieves an alias.
 func (a *Aliases) Get(alias string) (*client.GVR, bool) {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
 
 	gvr, ok := a.Alias[alias]
-	if ok && !gvr.IsK8sRes() {
-		if rgvr, found := a.Alias[gvr.String()]; found {
-			return rgvr, found
-		}
-	}
 
 	return gvr, ok
 }
 
 // Define declares a new alias.
 func (a *Aliases) Define(gvr *client.GVR, aliases ...string) {
-	if gvr.String() == "deployment" {
-		fmt.Println("!!YO!!")
-	}
 	a.mx.Lock()
 	defer a.mx.Unlock()
 	for _, alias := range aliases {

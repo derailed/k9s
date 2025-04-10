@@ -28,7 +28,7 @@ func TestLog(t *testing.T) {
 		Container: "blee",
 	}
 	v := view.NewLog(client.PodGVR, &opts)
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 
 	ii := dao.NewLogItems()
 	ii.Add(dao.NewLogItemFromString("blee\n"), dao.NewLogItemFromString("bozo\n"))
@@ -45,7 +45,7 @@ func TestLogFlush(t *testing.T) {
 		Container: "blee",
 	}
 	v := view.NewLog(client.PodGVR, &opts)
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 
 	items := dao.NewLogItems()
 	items.Add(
@@ -65,7 +65,7 @@ func BenchmarkLogFlush(b *testing.B) {
 		Container: "blee",
 	}
 	v := view.NewLog(client.PodGVR, &opts)
-	_ = v.Init(makeContext())
+	_ = v.Init(makeContext(b))
 
 	items := dao.NewLogItems()
 	items.Add(
@@ -103,9 +103,9 @@ func TestLogViewSave(t *testing.T) {
 		Container: "blee",
 	}
 	v := view.NewLog(client.PodGVR, &opts)
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 
-	app := makeApp()
+	app := makeApp(t)
 	ii := dao.NewLogItems()
 	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
 	ll := make([][]byte, ii.Len())
@@ -141,7 +141,7 @@ func TestAllContainerKeyBinding(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			v := view.NewLog(client.PodGVR, u.opts)
-			require.NoError(t, v.Init(makeContext()))
+			require.NoError(t, v.Init(makeContext(t)))
 			_, got := v.Logs().Actions().Get(ui.KeyA)
 			assert.Equal(t, u.e, got)
 		})
@@ -151,8 +151,8 @@ func TestAllContainerKeyBinding(t *testing.T) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeApp() *view.App {
-	return view.NewApp(mock.NewMockConfig())
+func makeApp(t *testing.T) *view.App {
+	return view.NewApp(mock.NewMockConfig(t))
 }
 
 func ensureDumpDir(n string) error {

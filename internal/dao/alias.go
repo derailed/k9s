@@ -63,14 +63,7 @@ func (*Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 
 // AsGVR returns a matching gvr if it exists.
 func (a *Alias) AsGVR(alias string) (*client.GVR, string, bool) {
-	gvr, ok := a.Aliases.Get(alias)
-	if ok {
-		if pgvr := MetaAccess.Lookup(alias); pgvr != client.NoGVR {
-			return pgvr, "", ok
-		}
-	}
-
-	return gvr, "", ok
+	return a.Resolve(alias)
 }
 
 // Get fetch a resource.
@@ -106,10 +99,9 @@ func (a *Alias) load(path string) error {
 		}
 		a.Define(gvr, gvr.AsResourceName())
 
-		// Allow single shot commands for k8s resources only!
-		if isStandardGroup(gvr.GVSub()) {
-			a.Define(gvr, meta.Name)
-			a.Define(gvr, meta.SingularName)
+		// Allow single shot commands for k8s resources only expect for metrics resource which override pods and nodes ;(!
+		if isStandardGroup(gvr.GVSub()) && gvr.G() != "metrics.k8s.io" {
+			a.Define(gvr, meta.Name, meta.SingularName)
 		}
 		if len(meta.ShortNames) > 0 {
 			a.Define(gvr, meta.ShortNames...)

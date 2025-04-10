@@ -27,14 +27,14 @@ import (
 func TestAliasNew(t *testing.T) {
 	v := view.NewAlias(client.AliGVR)
 
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 	assert.Equal(t, "Aliases", v.Name())
 	assert.Len(t, v.Hints(), 6)
 }
 
 func TestAliasSearch(t *testing.T) {
 	v := view.NewAlias(client.AliGVR)
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 	v.GetTable().SetModel(&mockModel{})
 	v.GetTable().Refresh()
 	v.App().Prompt().SetModel(v.GetTable().CmdBuff())
@@ -46,7 +46,7 @@ func TestAliasSearch(t *testing.T) {
 
 func TestAliasGoto(t *testing.T) {
 	v := view.NewAlias(client.AliGVR)
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 	v.GetTable().Select(0, 0)
 
 	b := buffL{}
@@ -74,8 +74,8 @@ func (b *buffL) BufferActive(bool, model.BufferKind) {
 	b.active++
 }
 
-func makeContext() context.Context {
-	a := view.NewApp(mock.NewMockConfig())
+func makeContext(t testing.TB) context.Context {
+	a := view.NewApp(mock.NewMockConfig(t))
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
 }

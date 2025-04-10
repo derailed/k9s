@@ -33,7 +33,7 @@ func TestSkinnedContext(t *testing.T) {
 	require.NoError(t, os.WriteFile(tf, raw, data.DefaultFileMod))
 
 	var cfg ui.Configurator
-	cfg.Config = mock.NewMockConfig()
+	cfg.Config = mock.NewMockConfig(t)
 	cl, ct := "cl-1", "ct-1"
 	flags := genericclioptions.ConfigFlags{
 		ClusterName: &cl,

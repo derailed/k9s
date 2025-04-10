@@ -321,6 +321,11 @@ func launchNodeShell(v model.Igniter, a *App, node string) {
 }
 
 func launchPodShell(v model.Igniter, a *App) {
+	if a.Config.K9s.ShellPod == nil {
+		slog.Error("Shell pod not configured!")
+		return
+	}
+
 	defer func() {
 		if err := nukeK9sShell(a); err != nil {
 			a.Flash().Errf("Launching node shell failed: %s", err)

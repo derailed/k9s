@@ -15,7 +15,7 @@ import (
 func TestPriorityClassNew(t *testing.T) {
 	s := view.NewPriorityClass(client.PcGVR)
 
-	require.NoError(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "PriorityClass", s.Name())
 	assert.Len(t, s.Hints(), 6)
 }
