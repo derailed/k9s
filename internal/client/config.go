@@ -14,12 +14,12 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
-	clientcmd "k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
-	defaultCallTimeoutDuration time.Duration = 10 * time.Second
+	defaultCallTimeoutDuration = 120 * time.Second
 
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true
