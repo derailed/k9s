@@ -15,7 +15,7 @@ import (
 func TestSecretNew(t *testing.T) {
 	s := view.NewSecret(client.SecGVR)
 
-	require.NoError(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "Secrets", s.Name())
 	assert.Len(t, s.Hints(), 8)
 }

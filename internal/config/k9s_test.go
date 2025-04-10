@@ -133,7 +133,7 @@ func TestK9sMerge(t *testing.T) {
 }
 
 func TestContextScreenDumpDir(t *testing.T) {
-	cfg := mock.NewMockConfig()
+	cfg := mock.NewMockConfig(t)
 	_, err := cfg.K9s.ActivateContext("ct-1-1")
 
 	require.NoError(t, err)
@@ -142,7 +142,7 @@ func TestContextScreenDumpDir(t *testing.T) {
 }
 
 func TestAppScreenDumpDir(t *testing.T) {
-	cfg := mock.NewMockConfig()
+	cfg := mock.NewMockConfig(t)
 
 	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, "/tmp/k9s-test/screen-dumps", cfg.K9s.AppScreenDumpDir())

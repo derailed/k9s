@@ -172,7 +172,7 @@ func init() {
 func TestServiceNew(t *testing.T) {
 	s := view.NewService(client.SvcGVR)
 
-	require.NoError(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "Services", s.Name())
 	assert.Len(t, s.Hints(), 12)
 }

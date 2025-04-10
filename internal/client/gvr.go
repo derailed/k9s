@@ -71,6 +71,10 @@ func NewGVR(path string) *GVR {
 	return &gvr
 }
 
+func (g *GVR) IsCommand() bool {
+	return g != nil && strings.Contains(g.raw, " ")
+}
+
 func (g *GVR) IsK8sRes() bool {
 	return strings.Contains(g.raw, "/")
 }

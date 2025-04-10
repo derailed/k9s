@@ -21,7 +21,7 @@ func TestLogAutoScroll(t *testing.T) {
 		SingleContainer: true,
 	}
 	v := NewLog(client.PodGVR, &opts)
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 	ii := dao.NewLogItems()
 	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
 	v.GetModel().Set(ii)
@@ -39,7 +39,7 @@ func TestLogViewNav(t *testing.T) {
 		Container: "blee",
 	}
 	v := NewLog(client.PodGVR, &opts)
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 
 	buff := dao.NewLogItems()
 	for i := range 100 {
@@ -58,7 +58,7 @@ func TestLogViewClear(t *testing.T) {
 		Container: "blee",
 	}
 	v := NewLog(client.PodGVR, &opts)
-	require.NoError(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 
 	v.toggleAutoScrollCmd(nil)
 	v.Logs().SetText("blee\nblah")
@@ -73,7 +73,7 @@ func TestLogTimestamp(t *testing.T) {
 		Container: "c1",
 	}
 	l := NewLog(client.NewGVR("test"), &opts)
-	require.NoError(t, l.Init(makeContext()))
+	require.NoError(t, l.Init(makeContext(t)))
 	ii := dao.NewLogItems()
 	ii.Add(
 		&dao.LogItem{
@@ -103,7 +103,7 @@ func TestLogFilter(t *testing.T) {
 		Container: "c1",
 	}
 	l := NewLog(client.NewGVR("test"), &opts)
-	require.NoError(t, l.Init(makeContext()))
+	require.NoError(t, l.Init(makeContext(t)))
 	buff := dao.NewLogItems()
 	buff.Add(
 		dao.NewLogItemFromString("duh"),

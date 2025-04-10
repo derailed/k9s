@@ -15,7 +15,7 @@ import (
 func TestConfigMapNew(t *testing.T) {
 	s := view.NewConfigMap(client.CmGVR)
 
-	require.NoError(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "ConfigMaps", s.Name())
 	assert.Len(t, s.Hints(), 7)
 }

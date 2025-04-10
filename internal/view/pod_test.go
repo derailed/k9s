@@ -18,14 +18,14 @@ import (
 func TestPodNew(t *testing.T) {
 	po := view.NewPod(client.PodGVR)
 
-	require.NoError(t, po.Init(makeCtx()))
+	require.NoError(t, po.Init(makeCtx(t)))
 	assert.Equal(t, "Pods", po.Name())
 	assert.Len(t, po.Hints(), 28)
 }
 
 // Helpers...
 
-func makeCtx() context.Context {
-	cfg := mock.NewMockConfig()
+func makeCtx(t testing.TB) context.Context {
+	cfg := mock.NewMockConfig(t)
 	return context.WithValue(context.Background(), internal.KeyApp, view.NewApp(cfg))
 }

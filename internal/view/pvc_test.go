@@ -15,7 +15,7 @@ import (
 func TestPVCNew(t *testing.T) {
 	v := view.NewPersistentVolumeClaim(client.PvcGVR)
 
-	require.NoError(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx(t)))
 	assert.Equal(t, "PersistentVolumeClaims", v.Name())
 	assert.Len(t, v.Hints(), 11)
 }

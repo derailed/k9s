@@ -48,6 +48,10 @@ func (c *Interpreter) Cmd() string {
 	return c.cmd
 }
 
+func (c *Interpreter) Args() string {
+	return strings.TrimSpace(strings.Replace(c.line, c.cmd, "", 1))
+}
+
 // IsBlank returns true if prompt is empty.
 func (c *Interpreter) IsBlank() bool {
 	return c.line == ""

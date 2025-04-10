@@ -61,7 +61,7 @@ func TestParsePFAnn(t *testing.T) {
 }
 
 func TestExtractApp(t *testing.T) {
-	app := NewApp(mock.NewMockConfig())
+	app := NewApp(mock.NewMockConfig(t))
 
 	uu := map[string]struct {
 		app *App

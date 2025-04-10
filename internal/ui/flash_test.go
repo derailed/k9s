@@ -25,7 +25,7 @@ func TestFlash(t *testing.T) {
 		"err":  {l: model.FlashErr, i: "hello", e: "😡 hello\n"},
 	}
 
-	a := ui.NewApp(mock.NewMockConfig(), "test")
+	a := ui.NewApp(mock.NewMockConfig(t), "test")
 	f := ui.NewFlash(a)
 	f.SetTestMode(true)
 	ctx, cancel := context.WithCancel(context.Background())
