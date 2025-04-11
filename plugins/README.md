@@ -23,6 +23,7 @@ Following is an example of some plugin files in this directory. Other files are 
 | resource-recommendations.yaml  | View recommendations for CPU/Memory requests based on historical data        | deployments/daemonsets/statefulsets | Shift-k   | [Robusta KRR](https://github.com/robusta-dev/krr)                                     |
 | trace-dns.yaml                 | Trace DNS resolution using Inspektor Gadget (4)                              | containers/pods/nodes               | Shift-d   |                                                                                       |
 | vector-dev-top.yaml            | Run `vector top` in vector.dev container                                     | pods/container                      | h         | [vector top](https://vector.dev/highlights/2020-12-23-vector-top/)                    |
+| dup.yaml                       | Duplicate, edit and Debug resources                                          | all                                 | Shift-d/e/v | [dup](https://github.com/vash/dup)                                                    |
 
 [1]: https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container
 [2]: https://github.com/nicolaka/netshoot
