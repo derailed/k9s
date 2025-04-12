@@ -33,6 +33,7 @@ import (
 
 func aliases(m *v1.APIResource, aa sets.Set[string]) sets.Set[string] {
 	ss := sets.New(aa.UnsortedList()...)
+	ss.Insert(m.Name)
 	ss.Insert(m.ShortNames...)
 	if m.SingularName != "" {
 		ss.Insert(m.SingularName)
