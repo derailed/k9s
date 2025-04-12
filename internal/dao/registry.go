@@ -331,6 +331,9 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 			if !isStandardGroup(r.GroupVersion) {
 				res.Categories = append(res.Categories, crdCat)
 			}
+			if isScalable(gvr) {
+				res.Categories = append(res.Categories, scaleCat)
+			}
 			m[gvr] = &res
 		}
 	}
@@ -340,6 +343,12 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 
 func isStandardGroup(gv string) bool {
 	return stdGroups.Has(gv) || strings.Contains(gv, ".k8s.io")
+}
+
+func isScalable(gvr *client.GVR) bool {
+	ss := sets.New(client.DpGVR, client.StsGVR)
+
+	return ss.Has(gvr)
 }
 
 var deprecatedGVRs = sets.New(

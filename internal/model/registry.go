@@ -43,7 +43,7 @@ var Registry = map[string]ResourceMeta{
 		Renderer:     new(render.Container),
 		TreeRenderer: new(xray.Container),
 	},
-	client.ScGVR.String(): {
+	client.ScnGVR.String(): {
 		DAO:      new(dao.ImageScan),
 		Renderer: new(render.ImageScan),
 	},
