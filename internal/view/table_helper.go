@@ -42,8 +42,8 @@ func computeFilename(dumpPath, ns, title, path string) (string, error) {
 	return strings.ToLower(filepath.Join(dir, fName)), nil
 }
 
-func saveTable(dir, title, path string, data *model1.TableData) (string, error) {
-	ns := data.GetNamespace()
+func saveTable(dir, title, path string, mdata *model1.TableData) (string, error) {
+	ns := mdata.GetNamespace()
 	if client.IsClusterWide(ns) {
 		ns = client.NamespaceAll
 	}
@@ -69,9 +69,9 @@ func saveTable(dir, title, path string, data *model1.TableData) (string, error) 
 	}()
 
 	w := csv.NewWriter(out)
-	_ = w.Write(data.ColumnNames(true))
+	_ = w.Write(mdata.ColumnNames(true))
 
-	data.RowsRange(func(_ int, re model1.RowEvent) bool {
+	mdata.RowsRange(func(_ int, re model1.RowEvent) bool {
 		_ = w.Write(re.Row.Fields)
 		return true
 	})

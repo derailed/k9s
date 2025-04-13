@@ -102,7 +102,7 @@ func (h *PulseHealth) checkMetrics(ctx context.Context) (health.Checks, error) {
 }
 
 func (h *PulseHealth) check(ctx context.Context, ns string, gvr *client.GVR) (*health.Check, error) {
-	meta, ok := Registry[gvr.String()]
+	meta, ok := Registry[gvr]
 	if !ok {
 		meta = ResourceMeta{
 			DAO:      new(dao.Table),

@@ -44,20 +44,20 @@ func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, err
 	}
 	path, _ := ctx.Value(internal.KeyPath).(string)
 
-	config, err := config.NewBench(benchFile)
+	bcfg, err := config.NewBench(benchFile)
 	if err != nil {
 		slog.Debug("No custom benchmark config file found", slogs.FileName, benchFile)
 	}
 
-	ff, cc := p.getFactory().Forwarders(), config.Benchmarks.Containers
+	ff, cc := p.getFactory().Forwarders(), bcfg.Benchmarks.Containers
 	oo := make([]runtime.Object, 0, len(ff))
 	for k, f := range ff {
 		if !strings.HasPrefix(k, path) {
 			continue
 		}
 		cfg := render.BenchCfg{
-			C: config.Benchmarks.Defaults.C,
-			N: config.Benchmarks.Defaults.N,
+			C: bcfg.Benchmarks.Defaults.C,
+			N: bcfg.Benchmarks.Defaults.N,
 		}
 		if cust, ok := cc[PodToKey(k)]; ok {
 			cfg.C, cfg.N = cust.C, cust.N

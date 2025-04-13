@@ -40,7 +40,7 @@ func GetDefaultContainer(m *metav1.ObjectMeta, spec *v1.PodSpec) (string, bool) 
 		}
 	}
 	slog.Warn("Container not found. Annotation ignored",
-		slogs.CO, defaultContainer,
+		slogs.Container, defaultContainer,
 		slogs.Annotation, DefaultContainerAnnotation,
 	)
 
@@ -74,11 +74,12 @@ func inList(ll []string, s string) bool {
 	return false
 }
 
-func toPerc(v1, v2 float64) float64 {
-	if v2 == 0 {
+func toPerc(v, dv float64) float64 {
+	if dv == 0 {
 		return 0
 	}
-	return math.Round((v1 / v2) * 100)
+
+	return math.Round((v / dv) * 100)
 }
 
 // ToYAML converts a resource to its YAML representation.
@@ -121,6 +122,7 @@ func serviceAccountMatches(podSA, saName string) bool {
 	if podSA == "" {
 		podSA = defaultServiceAccount
 	}
+
 	return podSA == saName
 }
 
