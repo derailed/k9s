@@ -11,24 +11,55 @@ import (
 )
 
 func TestComputeShellArgs(t *testing.T) {
-	config, empty := "coolConfig", ""
+	config, ctx, token, empty := "coolConfig", "coolContext", "coolToken", ""
 	_ = config
 	uu := map[string]struct {
-		fqn, co, os string
-		cfg         *string
-		e           string
+		fqn, co, os     string
+		cfg, ctx, token *string
+		e               string
 	}{
 		"config": {
 			"fred/blee",
 			"c1",
 			"darwin",
 			&config,
+			nil,
+			nil,
 			"exec -it -n fred blee --kubeconfig coolConfig -c c1 -- sh -c " + shellCheck,
+		},
+		"context": {
+			"fred/blee",
+			"c1",
+			"darwin",
+			&config,
+			&ctx,
+			nil,
+			"exec -it -n fred blee --kubeconfig coolConfig --context coolContext -c c1 -- sh -c " + shellCheck,
+		},
+		"token": {
+			"fred/blee",
+			"c1",
+			"darwin",
+			&config,
+			nil,
+			&token,
+			"exec -it -n fred blee --kubeconfig coolConfig --token coolToken -c c1 -- sh -c " + shellCheck,
+		},
+		"config-context-token": {
+			"fred/blee",
+			"c1",
+			"darwin",
+			&config,
+			&ctx,
+			&token,
+			"exec -it -n fred blee --kubeconfig coolConfig --context coolContext --token coolToken -c c1 -- sh -c " + shellCheck,
 		},
 		"no-config": {
 			"fred/blee",
 			"c1",
 			"linux",
+			nil,
+			nil,
 			nil,
 			"exec -it -n fred blee -c c1 -- sh -c " + shellCheck,
 		},
@@ -37,6 +68,17 @@ func TestComputeShellArgs(t *testing.T) {
 			"",
 			"",
 			&empty,
+			nil,
+			nil,
+			"exec -it -n fred blee -- sh -c " + shellCheck,
+		},
+		"empty-config-context-token": {
+			"fred/blee",
+			"",
+			"",
+			&empty,
+			&empty,
+			&empty,
 			"exec -it -n fred blee -- sh -c " + shellCheck,
 		},
 		"single-container": {
@@ -44,6 +86,8 @@ func TestComputeShellArgs(t *testing.T) {
 			"",
 			"linux",
 			&empty,
+			nil,
+			nil,
 			"exec -it -n fred blee -- sh -c " + shellCheck,
 		},
 		"windows": {
@@ -51,6 +95,8 @@ func TestComputeShellArgs(t *testing.T) {
 			"c1",
 			windowsOS,
 			&empty,
+			nil,
+			nil,
 			"exec -it -n fred blee -c c1 -- powershell",
 		},
 	}
@@ -58,7 +104,7 @@ func TestComputeShellArgs(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			args := computeShellArgs(u.fqn, u.co, u.cfg, u.os)
+			args := computeShellArgs(u.fqn, u.co, u.cfg, u.ctx, u.token, u.os)
 			assert.Equal(t, u.e, strings.Join(args, " "))
 		})
 	}
