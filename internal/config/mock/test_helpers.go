@@ -11,9 +11,11 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"testing"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/stretchr/testify/require"
 	version "k8s.io/apimachinery/pkg/version"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	disk "k8s.io/client-go/discovery/cached/disk"
@@ -35,9 +37,11 @@ func EnsureDir(d string) error {
 	return os.MkdirAll(d, 0700)
 }
 
-func NewMockConfig() *config.Config {
-	if _, err := os.Stat("/tmp/test"); errors.Is(err, os.ErrExist) {
-		_ = os.RemoveAll("/tmp/test")
+func NewMockConfig(t testing.TB) *config.Config {
+	if _, err := os.Stat("/tmp/test"); err == nil {
+		if e := os.RemoveAll("/tmp/test"); e != nil {
+			require.NoError(t, e)
+		}
 	}
 	config.AppContextsDir = "/tmp/test"
 	cl, ct := "cl-1", "ct-1-1"

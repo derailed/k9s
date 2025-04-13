@@ -15,7 +15,7 @@ import (
 func TestScreenDumpNew(t *testing.T) {
 	po := view.NewScreenDump(client.SdGVR)
 
-	require.NoError(t, po.Init(makeCtx()))
+	require.NoError(t, po.Init(makeCtx(t)))
 	assert.Equal(t, "ScreenDumps", po.Name())
 	assert.Len(t, po.Hints(), 5)
 }

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"math"
 
 	"github.com/derailed/k9s/internal/client"
@@ -85,15 +86,22 @@ func ToYAML(o runtime.Object, showManaged bool) (string, error) {
 	if o == nil {
 		return "", errors.New("no object to yamlize")
 	}
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return "", fmt.Errorf("expecting unstructured but got %T", o)
+	}
+	if u.Object == nil {
+		return "", fmt.Errorf("expecting unstructured object but got nil")
+	}
 
+	mm := u.Object
 	var (
 		buff bytes.Buffer
 		p    printers.YAMLPrinter
 	)
 	if !showManaged {
-		o = o.DeepCopyObject()
-		uo := o.(*unstructured.Unstructured).Object
-		if meta, ok := uo["metadata"].(map[string]any); ok {
+		mm = maps.Clone(mm)
+		if meta, ok := mm["metadata"].(map[string]any); ok {
 			delete(meta, "managedFields")
 		}
 	}

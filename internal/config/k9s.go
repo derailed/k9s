@@ -386,7 +386,9 @@ func (k *K9s) Validate(c client.Connection, contextName, clusterName string) {
 	if k.getActiveConfig() == nil {
 		_, _ = k.ActivateContext(contextName)
 	}
-	k.ShellPod.Validate()
+	if k.ShellPod != nil {
+		k.ShellPod.Validate()
+	}
 	k.Logger = k.Logger.Validate()
 	k.Thresholds = k.Thresholds.Validate()
 

@@ -83,7 +83,7 @@ func (*Workload) showRes(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 		app.Flash().Err(fmt.Errorf("unable to parse path: %q", path))
 		return
 	}
-	app.gotoResource(gvr.R(), fqn, false, true)
+	app.gotoResource(gvr.String(), fqn, false, true)
 }
 
 func (w *Workload) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {

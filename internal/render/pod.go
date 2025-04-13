@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
@@ -19,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/cache"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -76,22 +74,15 @@ var defaultPodHeader = model1.Header{
 	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 }
 
-const (
-	cacheSize  = 5_000
-	expiration = 5 * time.Minute
-)
-
 // Pod renders a K8s Pod to screen.
 type Pod struct {
 	*Base
-	cache *cache.LRUExpireCache
 }
 
 // NewPod returns a new instance.
 func NewPod() *Pod {
 	return &Pod{
-		Base:  new(Base),
-		cache: cache.NewLRUExpireCache(cacheSize),
+		Base: new(Base),
 	}
 }
 
@@ -157,22 +148,9 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["status"].(map[string]any), &st); err != nil {
 		return err
 	}
-	key := pwm.Raw.GetUID()
-	for _, o := range pwm.Raw.GetOwnerReferences() {
-		if o.Controller != nil && *o.Controller {
-			key = o.UID
-			break
-		}
-	}
-
 	spec := new(v1.PodSpec)
-	if cspec, ok := p.cache.Get(key); ok {
-		spec = cspec.(*v1.PodSpec)
-	} else {
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["spec"].(map[string]any), spec); err != nil {
-			return err
-		}
-		p.cache.Add(key, spec, expiration)
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["spec"].(map[string]any), spec); err != nil {
+		return err
 	}
 
 	dt := pwm.Raw.GetDeletionTimestamp()

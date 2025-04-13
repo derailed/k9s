@@ -15,7 +15,7 @@ import (
 func TestContainerNew(t *testing.T) {
 	c := view.NewContainer(client.CoGVR)
 
-	require.NoError(t, c.Init(makeCtx()))
+	require.NoError(t, c.Init(makeCtx(t)))
 	assert.Equal(t, "Containers", c.Name())
 	assert.Len(t, c.Hints(), 19)
 }

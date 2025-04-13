@@ -14,7 +14,7 @@ import (
 func TestDir(t *testing.T) {
 	v := view.NewDir("/fred")
 
-	require.NoError(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx(t)))
 	assert.Equal(t, "Directory", v.Name())
 	assert.Len(t, v.Hints(), 7)
 }

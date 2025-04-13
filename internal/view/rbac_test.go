@@ -15,7 +15,7 @@ import (
 func TestRbacNew(t *testing.T) {
 	v := view.NewRbac(client.RbacGVR)
 
-	require.NoError(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx(t)))
 	assert.Equal(t, "Rbac", v.Name())
 	assert.Len(t, v.Hints(), 5)
 }

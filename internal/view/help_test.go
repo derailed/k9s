@@ -15,7 +15,7 @@ import (
 )
 
 func TestHelp(t *testing.T) {
-	ctx := makeCtx()
+	ctx := makeCtx(t)
 
 	app := ctx.Value(internal.KeyApp).(*view.App)
 	po := view.NewPod(client.PodGVR)

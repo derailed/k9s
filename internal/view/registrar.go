@@ -69,7 +69,7 @@ func miscViewers(vv MetaViewers) {
 	vv[client.CoGVR] = MetaViewer{
 		viewerFn: NewContainer,
 	}
-	vv[client.ScGVR] = MetaViewer{
+	vv[client.ScnGVR] = MetaViewer{
 		viewerFn: NewImageScan,
 	}
 	vv[client.PfGVR] = MetaViewer{

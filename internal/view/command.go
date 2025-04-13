@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"regexp"
 	"runtime/debug"
-	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -21,7 +20,7 @@ import (
 )
 
 const (
-	podCmd = "pod"
+	podCmd = "v1/pods"
 	ctxCmd = "ctx"
 )
 
@@ -291,11 +290,7 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, err
 		return client.NoGVR, nil, fmt.Errorf("`%s` command not found", p.Cmd())
 	}
 	if exp != "" {
-		ff := strings.Fields(exp)
-		ff[0] = gvr.String()
-		ap := cmd.NewInterpreter(strings.Join(ff, " "))
-		gvr = client.NewGVR(ap.Cmd())
-		p.Amend(ap)
+		p.Amend(cmd.NewInterpreter(gvr.String() + " " + exp))
 	}
 
 	v := MetaViewer{
@@ -349,7 +344,6 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	}
 	comp.SetCommand(p)
 
-	c.app.Flash().Infof("Viewing %s...", gvr)
 	if clearStack {
 		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
 		c.app.Config.SetActiveView(cmd)

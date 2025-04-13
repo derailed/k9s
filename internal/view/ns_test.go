@@ -15,7 +15,7 @@ import (
 func TestNSCleanser(t *testing.T) {
 	ns := view.NewNamespace(client.NsGVR)
 
-	require.NoError(t, ns.Init(makeCtx()))
+	require.NoError(t, ns.Init(makeCtx(t)))
 	assert.Equal(t, "Namespaces", ns.Name())
 	assert.Len(t, ns.Hints(), 7)
 }

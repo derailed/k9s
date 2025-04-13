@@ -15,7 +15,7 @@ import (
 func TestDaemonSet(t *testing.T) {
 	v := view.NewDaemonSet(client.DsGVR)
 
-	require.NoError(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx(t)))
 	assert.Equal(t, "DaemonSets", v.Name())
 	assert.Len(t, v.Hints(), 17)
 }
