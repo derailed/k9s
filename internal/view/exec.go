@@ -344,18 +344,18 @@ func launchPodShell(v model.Igniter, a *App) {
 
 func sshIn(a *App, fqn, co string) error {
 	cfg := a.Config.K9s.ShellPod
-	os, err := getPodOS(a.factory, fqn)
+	platform, err := getPodOS(a.factory, fqn)
 	if err != nil {
 		return fmt.Errorf("os detect failed: %w", err)
 	}
 
-	args := buildShellArgs("exec", fqn, co, a.Conn().Config().Flags().KubeConfig)
+	args := buildShellArgs("exec", fqn, co, a.Conn().Config().Flags())
 	args = append(args, "--")
 	if len(cfg.Command) > 0 {
 		args = append(args, cfg.Command...)
 		args = append(args, cfg.Args...)
 	} else {
-		if os == windowsOS {
+		if platform == windowsOS {
 			args = append(args, "--", powerShell)
 		}
 		args = append(args, "sh", "-c", shellCheck)
@@ -380,7 +380,7 @@ func nukeK9sShell(a *App) error {
 	if err != nil {
 		return err
 	}
-	if !ct.FeatureGates.NodeShell {
+	if !ct.FeatureGates.NodeShell || a.Config.K9s.ShellPod == nil {
 		return nil
 	}
 
