@@ -63,8 +63,8 @@ func (b *Browser) getUpdating() bool {
 }
 
 // SetCommand sets the current command.
-func (b *Browser) SetCommand(cmd *cmd.Interpreter) {
-	b.GetTable().SetCommand(cmd)
+func (b *Browser) SetCommand(i *cmd.Interpreter) {
+	b.GetTable().SetCommand(i)
 }
 
 // Init watches all running pods in given namespace.
@@ -76,7 +76,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		return err
 	}
 	colorerFn := model1.DefaultColorer
-	if r, ok := model.Registry[b.GVR().String()]; ok && r.Renderer != nil {
+	if r, ok := model.Registry[b.GVR()]; ok && r.Renderer != nil {
 		colorerFn = r.Renderer.ColorerFunc()
 	}
 	b.GetTable().SetColorerFn(colorerFn)
@@ -222,15 +222,15 @@ func (b *Browser) BufferActive(state bool, _ model.BufferKind) {
 			slogs.Error, err,
 		)
 	}
-	data := b.GetModel().Peek()
-	cdata := b.Update(data, b.App().Conn().HasMetrics())
+	mdata := b.GetModel().Peek()
+	cdata := b.Update(mdata, b.App().Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		if b.getUpdating() {
 			return
 		}
 		b.setUpdating(true)
 		defer b.setUpdating(false)
-		b.UpdateUI(cdata, data)
+		b.UpdateUI(cdata, mdata)
 		if b.GetRowCount() > 1 {
 			b.App().filterHistory.Push(b.CmdBuff().GetText())
 		}
@@ -282,7 +282,7 @@ func (b *Browser) Aliases() sets.Set[string] {
 // Model Protocol...
 
 // TableNoData notifies view no data is available.
-func (b *Browser) TableNoData(data *model1.TableData) {
+func (b *Browser) TableNoData(mdata *model1.TableData) {
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -296,7 +296,7 @@ func (b *Browser) TableNoData(data *model1.TableData) {
 		return
 	}
 
-	cdata := b.Update(data, b.app.Conn().HasMetrics())
+	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		if b.getUpdating() {
 			return
@@ -307,12 +307,12 @@ func (b *Browser) TableNoData(data *model1.TableData) {
 			b.app.Flash().Warnf("No resources found for %s in namespace %s", b.GVR(), client.PrintNamespace(b.GetNamespace()))
 		}
 		b.refreshActions()
-		b.UpdateUI(cdata, data)
+		b.UpdateUI(cdata, mdata)
 	})
 }
 
 // TableDataChanged notifies view new data is available.
-func (b *Browser) TableDataChanged(data *model1.TableData) {
+func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -322,7 +322,7 @@ func (b *Browser) TableDataChanged(data *model1.TableData) {
 		return
 	}
 
-	cdata := b.Update(data, b.app.Conn().HasMetrics())
+	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		if b.getUpdating() {
 			return
@@ -333,7 +333,7 @@ func (b *Browser) TableDataChanged(data *model1.TableData) {
 			b.app.Flash().Infof("Viewing %s in namespace %s", b.GVR(), client.PrintNamespace(b.GetNamespace()))
 		}
 		b.refreshActions()
-		b.UpdateUI(cdata, data)
+		b.UpdateUI(cdata, mdata)
 	})
 }
 
@@ -358,6 +358,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
 	}
+
 	return nil
 }
 

@@ -215,7 +215,7 @@ func (c *Configurator) activeSkin() (string, bool) {
 	return skin, skin != ""
 }
 
-func (c *Configurator) activeConfig() (cluster, context string, ok bool) {
+func (c *Configurator) activeConfig() (cluster, contxt string, ok bool) {
 	if c.Config == nil || c.Config.K9s == nil {
 		return
 	}
@@ -223,8 +223,8 @@ func (c *Configurator) activeConfig() (cluster, context string, ok bool) {
 	if err != nil {
 		return
 	}
-	cluster, context = ct.GetClusterName(), c.Config.K9s.ActiveContextName()
-	if cluster != "" && context != "" {
+	cluster, contxt = ct.GetClusterName(), c.Config.K9s.ActiveContextName()
+	if cluster != "" && contxt != "" {
 		ok = true
 	}
 

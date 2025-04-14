@@ -52,9 +52,9 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 		coField.SetPlaceholder("Enter a container name::port")
 	}
 	coField.SetChangedFunc(func(s string) {
-		port := extractPort(s)
-		loField.SetText(port)
-		p2 = port
+		p := extractPort(s)
+		loField.SetText(p)
+		p2 = p
 	})
 	if loField.GetText() == "" {
 		loField.SetPlaceholder("Enter a local port")
@@ -121,16 +121,16 @@ func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func extractPort(port string) string {
-	tokens := strings.Split(port, "::")
+func extractPort(p string) string {
+	tokens := strings.Split(p, "::")
 	if len(tokens) < 2 {
-		ports := strings.Split(port, ",")
+		ports := strings.Split(p, ",")
 		for _, t := range ports {
 			if _, err := strconv.Atoi(strings.TrimSpace(t)); err != nil {
 				return ""
 			}
 		}
-		return port
+		return p
 	}
 
 	return tokens[1]

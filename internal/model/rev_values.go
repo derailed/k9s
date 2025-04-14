@@ -44,7 +44,7 @@ func NewRevValues(gvr *client.GVR, path, rev string) *RevValues {
 }
 
 func getHelmHistDao() *dao.HelmHistory {
-	return Registry[client.HmhGVR.String()].DAO.(*dao.HelmHistory)
+	return Registry[client.HmhGVR].DAO.(*dao.HelmHistory)
 }
 
 func getRevValues(path, _ string) []string {

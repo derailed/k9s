@@ -67,8 +67,8 @@ func (t *Table) Init(ctx context.Context) (err error) {
 }
 
 // SetCommand sets the current command.
-func (t *Table) SetCommand(cmd *cmd.Interpreter) {
-	t.command = cmd
+func (t *Table) SetCommand(i *cmd.Interpreter) {
+	t.command = i
 }
 
 // HeaderIndex returns index of a given column or false if not found.

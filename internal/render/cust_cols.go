@@ -119,8 +119,11 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 		parsers[ix] = jsonpath.New(
 			fmt.Sprintf("column%d", ix),
 		).AllowMissingKeys(true)
-		if err := parsers[ix].Parse(cc[ix].Spec); err != nil {
-			return nil, err
+		if err := parsers[ix].Parse(cc[ix].Spec); err != nil && !isJQSpec(cc[ix].Spec) {
+			slog.Warn("Unable to parse custom column",
+				slogs.Name, cc[ix].Header.Name,
+				slogs.Error, err,
+			)
 		}
 	}
 

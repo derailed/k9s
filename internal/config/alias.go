@@ -19,17 +19,19 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// Alias tracks shortname to GVR mappings.
-type Alias map[string]*client.GVR
+type (
+	// Alias tracks shortname to GVR mappings.
+	Alias map[string]*client.GVR
 
-// ShortNames represents a collection of shortnames for aliases.
-type ShortNames map[*client.GVR][]string
+	// ShortNames represents a collection of shortnames for aliases.
+	ShortNames map[*client.GVR][]string
 
-// Aliases represents a collection of aliases.
-type Aliases struct {
-	Alias Alias `yaml:"aliases"`
-	mx    sync.RWMutex
-}
+	// Aliases represents a collection of aliases.
+	Aliases struct {
+		Alias Alias `yaml:"aliases"`
+		mx    sync.RWMutex
+	}
+)
 
 // NewAliases return a new alias.
 func NewAliases() *Aliases {
@@ -108,6 +110,7 @@ func (a *Aliases) Get(alias string) (*client.GVR, bool) {
 func (a *Aliases) Define(gvr *client.GVR, aliases ...string) {
 	a.mx.Lock()
 	defer a.mx.Unlock()
+
 	for _, alias := range aliases {
 		if _, ok := a.Alias[alias]; !ok && alias != "" {
 			a.Alias[alias] = gvr
@@ -131,16 +134,6 @@ func (a *Aliases) Load(path string) error {
 	return a.LoadFile(path)
 }
 
-type aliases struct {
-	Alias map[string]string `yaml:"aliases"`
-}
-
-func newAliases(s int) aliases {
-	return aliases{
-		Alias: make(map[string]string, s),
-	}
-}
-
 // LoadFile loads alias from a given file.
 func (a *Aliases) LoadFile(path string) error {
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
@@ -155,14 +148,10 @@ func (a *Aliases) LoadFile(path string) error {
 		slog.Warn("Aliases validation failed", slogs.Error, err)
 	}
 
-	var aa aliases
-	if err := yaml.Unmarshal(bb, &aa); err != nil {
-		return err
-	}
 	a.mx.Lock()
 	defer a.mx.Unlock()
-	for alias, cmd := range aa.Alias {
-		a.Alias[alias] = client.NewGVR(cmd)
+	if err := yaml.Unmarshal(bb, a); err != nil {
+		return err
 	}
 
 	return nil
@@ -198,18 +187,17 @@ func (a *Aliases) loadDefaultAliases() {
 // Save alias to disk.
 func (a *Aliases) Save() error {
 	slog.Debug("Saving Aliases...")
-	return a.SaveAliases(AppAliasesFile)
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.saveAliases(AppAliasesFile)
 }
 
 // SaveAliases saves aliases to a given file.
-func (a *Aliases) SaveAliases(path string) error {
+func (a *Aliases) saveAliases(path string) error {
 	if err := data.EnsureDirPath(path, data.DefaultDirMod); err != nil {
 		return err
 	}
-	aa := newAliases(len(a.Alias))
-	for alias, gvr := range a.Alias {
-		aa.Alias[alias] = gvr.String()
-	}
 
-	return data.SaveYAML(path, aa)
+	return data.SaveYAML(path, a)
 }

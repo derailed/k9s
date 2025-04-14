@@ -13,181 +13,181 @@ import (
 
 // Registry tracks resources metadata.
 // BOZO!! Break up deps and merge into single registrar.
-var Registry = map[string]ResourceMeta{
+var Registry = map[*client.GVR]ResourceMeta{
 	// Custom...
-	client.WkGVR.String(): {
+	client.WkGVR: {
 		DAO:      new(dao.Workload),
 		Renderer: new(render.Workload),
 	},
-	client.RefGVR.String(): {
+	client.RefGVR: {
 		DAO:      new(dao.Reference),
 		Renderer: new(render.Reference),
 	},
-	client.DirGVR.String(): {
+	client.DirGVR: {
 		DAO:      new(dao.Dir),
 		Renderer: new(render.Dir),
 	},
-	client.PuGVR.String(): {
+	client.PuGVR: {
 		DAO: new(dao.Pulse),
 	},
-	client.HmGVR.String(): {
+	client.HmGVR: {
 		DAO:      new(dao.HelmChart),
 		Renderer: new(helm.Chart),
 	},
-	client.HmhGVR.String(): {
+	client.HmhGVR: {
 		DAO:      new(dao.HelmHistory),
 		Renderer: new(helm.History),
 	},
-	client.CoGVR.String(): {
+	client.CoGVR: {
 		DAO:          new(dao.Container),
 		Renderer:     new(render.Container),
 		TreeRenderer: new(xray.Container),
 	},
-	client.ScnGVR.String(): {
+	client.ScnGVR: {
 		DAO:      new(dao.ImageScan),
 		Renderer: new(render.ImageScan),
 	},
-	client.CtGVR.String(): {
+	client.CtGVR: {
 		DAO:      new(dao.Context),
 		Renderer: new(render.Context),
 	},
-	client.SdGVR.String(): {
+	client.SdGVR: {
 		DAO:      new(dao.ScreenDump),
 		Renderer: new(render.ScreenDump),
 	},
-	client.RbacGVR.String(): {
+	client.RbacGVR: {
 		DAO:      new(dao.Rbac),
 		Renderer: new(render.Rbac),
 	},
-	client.PolGVR.String(): {
+	client.PolGVR: {
 		DAO:      new(dao.Policy),
 		Renderer: new(render.Policy),
 	},
-	client.UsrGVR.String(): {
+	client.UsrGVR: {
 		DAO:      new(dao.Subject),
 		Renderer: new(render.Subject),
 	},
-	client.GrpGVR.String(): {
+	client.GrpGVR: {
 		DAO:      new(dao.Subject),
 		Renderer: new(render.Subject),
 	},
-	client.PfGVR.String(): {
+	client.PfGVR: {
 		DAO:      new(dao.PortForward),
 		Renderer: new(render.PortForward),
 	},
-	client.BeGVR.String(): {
+	client.BeGVR: {
 		DAO:      new(dao.Benchmark),
 		Renderer: new(render.Benchmark),
 	},
-	client.AliGVR.String(): {
+	client.AliGVR: {
 		DAO:      new(dao.Alias),
 		Renderer: new(render.Alias),
 	},
 
 	// Core...
-	client.EpGVR.String(): {
+	client.EpGVR: {
 		Renderer: new(render.Endpoints),
 	},
-	client.PodGVR.String(): {
+	client.PodGVR: {
 		DAO:          new(dao.Pod),
 		Renderer:     render.NewPod(),
 		TreeRenderer: new(xray.Pod),
 	},
-	client.NsGVR.String(): {
+	client.NsGVR: {
 		DAO:      new(dao.Namespace),
 		Renderer: new(render.Namespace),
 	},
-	client.SecGVR.String(): {
+	client.SecGVR: {
 		DAO:      new(dao.Secret),
 		Renderer: new(render.Secret),
 	},
-	client.CmGVR.String(): {
+	client.CmGVR: {
 		DAO:      new(dao.ConfigMap),
 		Renderer: new(render.ConfigMap),
 	},
-	client.NodeGVR.String(): {
+	client.NodeGVR: {
 		DAO:      new(dao.Node),
 		Renderer: new(render.Node),
 	},
-	client.SvcGVR.String(): {
+	client.SvcGVR: {
 		DAO:          new(dao.Service),
 		Renderer:     new(render.Service),
 		TreeRenderer: new(xray.Service),
 	},
-	client.SaGVR.String(): {
+	client.SaGVR: {
 		Renderer: new(render.ServiceAccount),
 	},
-	client.PvGVR.String(): {
+	client.PvGVR: {
 		Renderer: new(render.PersistentVolume),
 	},
-	client.PvcGVR.String(): {
+	client.PvcGVR: {
 		Renderer: new(render.PersistentVolumeClaim),
 	},
 
 	// Apps...
-	client.DpGVR.String(): {
+	client.DpGVR: {
 		DAO:          new(dao.Deployment),
 		Renderer:     new(render.Deployment),
 		TreeRenderer: new(xray.Deployment),
 	},
-	client.RsGVR.String(): {
+	client.RsGVR: {
 		Renderer:     new(render.ReplicaSet),
 		TreeRenderer: new(xray.ReplicaSet),
 	},
-	client.StsGVR.String(): {
+	client.StsGVR: {
 		DAO:          new(dao.StatefulSet),
 		Renderer:     new(render.StatefulSet),
 		TreeRenderer: new(xray.StatefulSet),
 	},
-	client.DsGVR.String(): {
+	client.DsGVR: {
 		DAO:          new(dao.DaemonSet),
 		Renderer:     new(render.DaemonSet),
 		TreeRenderer: new(xray.DaemonSet),
 	},
 
 	// Extensions...
-	client.NpGVR.String(): {
+	client.NpGVR: {
 		Renderer: &render.NetworkPolicy{},
 	},
 
 	// Batch...
-	client.CjGVR.String(): {
+	client.CjGVR: {
 		DAO:      new(dao.CronJob),
 		Renderer: new(render.CronJob),
 	},
-	client.JobGVR.String(): {
+	client.JobGVR: {
 		DAO:      new(dao.Job),
 		Renderer: new(render.Job),
 	},
 
 	// CRDs...
-	client.CrdGVR.String(): {
+	client.CrdGVR: {
 		DAO:      new(dao.CustomResourceDefinition),
 		Renderer: new(render.CustomResourceDefinition),
 	},
 
 	// Storage...
-	client.ScGVR.String(): {
+	client.ScGVR: {
 		Renderer: &render.StorageClass{},
 	},
 
 	// Policy...
-	client.PdbGVR.String(): {
+	client.PdbGVR: {
 		Renderer: &render.PodDisruptionBudget{},
 	},
 
 	// RBAC...
-	client.CrGVR.String(): {
+	client.CrGVR: {
 		DAO:      new(dao.Rbac),
 		Renderer: new(render.ClusterRole),
 	},
-	client.CrbGVR.String(): {
+	client.CrbGVR: {
 		Renderer: new(render.ClusterRoleBinding),
 	},
-	client.RoGVR.String(): {
+	client.RoGVR: {
 		Renderer: new(render.Role),
 	},
-	client.RobGVR.String(): {
+	client.RobGVR: {
 		Renderer: new(render.RoleBinding),
 	},
 }

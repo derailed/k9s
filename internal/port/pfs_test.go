@@ -137,9 +137,9 @@ func TestPFsToPortSpec(t *testing.T) {
 			if err != nil {
 				return
 			}
-			spec, port := pfs.ToPortSpec(u.specs)
+			spec, prt := pfs.ToPortSpec(u.specs)
 			assert.Equal(t, u.spec, spec)
-			assert.Equal(t, u.port, port)
+			assert.Equal(t, u.port, prt)
 		})
 	}
 }

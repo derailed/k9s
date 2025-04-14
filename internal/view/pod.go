@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 const (
@@ -399,11 +400,11 @@ func resumeShellIn(a *App, c model.Component, path, co string) {
 }
 
 func shellIn(a *App, fqn, co string) {
-	os, err := getPodOS(a.factory, fqn)
+	platform, err := getPodOS(a.factory, fqn)
 	if err != nil {
 		slog.Warn("OS detect failed", slogs.Error, err)
 	}
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+	args := computeShellArgs(fqn, co, a.Conn().Config().Flags(), platform)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	err = runK(a, &shellOpts{
@@ -451,31 +452,49 @@ func resumeAttachIn(a *App, c model.Component, path, co string) {
 }
 
 func attachIn(a *App, path, co string) {
-	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags().KubeConfig)
+	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags())
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if err := runK(a, &shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}); err != nil {
 		a.Flash().Errf("Attach exec failed: %s", err)
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string, os string) []string {
-	args := buildShellArgs("exec", path, co, kcfg)
-	if os == windowsOS {
+func computeShellArgs(path, co string, flags *genericclioptions.ConfigFlags, platform string) []string {
+	args := buildShellArgs("exec", path, co, flags)
+	if platform == windowsOS {
 		return append(args, "--", powerShell)
 	}
+
 	return append(args, "--", "sh", "-c", shellCheck)
 }
 
-func buildShellArgs(cmd, path, co string, kcfg *string) []string {
+func isFlagSet(flag *string) (string, bool) {
+	if flag == nil || *flag == "" {
+		return "", false
+	}
+
+	return *flag, true
+}
+
+func buildShellArgs(cmd, path, co string, flags *genericclioptions.ConfigFlags) []string {
 	args := make([]string, 0, 15)
+
 	args = append(args, cmd, "-it")
 	ns, po := client.Namespaced(path)
 	if ns != client.BlankNamespace {
 		args = append(args, "-n", ns)
 	}
 	args = append(args, po)
-	if kcfg != nil && *kcfg != "" {
-		args = append(args, "--kubeconfig", *kcfg)
+	if flags != nil {
+		if v, ok := isFlagSet(flags.KubeConfig); ok {
+			args = append(args, "--kubeconfig", v)
+		}
+		if v, ok := isFlagSet(flags.Context); ok {
+			args = append(args, "--context", v)
+		}
+		if v, ok := isFlagSet(flags.BearerToken); ok {
+			args = append(args, "--token", v)
+		}
 	}
 	if co != "" {
 		args = append(args, "-c", co)
@@ -560,12 +579,12 @@ func getPodOS(f dao.Factory, fqn string) (string, error) {
 }
 
 func osFromSelector(s map[string]string) (string, bool) {
-	if os, ok := s[osBetaSelector]; ok {
-		return os, ok
+	if platform, ok := s[osBetaSelector]; ok {
+		return platform, ok
 	}
+	platform, ok := s[osSelector]
 
-	os, ok := s[osSelector]
-	return os, ok
+	return platform, ok
 }
 
 func resourceSorters(t *Table) *ui.KeyActions {

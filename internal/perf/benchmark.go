@@ -106,10 +106,10 @@ func (b *Benchmark) Canceled() bool {
 }
 
 // Run starts a benchmark.
-func (b *Benchmark) Run(cluster, context string, done func()) {
+func (b *Benchmark) Run(cluster, ct string, done func()) {
 	slog.Debug("Running benchmark",
 		slogs.Cluster, cluster,
-		slogs.Context, context,
+		slogs.Context, ct,
 	)
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
@@ -117,18 +117,18 @@ func (b *Benchmark) Run(cluster, context string, done func()) {
 	b.worker.Run()
 	b.worker.Stop()
 	if buff.Len() > 0 {
-		if err := b.save(cluster, context, buff); err != nil {
+		if err := b.save(cluster, ct, buff); err != nil {
 			slog.Error("Saving Benchmark", slogs.Error, err)
 		}
 	}
 	done()
 }
 
-func (b *Benchmark) save(cluster, context string, r io.Reader) error {
+func (b *Benchmark) save(cluster, ct string, r io.Reader) error {
 	ns, n := client.Namespaced(b.config.Name)
 	n = strings.ReplaceAll(n, "|", "_")
 	n = strings.ReplaceAll(n, ":", "_")
-	dir, err := config.EnsureBenchmarksDir(cluster, context)
+	dir, err := config.EnsureBenchmarksDir(cluster, ct)
 	if err != nil {
 		return err
 	}

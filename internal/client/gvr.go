@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/fvbommel/sortorder"
+	"gopkg.in/yaml.v3"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -43,9 +44,9 @@ func (c gvrCache) get(gvrs string) *GVR {
 var gvrsCache = make(gvrCache)
 
 // NewGVR builds a new gvr from a group, version, resource.
-func NewGVR(path string) *GVR {
-	raw := path
-	tokens := strings.Split(path, ":")
+func NewGVR(s string) *GVR {
+	raw := s
+	tokens := strings.Split(s, ":")
 	var g, v, r, sr string
 	if len(tokens) == 2 {
 		raw, sr = tokens[0], tokens[1]
@@ -59,10 +60,10 @@ func NewGVR(path string) *GVR {
 	case 1:
 		r = tokens[0]
 	default:
-		slog.Error("GVR init failed!", slogs.Error, fmt.Errorf("can't parse GVR %q", path))
+		slog.Error("GVR init failed!", slogs.Error, fmt.Errorf("can't parse GVR %q", s))
 	}
 
-	gvr := GVR{raw: path, g: g, v: v, r: r, sr: sr}
+	gvr := GVR{raw: s, g: g, v: v, r: r, sr: sr}
 	if cgvr := gvrsCache.get(gvr.String()); cgvr != nil {
 		return cgvr
 	}
@@ -202,6 +203,19 @@ func (g *GVR) G() string {
 // IsDecodable checks if the k8s resource has a decodable view
 func (g *GVR) IsDecodable() bool {
 	return g.GVK().Kind == "secrets"
+}
+
+var _ = yaml.Marshaler((*GVR)(nil))
+var _ = yaml.Unmarshaler((*GVR)(nil))
+
+func (g *GVR) MarshalYAML() (any, error) {
+	return g.String(), nil
+}
+
+func (g *GVR) UnmarshalYAML(n *yaml.Node) error {
+	*g = *NewGVR(n.Value)
+
+	return nil
 }
 
 // GVRs represents a collection of gvr.

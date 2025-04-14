@@ -318,17 +318,19 @@ func ToMB(v int64) int64 {
 }
 
 // ToPercentage computes percentage as string otherwise n/aa.
-func ToPercentage(v1, v2 int64) int {
-	if v2 == 0 {
+func ToPercentage(v, dv int64) int {
+	if dv == 0 {
 		return 0
 	}
-	return int(math.Floor((float64(v1) / float64(v2)) * 100))
+
+	return int(math.Floor((float64(v) / float64(dv)) * 100))
 }
 
 // ToPercentageStr computes percentage, but if v2 is 0, it will return NAValue instead of 0.
-func ToPercentageStr(v1, v2 int64) string {
-	if v2 == 0 {
+func ToPercentageStr(v, dv int64) string {
+	if dv == 0 {
 		return NA
 	}
-	return strconv.Itoa(ToPercentage(v1, v2))
+
+	return strconv.Itoa(ToPercentage(v, dv))
 }
