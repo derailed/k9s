@@ -470,6 +470,13 @@ You can now override the context portForward default address configuration by se
         memory: 100Mi
       # Enable TTY
       tty: true
+      hostPathVolume:
+      - name: docker-socket
+        # Mount the Docker socket into the shell pod
+        mountPath: /var/run/docker.sock
+        # The path on the host to mount
+        hostPath: /var/run/docker.sock
+        readOnly: true
   ```
 
 ---
@@ -517,6 +524,21 @@ k9s:
     nodeShell: true # => Enable this feature gate to make nodeShell available on this cluster
   portForwardAddress: localhost
 ```
+
+### Customizing the Shell Pod
+You can also customize the shell pod by adding a `hostPathVolume` to your shell pod. This allows you to mount a local directory or file into the shell pod. For example, if you want to mount the Docker socket into the shell pod, you can do so as follows:
+```yaml
+k9s:
+  shellPod:
+    hostPathVolume:
+    - name: docker-socket
+      # Mount the Docker socket into the shell pod
+      mountPath: /var/run/docker.sock
+      # The path on the host to mount
+      hostPath: /var/run/docker.sock
+      readOnly: true
+```
+This will mount the Docker socket into the shell pod at `/var/run/docker.sock` and make it read-only. You can also mount any other directory or file in a similar way.
 
 ---
 
