@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	restclient "k8s.io/client-go/rest"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -487,6 +488,17 @@ func (p *Pod) isControlled(path string) (fqn string, ok bool, err error) {
 	return "", false, nil
 }
 
+var toastPhases = sets.New(
+	render.PhaseCompleted,
+	render.PhasePending,
+	render.PhaseCrashLoop,
+	render.PhaseError,
+	render.PhaseImagePullBackOff,
+	render.PhaseContainerStatusUnknown,
+	render.PhaseEvicted,
+	render.PhaseOOMKilled,
+)
+
 func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 	oo, err := p.Resource.List(ctx, ns)
 	if err != nil {
@@ -504,22 +516,8 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 		if err != nil {
 			continue
 		}
-		switch render.PodStatus(&pod) {
-		case render.PhaseCompleted:
-			fallthrough
-		case render.PhasePending:
-			fallthrough
-		case render.PhaseCrashLoop:
-			fallthrough
-		case render.PhaseError:
-			fallthrough
-		case render.PhaseImagePullBackOff:
-			fallthrough
-		case render.PhaseContainerStatusUnknown:
-			fallthrough
-		case render.PhaseEvicted:
-			fallthrough
-		case render.PhaseOOMKilled:
+
+		if toastPhases.Has(render.PodStatus(&pod)) {
 			// !!BOZO!! Might need to bump timeout otherwise rev limit if too many??
 			fqn := client.FQN(pod.Namespace, pod.Name)
 			slog.Debug("Sanitizing resource", slogs.FQN, fqn)

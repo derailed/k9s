@@ -41,9 +41,6 @@ linters:
     - goconst
     - dogsled
     - lll
-    # - dupl
-    # - gochecknoinits
-    # - mnd
 
   settings:
     dogsled:
@@ -96,20 +93,24 @@ linters:
     goconst:
       min-len: 2
       min-occurrences: 3
-      ignore-strings: 'blee|duh|cl-1|ct-1-1'
+      ignore-string-values:
+        - blee
+        - duh
+        - cl-1
+        - ct-1-1
 
-    # gocritic:
-    #   enabled-tags:
-    #     - diagnostic
-    #     - experimental
-    #     - opinionated
-    #     - performance
-    #     - style
-    #   disabled-checks:
-    #     - dupImport # https://github.com/go-critic/go-critic/issues/845
-    #     - ifElseChain
-    #     - octalLiteral
-    #     - whyNoLint
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - dupImport # https://github.com/go-critic/go-critic/issues/845
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
 
     gocyclo:
       min-complexity: 35

@@ -35,9 +35,9 @@ type Factory struct {
 }
 
 // NewFactory returns a new informers factory.
-func NewFactory(client client.Connection) *Factory {
+func NewFactory(clt client.Connection) *Factory {
 	return &Factory{
-		client:     client,
+		client:     clt,
 		factories:  make(map[string]di.DynamicSharedInformerFactory),
 		forwarders: NewForwarders(),
 	}
@@ -72,7 +72,7 @@ func (f *Factory) Terminate() {
 }
 
 // List returns a resource collection.
-func (f *Factory) List(gvr *client.GVR, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
+func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Selector) ([]runtime.Object, error) {
 	if client.IsAllNamespace(ns) {
 		ns = client.BlankNamespace
 	}
@@ -83,9 +83,9 @@ func (f *Factory) List(gvr *client.GVR, ns string, wait bool, labels labels.Sele
 
 	var oo []runtime.Object
 	if client.IsClusterScoped(ns) {
-		oo, err = inf.Lister().List(labels)
+		oo, err = inf.Lister().List(lbls)
 	} else {
-		oo, err = inf.Lister().ByNamespace(ns).List(labels)
+		oo, err = inf.Lister().ByNamespace(ns).List(lbls)
 	}
 	if !wait || (wait && inf.Informer().HasSynced()) {
 		return oo, err
@@ -93,9 +93,9 @@ func (f *Factory) List(gvr *client.GVR, ns string, wait bool, labels labels.Sele
 
 	f.waitForCacheSync(ns)
 	if client.IsClusterScoped(ns) {
-		return inf.Lister().List(labels)
+		return inf.Lister().List(lbls)
 	}
-	return inf.Lister().ByNamespace(ns).List(labels)
+	return inf.Lister().ByNamespace(ns).List(lbls)
 }
 
 // HasSynced checks if given informer is up to date.

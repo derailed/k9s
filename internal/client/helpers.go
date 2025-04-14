@@ -15,7 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var toFileName = regexp.MustCompile(`[^(\w/\.)]`)
+var toFileName = regexp.MustCompile(`[^(\w/.)]`)
 
 // IsClusterWide returns true if ns designates cluster scope, false otherwise.
 func IsClusterWide(ns string) bool {

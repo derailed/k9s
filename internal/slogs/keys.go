@@ -147,9 +147,6 @@ const (
 	// Log tracks a log logger key.
 	Log = "log"
 
-	// CO tracks a container logger key.
-	CO = "container"
-
 	// Annotation tracks an annotation logger key.
 	Annotation = "annotation"
 
