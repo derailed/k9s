@@ -315,10 +315,16 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
-
 	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
 
 	return data
+}
+
+func (t *Table) shouldExcludeColumn(h model1.HeaderColumn) bool {
+	return (h.Hide || (!t.wide && h.Wide)) ||
+		(h.Name == "NAMESPACE" && !t.GetModel().ClusterWide()) ||
+		(h.MX && !t.hasMetrics) ||
+		(h.VS && vul.ImgScanner == nil)
 }
 
 func (t *Table) UpdateUI(cdata, data *model1.TableData) {
@@ -328,19 +334,9 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 
 	var col int
 	for _, h := range cdata.Header() {
-		if h.Hide || (!t.wide && h.Wide) {
+		if t.shouldExcludeColumn(h) {
 			continue
 		}
-		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
-			continue
-		}
-		if h.MX && !t.hasMetrics {
-			continue
-		}
-		if h.VS && vul.ImgScanner == nil {
-			continue
-		}
-
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
@@ -384,17 +380,7 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 			)
 			continue
 		}
-		if h[c].Hide || (!t.wide && h[c].Wide) {
-			continue
-		}
-
-		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
-			continue
-		}
-		if h[c].MX && !t.hasMetrics {
-			continue
-		}
-		if h[c].VS && vul.ImgScanner == nil {
+		if t.shouldExcludeColumn(h[c]) {
 			continue
 		}
 
@@ -468,7 +454,6 @@ func (t *Table) Refresh() {
 	if data.HeaderCount() == 0 {
 		return
 	}
-	// BOZO!! Really want to tell model reload now. Refactor!
 	cdata := t.Update(data, t.hasMetrics)
 	t.UpdateUI(cdata, data)
 }
