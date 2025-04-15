@@ -13,6 +13,8 @@ func initKeys() {
 	tcell.KeyNames[KeyHelp] = "?"
 	tcell.KeyNames[KeySlash] = "/"
 	tcell.KeyNames[KeySpace] = "space"
+	tcell.KeyNames[KeyLess] = "<"
+	tcell.KeyNames[KeyGreater] = ">"
 
 	initNumbKeys()
 	initStdKeys()
@@ -83,6 +85,8 @@ const (
 	KeyDash         = 45
 	KeyLeftBracket  = 91
 	KeyRightBracket = 93
+	KeyLess         = 60
+	KeyGreater      = 62
 )
 
 // Define Shift Keys.
