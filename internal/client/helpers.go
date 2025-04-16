@@ -15,11 +15,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var toFileName = regexp.MustCompile(`[^(\w/\.)]`)
+var toFileName = regexp.MustCompile(`[^(\w/.)]`)
 
 // IsClusterWide returns true if ns designates cluster scope, false otherwise.
 func IsClusterWide(ns string) bool {
 	return ns == NamespaceAll || ns == BlankNamespace || ns == ClusterScope
+}
+
+func PrintNamespace(ns string) string {
+	if IsAllNamespaces(ns) {
+		return "all"
+	}
+
+	return ns
 }
 
 // CleanseNamespace ensures all ns maps to blank.

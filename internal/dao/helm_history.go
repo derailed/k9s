@@ -146,10 +146,10 @@ func (h *HelmHistory) Rollback(_ context.Context, path, rev string) error {
 	if err != nil {
 		return fmt.Errorf("could not convert revision to a number: %w", err)
 	}
-	client := action.NewRollback(cfg)
-	client.Version = ver
+	clt := action.NewRollback(cfg)
+	clt.Version = ver
 
-	return client.Run(n)
+	return clt.Run(n)
 }
 
 // Delete uninstall a Helm.

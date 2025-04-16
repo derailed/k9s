@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"math"
 
 	"github.com/derailed/k9s/internal/client"
@@ -39,7 +40,7 @@ func GetDefaultContainer(m *metav1.ObjectMeta, spec *v1.PodSpec) (string, bool) 
 		}
 	}
 	slog.Warn("Container not found. Annotation ignored",
-		slogs.CO, defaultContainer,
+		slogs.Container, defaultContainer,
 		slogs.Annotation, DefaultContainerAnnotation,
 	)
 
@@ -73,11 +74,12 @@ func inList(ll []string, s string) bool {
 	return false
 }
 
-func toPerc(v1, v2 float64) float64 {
-	if v2 == 0 {
+func toPerc(v, dv float64) float64 {
+	if dv == 0 {
 		return 0
 	}
-	return math.Round((v1 / v2) * 100)
+
+	return math.Round((v / dv) * 100)
 }
 
 // ToYAML converts a resource to its YAML representation.
@@ -85,15 +87,22 @@ func ToYAML(o runtime.Object, showManaged bool) (string, error) {
 	if o == nil {
 		return "", errors.New("no object to yamlize")
 	}
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return "", fmt.Errorf("expecting unstructured but got %T", o)
+	}
+	if u.Object == nil {
+		return "", fmt.Errorf("expecting unstructured object but got nil")
+	}
 
+	mm := u.Object
 	var (
 		buff bytes.Buffer
 		p    printers.YAMLPrinter
 	)
 	if !showManaged {
-		o = o.DeepCopyObject()
-		uo := o.(*unstructured.Unstructured).Object
-		if meta, ok := uo["metadata"].(map[string]any); ok {
+		mm = maps.Clone(mm)
+		if meta, ok := mm["metadata"].(map[string]any); ok {
 			delete(meta, "managedFields")
 		}
 	}
@@ -113,6 +122,7 @@ func serviceAccountMatches(podSA, saName string) bool {
 	if podSA == "" {
 		podSA = defaultServiceAccount
 	}
+
 	return podSA == saName
 }
 

@@ -6,12 +6,9 @@ package dao
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -72,7 +69,6 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	ti := time.Now()
 	o, err := c.Get().
 		SetHeader("Accept", header).
 		Param("includeObject", includeObject).
@@ -86,7 +82,6 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	slog.Debug("Q Time", slogs.Elapsed, time.Since(ti))
 
 	namespaced := true
 	if res, e := MetaAccess.MetaFor(t.gvr); e == nil && !res.Namespaced {

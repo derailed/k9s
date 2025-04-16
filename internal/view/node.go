@@ -72,7 +72,7 @@ func (n *Node) bindDangerousKeys(aa *ui.KeyActions) {
 		slog.Error("No active context located", slogs.Error, err)
 		return
 	}
-	if ct.FeatureGates.NodeShell {
+	if ct.FeatureGates.NodeShell && n.App().Config.K9s.ShellPod != nil {
 		aa.Add(ui.KeyS, ui.NewKeyAction("Shell", n.sshCmd, true))
 	}
 }

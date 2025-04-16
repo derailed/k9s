@@ -6,12 +6,10 @@ package dao
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/slogs"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -69,7 +67,7 @@ func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 	var cr rbacv1.ClusterRole
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(crbo.(*unstructured.Unstructured).Object, &cro)
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(cro.(*unstructured.Unstructured).Object, &cr)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +112,6 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 }
 
 func (r *Rbac) loadClusterRole(fqn string) ([]runtime.Object, error) {
-	slog.Debug("LOAD-CR", slogs.FQN, fqn)
 	o, err := r.getFactory().Get(client.CrGVR, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err

@@ -344,10 +344,9 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	}
 	comp.SetCommand(p)
 
-	c.app.Flash().Infof("Viewing %s...", gvr)
 	if clearStack {
-		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
-		c.app.Config.SetActiveView(cmd)
+		v := contextRX.ReplaceAllString(p.GetLine(), "")
+		c.app.Config.SetActiveView(v)
 	}
 	if err := c.app.inject(comp, clearStack); err != nil {
 		return err
