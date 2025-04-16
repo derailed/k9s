@@ -40,6 +40,7 @@ func printInfo(*cobra.Command, []string) error {
 	printTuple(fmat, "Skins", config.AppSkinsDir, color.Cyan)
 	printTuple(fmat, "Context Configs", config.AppContextsDir, color.Cyan)
 	printTuple(fmat, "Logs", config.AppLogFile, color.Cyan)
+	printTuple(fmat, "Json Templates", config.AppJsonFile, color.Cyan)
 	printTuple(fmat, "Benchmarks", config.AppBenchmarksDir, color.Cyan)
 	printTuple(fmat, "ScreenDumps", getScreenDumpDirForInfo(), color.Cyan)
 
