@@ -24,6 +24,7 @@ Following is an example of some plugin files in this directory. Other files are 
 | szero.yaml                     | Temporarily scale down/up all deployments, statefulsets, and daemonsets      | namespaces                          | Shift-d/u | [szero](https://github.com/jadolg/szero)                                              |
 | trace-dns.yaml                 | Trace DNS resolution using Inspektor Gadget (4)                              | containers/pods/nodes               | Shift-d   |                                                                                       |
 | vector-dev-top.yaml            | Run `vector top` in vector.dev container                                     | pods/container                      | h         | [vector top](https://vector.dev/highlights/2020-12-23-vector-top/)                    |
+| start-alpine.yaml            | Starts a deployment for the `alpine:latest` docker image in the current namespace/context | deployments/pods | Ctrl-T | |
 
 [1]: https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container
 [2]: https://github.com/nicolaka/netshoot
