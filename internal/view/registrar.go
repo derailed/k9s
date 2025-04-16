@@ -135,6 +135,9 @@ func batchViewers(vv MetaViewers) {
 	vv[client.CjGVR] = MetaViewer{
 		viewerFn: NewCronJob,
 	}
+	vv[client.CjBetaGVR] = MetaViewer{
+		viewerFn: NewCronJob,
+	}
 	vv[client.JobGVR] = MetaViewer{
 		viewerFn: NewJob,
 	}
