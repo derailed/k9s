@@ -596,17 +596,16 @@ func Test_podRequests(t *testing.T) {
 
 func makeContainer(n string, restartable bool, rc, rm, lc, lm string) v1.Container {
 	always := v1.ContainerRestartPolicyAlways
-	var res v1.ResourceRequirements
-	var rp *v1.ContainerRestartPolicy
-	res = v1.ResourceRequirements{
+	rq := v1.ResourceRequirements{
 		Requests: makeRes(rc, rm),
 		Limits:   makeRes(lc, lm),
 	}
+	var rp *v1.ContainerRestartPolicy
 	if restartable {
 		rp = &always
 	}
 
-	return v1.Container{Name: n, Resources: res, RestartPolicy: rp}
+	return v1.Container{Name: n, Resources: rq, RestartPolicy: rp}
 }
 
 func makeRes(c, m string) v1.ResourceList {

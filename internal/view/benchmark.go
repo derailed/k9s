@@ -44,13 +44,13 @@ func (b *Benchmark) benchContext(ctx context.Context) context.Context {
 }
 
 func (b *Benchmark) viewBench(app *App, _ ui.Tabular, _ *client.GVR, path string) {
-	data, err := readBenchFile(app.Config, b.benchFile())
+	mdata, err := readBenchFile(app.Config, b.benchFile())
 	if err != nil {
 		app.Flash().Errf("Unable to load bench file %s", err)
 		return
 	}
 
-	details := NewDetails(b.App(), "Results", fileToSubject(path), contentYAML, false).Update(data)
+	details := NewDetails(b.App(), "Results", fileToSubject(path), contentYAML, false).Update(mdata)
 	if err := app.inject(details, false); err != nil {
 		app.Flash().Err(err)
 	}
@@ -85,9 +85,10 @@ func benchDir(cfg *config.Config) string {
 }
 
 func readBenchFile(cfg *config.Config, n string) (string, error) {
-	data, err := os.ReadFile(filepath.Join(benchDir(cfg), n))
+	bb, err := os.ReadFile(filepath.Join(benchDir(cfg), n))
 	if err != nil {
 		return "", err
 	}
-	return string(data), nil
+
+	return string(bb), nil
 }

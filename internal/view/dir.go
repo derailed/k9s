@@ -34,10 +34,10 @@ type Dir struct {
 }
 
 // NewDir returns a new instance.
-func NewDir(path string) ResourceViewer {
+func NewDir(s string) ResourceViewer {
 	d := Dir{
 		ResourceViewer: NewBrowser(client.DirGVR),
-		path:           path,
+		path:           s,
 	}
 	d.GetTable().SetBorderFocusColor(tcell.ColorAliceBlue)
 	d.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorAliceBlue).Attributes(tcell.AttrNone))
