@@ -145,7 +145,7 @@ type Switchable interface {
 // Restartable represents a restartable resource.
 type Restartable interface {
 	// Restart performs a rollout restart.
-	Restart(ctx context.Context, path string) error
+	Restart(context.Context, string, *metav1.PatchOptions) error
 }
 
 // Runnable represents a runnable resource.

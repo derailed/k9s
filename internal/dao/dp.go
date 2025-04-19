@@ -56,8 +56,8 @@ func (d *Deployment) Scale(ctx context.Context, path string, replicas int32) err
 }
 
 // Restart a Deployment rollout.
-func (d *Deployment) Restart(ctx context.Context, path string) error {
-	return restartRes[*appsv1.Deployment](ctx, d.getFactory(), client.DpGVR, path)
+func (d *Deployment) Restart(ctx context.Context, path string, opts *metav1.PatchOptions) error {
+	return restartRes[*appsv1.Deployment](ctx, d.getFactory(), client.DpGVR, path, opts)
 }
 
 // TailLogs tail logs for all pods represented by this Deployment.
@@ -395,7 +395,7 @@ func scaleRes(ctx context.Context, f Factory, gvr *client.GVR, path string, repl
 	}
 }
 
-func restartRes[T runtime.Object](ctx context.Context, f Factory, gvr *client.GVR, path string) error {
+func restartRes[T runtime.Object](ctx context.Context, f Factory, gvr *client.GVR, path string, opts *metav1.PatchOptions) error {
 	o, err := f.Get(gvr, path, true, labels.Everything())
 	if err != nil {
 		return err
@@ -440,7 +440,7 @@ func restartRes[T runtime.Object](ctx context.Context, f Factory, gvr *client.GV
 			n,
 			types.StrategicMergePatchType,
 			diff,
-			metav1.PatchOptions{},
+			*opts,
 		)
 
 	case client.DsGVR:
@@ -449,7 +449,7 @@ func restartRes[T runtime.Object](ctx context.Context, f Factory, gvr *client.GV
 			n,
 			types.StrategicMergePatchType,
 			diff,
-			metav1.PatchOptions{},
+			*opts,
 		)
 
 	case client.StsGVR:
@@ -458,7 +458,7 @@ func restartRes[T runtime.Object](ctx context.Context, f Factory, gvr *client.GV
 			n,
 			types.StrategicMergePatchType,
 			diff,
-			metav1.PatchOptions{},
+			*opts,
 		)
 	}
 
