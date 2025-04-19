@@ -73,7 +73,7 @@ Please refer to our [K9s documentation](https://k9scli.io) site for installation
 Wanna discuss K9s features with your fellow `K9sers` or simply show your support for this tool?
 
 * Channel: [K9sersSlack](https://k9sers.slack.com/)
-* Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
+* Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/zt-3360a389v-ElLHrb0Dp1kAXqYUItSAFA)
 
 ---
 
@@ -472,6 +472,13 @@ You can now override the context portForward default address configuration by se
         memory: 100Mi
       # Enable TTY
       tty: true
+      hostPathVolume:
+      - name: docker-socket
+        # Mount the Docker socket into the shell pod
+        mountPath: /var/run/docker.sock
+        # The path on the host to mount
+        hostPath: /var/run/docker.sock
+        readOnly: true
   ```
 
 ---
@@ -519,6 +526,21 @@ k9s:
     nodeShell: true # => Enable this feature gate to make nodeShell available on this cluster
   portForwardAddress: localhost
 ```
+
+### Customizing the Shell Pod
+You can also customize the shell pod by adding a `hostPathVolume` to your shell pod. This allows you to mount a local directory or file into the shell pod. For example, if you want to mount the Docker socket into the shell pod, you can do so as follows:
+```yaml
+k9s:
+  shellPod:
+    hostPathVolume:
+    - name: docker-socket
+      # Mount the Docker socket into the shell pod
+      mountPath: /var/run/docker.sock
+      # The path on the host to mount
+      hostPath: /var/run/docker.sock
+      readOnly: true
+```
+This will mount the Docker socket into the shell pod at `/var/run/docker.sock` and make it read-only. You can also mount any other directory or file in a similar way.
 
 ---
 

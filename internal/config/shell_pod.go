@@ -23,6 +23,14 @@ type ShellPod struct {
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets,omitempty"`
 	ImagePullPolicy  v1.PullPolicy             `json:"imagePullPolicy,omitempty" yaml:"imagePullPolicy,omitempty"`
 	TTY              bool                      `json:"tty,omitempty" yaml:"tty,omitempty"`
+	HostPathVolume   []hostPathVolume          `json:"hostPathVolume,omitempty" yaml:"hostPathVolume,omitempty"`
+}
+
+type hostPathVolume struct {
+	Name      string `json:"name" yaml:"name"`
+	MountPath string `json:"mountPath" yaml:"mountPath"`
+	HostPath  string `json:"hostPath" yaml:"hostPath"`
+	ReadOnly  bool   `json:"readOnly,omitempty" yaml:"readOnly,omitempty"`
 }
 
 // NewShellPod returns a new instance.
