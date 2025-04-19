@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var NoGVR = &GVR{}
+var NoGVR = new(GVR)
 
 // GVR represents a kubernetes resource schema as a string.
 // Format is group/version/resources:subresource.
