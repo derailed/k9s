@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -105,7 +106,7 @@ type Viewer interface {
 
 type Filterer interface {
 	SetFilter(string)
-	SetLabelFilter(map[string]string)
+	SetLabelSelector(labels.Selector)
 }
 
 // Cruder performs crud operations.

@@ -17,6 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -42,7 +43,7 @@ func TestTableUpdate(t *testing.T) {
 func TestTableSelection(t *testing.T) {
 	v := ui.NewTable(client.NewGVR("fred"))
 	v.Init(makeContext())
-	m := &mockModel{}
+	m := new(mockModel)
 	v.SetModel(m)
 	data := m.Peek()
 	cdata := v.Update(data, false)
@@ -72,8 +73,8 @@ var _ ui.Tabular = &mockModel{}
 
 func (*mockModel) SetViewSetting(context.Context, *config.ViewSetting) {}
 func (*mockModel) SetInstance(string)                                  {}
-func (*mockModel) SetLabelFilter(string)                               {}
-func (*mockModel) GetLabelFilter() string                              { return "" }
+func (*mockModel) SetLabelSelector(labels.Selector)                    {}
+func (*mockModel) GetLabelSelector() labels.Selector                   { return nil }
 func (*mockModel) Empty() bool                                         { return false }
 func (*mockModel) RowCount() int                                       { return 1 }
 func (*mockModel) HasMetrics() bool                                    { return true }

@@ -8,7 +8,9 @@ import (
 	"log/slog"
 	"reflect"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/slogs"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const ageCol = "AGE"
@@ -169,6 +171,24 @@ func (h Header) Diff(header Header) bool {
 		return true
 	}
 	return !reflect.DeepEqual(h, header)
+}
+
+// FilterColIndices return viewable col header indices.
+func (h Header) FilterColIndices(ns string, wide bool) sets.Set[int] {
+	if len(h) == 0 {
+		return nil
+	}
+	nsed := client.IsNamespaced(ns)
+
+	cc := sets.New[int]()
+	for i, c := range h {
+		if c.Name == "AGE" || !wide && c.Wide || c.Hide || (nsed && c.Name == "NAMESPACE") {
+			continue
+		}
+		cc.Insert(i)
+	}
+
+	return cc
 }
 
 // ColumnNames return header col names

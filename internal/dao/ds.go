@@ -50,8 +50,8 @@ func (d *DaemonSet) ListImages(_ context.Context, fqn string) ([]string, error) 
 }
 
 // Restart a DaemonSet rollout.
-func (d *DaemonSet) Restart(ctx context.Context, path string) error {
-	return restartRes[*appsv1.DaemonSet](ctx, d.getFactory(), client.DsGVR, path)
+func (d *DaemonSet) Restart(ctx context.Context, path string, opts *metav1.PatchOptions) error {
+	return restartRes[*appsv1.DaemonSet](ctx, d.getFactory(), client.DsGVR, path, opts)
 }
 
 // TailLogs tail logs for all pods represented by this DaemonSet.

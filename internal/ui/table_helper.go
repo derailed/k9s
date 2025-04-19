@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/slogs"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -58,12 +59,13 @@ func TrimCell(tv *SelectTable, row, col int) string {
 }
 
 // TrimLabelSelector extracts label query.
-func TrimLabelSelector(s string) string {
+func TrimLabelSelector(s string) (labels.Selector, error) {
+	var selStr string
 	if strings.Index(s, "-l") == 0 {
-		return strings.TrimSpace(s[2:])
+		selStr = strings.TrimSpace(s[2:])
 	}
 
-	return s
+	return labels.Parse(selStr)
 }
 
 // SkinTitle decorates a title.

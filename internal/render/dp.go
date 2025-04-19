@@ -87,16 +87,20 @@ func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) er
 		return err
 	}
 
+	var desired int32
+	if dp.Spec.Replicas != nil {
+		desired = *dp.Spec.Replicas
+	}
 	r.ID = client.MetaFQN(&dp.ObjectMeta)
 	r.Fields = model1.Fields{
 		dp.Namespace,
 		dp.Name,
 		computeVulScore(dp.Namespace, dp.Labels, &dp.Spec.Template.Spec),
-		strconv.Itoa(int(dp.Status.AvailableReplicas)) + "/" + strconv.Itoa(int(dp.Status.Replicas)),
+		strconv.Itoa(int(dp.Status.AvailableReplicas)) + "/" + strconv.Itoa(int(desired)),
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
 		mapToStr(dp.Labels),
-		AsStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
+		AsStatus(d.diagnose(desired, dp.Status.AvailableReplicas)),
 		ToAge(dp.GetCreationTimestamp()),
 	}
 

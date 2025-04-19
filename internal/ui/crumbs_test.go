@@ -15,6 +15,7 @@ import (
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func init() {
@@ -60,4 +61,4 @@ func (c) Start()                           {}
 func (c) Stop()                            {}
 func (c) Init(context.Context) error       { return nil }
 func (c) SetFilter(string)                 {}
-func (c) SetLabelFilter(map[string]string) {}
+func (c) SetLabelSelector(labels.Selector) {}

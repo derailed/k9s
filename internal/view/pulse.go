@@ -22,6 +22,7 @@ import (
 	"github.com/derailed/tview"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // Graphable represents a graphic component.
@@ -80,7 +81,7 @@ func NewPulse(gvr *client.GVR) ResourceViewer {
 
 func (*Pulse) SetCommand(*cmd.Interpreter)      {}
 func (*Pulse) SetFilter(string)                 {}
-func (*Pulse) SetLabelFilter(map[string]string) {}
+func (*Pulse) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the view.
 func (p *Pulse) Init(ctx context.Context) error {

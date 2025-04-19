@@ -49,9 +49,8 @@ func TestConfigSave(t *testing.T) {
 		},
 	}
 
-	for k := range uu {
+	for k, u := range uu {
 		xdg.Reload()
-		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			c := mock.NewMockConfig(t)
 			_, err := c.K9s.ActivateContext(u.ct)
@@ -562,6 +561,7 @@ func TestConfigSaveFile(t *testing.T) {
 	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 
 	cfg.K9s.RefreshRate = 100
+	cfg.K9s.APIServerTimeout = "30s"
 	cfg.K9s.ReadOnly = true
 	cfg.K9s.Logger.TailCount = 500
 	cfg.K9s.Logger.BufferSize = 800

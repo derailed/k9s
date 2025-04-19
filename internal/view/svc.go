@@ -74,7 +74,7 @@ func (s *Service) showPods(a *App, _ ui.Tabular, _ *client.GVR, path string) {
 		return
 	}
 
-	showPods(a, path, toLabelsStr(svc.Spec.Selector), "")
+	showPods(a, path, labels.SelectorFromSet(svc.Spec.Selector), "")
 }
 
 func (*Service) checkSvc(svc *v1.Service) error {

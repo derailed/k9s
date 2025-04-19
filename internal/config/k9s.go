@@ -24,6 +24,7 @@ type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
 	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
 	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
+	APIServerTimeout    string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
 	MaxConnRetry        int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
 	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
@@ -54,6 +55,7 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	return &K9s{
 		RefreshRate:        defaultRefreshRate,
 		MaxConnRetry:       defaultMaxConnRetry,
+		APIServerTimeout:   client.DefaultCallTimeoutDuration.String(),
 		ScreenDumpDir:      AppDumpsDir,
 		Logger:             NewLogger(),
 		Thresholds:         NewThreshold(),
@@ -117,9 +119,11 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.DefaultView = k1.DefaultView
 	k.ScreenDumpDir = k1.ScreenDumpDir
 	k.RefreshRate = k1.RefreshRate
+	k.APIServerTimeout = k1.APIServerTimeout
 	k.MaxConnRetry = k1.MaxConnRetry
 	k.ReadOnly = k1.ReadOnly
 	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
+	k.PortForwardAddress = k1.PortForwardAddress
 	k.UI = k1.UI
 	k.SkipLatestRevCheck = k1.SkipLatestRevCheck
 	k.DisablePodCounting = k1.DisablePodCounting

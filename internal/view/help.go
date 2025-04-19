@@ -17,6 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -46,7 +47,7 @@ func NewHelp(app *App) *Help {
 
 func (*Help) SetCommand(*cmd.Interpreter)      {}
 func (*Help) SetFilter(string)                 {}
-func (*Help) SetLabelFilter(map[string]string) {}
+func (*Help) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the component.
 func (h *Help) Init(ctx context.Context) error {

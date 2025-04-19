@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
@@ -79,10 +80,23 @@ func (c *Config) ContextPluginsPath() (string, error) {
 	return AppContextPluginsFile(ct.GetClusterName(), c.K9s.activeContextName), nil
 }
 
+func setK8sTimeout(flags *genericclioptions.ConfigFlags, d time.Duration) {
+	v := d.String()
+	flags.Timeout = &v
+}
+
 // Refine the configuration based on cli args.
 func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, cfg *client.Config) error {
 	if flags == nil {
 		return nil
+	}
+
+	if !isStringSet(flags.Timeout) {
+		if d, err := time.ParseDuration(c.K9s.APIServerTimeout); err == nil {
+			setK8sTimeout(flags, d)
+		} else {
+			setK8sTimeout(flags, client.DefaultCallTimeoutDuration)
+		}
 	}
 	if isStringSet(flags.Context) {
 		if _, err := c.K9s.ActivateContext(*flags.Context); err != nil {
@@ -107,6 +121,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		c.ResetActiveView()
 	case isStringSet(flags.Namespace):
 		ns = *flags.Namespace
+		c.ResetActiveView()
 	default:
 		nss, err := c.K9s.ActiveContextNamespace()
 		if err != nil {

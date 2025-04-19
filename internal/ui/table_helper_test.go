@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func TestTruncate(t *testing.T) {
@@ -34,17 +35,29 @@ func TestTruncate(t *testing.T) {
 }
 
 func TestTrimLabelSelector(t *testing.T) {
+	sel, _ := labels.Parse("app=fred,env=blee")
 	uu := map[string]struct {
-		sel, e string
+		sel string
+		err error
+		e   labels.Selector
 	}{
-		"cool":    {"-l app=fred,env=blee", "app=fred,env=blee"},
-		"noSpace": {"-lapp=fred,env=blee", "app=fred,env=blee"},
+		"cool": {
+			sel: "-l app=fred,env=blee",
+			e:   sel,
+		},
+
+		"no-space": {
+			sel: "-lapp=fred,env=blee",
+			e:   sel,
+		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, TrimLabelSelector(u.sel))
+			sel, err := TrimLabelSelector(u.sel)
+			assert.Equal(t, u.err, err)
+			assert.Equal(t, u.e, sel)
 		})
 	}
 }

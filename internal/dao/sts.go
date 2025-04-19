@@ -54,8 +54,8 @@ func (s *StatefulSet) Scale(ctx context.Context, path string, replicas int32) er
 }
 
 // Restart a StatefulSet rollout.
-func (s *StatefulSet) Restart(ctx context.Context, path string) error {
-	return restartRes[*appsv1.StatefulSet](ctx, s.getFactory(), client.StsGVR, path)
+func (s *StatefulSet) Restart(ctx context.Context, path string, opts *metav1.PatchOptions) error {
+	return restartRes[*appsv1.StatefulSet](ctx, s.getFactory(), client.StsGVR, path, opts)
 }
 
 // GetInstance returns a statefulset instance.

@@ -112,7 +112,9 @@ func (w *Workload) defaultContext(gvr *client.GVR, fqn string) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, fqn)
 	}
 	if internal.IsLabelSelector(w.GetTable().CmdBuff().GetText()) {
-		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(w.GetTable().CmdBuff().GetText()))
+		if sel, err := ui.TrimLabelSelector(w.GetTable().CmdBuff().GetText()); err == nil {
+			ctx = context.WithValue(ctx, internal.KeyLabels, sel)
+		}
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(w.App().Config.ActiveNamespace()))
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, w.App().factory.Client().HasMetrics())

@@ -409,8 +409,10 @@ You can now override the context portForward default address configuration by se
     liveViewAutoRefresh: false
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp/dumps
-    # Represents ui poll intervals. Default 2secs
+    # Represents ui poll intervals in seconds. Default 2secs
     refreshRate: 2
+    # Overrides the default k8s api server requests timeout. Defaults 120s
+    apiServerTimeout: 15s
     # Number of retries once the connection to the api-server is lost. Default 15.
     maxConnRetry: 5
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
@@ -431,6 +433,7 @@ You can now override the context portForward default address configuration by se
       crumbsless: false
       # Set to true to suppress the K9s splash screen on start. Default false. Note that for larger clusters or higher latency connections, there may be no resources visible initially until local caches have finished populating.
       splashless: false
+      # Toggles icons display as not all terminal support these chars. Default: true
       noIcons: false
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false

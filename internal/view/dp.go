@@ -90,5 +90,5 @@ func showPodsFromSelector(app *App, path string, sel *metav1.LabelSelector) {
 		return
 	}
 
-	showPods(app, path, l.String(), "")
+	showPods(app, path, l, "")
 }

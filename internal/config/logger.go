@@ -8,7 +8,7 @@ const (
 	DefaultLoggerTailCount = 100
 
 	// MaxLogThreshold sets the max value for log size.
-	MaxLogThreshold = 5000
+	MaxLogThreshold = 5_000
 
 	// DefaultSinceSeconds tracks default log age.
 	DefaultSinceSeconds = -1 // tail logs by default

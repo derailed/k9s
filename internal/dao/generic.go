@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 )
@@ -38,7 +39,10 @@ type Generic struct {
 // List returns a collection of resources.
 // BOZO!! no auth check??
 func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	labelSel, _ := ctx.Value(internal.KeyLabels).(string)
+	labelSel, ok := ctx.Value(internal.KeyLabels).(labels.Selector)
+	if !ok {
+		labelSel = labels.Everything()
+	}
 	if client.IsAllNamespace(ns) {
 		ns = client.BlankNamespace
 	}
@@ -48,11 +52,12 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 		return nil, err
 	}
 
+	opts := metav1.ListOptions{LabelSelector: labelSel.String()}
 	var ll *unstructured.UnstructuredList
 	if client.IsClusterScoped(ns) {
-		ll, err = dial.List(ctx, metav1.ListOptions{LabelSelector: labelSel})
+		ll, err = dial.List(ctx, opts)
 	} else {
-		ll, err = dial.Namespace(ns).List(ctx, metav1.ListOptions{LabelSelector: labelSel})
+		ll, err = dial.Namespace(ns).List(ctx, opts)
 	}
 	if err != nil {
 		return nil, err
