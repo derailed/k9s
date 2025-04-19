@@ -94,6 +94,7 @@ func (c *Config) SwitchContext(name string) error {
 	flags.Impersonate = c.flags.Impersonate
 	flags.ImpersonateGroup = c.flags.ImpersonateGroup
 	flags.ImpersonateUID = c.flags.ImpersonateUID
+	flags.Insecure = c.flags.Insecure
 	c.flags = flags
 
 	return nil
