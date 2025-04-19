@@ -409,8 +409,10 @@ You can now override the context portForward default address configuration by se
     liveViewAutoRefresh: false
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp/dumps
-    # Represents ui poll intervals. Default 2secs
+    # Represents ui poll intervals in seconds. Default 2secs
     refreshRate: 2
+    # Overrides the default k8s api server requests timeout. Defaults 120s
+    apiServerTimeout: 15s
     # Number of retries once the connection to the api-server is lost. Default 15.
     maxConnRetry: 5
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false

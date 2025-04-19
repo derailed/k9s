@@ -2,6 +2,7 @@ k9s:
   liveViewAutoRefresh: true
   screenDumpDir: /tmp/k9s-test/screen-dumps
   refreshRate: 100
+  apiServerTimeout: 30s
   maxConnRetry: 5
   readOnly: true
   noExitOnCtrlC: false
