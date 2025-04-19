@@ -25,12 +25,9 @@ type Resource struct {
 
 // List returns a collection of resources.
 func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	strLabel, _ := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
-	if strLabel != "" {
-		if sel, err := labels.Parse(strLabel); err == nil {
-			lsel = sel
-		}
+	if sel, ok := ctx.Value(internal.KeyLabels).(labels.Selector); ok {
+		lsel = sel
 	}
 
 	return r.getFactory().List(r.gvr, ns, false, lsel)

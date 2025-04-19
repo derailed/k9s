@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // Picker represents a container picker.
@@ -30,7 +31,7 @@ func NewPicker() *Picker {
 
 func (*Picker) SetCommand(*cmd.Interpreter)      {}
 func (*Picker) SetFilter(string)                 {}
-func (*Picker) SetLabelFilter(map[string]string) {}
+func (*Picker) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the view.
 func (p *Picker) Init(ctx context.Context) error {

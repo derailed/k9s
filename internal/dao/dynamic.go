@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
@@ -39,7 +40,11 @@ func (d *Dynamic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 }
 
 func (d *Dynamic) toTable(ctx context.Context, fqn string) ([]runtime.Object, error) {
-	strLabel, _ := ctx.Value(internal.KeyLabels).(string)
+	sel := labels.Everything()
+	if s, ok := ctx.Value(internal.KeyLabels).(labels.Selector); ok {
+		sel = s
+	}
+
 	opts := []string{d.gvr.AsResourceName()}
 	ns, n := client.Namespaced(fqn)
 	if n != "" {
@@ -51,7 +56,7 @@ func (d *Dynamic) toTable(ctx context.Context, fqn string) ([]runtime.Object, er
 	b := f.NewBuilder().
 		Unstructured().
 		NamespaceParam(ns).DefaultNamespace().AllNamespaces(allNS).
-		LabelSelectorParam(strLabel).
+		LabelSelectorParam(sel.String()).
 		FieldSelectorParam("").
 		RequestChunksOf(0).
 		ResourceTypeOrNameArgs(true, opts...).

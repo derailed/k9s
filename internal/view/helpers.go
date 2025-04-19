@@ -23,11 +23,11 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -135,19 +135,10 @@ func describeResource(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
 	}
 }
 
-func toLabelsStr(labels map[string]string) string {
-	ll := make([]string, 0, len(labels))
-	for k, v := range labels {
-		ll = append(ll, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return strings.Join(ll, ",")
-}
-
-func showPods(app *App, path, labelSel, fieldSel string) {
+func showPods(app *App, path string, labelSel labels.Selector, fieldSel string) {
 	v := NewPod(client.PodGVR)
 	v.SetContextFn(podCtx(app, path, fieldSel))
-	v.SetLabelFilter(cmd.ToLabels(labelSel))
+	v.SetLabelSelector(labelSel)
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {

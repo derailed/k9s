@@ -25,6 +25,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -66,7 +67,7 @@ func NewLog(gvr *client.GVR, opts *dao.LogOptions) *Log {
 
 func (*Log) SetCommand(*cmd.Interpreter)      {}
 func (*Log) SetFilter(string)                 {}
-func (*Log) SetLabelFilter(map[string]string) {}
+func (*Log) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {

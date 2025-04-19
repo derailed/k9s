@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -61,7 +62,7 @@ func NewDetails(app *App, title, subject, contentType string, searchable bool) *
 
 func (*Details) SetCommand(*cmd.Interpreter)      {}
 func (*Details) SetFilter(string)                 {}
-func (*Details) SetLabelFilter(map[string]string) {}
+func (*Details) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the viewer.
 func (d *Details) Init(_ context.Context) error {

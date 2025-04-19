@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view/cmd"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -199,15 +200,15 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) 
 
 	co := c.componentFor(gvr, fqn, v)
 	co.SetFilter("")
-	co.SetLabelFilter(nil)
+	co.SetLabelSelector(labels.Everything())
 	if f, ok := p.FilterArg(); ok {
 		co.SetFilter(f)
 	}
 	if f, ok := p.FuzzyArg(); ok {
 		co.SetFilter("-f " + f)
 	}
-	if ll, ok := p.LabelsArg(); ok {
-		co.SetLabelFilter(ll)
+	if ss, ok := p.LabelsArg(); ok {
+		co.SetLabelSelector(labels.SelectorFromSet(ss))
 	}
 
 	return c.exec(p, gvr, co, clearStack, pushCmd)

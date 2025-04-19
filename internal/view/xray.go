@@ -28,6 +28,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -58,7 +59,7 @@ func NewXray(gvr *client.GVR) ResourceViewer {
 
 func (*Xray) SetCommand(*cmd.Interpreter)      {}
 func (*Xray) SetFilter(string)                 {}
-func (*Xray) SetLabelFilter(map[string]string) {}
+func (*Xray) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the view.
 func (x *Xray) Init(ctx context.Context) error {
@@ -609,9 +610,11 @@ func (x *Xray) defaultContext() context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, x.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
 	if x.CmdBuff().Empty() {
-		ctx = context.WithValue(ctx, internal.KeyLabels, "")
+		ctx = context.WithValue(ctx, internal.KeyLabels, labels.Everything())
 	} else {
-		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(x.CmdBuff().GetText()))
+		if sel, err := ui.TrimLabelSelector(x.CmdBuff().GetText()); err == nil {
+			ctx = context.WithValue(ctx, internal.KeyLabels, sel)
+		}
 	}
 
 	return ctx
@@ -688,7 +691,9 @@ func (x *Xray) styleTitle() string {
 		return title
 	}
 	if internal.IsLabelSelector(buff) {
-		buff = ui.TrimLabelSelector(buff)
+		if sel, err := ui.TrimLabelSelector(buff); err == nil {
+			buff = sel.String()
+		}
 	}
 
 	return title + ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), &styles)

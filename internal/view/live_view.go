@@ -19,6 +19,7 @@ import (
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -64,7 +65,7 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 
 func (*LiveView) SetCommand(*cmd.Interpreter)      {}
 func (*LiveView) SetFilter(string)                 {}
-func (*LiveView) SetLabelFilter(map[string]string) {}
+func (*LiveView) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the viewer.
 func (v *LiveView) Init(_ context.Context) error {

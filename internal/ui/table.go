@@ -560,9 +560,14 @@ func (t *Table) styleTitle() string {
 
 	buff := t.cmdBuff.GetText()
 	if internal.IsLabelSelector(buff) {
-		buff = render.Truncate(TrimLabelSelector(buff), maxTruncate)
-	} else if l := t.GetModel().GetLabelFilter(); l != "" {
-		buff = render.Truncate(l, maxTruncate)
+		sel, err := TrimLabelSelector(buff)
+		if err != nil {
+			buff = render.Truncate(sel.String(), maxTruncate)
+		}
+	} else if l := t.GetModel().GetLabelSelector(); l != nil && !l.Empty() {
+		buff = render.Truncate(l.String(), maxTruncate)
+	} else if buff != "" {
+		buff = render.Truncate(buff, maxTruncate)
 	}
 
 	if buff == "" {

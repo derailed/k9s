@@ -26,6 +26,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -194,9 +195,11 @@ func (b *Browser) SetFilter(s string) {
 	b.CmdBuff().SetText(s, "")
 }
 
-func (b *Browser) SetLabelFilter(labels map[string]string) {
-	b.CmdBuff().SetText(toLabelsStr(labels), "")
-	b.GetModel().SetLabelFilter(toLabelsStr(labels))
+func (b *Browser) SetLabelSelector(sel labels.Selector) {
+	if sel != nil {
+		b.CmdBuff().SetText(sel.String(), "")
+	}
+	b.GetModel().SetLabelSelector(sel)
 }
 
 // BufferChanged indicates the buffer was changed.
@@ -205,9 +208,11 @@ func (*Browser) BufferChanged(_, _ string) {}
 // BufferCompleted indicates input was accepted.
 func (b *Browser) BufferCompleted(text, _ string) {
 	if internal.IsLabelSelector(text) {
-		b.GetModel().SetLabelFilter(ui.TrimLabelSelector(text))
+		if sel, err := ui.TrimLabelSelector(text); err == nil {
+			b.GetModel().SetLabelSelector(sel)
+		}
 	} else {
-		b.GetModel().SetLabelFilter("")
+		b.GetModel().SetLabelSelector(labels.Everything())
 	}
 }
 
@@ -375,7 +380,7 @@ func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		hasFilter := !b.CmdBuff().Empty()
 		b.CmdBuff().ClearText(false)
 		if hasFilter {
-			b.GetModel().SetLabelFilter("")
+			b.GetModel().SetLabelSelector(labels.Everything())
 			b.Refresh()
 		}
 		return b.App().PrevCmd(evt)
@@ -555,7 +560,9 @@ func (b *Browser) defaultContext() context.Context {
 	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR())
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
-		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.CmdBuff().GetText()))
+		if sel, err := ui.TrimLabelSelector(b.CmdBuff().GetText()); err == nil {
+			ctx = context.WithValue(ctx, internal.KeyLabels, sel)
+		}
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, b.app.factory.Client().HasMetrics())

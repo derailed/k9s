@@ -19,6 +19,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -38,15 +39,15 @@ type TableListener interface {
 
 // Table represents a table model.
 type Table struct {
-	gvr         *client.GVR
-	data        *model1.TableData
-	listeners   []TableListener
-	inUpdate    int32
-	refreshRate time.Duration
-	instance    string
-	labelFilter string
-	mx          sync.RWMutex
-	vs          *config.ViewSetting
+	gvr           *client.GVR
+	data          *model1.TableData
+	listeners     []TableListener
+	inUpdate      int32
+	refreshRate   time.Duration
+	instance      string
+	labelSelector labels.Selector
+	mx            sync.RWMutex
+	vs            *config.ViewSetting
 }
 
 // NewTable returns a new table model.
@@ -70,20 +71,20 @@ func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
 	}
 }
 
-// SetLabelFilter sets the labels filter.
-func (t *Table) SetLabelFilter(f string) {
+// SetLabelSelector sets the labels selector.
+func (t *Table) SetLabelSelector(sel labels.Selector) {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	t.labelFilter = f
+	t.labelSelector = sel
 }
 
-// GetLabelFilter sets the labels filter.
-func (t *Table) GetLabelFilter() string {
+// GetLabelSelector sets the labels selector.
+func (t *Table) GetLabelSelector() labels.Selector {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	return t.labelFilter
+	return t.labelSelector
 }
 
 // SetInstance sets a single entry table.
@@ -253,7 +254,7 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	a.Init(factory, t.gvr)
 
 	t.mx.RLock()
-	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelSelector)
 	t.mx.RUnlock()
 
 	ns := client.CleanseNamespace(t.data.GetNamespace())
@@ -273,7 +274,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	if t.vs != nil {
 		meta.DAO.SetIncludeObject(true)
 	}
-	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelSelector)
 	if t.instance == "" {
 		oo, err = t.list(ctx, meta.DAO)
 	} else {

@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -35,7 +36,7 @@ func TestAliasNew(t *testing.T) {
 func TestAliasSearch(t *testing.T) {
 	v := view.NewAlias(client.AliGVR)
 	require.NoError(t, v.Init(makeContext(t)))
-	v.GetTable().SetModel(&mockModel{})
+	v.GetTable().SetModel(new(mockModel))
 	v.GetTable().Refresh()
 	v.App().Prompt().SetModel(v.GetTable().CmdBuff())
 	v.App().Prompt().SendStrokes("blee")
@@ -93,8 +94,8 @@ func (*mockModel) NextSuggestion() (string, bool)                      { return 
 func (*mockModel) PrevSuggestion() (string, bool)                      { return "", false }
 func (*mockModel) ClearSuggestions()                                   {}
 func (*mockModel) SetInstance(string)                                  {}
-func (*mockModel) SetLabelFilter(string)                               {}
-func (*mockModel) GetLabelFilter() string                              { return "" }
+func (*mockModel) SetLabelSelector(labels.Selector)                    {}
+func (*mockModel) GetLabelSelector() labels.Selector                   { return nil }
 func (*mockModel) Empty() bool                                         { return false }
 func (*mockModel) RowCount() int                                       { return 1 }
 func (*mockModel) HasMetrics() bool                                    { return true }

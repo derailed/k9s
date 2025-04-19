@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
@@ -56,7 +57,10 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List all Resources in a given namespace.
 func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	labelSel, _ := ctx.Value(internal.KeyLabels).(string)
+	sel := labels.Everything()
+	if labelSel, ok := ctx.Value(internal.KeyLabels).(labels.Selector); ok {
+		sel = labelSel
+	}
 	fieldSel, _ := ctx.Value(internal.KeyFields).(string)
 
 	includeObject := includeMeta
@@ -75,7 +79,7 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		Namespace(ns).
 		Resource(t.gvr.R()).
 		VersionedParams(&metav1.ListOptions{
-			LabelSelector: labelSel,
+			LabelSelector: sel.String(),
 			FieldSelector: fieldSel,
 		}, metav1.ParameterCodec).
 		Do(ctx).Get()

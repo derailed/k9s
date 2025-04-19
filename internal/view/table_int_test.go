@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -135,8 +136,8 @@ var _ ui.Tabular = (*mockTableModel)(nil)
 
 func (*mockTableModel) SetViewSetting(context.Context, *config.ViewSetting) {}
 func (*mockTableModel) SetInstance(string)                                  {}
-func (*mockTableModel) SetLabelFilter(string)                               {}
-func (*mockTableModel) GetLabelFilter() string                              { return "" }
+func (*mockTableModel) SetLabelSelector(labels.Selector)                    {}
+func (*mockTableModel) GetLabelSelector() labels.Selector                   { return nil }
 func (*mockTableModel) Empty() bool                                         { return false }
 func (*mockTableModel) RowCount() int                                       { return 1 }
 func (*mockTableModel) HasMetrics() bool                                    { return true }
