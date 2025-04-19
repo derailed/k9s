@@ -477,13 +477,39 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 			Privileged: &priv,
 		},
 	}
+	v := []v1.Volume{
+		{
+			Name: "root-vol",
+			VolumeSource: v1.VolumeSource{
+				HostPath: &v1.HostPathVolumeSource{
+					Path: "/",
+				},
+			},
+		},
+	}
 	if len(cfg.Command) != 0 {
 		c.Command = cfg.Command
 	}
 	if len(cfg.Args) > 0 {
 		c.Args = cfg.Args
 	}
-
+	if len(cfg.HostPathVolume) > 0 {
+		for _, h := range cfg.HostPathVolume {
+			c.VolumeMounts = append(c.VolumeMounts, v1.VolumeMount{
+				Name:      h.Name,
+				MountPath: h.MountPath,
+				ReadOnly:  h.ReadOnly,
+			})
+			v = append(v, v1.Volume{
+				Name: h.Name,
+				VolumeSource: v1.VolumeSource{
+					HostPath: &v1.HostPathVolumeSource{
+						Path: h.HostPath,
+					},
+				},
+			})
+		}
+	}
 	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k9sShellPodName(),
@@ -497,17 +523,8 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 			HostNetwork:                   true,
 			ImagePullSecrets:              cfg.ImagePullSecrets,
 			TerminationGracePeriodSeconds: &grace,
-			Volumes: []v1.Volume{
-				{
-					Name: "root-vol",
-					VolumeSource: v1.VolumeSource{
-						HostPath: &v1.HostPathVolumeSource{
-							Path: "/",
-						},
-					},
-				},
-			},
-			Containers: []v1.Container{c},
+			Volumes:                       v,
+			Containers:                    []v1.Container{c},
 			Tolerations: []v1.Toleration{
 				{
 					Operator: v1.TolerationOperator("Exists"),
