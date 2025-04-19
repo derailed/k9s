@@ -17,6 +17,19 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
+var defaultJOBHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "COMPLETIONS"},
+	model1.HeaderColumn{Name: "DURATION"},
+	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Job renders a K8s Job to screen.
 type Job struct {
 	Base
@@ -24,29 +37,14 @@ type Job struct {
 
 // Header returns a header row.
 func (j Job) Header(_ string) model1.Header {
-	return j.doHeader(j.defaultHeader())
-}
-
-func (Job) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
-		model1.HeaderColumn{Name: "COMPLETIONS"},
-		model1.HeaderColumn{Name: "DURATION"},
-		model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return j.doHeader(defaultJOBHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (j Job) Render(o interface{}, ns string, row *model1.Row) error {
+func (j Job) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected Job, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	if err := j.defaultRow(raw, row); err != nil {
 		return err
@@ -54,8 +52,7 @@ func (j Job) Render(o interface{}, ns string, row *model1.Row) error {
 	if j.specs.isEmpty() {
 		return nil
 	}
-
-	cols, err := j.specs.realize(raw, j.defaultHeader(), row)
+	cols, err := j.specs.realize(raw, defaultJOBHeader, row)
 	if err != nil {
 		return err
 	}
@@ -70,28 +67,28 @@ func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	if err != nil {
 		return err
 	}
-	ready := toCompletion(job.Spec, job.Status)
+	ready := toCompletion(&job.Spec, &job.Status)
 
-	cc, ii := toContainers(job.Spec.Template.Spec)
+	cc, ii := toContainers(&job.Spec.Template.Spec)
 
-	r.ID = client.MetaFQN(job.ObjectMeta)
+	r.ID = client.MetaFQN(&job.ObjectMeta)
 	r.Fields = model1.Fields{
 		job.Namespace,
 		job.Name,
-		computeVulScore(job.ObjectMeta, &job.Spec.Template.Spec),
+		computeVulScore(job.Namespace, job.Labels, &job.Spec.Template.Spec),
 		ready,
-		toDuration(job.Status),
-		jobSelector(job.Spec),
+		toDuration(&job.Status),
+		jobSelector(&job.Spec),
 		cc,
 		ii,
-		AsStatus(j.diagnose(ready, job.Status)),
+		AsStatus(j.diagnose(ready, &job.Status)),
 		ToAge(job.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (Job) diagnose(ready string, status batchv1.JobStatus) error {
+func (Job) diagnose(ready string, status *batchv1.JobStatus) error {
 	tokens := strings.Split(ready, "/")
 	if tokens[0] != tokens[1] && status.Failed > 0 {
 		return fmt.Errorf("%d pods failed", status.Failed)
@@ -104,7 +101,7 @@ func (Job) diagnose(ready string, status batchv1.JobStatus) error {
 
 const maxShow = 2
 
-func toContainers(p v1.PodSpec) (string, string) {
+func toContainers(p *v1.PodSpec) (containers, images string) {
 	cc, ii := parseContainers(p.InitContainers)
 	cn, ci := parseContainers(p.Containers)
 
@@ -122,15 +119,15 @@ func toContainers(p v1.PodSpec) (string, string) {
 }
 
 func parseContainers(cos []v1.Container) (nn, ii []string) {
-	for _, co := range cos {
-		nn = append(nn, co.Name)
-		ii = append(ii, co.Image)
+	nn, ii = make([]string, 0, len(cos)), make([]string, 0, len(cos))
+	for i := range cos {
+		nn, ii = append(nn, cos[i].Name), append(ii, cos[i].Image)
 	}
 
 	return nn, ii
 }
 
-func toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s string) {
+func toCompletion(spec *batchv1.JobSpec, status *batchv1.JobStatus) (s string) {
 	if spec.Completions != nil {
 		return strconv.Itoa(int(status.Succeeded)) + "/" + strconv.Itoa(int(*spec.Completions))
 	}
@@ -147,7 +144,7 @@ func toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s string) {
 	return strconv.Itoa(int(status.Succeeded)) + "/1"
 }
 
-func toDuration(status batchv1.JobStatus) string {
+func toDuration(status *batchv1.JobStatus) string {
 	if status.StartTime == nil || status.CompletionTime == nil {
 		return MissingValue
 	}

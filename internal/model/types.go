@@ -34,7 +34,7 @@ type ViewerToggleOpts map[string]bool
 type ResourceViewer interface {
 	GetPath() string
 	Filter(string)
-	GVR() client.GVR
+	GVR() *client.GVR
 	ClearFilter()
 	Peek() []string
 	SetOptions(context.Context, ViewerToggleOpts)
@@ -136,7 +136,7 @@ type Describer interface {
 
 // TreeRenderer represents an xray node.
 type TreeRenderer interface {
-	Render(ctx context.Context, ns string, o interface{}) error
+	Render(ctx context.Context, ns string, o any) error
 }
 
 // ResourceMeta represents model info about a resource.

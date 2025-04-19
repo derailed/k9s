@@ -33,12 +33,12 @@ func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error
 		}
 	}
 
-	return r.getFactory().List(r.gvrStr(), ns, false, lsel)
+	return r.getFactory().List(r.gvr, ns, false, lsel)
 }
 
 // Get returns a resource instance if found, else an error.
 func (r *Resource) Get(_ context.Context, path string) (runtime.Object, error) {
-	return r.getFactory().Get(r.gvrStr(), path, true, labels.Everything())
+	return r.getFactory().Get(r.gvr, path, true, labels.Everything())
 }
 
 // ToYAML returns a resource yaml.

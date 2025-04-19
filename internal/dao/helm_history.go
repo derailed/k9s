@@ -59,7 +59,7 @@ func (h *HelmHistory) List(ctx context.Context, _ string) ([]runtime.Object, err
 // Get returns a resource.
 func (h *HelmHistory) Get(_ context.Context, path string) (runtime.Object, error) {
 	fqn, rev, found := strings.Cut(path, ":")
-	if !found || len(rev) == 0 {
+	if !found || rev == "" {
 		return nil, fmt.Errorf("invalid path %q", path)
 	}
 
@@ -99,7 +99,7 @@ func (h *HelmHistory) Describe(path string) (string, error) {
 }
 
 // ToYAML returns the chart manifest.
-func (h *HelmHistory) ToYAML(path string, showManaged bool) (string, error) {
+func (h *HelmHistory) ToYAML(path string, _ bool) (string, error) {
 	rel, err := h.Get(context.Background(), path)
 	if err != nil {
 		return "", err
@@ -146,10 +146,10 @@ func (h *HelmHistory) Rollback(_ context.Context, path, rev string) error {
 	if err != nil {
 		return fmt.Errorf("could not convert revision to a number: %w", err)
 	}
-	client := action.NewRollback(cfg)
-	client.Version = ver
+	clt := action.NewRollback(cfg)
+	clt.Version = ver
 
-	return client.Run(n)
+	return clt.Run(n)
 }
 
 // Delete uninstall a Helm.

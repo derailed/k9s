@@ -14,6 +14,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultSECHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "TYPE"},
+	model1.HeaderColumn{Name: "DATA"},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Secret renders a K8s Secret to screen.
 type Secret struct {
 	Base
@@ -21,35 +30,22 @@ type Secret struct {
 
 // Header returns a header row.
 func (s Secret) Header(_ string) model1.Header {
-	return s.doHeader(s.defaultHeader())
-}
-
-func (Secret) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "TYPE"},
-		model1.HeaderColumn{Name: "DATA"},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return s.doHeader(defaultSECHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (s Secret) Render(o interface{}, ns string, row *model1.Row) error {
+func (s Secret) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected Secret, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
-
 	if err := s.defaultRow(raw, row); err != nil {
 		return err
 	}
 	if s.specs.isEmpty() {
 		return nil
 	}
-
-	cols, err := s.specs.realize(raw, s.defaultHeader(), row)
+	cols, err := s.specs.realize(raw, defaultSECHeader, row)
 	if err != nil {
 		return err
 	}
@@ -58,7 +54,7 @@ func (s Secret) Render(o interface{}, ns string, row *model1.Row) error {
 	return nil
 }
 
-func (n Secret) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
+func (Secret) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var sec v1.Secret
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sec)
 	if err != nil {

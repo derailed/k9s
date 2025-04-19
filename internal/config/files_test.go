@@ -12,11 +12,12 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInitLogLoc(t *testing.T) {
 	tmp, err := config.UserTmpDir()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	uu := map[string]struct {
 		dir string
@@ -39,33 +40,33 @@ func TestInitLogLoc(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.NoError(t, os.Unsetenv(config.K9sEnvLogsDir))
-			assert.NoError(t, os.Unsetenv("XDG_STATE_HOME"))
-			assert.NoError(t, os.Unsetenv(config.K9sEnvConfigDir))
+			require.NoError(t, os.Unsetenv(config.K9sEnvLogsDir))
+			require.NoError(t, os.Unsetenv("XDG_STATE_HOME"))
+			require.NoError(t, os.Unsetenv(config.K9sEnvConfigDir))
 			switch k {
 			case "log-env":
-				assert.NoError(t, os.Setenv(config.K9sEnvLogsDir, u.dir))
+				require.NoError(t, os.Setenv(config.K9sEnvLogsDir, u.dir))
 			case "xdg-env":
-				assert.NoError(t, os.Setenv("XDG_STATE_HOME", u.dir))
+				require.NoError(t, os.Setenv("XDG_STATE_HOME", u.dir))
 				xdg.Reload()
 			case "cfg-env":
-				assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, u.dir))
+				require.NoError(t, os.Setenv(config.K9sEnvConfigDir, u.dir))
 			}
 			err := config.InitLogLoc()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.e, config.AppLogFile)
-			assert.NoError(t, os.RemoveAll(config.AppLogFile))
+			require.NoError(t, os.RemoveAll(config.AppLogFile))
 		})
 	}
 }
 
 func TestEnsureBenchmarkCfg(t *testing.T) {
-	assert.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
-	assert.NoError(t, config.InitLocs())
-	defer assert.NoError(t, os.RemoveAll("/tmp/test-config"))
+	require.NoError(t, os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config"))
+	require.NoError(t, config.InitLocs())
+	defer require.NoError(t, os.RemoveAll("/tmp/test-config"))
 
-	assert.NoError(t, data.EnsureFullPath("/tmp/test-config/clusters/cl-1/ct-2", data.DefaultDirMod))
-	assert.NoError(t, os.WriteFile("/tmp/test-config/clusters/cl-1/ct-2/benchmarks.yaml", []byte{}, data.DefaultFileMod))
+	require.NoError(t, data.EnsureFullPath("/tmp/test-config/clusters/cl-1/ct-2", data.DefaultDirMod))
+	require.NoError(t, os.WriteFile("/tmp/test-config/clusters/cl-1/ct-2/benchmarks.yaml", []byte{}, data.DefaultFileMod))
 
 	uu := map[string]struct {
 		cluster, context string
@@ -88,10 +89,10 @@ func TestEnsureBenchmarkCfg(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			f, err := config.EnsureBenchmarksCfgFile(u.cluster, u.context)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.f, f)
 			bb, err := os.ReadFile(f)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.e, string(bb))
 		})
 	}
@@ -99,7 +100,7 @@ func TestEnsureBenchmarkCfg(t *testing.T) {
 
 func TestSkinFileFromName(t *testing.T) {
 	config.AppSkinsDir = "/tmp/k9s-test/skins"
-	defer assert.NoError(t, os.RemoveAll("/tmp/k9s-test/skins"))
+	defer require.NoError(t, os.RemoveAll("/tmp/k9s-test/skins"))
 
 	uu := map[string]struct {
 		n string

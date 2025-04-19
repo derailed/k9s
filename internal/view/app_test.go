@@ -12,7 +12,7 @@ import (
 )
 
 func TestAppNew(t *testing.T) {
-	a := view.NewApp(mock.NewMockConfig())
+	a := view.NewApp(mock.NewMockConfig(t))
 	_ = a.Init("blee", 10)
 
 	assert.Equal(t, 15, a.GetActions().Len())

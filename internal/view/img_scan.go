@@ -28,7 +28,7 @@ type ImageScan struct {
 }
 
 // NewImageScan returns a new scans view.
-func NewImageScan(gvr client.GVR) ResourceViewer {
+func NewImageScan(gvr *client.GVR) ResourceViewer {
 	v := ImageScan{}
 	v.ResourceViewer = NewBrowser(gvr)
 	v.AddBindKeysFn(v.bindKeys)
@@ -39,20 +39,19 @@ func NewImageScan(gvr client.GVR) ResourceViewer {
 }
 
 // Name returns the component name.
-func (s *ImageScan) Name() string { return imgScanTitle }
+func (*ImageScan) Name() string { return imgScanTitle }
 
-func (c *ImageScan) bindKeys(aa *ui.KeyActions) {
+func (i *ImageScan) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlZ, tcell.KeyCtrlW)
-
 	aa.Bulk(ui.KeyMap{
-		ui.KeyShiftL: ui.NewKeyAction("Sort Lib", c.GetTable().SortColCmd("LIBRARY", false), true),
-		ui.KeyShiftS: ui.NewKeyAction("Sort Severity", c.GetTable().SortColCmd("SEVERITY", false), true),
-		ui.KeyShiftF: ui.NewKeyAction("Sort Fixed-in", c.GetTable().SortColCmd("FIXED-IN", false), true),
-		ui.KeyShiftV: ui.NewKeyAction("Sort Vulnerability", c.GetTable().SortColCmd("VULNERABILITY", false), true),
+		ui.KeyShiftL: ui.NewKeyAction("Sort Lib", i.GetTable().SortColCmd("LIBRARY", false), true),
+		ui.KeyShiftS: ui.NewKeyAction("Sort Severity", i.GetTable().SortColCmd("SEVERITY", false), true),
+		ui.KeyShiftF: ui.NewKeyAction("Sort Fixed-in", i.GetTable().SortColCmd("FIXED-IN", false), true),
+		ui.KeyShiftV: ui.NewKeyAction("Sort Vulnerability", i.GetTable().SortColCmd("VULNERABILITY", false), true),
 	})
 }
 
-func (s *ImageScan) viewCVE(app *App, _ ui.Tabular, _ client.GVR, path string) {
+func (*ImageScan) viewCVE(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	bin := browseLinux
 	if runtime.GOOS == "darwin" {
 		bin = browseOSX
@@ -69,7 +68,7 @@ func (s *ImageScan) viewCVE(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	}
 	site += cve
 
-	ok, errChan, _ := run(app, shellOpts{
+	ok, errChan, _ := run(app, &shellOpts{
 		background: true,
 		binary:     bin,
 		args:       []string{site},

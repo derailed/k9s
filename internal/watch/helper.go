@@ -25,10 +25,10 @@ func toGVR(gvr string) schema.GroupVersionResource {
 	}
 }
 
-func namespaced(n string) (string, string) {
-	ns, po := path.Split(n)
+func namespaced(n string) (ns, res string) {
+	ns, res = path.Split(n)
 
-	return strings.Trim(ns, "/"), po
+	return strings.Trim(ns, "/"), res
 }
 
 // DumpFactory for debug.
@@ -41,7 +41,7 @@ func DumpFactory(f *Factory) {
 }
 
 // DebugFactory for debug.
-func DebugFactory(f *Factory, ns string, gvr string) {
+func DebugFactory(f *Factory, ns, gvr string) {
 	slog.Debug(fmt.Sprintf("----------- DEBUG FACTORY (%s) -------------", gvr))
 	fac, ok := f.factories[ns]
 	if !ok {

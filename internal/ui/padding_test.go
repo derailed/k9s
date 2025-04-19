@@ -144,7 +144,7 @@ func BenchmarkMaxColumn(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		ComputeMaxColumns(pads, "A", table)
 	}
 }

@@ -17,6 +17,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultCRDHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "GROUP"},
+	model1.HeaderColumn{Name: "KIND"},
+	model1.HeaderColumn{Name: "VERSIONS"},
+	model1.HeaderColumn{Name: "SCOPE"},
+	model1.HeaderColumn{Name: "ALIASES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // CustomResourceDefinition renders a K8s CustomResourceDefinition to screen.
 type CustomResourceDefinition struct {
 	Base
@@ -24,29 +36,14 @@ type CustomResourceDefinition struct {
 
 // Header returns a header row.
 func (c CustomResourceDefinition) Header(_ string) model1.Header {
-	return c.doHeader(c.defaultHeader())
-}
-
-// Header returns a header rbw.
-func (CustomResourceDefinition) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "GROUP"},
-		model1.HeaderColumn{Name: "KIND"},
-		model1.HeaderColumn{Name: "VERSIONS"},
-		model1.HeaderColumn{Name: "SCOPE"},
-		model1.HeaderColumn{Name: "ALIASES", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return c.doHeader(defaultCRDHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (c CustomResourceDefinition) Render(o interface{}, ns string, row *model1.Row) error {
+func (c CustomResourceDefinition) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected CustomResourceDefinition, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 
 	if err := c.defaultRow(raw, row); err != nil {
@@ -55,9 +52,7 @@ func (c CustomResourceDefinition) Render(o interface{}, ns string, row *model1.R
 	if c.specs.isEmpty() {
 		return nil
 	}
-
-	// !BOZO!! Call header 2 times
-	cols, err := c.specs.realize(raw, c.defaultHeader(), row)
+	cols, err := c.specs.realize(raw, defaultCRDHeader, row)
 	if err != nil {
 		return err
 	}
@@ -88,7 +83,7 @@ func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *
 		slog.Warn("Unable to assert CRD versions", slogs.FQN, crd.Name)
 	}
 
-	r.ID = client.MetaFQN(crd.ObjectMeta)
+	r.ID = client.MetaFQN(&crd.ObjectMeta)
 	r.Fields = model1.Fields{
 		crd.Spec.Names.Plural,
 		crd.Spec.Group,
@@ -104,7 +99,7 @@ func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *
 	return nil
 }
 
-func (c CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefinitionVersion) error {
+func (CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefinitionVersion) error {
 	if len(vv) == 0 {
 		return fmt.Errorf("unable to assert CRD servers versions for %s", n)
 	}

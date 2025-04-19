@@ -14,13 +14,23 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+var defaultWKHeader = model1.Header{
+	model1.HeaderColumn{Name: "KIND"},
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: "READY"},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // Workload renders a workload to screen.
 type Workload struct {
 	Base
 }
 
 // ColorerFunc colors a resource row.
-func (n Workload) ColorerFunc() model1.ColorerFunc {
+func (Workload) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
@@ -39,22 +49,14 @@ func (n Workload) ColorerFunc() model1.ColorerFunc {
 
 // Header returns a header rbw.
 func (Workload) Header(string) model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "KIND"},
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "READY"},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return defaultWKHeader
 }
 
 // Render renders a K8s resource to screen.
-func (n Workload) Render(o interface{}, _ string, r *model1.Row) error {
+func (Workload) Render(o any, _ string, r *model1.Row) error {
 	res, ok := o.(*WorkloadRes)
 	if !ok {
-		return fmt.Errorf("expected allRes but got %T", o)
+		return fmt.Errorf("expected WorkloadRes but got %T", o)
 	}
 
 	r.ID = fmt.Sprintf("%s|%s|%s", res.Row.Cells[0].(string), res.Row.Cells[1].(string), res.Row.Cells[2].(string))
@@ -76,7 +78,7 @@ type WorkloadRes struct {
 }
 
 // GetObjectKind returns a schema object.
-func (a *WorkloadRes) GetObjectKind() schema.ObjectKind {
+func (*WorkloadRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 

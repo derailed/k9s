@@ -22,7 +22,7 @@ const (
 	MinusSign = "[green::b]↓"
 )
 
-var percent = regexp.MustCompile(`\A(\d+)\%\z`)
+var percent = regexp.MustCompile(`\A(\d+)%\z`)
 
 func deltaNumb(o, n string) (string, bool) {
 	var delta string

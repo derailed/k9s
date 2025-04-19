@@ -4,6 +4,7 @@
 package health
 
 import (
+	"github.com/derailed/k9s/internal/client"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -12,14 +13,14 @@ import (
 type Check struct {
 	Counts
 
-	GVR string
+	GVR *client.GVR
 }
 
 // Checks represents a collection of health checks.
 type Checks []*Check
 
 // NewCheck returns a new health check.
-func NewCheck(gvr string) *Check {
+func NewCheck(gvr *client.GVR) *Check {
 	return &Check{
 		GVR:    gvr,
 		Counts: make(Counts),

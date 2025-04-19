@@ -18,28 +18,22 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-// ResourceMetas represents a collection of resource metadata.
-type ResourceMetas map[client.GVR]metav1.APIResource
-
-// Accessors represents a collection of dao accessors.
-type Accessors map[client.GVR]Accessor
-
 // Factory represents a resource factory.
 type Factory interface {
 	// Client retrieves an api client.
 	Client() client.Connection
 
 	// Get fetch a given resource.
-	Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error)
+	Get(gvr *client.GVR, path string, wait bool, sel labels.Selector) (runtime.Object, error)
 
 	// List fetch a collection of resources.
-	List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error)
+	List(gvr *client.GVR, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error)
 
 	// ForResource fetch an informer for a given resource.
-	ForResource(ns, gvr string) (informers.GenericInformer, error)
+	ForResource(ns string, gvr *client.GVR) (informers.GenericInformer, error)
 
 	// CanForResource fetch an informer for a given resource if authorized
-	CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error)
+	CanForResource(ns string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error)
 
 	// WaitForCacheSync synchronize the cache.
 	WaitForCacheSync()
@@ -75,7 +69,7 @@ type Accessor interface {
 	Getter
 
 	// Init the resource with a factory object.
-	Init(Factory, client.GVR)
+	Init(Factory, *client.GVR)
 
 	// GVR returns a gvr a string.
 	GVR() string

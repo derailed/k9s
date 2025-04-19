@@ -20,23 +20,21 @@ type ClusterRole struct {
 
 // Header returns a header row.
 func (c ClusterRole) Header(_ string) model1.Header {
-	return c.doHeader(c.defaultHeader())
+	return c.doHeader(defaultCRHeader)
 }
 
 // Header returns a header rbw.
-func (ClusterRole) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+var defaultCRHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
-func (p ClusterRole) Render(o interface{}, ns string, row *model1.Row) error {
+func (p ClusterRole) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expecting clusterrole, but got %T", o)
+		return fmt.Errorf("expecting Unstructured, but got %T", o)
 	}
 	if err := p.defaultRow(raw, row); err != nil {
 		return err
@@ -44,8 +42,7 @@ func (p ClusterRole) Render(o interface{}, ns string, row *model1.Row) error {
 	if p.specs.isEmpty() {
 		return nil
 	}
-
-	cols, err := p.specs.realize(raw, p.defaultHeader(), row)
+	cols, err := p.specs.realize(raw, defaultCRHeader, row)
 	if err != nil {
 		return err
 	}

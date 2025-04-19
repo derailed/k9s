@@ -11,21 +11,22 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_initXDGLocs(t *testing.T) {
 	tmp, err := UserTmpDir()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NoError(t, os.Unsetenv("XDG_CONFIG_HOME"))
-	assert.NoError(t, os.Unsetenv("XDG_CACHE_HOME"))
-	assert.NoError(t, os.Unsetenv("XDG_STATE_HOME"))
-	assert.NoError(t, os.Unsetenv("XDG_DATA_HOME"))
+	require.NoError(t, os.Unsetenv("XDG_CONFIG_HOME"))
+	require.NoError(t, os.Unsetenv("XDG_CACHE_HOME"))
+	require.NoError(t, os.Unsetenv("XDG_STATE_HOME"))
+	require.NoError(t, os.Unsetenv("XDG_DATA_HOME"))
 
-	assert.NoError(t, os.Setenv("XDG_CONFIG_HOME", filepath.Join(tmp, "k9s-xdg", "config")))
-	assert.NoError(t, os.Setenv("XDG_CACHE_HOME", filepath.Join(tmp, "k9s-xdg", "cache")))
-	assert.NoError(t, os.Setenv("XDG_STATE_HOME", filepath.Join(tmp, "k9s-xdg", "state")))
-	assert.NoError(t, os.Setenv("XDG_DATA_HOME", filepath.Join(tmp, "k9s-xdg", "data")))
+	require.NoError(t, os.Setenv("XDG_CONFIG_HOME", filepath.Join(tmp, "k9s-xdg", "config")))
+	require.NoError(t, os.Setenv("XDG_CACHE_HOME", filepath.Join(tmp, "k9s-xdg", "cache")))
+	require.NoError(t, os.Setenv("XDG_STATE_HOME", filepath.Join(tmp, "k9s-xdg", "state")))
+	require.NoError(t, os.Setenv("XDG_DATA_HOME", filepath.Join(tmp, "k9s-xdg", "data")))
 	xdg.Reload()
 
 	uu := map[string]struct {
@@ -55,7 +56,7 @@ func Test_initXDGLocs(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.NoError(t, initXDGLocs())
+			require.NoError(t, initXDGLocs())
 			assert.Equal(t, u.configDir, AppConfigDir)
 			assert.Equal(t, u.configFile, AppConfigFile)
 			assert.Equal(t, u.benchmarksDir, AppBenchmarksDir)
@@ -63,13 +64,13 @@ func Test_initXDGLocs(t *testing.T) {
 			assert.Equal(t, u.contextHotkeysFile, AppContextHotkeysFile("cl-1", "ct-1-1"))
 			assert.Equal(t, u.contextConfig, AppContextConfig("cl-1", "ct-1-1"))
 			dir, err := DumpsDir("cl-1", "ct-1-1")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.dumpsDir, dir)
 			bdir, err := EnsureBenchmarksDir("cl-1", "ct-1-1")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.benchDir, bdir)
 			hk, err := EnsureHotkeysCfgFile()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, u.hkFile, hk)
 		})
 	}

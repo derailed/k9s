@@ -31,7 +31,7 @@ type ReplicaSet struct {
 }
 
 // ListImages lists container images.
-func (r *ReplicaSet) ListImages(ctx context.Context, fqn string) ([]string, error) {
+func (r *ReplicaSet) ListImages(_ context.Context, fqn string) ([]string, error) {
 	rs, err := r.Load(r.Factory, fqn)
 	if err != nil {
 		return nil, err
@@ -41,8 +41,8 @@ func (r *ReplicaSet) ListImages(ctx context.Context, fqn string) ([]string, erro
 }
 
 // Load returns a given instance.
-func (r *ReplicaSet) Load(f Factory, path string) (*appsv1.ReplicaSet, error) {
-	o, err := f.Get("apps/v1/replicasets", path, true, labels.Everything())
+func (*ReplicaSet) Load(f Factory, path string) (*appsv1.ReplicaSet, error) {
+	o, err := f.Get(client.RsGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func getRSRevision(rs *appsv1.ReplicaSet) (int64, error) {
 	return int64(vers), nil
 }
 
-func controllerInfo(rs *appsv1.ReplicaSet) (string, string, string, error) {
+func controllerInfo(rs *appsv1.ReplicaSet) (name, kind, group string, err error) {
 	for _, ref := range rs.OwnerReferences {
 		if ref.Controller == nil {
 			continue
@@ -80,6 +80,7 @@ func controllerInfo(rs *appsv1.ReplicaSet) (string, string, string, error) {
 		}
 		return ref.Name, ref.Kind, group, nil
 	}
+
 	return "", "", "", fmt.Errorf("unable to find controller for replicaset: %s", rs.Name)
 }
 
@@ -114,7 +115,7 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 	}
 
 	var ddp Deployment
-	ddp.Init(r.Factory, client.NewGVR("apps/v1/deployments"))
+	ddp.Init(r.Factory, client.DpGVR)
 	dp, err := ddp.GetInstance(client.FQN(rs.Namespace, name))
 	if err != nil {
 		return err

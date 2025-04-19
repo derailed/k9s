@@ -58,7 +58,7 @@ func NewSplash(styles *config.Styles, version string) *Splash {
 	return &s
 }
 
-func (s *Splash) layoutLogo(t *tview.TextView, styles *config.Styles) {
+func (*Splash) layoutLogo(t *tview.TextView, styles *config.Styles) {
 	logo := strings.Join(LogoBig, fmt.Sprintf("\n[%s::b]", styles.Body().LogoColor))
 	_, _ = fmt.Fprintf(t, "%s[%s::b]%s\n",
 		strings.Repeat("\n", 2),
@@ -66,6 +66,6 @@ func (s *Splash) layoutLogo(t *tview.TextView, styles *config.Styles) {
 		logo)
 }
 
-func (s *Splash) layoutRev(t *tview.TextView, rev string, styles *config.Styles) {
+func (*Splash) layoutRev(t *tview.TextView, rev string, styles *config.Styles) {
 	_, _ = fmt.Fprintf(t, "[%s::b]Revision [red::b]%s", styles.Body().FgColor, rev)
 }

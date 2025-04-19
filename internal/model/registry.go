@@ -4,6 +4,7 @@
 package model
 
 import (
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/render/helm"
@@ -12,181 +13,181 @@ import (
 
 // Registry tracks resources metadata.
 // BOZO!! Break up deps and merge into single registrar.
-var Registry = map[string]ResourceMeta{
-	"workloads": {
-		DAO:      &dao.Workload{},
-		Renderer: &render.Workload{},
-	},
+var Registry = map[*client.GVR]ResourceMeta{
 	// Custom...
-	"references": {
-		DAO:      &dao.Reference{},
-		Renderer: &render.Reference{},
+	client.WkGVR: {
+		DAO:      new(dao.Workload),
+		Renderer: new(render.Workload),
 	},
-	"dir": {
-		DAO:      &dao.Dir{},
-		Renderer: &render.Dir{},
+	client.RefGVR: {
+		DAO:      new(dao.Reference),
+		Renderer: new(render.Reference),
 	},
-	"pulses": {
-		DAO: &dao.Pulse{},
+	client.DirGVR: {
+		DAO:      new(dao.Dir),
+		Renderer: new(render.Dir),
 	},
-	"helm": {
-		DAO:      &dao.HelmChart{},
-		Renderer: &helm.Chart{},
+	client.PuGVR: {
+		DAO: new(dao.Pulse),
 	},
-	"helm-history": {
-		DAO:      &dao.HelmHistory{},
-		Renderer: &helm.History{},
+	client.HmGVR: {
+		DAO:      new(dao.HelmChart),
+		Renderer: new(helm.Chart),
 	},
-	"containers": {
-		DAO:          &dao.Container{},
-		Renderer:     &render.Container{},
-		TreeRenderer: &xray.Container{},
+	client.HmhGVR: {
+		DAO:      new(dao.HelmHistory),
+		Renderer: new(helm.History),
 	},
-	"scans": {
-		DAO:      &dao.ImageScan{},
-		Renderer: &render.ImageScan{},
+	client.CoGVR: {
+		DAO:          new(dao.Container),
+		Renderer:     new(render.Container),
+		TreeRenderer: new(xray.Container),
 	},
-	"contexts": {
-		DAO:      &dao.Context{},
-		Renderer: &render.Context{},
+	client.ScnGVR: {
+		DAO:      new(dao.ImageScan),
+		Renderer: new(render.ImageScan),
 	},
-	"screendumps": {
-		DAO:      &dao.ScreenDump{},
-		Renderer: &render.ScreenDump{},
+	client.CtGVR: {
+		DAO:      new(dao.Context),
+		Renderer: new(render.Context),
 	},
-	"rbac": {
-		DAO:      &dao.Rbac{},
-		Renderer: &render.Rbac{},
+	client.SdGVR: {
+		DAO:      new(dao.ScreenDump),
+		Renderer: new(render.ScreenDump),
 	},
-	"policy": {
-		DAO:      &dao.Policy{},
-		Renderer: &render.Policy{},
+	client.RbacGVR: {
+		DAO:      new(dao.Rbac),
+		Renderer: new(render.Rbac),
 	},
-	"users": {
-		DAO:      &dao.Subject{},
-		Renderer: &render.Subject{},
+	client.PolGVR: {
+		DAO:      new(dao.Policy),
+		Renderer: new(render.Policy),
 	},
-	"groups": {
-		DAO:      &dao.Subject{},
-		Renderer: &render.Subject{},
+	client.UsrGVR: {
+		DAO:      new(dao.Subject),
+		Renderer: new(render.Subject),
 	},
-	"portforwards": {
-		DAO:      &dao.PortForward{},
-		Renderer: &render.PortForward{},
+	client.GrpGVR: {
+		DAO:      new(dao.Subject),
+		Renderer: new(render.Subject),
 	},
-	"benchmarks": {
-		DAO:      &dao.Benchmark{},
-		Renderer: &render.Benchmark{},
+	client.PfGVR: {
+		DAO:      new(dao.PortForward),
+		Renderer: new(render.PortForward),
 	},
-	"aliases": {
-		DAO:      &dao.Alias{},
-		Renderer: &render.Alias{},
+	client.BeGVR: {
+		DAO:      new(dao.Benchmark),
+		Renderer: new(render.Benchmark),
+	},
+	client.AliGVR: {
+		DAO:      new(dao.Alias),
+		Renderer: new(render.Alias),
 	},
 
 	// Core...
-	"v1/endpoints": {
-		Renderer: &render.Endpoints{},
+	client.EpGVR: {
+		Renderer: new(render.Endpoints),
 	},
-	"v1/pods": {
-		DAO:          &dao.Pod{},
+	client.PodGVR: {
+		DAO:          new(dao.Pod),
 		Renderer:     render.NewPod(),
-		TreeRenderer: &xray.Pod{},
+		TreeRenderer: new(xray.Pod),
 	},
-	"v1/namespaces": {
-		DAO:      &dao.Namespace{},
-		Renderer: &render.Namespace{},
+	client.NsGVR: {
+		DAO:      new(dao.Namespace),
+		Renderer: new(render.Namespace),
 	},
-	"v1/secrets": {
-		DAO:      &dao.Secret{},
-		Renderer: &render.Secret{},
+	client.SecGVR: {
+		DAO:      new(dao.Secret),
+		Renderer: new(render.Secret),
 	},
-	"v1/configmaps": {
-		DAO:      &dao.ConfigMap{},
-		Renderer: &render.ConfigMap{},
+	client.CmGVR: {
+		DAO:      new(dao.ConfigMap),
+		Renderer: new(render.ConfigMap),
 	},
-	"v1/nodes": {
-		DAO:      &dao.Node{},
-		Renderer: &render.Node{},
+	client.NodeGVR: {
+		DAO:      new(dao.Node),
+		Renderer: new(render.Node),
 	},
-	"v1/services": {
-		DAO:          &dao.Service{},
-		Renderer:     &render.Service{},
-		TreeRenderer: &xray.Service{},
+	client.SvcGVR: {
+		DAO:          new(dao.Service),
+		Renderer:     new(render.Service),
+		TreeRenderer: new(xray.Service),
 	},
-	"v1/serviceaccounts": {
-		Renderer: &render.ServiceAccount{},
+	client.SaGVR: {
+		Renderer: new(render.ServiceAccount),
 	},
-	"v1/persistentvolumes": {
-		Renderer: &render.PersistentVolume{},
+	client.PvGVR: {
+		Renderer: new(render.PersistentVolume),
 	},
-	"v1/persistentvolumeclaims": {
-		Renderer: &render.PersistentVolumeClaim{},
+	client.PvcGVR: {
+		Renderer: new(render.PersistentVolumeClaim),
 	},
 
 	// Apps...
-	"apps/v1/deployments": {
-		DAO:          &dao.Deployment{},
-		Renderer:     &render.Deployment{},
-		TreeRenderer: &xray.Deployment{},
+	client.DpGVR: {
+		DAO:          new(dao.Deployment),
+		Renderer:     new(render.Deployment),
+		TreeRenderer: new(xray.Deployment),
 	},
-	"apps/v1/replicasets": {
-		Renderer:     &render.ReplicaSet{},
-		TreeRenderer: &xray.ReplicaSet{},
+	client.RsGVR: {
+		Renderer:     new(render.ReplicaSet),
+		TreeRenderer: new(xray.ReplicaSet),
 	},
-	"apps/v1/statefulsets": {
-		DAO:          &dao.StatefulSet{},
-		Renderer:     &render.StatefulSet{},
-		TreeRenderer: &xray.StatefulSet{},
+	client.StsGVR: {
+		DAO:          new(dao.StatefulSet),
+		Renderer:     new(render.StatefulSet),
+		TreeRenderer: new(xray.StatefulSet),
 	},
-	"apps/v1/daemonsets": {
-		DAO:          &dao.DaemonSet{},
-		Renderer:     &render.DaemonSet{},
-		TreeRenderer: &xray.DaemonSet{},
+	client.DsGVR: {
+		DAO:          new(dao.DaemonSet),
+		Renderer:     new(render.DaemonSet),
+		TreeRenderer: new(xray.DaemonSet),
 	},
 
 	// Extensions...
-	"networking.k8s.io/v1/networkpolicies": {
+	client.NpGVR: {
 		Renderer: &render.NetworkPolicy{},
 	},
 
 	// Batch...
-	"batch/v1/cronjobs": {
-		DAO:      &dao.CronJob{},
-		Renderer: &render.CronJob{},
+	client.CjGVR: {
+		DAO:      new(dao.CronJob),
+		Renderer: new(render.CronJob),
 	},
-	"batch/v1/jobs": {
-		DAO:      &dao.Job{},
-		Renderer: &render.Job{},
+	client.JobGVR: {
+		DAO:      new(dao.Job),
+		Renderer: new(render.Job),
 	},
 
 	// CRDs...
-	"apiextensions.k8s.io/v1/customresourcedefinitions": {
-		DAO:      &dao.CustomResourceDefinition{},
-		Renderer: &render.CustomResourceDefinition{},
+	client.CrdGVR: {
+		DAO:      new(dao.CustomResourceDefinition),
+		Renderer: new(render.CustomResourceDefinition),
 	},
 
 	// Storage...
-	"storage.k8s.io/v1/storageclasses": {
+	client.ScGVR: {
 		Renderer: &render.StorageClass{},
 	},
 
 	// Policy...
-	"policy/v1/poddisruptionbudgets": {
+	client.PdbGVR: {
 		Renderer: &render.PodDisruptionBudget{},
 	},
 
 	// RBAC...
-	"rbac.authorization.k8s.io/v1/clusterroles": {
-		DAO:      &dao.Rbac{},
-		Renderer: &render.ClusterRole{},
+	client.CrGVR: {
+		DAO:      new(dao.Rbac),
+		Renderer: new(render.ClusterRole),
 	},
-	"rbac.authorization.k8s.io/v1/clusterrolebindings": {
-		Renderer: &render.ClusterRoleBinding{},
+	client.CrbGVR: {
+		Renderer: new(render.ClusterRoleBinding),
 	},
-	"rbac.authorization.k8s.io/v1/roles": {
-		Renderer: &render.Role{},
+	client.RoGVR: {
+		Renderer: new(render.Role),
 	},
-	"rbac.authorization.k8s.io/v1/rolebindings": {
-		Renderer: &render.RoleBinding{},
+	client.RobGVR: {
+		Renderer: new(render.RoleBinding),
 	},
 }

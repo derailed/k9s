@@ -147,9 +147,6 @@ const (
 	// Log tracks a log logger key.
 	Log = "log"
 
-	// CO tracks a container logger key.
-	CO = "container"
-
 	// Annotation tracks an annotation logger key.
 	Annotation = "annotation"
 
@@ -212,4 +209,10 @@ const (
 
 	// ID tracks an id logger key.
 	ID = "id"
+
+	// ViewSetting tracks a view setting logger key.
+	ViewSetting = "view-setting"
+
+	// JQExp tracks a jq expression logger key.
+	JQExp = "jq-exp"
 )

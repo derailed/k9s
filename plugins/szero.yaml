@@ -1,0 +1,28 @@
+# Temporarily scale down/up all deployments, statefulsets, and daemonsets in a namespace using szero
+# Uses https://github.com/jadolg/szero
+
+plugins:
+  szero-down:
+    shortCut: Shift-D
+    confirm: true
+    dangerous: true
+    description: Scale all down
+    scopes:
+      - namespace
+    command: sh
+    background: false
+    args:
+      - -c
+      - "szero down --context $CONTEXT --namespace $NAME"
+  szero-up:
+    shortCut: Shift-U
+    confirm: true
+    dangerous: true
+    description: Scale all up
+    scopes:
+      - namespace
+    command: sh
+    background: false
+    args:
+      - -c
+      - "szero up --context $CONTEXT --namespace $NAME"

@@ -51,7 +51,7 @@ func (s *StatusIndicator) StylesChanged(styles *config.Styles) {
 const statusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s[white::]::[darkturquoise::]%s"
 
 // ClusterInfoUpdated notifies the cluster meta was updated.
-func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
+func (s *StatusIndicator) ClusterInfoUpdated(data *model.ClusterMeta) {
 	s.app.QueueUpdateDraw(func() {
 		s.SetPermanent(fmt.Sprintf(
 			statusIndicatorFmt,
@@ -66,7 +66,7 @@ func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
 }
 
 // ClusterInfoChanged notifies the cluster meta was changed.
-func (s *StatusIndicator) ClusterInfoChanged(prev, cur model.ClusterMeta) {
+func (s *StatusIndicator) ClusterInfoChanged(prev, cur *model.ClusterMeta) {
 	if !s.app.IsRunning() {
 		return
 	}

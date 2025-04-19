@@ -121,7 +121,6 @@ func TestFlagsNew(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			l := newArgs(u.i, u.aa)
-			assert.Equal(t, len(u.ll), len(l))
 			assert.Equal(t, u.ll, l)
 		})
 	}

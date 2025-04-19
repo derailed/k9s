@@ -30,10 +30,10 @@ const (
 // ClusterInfoListener registers a listener for model changes.
 type ClusterInfoListener interface {
 	// ClusterInfoChanged notifies the cluster meta was changed.
-	ClusterInfoChanged(prev, curr ClusterMeta)
+	ClusterInfoChanged(prev, curr *ClusterMeta)
 
 	// ClusterInfoUpdated notifies the cluster meta was updated.
-	ClusterInfoUpdated(ClusterMeta)
+	ClusterInfoUpdated(*ClusterMeta)
 }
 
 // ClusterMeta represents cluster meta data.
@@ -46,8 +46,8 @@ type ClusterMeta struct {
 }
 
 // NewClusterMeta returns a new instance.
-func NewClusterMeta() ClusterMeta {
-	return ClusterMeta{
+func NewClusterMeta() *ClusterMeta {
+	return &ClusterMeta{
 		Context:   client.NA,
 		Cluster:   client.NA,
 		User:      client.NA,
@@ -60,7 +60,7 @@ func NewClusterMeta() ClusterMeta {
 }
 
 // Deltas diffs cluster meta return true if different, false otherwise.
-func (c ClusterMeta) Deltas(n ClusterMeta) bool {
+func (c *ClusterMeta) Deltas(n *ClusterMeta) bool {
 	if c.Cpu != n.Cpu || c.Mem != n.Mem || c.Ephemeral != n.Ephemeral {
 		return true
 	}
@@ -77,7 +77,7 @@ func (c ClusterMeta) Deltas(n ClusterMeta) bool {
 type ClusterInfo struct {
 	cluster   *Cluster
 	factory   dao.Factory
-	data      ClusterMeta
+	data      *ClusterMeta
 	version   string
 	cfg       *config.K9s
 	listeners []ClusterInfoListener
@@ -122,9 +122,7 @@ func (c *ClusterInfo) Reset(f dao.Factory) {
 	}
 
 	c.mx.Lock()
-	{
-		c.cluster, c.data = NewCluster(f), NewClusterMeta()
-	}
+	c.cluster, c.data = NewCluster(f), NewClusterMeta()
 	c.mx.Unlock()
 
 	c.Refresh()
@@ -165,9 +163,7 @@ func (c *ClusterInfo) Refresh() {
 		c.fireNoMetaChanged(data)
 	}
 	c.mx.Lock()
-	{
-		c.data = data
-	}
+	c.data = data
 	c.mx.Unlock()
 }
 
@@ -191,13 +187,13 @@ func (c *ClusterInfo) RemoveListener(l ClusterInfoListener) {
 	}
 }
 
-func (c *ClusterInfo) fireMetaChanged(prev, cur ClusterMeta) {
+func (c *ClusterInfo) fireMetaChanged(prev, cur *ClusterMeta) {
 	for _, l := range c.listeners {
 		l.ClusterInfoChanged(prev, cur)
 	}
 }
 
-func (c *ClusterInfo) fireNoMetaChanged(data ClusterMeta) {
+func (c *ClusterInfo) fireNoMetaChanged(data *ClusterMeta) {
 	for _, l := range c.listeners {
 		l.ClusterInfoUpdated(data)
 	}
@@ -210,7 +206,7 @@ func fetchLatestRev() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, k9sGitURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, k9sGitURL, http.NoBody)
 	if err != nil {
 		return "", err
 	}
@@ -228,7 +224,7 @@ func fetchLatestRev() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	m := make(map[string]interface{}, 20)
+	m := make(map[string]any, 20)
 	if err := json.Unmarshal(b, &m); err != nil {
 		return "", err
 	}
