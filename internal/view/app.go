@@ -170,7 +170,7 @@ func (a *App) layout(ctx context.Context) {
 	a.Main.AddPage("main", main, true, false)
 	a.toggleHeader(!a.Config.K9s.IsHeadless(), !a.Config.K9s.IsLogoless())
 	if !a.Config.K9s.IsSplashless() {
-		a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version), true, true)
+		a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version+"j"), true, true)
 	}
 }
 

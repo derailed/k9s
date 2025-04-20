@@ -37,6 +37,7 @@ k9s:
     textWrap: false
     disableAutoscroll: false
     showTime: false
+    decodeJson: false
   thresholds:
     cpu:
       critical: 90
