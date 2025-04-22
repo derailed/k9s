@@ -10,7 +10,6 @@ import (
 	"os"
 	"runtime/debug"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
@@ -104,7 +103,7 @@ func run(*cobra.Command, []string) error {
 
 	slog.SetDefault(slog.New(tint.NewHandler(logFile, &tint.Options{
 		Level:      parseLevel(*k9sFlags.LogLevel),
-		TimeFormat: time.Kitchen,
+		TimeFormat: "15:04:05",
 	})))
 
 	cfg, err := loadConfiguration()
