@@ -562,6 +562,8 @@ func (t *Table) styleTitle() string {
 	if internal.IsLabelSelector(buff) {
 		sel, err := TrimLabelSelector(buff)
 		if err != nil {
+			buff = render.Truncate(buff, maxTruncate)
+		} else if sel != nil {
 			buff = render.Truncate(sel.String(), maxTruncate)
 		}
 	} else if l := t.GetModel().GetLabelSelector(); l != nil && !l.Empty() {
