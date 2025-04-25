@@ -42,11 +42,11 @@ const (
 var editorEnvVars = []string{"K9S_EDITOR", "KUBE_EDITOR", "EDITOR"}
 
 type shellOpts struct {
-	clear, background bool
-	pipes             []string
-	binary            string
-	banner            string
-	args              []string
+	clear, background, forwardInterrupt bool
+	pipes                               []string
+	binary                              string
+	banner                              string
+	args                                []string
 }
 
 func (s shellOpts) String() string {
@@ -185,12 +185,22 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func(cancel context.CancelFunc) {
 		defer slog.Debug("Got signal canceled")
-		select {
-		case sig := <-sigChan:
-			slog.Debug("Command canceled with signal", slogs.Sig, sig)
-			cancel()
-		case <-ctx.Done():
-			slog.Debug("Signal context canceled!")
+		keepListening := true
+
+		for keepListening {
+			select {
+			case sig := <-sigChan:
+				if opts.forwardInterrupt && sig == os.Interrupt {
+					slog.Debug("Skipping interrupt handling, forwarding to child!")
+					continue
+				}
+				slog.Debug("Command canceled with signal", slogs.Sig, sig)
+				keepListening = false
+				cancel()
+			case <-ctx.Done():
+				keepListening = false
+				slog.Debug("Signal context canceled!")
+			}
 		}
 		interrupted = true
 	}(cancel)
