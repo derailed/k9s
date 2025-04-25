@@ -190,10 +190,11 @@ func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 
 		cb := func() {
 			opts := shellOpts{
-				binary:     p.Command,
-				background: p.Background,
-				pipes:      p.Pipes,
-				args:       args,
+				binary:           p.Command,
+				background:       p.Background,
+				pipes:            p.Pipes,
+				args:             args,
+				forwardInterrupt: p.ForwardInterrupt,
 			}
 			suspend, errChan, statusChan := run(r.App(), &opts)
 			if !suspend {
