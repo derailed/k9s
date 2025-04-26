@@ -157,6 +157,7 @@ func capacityToNumber(capacity string) int64 {
 // Less return true if c1 <= c2.
 func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 	var less bool
+	isDurationFormat := isDurationFormat(v1) && isDurationFormat(v2)
 	switch {
 	case isNumber:
 		less = lessNumber(v1, v2)
@@ -164,6 +165,8 @@ func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 		less = lessDuration(v1, v2)
 	case isCapacity:
 		less = lessCapacity(v1, v2)
+	case isDurationFormat:
+		less = lessDuration(v1, v2)
 	default:
 		less = sortorder.NaturalLess(v1, v2)
 	}
@@ -189,4 +192,34 @@ func lessNumber(s1, s2 string) bool {
 	v1, v2 := strings.ReplaceAll(s1, ",", ""), strings.ReplaceAll(s2, ",", "")
 
 	return sortorder.NaturalLess(v1, v2)
+}
+
+// fields like LAST SEEN, AGE, etc. are returned as string from the K8 API
+// these must be sorted based on their duration rather than literal value
+func isDurationFormat(s string) bool {
+	if s == "" || s == NAValue {
+		return false
+	}
+
+	parts := strings.Fields(s)
+	if len(parts) != 1 {
+		return false
+	}
+
+	current := ""
+	for _, r := range s {
+		switch r {
+		case 'h', 'm', 's', 'd', 'y':
+			if current == "" {
+				return false
+			}
+			current = ""
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			current += string(r)
+		default:
+			return false
+		}
+	}
+
+	return current == ""
 }
