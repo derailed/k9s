@@ -26,3 +26,22 @@ plugins:
         break
         fi
         done
+  krr-ns:
+    shortCut: Shift-K
+    description: Get krr
+    scopes:
+      - namespaces
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        krr simple --cluster $CONTEXT -n $RESOURCE_NAME
+        echo "Press 'q' to exit"
+        while : ; do
+        read -n 1 k <&1
+        if [[ $k = q ]] ; then
+        break
+        fi
+        done
