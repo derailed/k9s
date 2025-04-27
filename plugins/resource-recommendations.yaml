@@ -11,6 +11,7 @@ plugins:
       - deployments
       - daemonsets
       - statefulsets
+      - cronjobs
     command: bash
     background: false
     confirm: false
