@@ -4,12 +4,15 @@
 package render
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
@@ -196,6 +199,30 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	}
 
 	return nil
+}
+
+// Healthy checks component health.
+func (p Pod) Healthy(_ context.Context, o any) error {
+	pwm, ok := o.(*PodWithMetrics)
+	if !ok {
+		slog.Error("Expected *PodWithMetrics", slogs.Type, fmt.Sprintf("%T", o))
+		return nil
+	}
+	var st v1.PodStatus
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["status"].(map[string]any), &st); err != nil {
+		slog.Error("Failed to convert unstructured to PodState", slogs.Error, err)
+		return nil
+	}
+	spec := new(v1.PodSpec)
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["spec"].(map[string]any), spec); err != nil {
+		slog.Error("Failed to convert unstructured to PodSpec", slogs.Error, err)
+		return nil
+	}
+	dt := pwm.Raw.GetDeletionTimestamp()
+	phase := p.Phase(dt, spec, &st)
+	cr, _, _, _ := p.Statuses(st.ContainerStatuses)
+
+	return p.diagnose(phase, cr, len(st.ContainerStatuses))
 }
 
 func (*Pod) diagnose(phase string, cr, ct int) error {

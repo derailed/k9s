@@ -37,6 +37,8 @@ var (
 	PdbGVR = NewGVR("policy/v1/poddisruptionbudgets")
 	PspGVR = NewGVR("policy/v1beta1/podsecuritypolicies")
 
+	IngGVR = NewGVR("networking.k8s.io/v1/ingresses")
+
 	// Metrics...
 	NmxGVR = NewGVR("metrics.k8s.io/v1beta1/nodes")
 	PmxGVR = NewGVR("metrics.k8s.io/v1beta1/pods")

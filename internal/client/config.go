@@ -6,14 +6,12 @@ package client
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -51,7 +49,6 @@ func (c *Config) CallTimeout() time.Duration {
 	if err != nil {
 		return DefaultCallTimeoutDuration
 	}
-	slog.Debug("APIServer timeout", slogs.Duration, dur)
 
 	return dur
 }

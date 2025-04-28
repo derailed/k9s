@@ -123,6 +123,9 @@ var Registry = map[*client.GVR]ResourceMeta{
 	client.PvcGVR: {
 		Renderer: new(render.PersistentVolumeClaim),
 	},
+	client.EvGVR: {
+		Renderer: new(render.Event),
+	},
 
 	// Apps...
 	client.DpGVR: {

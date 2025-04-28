@@ -4,13 +4,16 @@
 package helm
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -66,6 +69,16 @@ func (c Chart) Render(o any, _ string, r *model1.Row) error {
 	}
 
 	return nil
+}
+
+// Healthy checks component health.
+func (c Chart) Healthy(_ context.Context, o any) error {
+	h, ok := o.(*ReleaseRes)
+	if !ok {
+		slog.Error("Expected *ReleaseRes, but got", slogs.Type, fmt.Sprintf("%T", o))
+	}
+
+	return c.diagnose(h.Release.Info.Status.String())
 }
 
 func (Chart) diagnose(s string) error {

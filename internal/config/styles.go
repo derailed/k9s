@@ -242,6 +242,8 @@ type (
 		DefaultDialColors  Colors            `json:"defaultDialColors" yaml:"defaultDialColors"`
 		DefaultChartColors Colors            `json:"defaultChartColors" yaml:"defaultChartColors"`
 		ResourceColors     map[string]Colors `json:"resourceColors" yaml:"resourceColors"`
+		FocusFgColor       Color             `yaml:"focusFgColor"`
+		FocusBgColor       Color             `yaml:"focusBgColor"`
 	}
 )
 
@@ -293,6 +295,8 @@ func newCharts() Charts {
 			CPU: {Color("dodgerblue"), Color("darkslateblue")},
 			MEM: {Color("yellow"), Color("goldenrod")},
 		},
+		FocusFgColor: "white",
+		FocusBgColor: "aqua",
 	}
 }
 

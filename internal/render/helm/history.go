@@ -17,11 +17,6 @@ import (
 // History renders a History chart to screen.
 type History struct{}
 
-// Healthy checks component health.
-func (History) Healthy(context.Context, any) error {
-	return nil
-}
-
 func (History) SetViewSetting(*config.ViewSetting) {}
 
 // IsGeneric identifies a generic handler.
@@ -64,6 +59,11 @@ func (c History) Render(o any, _ string, r *model1.Row) error {
 		render.AsStatus(c.diagnose(h.Release.Info.Status.String())),
 	}
 
+	return nil
+}
+
+// Healthy checks component health.
+func (History) Healthy(context.Context, any) error {
 	return nil
 }
 
