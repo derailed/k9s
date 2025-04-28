@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/fvbommel/sortorder"
@@ -25,23 +26,33 @@ type GVR struct {
 	raw, g, v, r, sr string
 }
 
-type gvrCache map[string]*GVR
+type gvrCache struct {
+	data map[string]*GVR
+	sync.RWMutex
+}
 
-func (c gvrCache) add(gvr *GVR) {
+func (c *gvrCache) add(gvr *GVR) {
 	if c.get(gvr.String()) == nil {
-		c[gvr.String()] = gvr
+		c.Lock()
+		c.data[gvr.String()] = gvr
+		c.Unlock()
 	}
 }
 
-func (c gvrCache) get(gvrs string) *GVR {
-	if gvr, ok := c[gvrs]; ok {
+func (c *gvrCache) get(gvrs string) *GVR {
+	c.RLock()
+	defer c.RUnlock()
+
+	if gvr, ok := c.data[gvrs]; ok {
 		return gvr
 	}
 
 	return nil
 }
 
-var gvrsCache = make(gvrCache)
+var gvrsCache = gvrCache{
+	data: make(map[string]*GVR),
+}
 
 // NewGVR builds a new gvr from a group, version, resource.
 func NewGVR(s string) *GVR {
