@@ -135,6 +135,23 @@ func describeResource(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
 	}
 }
 
+func showReplicasets(app *App, path string, labelSel labels.Selector, fieldSel string) {
+	v := NewReplicaSet(client.RsGVR)
+	v.SetContextFn(func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		return context.WithValue(ctx, internal.KeyFields, fieldSel)
+	})
+	v.SetLabelSelector(labelSel)
+
+	ns, _ := client.Namespaced(path)
+	if err := app.Config.SetActiveNamespace(ns); err != nil {
+		slog.Error("Unable to set active namespace during show replicasets", slogs.Error, err)
+	}
+	if err := app.inject(v, false); err != nil {
+		app.Flash().Err(err)
+	}
+}
+
 func showPods(app *App, path string, labelSel labels.Selector, fieldSel string) {
 	v := NewPod(client.PodGVR)
 	v.SetContextFn(podCtx(app, path, fieldSel))
