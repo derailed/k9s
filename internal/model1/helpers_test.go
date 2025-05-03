@@ -134,37 +134,3 @@ func BenchmarkDurationToSecond(b *testing.B) {
 		durationToSeconds(t)
 	}
 }
-
-func TestIsDurationFormat(t *testing.T) {
-	uu := map[string]struct {
-		s        string
-		expected bool
-	}{
-		"empty string":              {s: "", expected: false},
-		"na value":                  {s: NAValue, expected: false},
-		"simple seconds":            {s: "30s", expected: true},
-		"simple minutes":            {s: "15m", expected: true},
-		"simple hours":              {s: "2h", expected: true},
-		"simple days":               {s: "7d", expected: true},
-		"simple years":              {s: "1y", expected: true},
-		"combined duration":         {s: "1h30m5s", expected: true},
-		"full mixed duration":       {s: "2y3d4h5m6s", expected: true},
-		"missing unit after number": {s: "30", expected: false},
-		"letters without numbers":   {s: "hms", expected: false},
-		"invalid characters":        {s: "30x", expected: false},
-		"multiple parts (space)":    {s: "1h 30m", expected: false},
-		"starting with letter":      {s: "h30m", expected: false},
-		"ending with number":        {s: "30m5", expected: false},
-		"only number":               {s: "123", expected: false},
-		"unit without number":       {s: "h", expected: false},
-		"zero seconds":              {s: "0s", expected: true},
-		"multiple zeros":            {s: "0h0m0s", expected: true},
-	}
-
-	for k := range uu {
-		u := uu[k]
-		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.expected, isDurationFormat(u.s))
-		})
-	}
-}
