@@ -111,6 +111,11 @@ func TestFlagsNew(t *testing.T) {
 			aa: []string{"Dev"},
 			ll: args{contextKey: "Dev"},
 		},
+		"human readable ctx name": {
+			i:  NewInterpreter("ctx"),
+			aa: []string{"Dev", "Env"},
+			ll: args{contextKey: "Dev Env"},
+		},
 		"bork": {
 			i:  NewInterpreter("apply -f"),
 			ll: args{},

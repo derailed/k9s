@@ -57,7 +57,7 @@ func newArgs(p *Interpreter, aa []string) args {
 		default:
 			switch {
 			case p.IsContextCmd():
-				arguments[contextKey] = a
+				arguments[contextKey] = strings.Join(aa, " ")
 			case p.IsDirCmd():
 				if _, ok := arguments[topicKey]; !ok {
 					arguments[topicKey] = a
