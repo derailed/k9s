@@ -11,6 +11,7 @@ plugins:
       - deployments
       - daemonsets
       - statefulsets
+      - cronjobs
     command: bash
     background: false
     confirm: false
@@ -19,6 +20,25 @@ plugins:
       - |
         LABELS=$(kubectl get $RESOURCE_NAME $NAME -n $NAMESPACE  --context $CONTEXT  --show-labels | awk '{print $NF}' | awk '{if(NR>1)print}')
         krr simple --cluster $CONTEXT --selector $LABELS 
+        echo "Press 'q' to exit"
+        while : ; do
+        read -n 1 k <&1
+        if [[ $k = q ]] ; then
+        break
+        fi
+        done
+  krr-ns:
+    shortCut: Shift-K
+    description: Get krr
+    scopes:
+      - namespaces
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        krr simple --cluster $CONTEXT -n $RESOURCE_NAME
         echo "Press 'q' to exit"
         while : ; do
         read -n 1 k <&1

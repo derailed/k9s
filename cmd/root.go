@@ -104,7 +104,7 @@ func run(*cobra.Command, []string) error {
 
 	slog.SetDefault(slog.New(tint.NewHandler(logFile, &tint.Options{
 		Level:      parseLevel(*k9sFlags.LogLevel),
-		TimeFormat: time.Kitchen,
+		TimeFormat: time.RFC3339,
 	})))
 
 	cfg, err := loadConfiguration()
