@@ -138,6 +138,73 @@ func TestGenericCustRender(t *testing.T) {
 	}
 }
 
+func TestTableDefaultHeader(t *testing.T) {
+	uu := map[string]struct {
+		table   *metav1beta1.Table
+		eHeader model1.Header
+	}{
+		"standardColumns": {
+			table: &metav1beta1.Table{
+				ColumnDefinitions: []metav1beta1.TableColumnDefinition{
+					{Name: "name"},
+					{Name: "ready"},
+					{Name: "status"},
+				},
+			},
+			eHeader: model1.Header{
+				model1.HeaderColumn{Name: "NAME"},
+				model1.HeaderColumn{Name: "READY"},
+				model1.HeaderColumn{Name: "STATUS"},
+			},
+		},
+		"withAge": {
+			table: &metav1beta1.Table{
+				ColumnDefinitions: []metav1beta1.TableColumnDefinition{
+					{Name: "name"},
+					{Name: "Age"},
+					{Name: "status"},
+				},
+			},
+			eHeader: model1.Header{
+				model1.HeaderColumn{Name: "NAME"},
+				model1.HeaderColumn{Name: "STATUS"},
+				model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+			},
+		},
+		"withDurationColumns": {
+			table: &metav1beta1.Table{
+				ColumnDefinitions: []metav1beta1.TableColumnDefinition{
+					{Name: "name"},
+					{Name: "Last Seen"},
+					{Name: "First Seen"},
+					{Name: "count"},
+				},
+			},
+			eHeader: model1.Header{
+				model1.HeaderColumn{Name: "NAME"},
+				model1.HeaderColumn{Name: "LAST SEEN", Attrs: model1.Attrs{Time: true}},
+				model1.HeaderColumn{Name: "FIRST SEEN", Attrs: model1.Attrs{Time: true}},
+				model1.HeaderColumn{Name: "COUNT"},
+			},
+		},
+		"nilTable": {
+			table:   nil,
+			eHeader: model1.Header{},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			table := render.Table{}
+			table.SetTable("", u.table)
+			header := table.Header("")
+
+			assert.Equal(t, u.eHeader, header)
+		})
+	}
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
