@@ -14,14 +14,12 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const ageTableCol = "Age"
 
-var durationColsSet = map[string]struct{}{
-	"Last Seen":  {},
-	"First Seen": {},
-}
+var DurationColumns = sets.New("First Seen", "Last Seen")
 
 // Table renders a tabular resource to screen.
 type Table struct {
@@ -75,8 +73,7 @@ func (t *Table) defaultHeader() model1.Header {
 			t.setAgeIndex(i)
 			continue
 		}
-		_, isDuration := durationColsSet[c.Name]
-		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name), Attrs: model1.Attrs{Time: isDuration}})
+		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name), Attrs: model1.Attrs{Time: DurationColumns.Has(c.Name)}})
 	}
 	if t.getAgeIndex() > 0 {
 		h = append(h, model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}})
