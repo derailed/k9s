@@ -160,6 +160,10 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	_, _, irc, _ := p.Statuses(st.InitContainerStatuses)
 	cr, _, rc, lr := p.Statuses(st.ContainerStatuses)
 
+	rcr, rcc := p.initContainerCounts(spec.InitContainers, st.InitContainerStatuses)
+	cr += rcr
+	cc := len(spec.Containers) + rcc
+
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
 		ccmx = pwm.MX.Containers
@@ -175,7 +179,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		n,
 		computeVulScore(ns, pwm.Raw.GetLabels(), spec),
 		"●",
-		strconv.Itoa(cr) + "/" + strconv.Itoa(len(spec.Containers)),
+		strconv.Itoa(cr) + "/" + strconv.Itoa(cc),
 		phase,
 		strconv.Itoa(rc + irc),
 		ToAge(lr),
@@ -194,7 +198,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		asReadinessGate(spec, &st),
 		p.mapQOS(st.QOSClass),
 		mapToStr(pwm.Raw.GetLabels()),
-		AsStatus(p.diagnose(phase, cr, len(st.ContainerStatuses))),
+		AsStatus(p.diagnose(phase, cr, cc)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
@@ -222,7 +226,11 @@ func (p Pod) Healthy(_ context.Context, o any) error {
 	phase := p.Phase(dt, spec, &st)
 	cr, _, _, _ := p.Statuses(st.ContainerStatuses)
 
-	return p.diagnose(phase, cr, len(st.ContainerStatuses))
+	rcr, rcc := p.initContainerCounts(spec.InitContainers, st.InitContainerStatuses)
+	cr += rcr
+	cc := len(spec.Containers) + rcc
+
+	return p.diagnose(phase, cr, cc)
 }
 
 func (*Pod) diagnose(phase string, cr, ct int) error {
@@ -382,6 +390,19 @@ func (*Pod) Statuses(cc []v1.ContainerStatus) (cr, ct, rc int, latest metav1.Tim
 		}
 	}
 
+	return
+}
+
+func (*Pod) initContainerCounts(cc []v1.Container, cos []v1.ContainerStatus) (ready, total int) {
+	for i := range cos {
+		if !restartableInitCO(cc[i].RestartPolicy) {
+			continue
+		}
+		total++
+		if cos[i].Ready {
+			ready++
+		}
+	}
 	return
 }
 
