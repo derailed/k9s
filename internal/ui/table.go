@@ -560,10 +560,7 @@ func (t *Table) styleTitle() string {
 
 	buff := t.cmdBuff.GetText()
 	if internal.IsLabelSelector(buff) {
-		sel, err := TrimLabelSelector(buff)
-		if err != nil {
-			buff = render.Truncate(buff, maxTruncate)
-		} else if sel != nil {
+		if sel, err := TrimLabelSelector(buff); err == nil {
 			buff = render.Truncate(sel.String(), maxTruncate)
 		}
 	} else if l := t.GetModel().GetLabelSelector(); l != nil && !l.Empty() {
@@ -571,7 +568,6 @@ func (t *Table) styleTitle() string {
 	} else if buff != "" {
 		buff = render.Truncate(buff, maxTruncate)
 	}
-
 	if buff == "" {
 		return title
 	}
