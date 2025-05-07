@@ -11,7 +11,6 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 )
 
@@ -33,7 +32,7 @@ func NewStatusIndicator(app *App, styles *config.Styles) *StatusIndicator {
 		styles:   styles,
 	}
 	s.SetTextAlign(tview.AlignCenter)
-	s.SetTextColor(tcell.ColorWhite)
+	s.SetTextColor(styles.FgColor())
 	s.SetBackgroundColor(styles.BgColor())
 	s.SetDynamicColors(true)
 	styles.AddListener(&s)
@@ -48,18 +47,24 @@ func (s *StatusIndicator) StylesChanged(styles *config.Styles) {
 	s.SetTextColor(styles.FgColor())
 }
 
-const statusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s[white::]::[darkturquoise::]%s"
+const statusIndicatorFmt = "[%s::b]K9s [%s::]%s [%s::]%s:%s:%s [%s::]%s[%s::]::[%s::]%s"
 
 // ClusterInfoUpdated notifies the cluster meta was updated.
 func (s *StatusIndicator) ClusterInfoUpdated(data *model.ClusterMeta) {
 	s.app.QueueUpdateDraw(func() {
 		s.SetPermanent(fmt.Sprintf(
 			statusIndicatorFmt,
+			s.styles.Body().LogoColor.String(),
+			s.styles.K9s.Info.K9sRevColor.String(),
 			data.K9sVer,
+			s.styles.K9s.Info.FgColor.String(),
 			data.Context,
 			data.Cluster,
 			data.K8sVer,
+			s.styles.K9s.Info.CPUColor.String(),
 			render.PrintPerc(data.Cpu),
+			s.styles.Body().FgColor.String(),
+			s.styles.K9s.Info.MEMColor.String(),
 			render.PrintPerc(data.Mem),
 		))
 	})
@@ -73,11 +78,17 @@ func (s *StatusIndicator) ClusterInfoChanged(prev, cur *model.ClusterMeta) {
 	s.app.QueueUpdateDraw(func() {
 		s.SetPermanent(fmt.Sprintf(
 			statusIndicatorFmt,
+			s.styles.Body().LogoColor.String(),
+			s.styles.K9s.Info.K9sRevColor.String(),
 			cur.K9sVer,
+			s.styles.K9s.Info.FgColor.String(),
 			cur.Context,
 			cur.Cluster,
 			cur.K8sVer,
+			s.styles.K9s.Info.CPUColor.String(),
 			AsPercDelta(prev.Cpu, cur.Cpu),
+			s.styles.Body().FgColor.String(),
+			s.styles.K9s.Info.MEMColor.String(),
 			AsPercDelta(prev.Cpu, cur.Mem),
 		))
 	})

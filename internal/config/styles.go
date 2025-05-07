@@ -185,6 +185,9 @@ type (
 	Info struct {
 		SectionColor Color `json:"sectionColor" yaml:"sectionColor"`
 		FgColor      Color `json:"fgColor" yaml:"fgColor"`
+		CPUColor     Color `json:"cpuColor" yaml:"cpuColor"`
+		MEMColor     Color `json:"memColor" yaml:"memColor"`
+		K9sRevColor  Color `json:"k9sRevColor" yaml:"k9sRevColor"`
 	}
 
 	// Border tracks border styles.
@@ -403,6 +406,9 @@ func newInfo() Info {
 	return Info{
 		SectionColor: "white",
 		FgColor:      "orange",
+		CPUColor:     "lawngreen",
+		MEMColor:     "darkturquoise",
+		K9sRevColor:  "aqua",
 	}
 }
 
