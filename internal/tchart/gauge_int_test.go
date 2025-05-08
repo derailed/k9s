@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright Authors of K9s
-
 package tchart
 
 import (
@@ -11,7 +8,7 @@ import (
 
 func TestComputeDeltas(t *testing.T) {
 	uu := map[string]struct {
-		d1, d2 int64
+		d1, d2 int
 		e      delta
 	}{
 		"same": {

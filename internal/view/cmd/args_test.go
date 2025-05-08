@@ -19,61 +19,73 @@ func TestFlagsNew(t *testing.T) {
 			i:  NewInterpreter("po"),
 			ll: make(args),
 		},
+
 		"ns": {
 			i:  NewInterpreter("po"),
 			aa: []string{"ns1"},
 			ll: args{nsKey: "ns1"},
 		},
+
 		"ns+spaces": {
 			i:  NewInterpreter("po"),
 			aa: []string{" ns1 "},
 			ll: args{nsKey: "ns1"},
 		},
+
 		"filter": {
 			i:  NewInterpreter("po"),
 			aa: []string{"/fred"},
 			ll: args{filterKey: "fred"},
 		},
+
 		"inverse-filter": {
 			i:  NewInterpreter("po"),
 			aa: []string{"/!fred"},
 			ll: args{filterKey: "!fred"},
 		},
+
 		"fuzzy-filter": {
 			i:  NewInterpreter("po"),
 			aa: []string{"-f", "fred"},
 			ll: args{fuzzyKey: "fred"},
 		},
+
 		"fuzzy-filter-nospace": {
 			i:  NewInterpreter("po"),
 			aa: []string{"-ffred"},
 			ll: args{fuzzyKey: "fred"},
 		},
+
 		"filter+ns": {
 			i:  NewInterpreter("po"),
 			aa: []string{"/fred", "  ns1 "},
 			ll: args{nsKey: "ns1", filterKey: "fred"},
 		},
+
 		"label": {
 			i:  NewInterpreter("po"),
 			aa: []string{"app=fred"},
 			ll: args{labelKey: "app=fred"},
 		},
+
 		"label-toast": {
 			i:  NewInterpreter("po"),
 			aa: []string{"="},
 			ll: make(args),
 		},
+
 		"multi-labels": {
 			i:  NewInterpreter("po"),
 			aa: []string{"app=fred,blee=duh"},
 			ll: args{labelKey: "app=fred,blee=duh"},
 		},
+
 		"label+ns": {
 			i:  NewInterpreter("po"),
 			aa: []string{"a=b,c=d", "  ns1  "},
 			ll: args{labelKey: "a=b,c=d", nsKey: "ns1"},
 		},
+
 		"full-monty": {
 			i:  NewInterpreter("po"),
 			aa: []string{"app=fred", "ns1", "-f", "blee", "/zorg"},
@@ -84,6 +96,7 @@ func TestFlagsNew(t *testing.T) {
 				nsKey:     "ns1",
 			},
 		},
+
 		"full-monty+ctx": {
 			i:  NewInterpreter("po"),
 			aa: []string{"app=fred", "ns1", "-f", "blee", "/zorg", "@ctx1"},
@@ -95,6 +108,43 @@ func TestFlagsNew(t *testing.T) {
 				contextKey: "ctx1",
 			},
 		},
+
+		"full-monty+ctx-with-space": {
+			i:  NewInterpreter("po"),
+			aa: []string{"app=fred", "ns1", "-f", "blee", "/zorg", "@zorg fred"},
+			ll: args{
+				filterKey:  "zorg",
+				fuzzyKey:   "blee",
+				labelKey:   "app=fred",
+				nsKey:      "ns1",
+				contextKey: "zorg fred",
+			},
+		},
+
+		"full-monty+ctx-first": {
+			i:  NewInterpreter("po"),
+			aa: []string{"@ctx1", "app=fred", "ns1", "-f", "blee", "/zorg"},
+			ll: args{
+				filterKey:  "zorg",
+				fuzzyKey:   "blee",
+				labelKey:   "app=fred",
+				nsKey:      "ns1",
+				contextKey: "ctx1",
+			},
+		},
+
+		"full-monty+ctx-with-space-middle": {
+			i:  NewInterpreter("po"),
+			aa: []string{"app=fred", "@ctx1", "ns1", "-f", "blee", "/zorg"},
+			ll: args{
+				filterKey:  "zorg",
+				fuzzyKey:   "blee",
+				labelKey:   "app=fred",
+				nsKey:      "ns1",
+				contextKey: "ctx1",
+			},
+		},
+
 		"caps": {
 			i:  NewInterpreter("po"),
 			aa: []string{"app=fred", "ns1", "-f", "blee", "/zorg", "@Dev"},
@@ -106,12 +156,14 @@ func TestFlagsNew(t *testing.T) {
 				contextKey: "Dev",
 			},
 		},
+
 		"ctx": {
 			i:  NewInterpreter("ctx"),
 			aa: []string{"Dev"},
 			ll: args{contextKey: "Dev"},
 		},
-		"bork": {
+
+		"toast": {
 			i:  NewInterpreter("apply -f"),
 			ll: args{},
 		},

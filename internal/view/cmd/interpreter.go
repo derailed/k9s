@@ -130,11 +130,11 @@ func (c *Interpreter) IsRBACCmd() bool {
 
 // ContextArg returns context cmd arg.
 func (c *Interpreter) ContextArg() (string, bool) {
-	if !c.IsContextCmd() {
-		return "", false
+	if c.IsContextCmd() || strings.Contains(c.line, contextFlag) {
+		return c.args[contextKey], true
 	}
 
-	return c.args[contextKey], true
+	return "", false
 }
 
 // ResetContextArg deletes context arg.

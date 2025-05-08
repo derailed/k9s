@@ -4,12 +4,15 @@
 package render
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
@@ -157,6 +160,10 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	_, _, irc, _ := p.Statuses(st.InitContainerStatuses)
 	cr, _, rc, lr := p.Statuses(st.ContainerStatuses)
 
+	rcr, rcc := p.initContainerCounts(spec.InitContainers, st.InitContainerStatuses)
+	cr += rcr
+	cc := len(spec.Containers) + rcc
+
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
 		ccmx = pwm.MX.Containers
@@ -172,7 +179,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		n,
 		computeVulScore(ns, pwm.Raw.GetLabels(), spec),
 		"●",
-		strconv.Itoa(cr) + "/" + strconv.Itoa(len(spec.Containers)),
+		strconv.Itoa(cr) + "/" + strconv.Itoa(cc),
 		phase,
 		strconv.Itoa(rc + irc),
 		ToAge(lr),
@@ -191,11 +198,39 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		asReadinessGate(spec, &st),
 		p.mapQOS(st.QOSClass),
 		mapToStr(pwm.Raw.GetLabels()),
-		AsStatus(p.diagnose(phase, cr, len(st.ContainerStatuses))),
+		AsStatus(p.diagnose(phase, cr, cc)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
 	return nil
+}
+
+// Healthy checks component health.
+func (p Pod) Healthy(_ context.Context, o any) error {
+	pwm, ok := o.(*PodWithMetrics)
+	if !ok {
+		slog.Error("Expected *PodWithMetrics", slogs.Type, fmt.Sprintf("%T", o))
+		return nil
+	}
+	var st v1.PodStatus
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["status"].(map[string]any), &st); err != nil {
+		slog.Error("Failed to convert unstructured to PodState", slogs.Error, err)
+		return nil
+	}
+	spec := new(v1.PodSpec)
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object["spec"].(map[string]any), spec); err != nil {
+		slog.Error("Failed to convert unstructured to PodSpec", slogs.Error, err)
+		return nil
+	}
+	dt := pwm.Raw.GetDeletionTimestamp()
+	phase := p.Phase(dt, spec, &st)
+	cr, _, _, _ := p.Statuses(st.ContainerStatuses)
+
+	rcr, rcc := p.initContainerCounts(spec.InitContainers, st.InitContainerStatuses)
+	cr += rcr
+	cc := len(spec.Containers) + rcc
+
+	return p.diagnose(phase, cr, cc)
 }
 
 func (*Pod) diagnose(phase string, cr, ct int) error {
@@ -355,6 +390,19 @@ func (*Pod) Statuses(cc []v1.ContainerStatus) (cr, ct, rc int, latest metav1.Tim
 		}
 	}
 
+	return
+}
+
+func (*Pod) initContainerCounts(cc []v1.Container, cos []v1.ContainerStatus) (ready, total int) {
+	for i := range cos {
+		if !restartableInitCO(cc[i].RestartPolicy) {
+			continue
+		}
+		total++
+		if cos[i].Ready {
+			ready++
+		}
+	}
 	return
 }
 

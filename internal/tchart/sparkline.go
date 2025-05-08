@@ -1,12 +1,10 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright Authors of K9s
-
 package tchart
 
 import (
 	"fmt"
 	"image"
 	"math"
+	"time"
 
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -14,63 +12,106 @@ import (
 
 var sparks = []rune{'▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
 
+const axisColor = "#ff0066"
+
 type block struct {
 	full    int
 	partial rune
-}
-
-type blocks struct {
-	s1, s2 block
-}
-
-// Metric tracks two series.
-type Metric struct {
-	S1, S2 int64
-}
-
-// MaxDigits returns the max series number of digits.
-func (m Metric) MaxDigits() int {
-	s := fmt.Sprintf("%d", m.Max())
-
-	return len(s)
-}
-
-// Max returns the max of the series.
-func (m Metric) Max() int64 {
-	return int64(math.Max(float64(m.S1), float64(m.S2)))
-}
-
-// Sum returns the sum of series.
-func (m Metric) Sum() int64 {
-	return m.S1 + m.S2
 }
 
 // SparkLine represents a sparkline component.
 type SparkLine struct {
 	*Component
 
-	data        []Metric
-	multiSeries bool
+	series     MetricSeries
+	max        float64
+	unit       string
+	colorIndex int
 }
 
 // NewSparkLine returns a new graph.
-func NewSparkLine(id string) *SparkLine {
+func NewSparkLine(id, unit string) *SparkLine {
 	return &SparkLine{
-		Component:   NewComponent(id),
-		multiSeries: true,
+		Component: NewComponent(id),
+		series:    make(MetricSeries),
+		unit:      unit,
 	}
 }
 
-// SetMultiSeries indicates if multi series are in effect or not.
-func (s *SparkLine) SetMultiSeries(b bool) {
-	s.multiSeries = b
+// GetSeriesColorNames returns series colors by name.
+func (s *SparkLine) GetSeriesColorNames() []string {
+	s.mx.RLock()
+	defer s.mx.RUnlock()
+
+	nn := make([]string, 0, len(s.seriesColors))
+	for _, color := range s.seriesColors {
+		for name, co := range tcell.ColorNames {
+			if co == color {
+				nn = append(nn, name)
+			}
+		}
+	}
+	if len(nn) < 3 {
+		nn = append(nn, "green", "orange", "orangered")
+	}
+
+	return nn
 }
 
+func (s *SparkLine) SetColorIndex(n int) {
+	s.colorIndex = n
+}
+
+func (s *SparkLine) SetMax(m float64) {
+	if m > s.max {
+		s.max = m
+	}
+}
+
+func (s *SparkLine) GetMax() float64 {
+	return s.max
+}
+
+func (*SparkLine) Add(int, int) {}
+
 // Add adds a metric.
-func (s *SparkLine) Add(m Metric) {
+func (s *SparkLine) AddMetric(t time.Time, f float64) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
-	s.data = append(s.data, m)
+	s.series.Add(t, f)
+}
+
+func (s *SparkLine) printYAxis(screen tcell.Screen, rect image.Rectangle) {
+	style := tcell.StyleDefault.Foreground(tcell.GetColor(axisColor)).Background(s.bgColor)
+	for y := range rect.Dy() - 3 {
+		screen.SetContent(rect.Min.X, rect.Min.Y+y, tview.BoxDrawingsLightVertical, nil, style)
+	}
+	screen.SetContent(rect.Min.X, rect.Min.Y+rect.Dy()-3, tview.BoxDrawingsLightUpAndRight, nil, style)
+}
+
+func (s *SparkLine) printXAxis(screen tcell.Screen, rect image.Rectangle) time.Time {
+	dx, t := rect.Dx()-1, time.Now()
+	vals := make([]string, 0, dx)
+	for i := dx; i > 0; i -= 10 {
+		label := fmt.Sprintf("%02d:%02d", t.Hour(), t.Minute())
+		vals = append(vals, label)
+		t = t.Add(-(10 * time.Minute))
+	}
+
+	y := rect.Max.Y - 2
+	for _, v := range vals {
+		if dx <= 2 {
+			break
+		}
+		tview.Print(screen, v, rect.Min.X+dx-5, y, 6, tview.AlignCenter, tcell.ColorOrange)
+		dx -= 10
+	}
+	style := tcell.StyleDefault.Foreground(tcell.GetColor(axisColor)).Background(s.bgColor)
+	for x := 1; x < rect.Dx()-1; x++ {
+		screen.SetContent(rect.Min.X+x, rect.Max.Y-3, tview.BoxDrawingsLightHorizontal, nil, style)
+	}
+
+	return t
 }
 
 // Draw draws the graph.
@@ -80,54 +121,50 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 
-	if len(s.data) == 0 {
-		return
+	rect := s.asRect()
+	s.printXAxis(screen, rect)
+
+	padX := 1
+	s.cutSet(rect.Dx() - padX)
+	var cX int
+	if len(s.series) < rect.Dx() {
+		cX = rect.Max.X - len(s.series) - 1
+	} else {
+		cX = rect.Min.X + padX
 	}
 
-	pad := 0
+	pad := 2
 	if s.legend != "" {
 		pad++
 	}
-
-	rect := s.asRect()
-	s.cutSet(rect.Dx())
-	maxVal := s.computeMax()
-
-	cX, idx := rect.Min.X+1, 0
-	if len(s.data)*2 < rect.Dx() {
-		cX = rect.Max.X - len(s.data)*2
-	} else {
-		idx = len(s.data) - rect.Dx()/2
-	}
-
-	scale := float64(len(sparks)*(rect.Dy()-pad)) / float64(maxVal)
-	c1, c2 := s.colorForSeries()
-	for _, d := range s.data[idx:] {
-		b := toBlocks(d, scale)
-		cY := rect.Max.Y - pad
-		s.drawBlock(rect, screen, cX, cY, b.s1, c1)
-		cX++
-		s.drawBlock(rect, screen, cX, cY, b.s2, c2)
+	scale := float64(len(sparks)*(rect.Dy()-pad)) / float64(s.max)
+	colors := s.colorForSeries()
+	cY := rect.Max.Y - pad - 1
+	for _, t := range s.series.Keys() {
+		b := s.makeBlock(s.series[t], scale)
+		s.drawBlock(rect, screen, cX, cY, b, colors[s.colorIndex%len(colors)])
 		cX++
 	}
+
+	s.printYAxis(screen, rect)
 
 	if rect.Dx() > 0 && rect.Dy() > 0 && s.legend != "" {
 		legend := s.legend
 		if s.HasFocus() {
 			legend = fmt.Sprintf("[%s:%s:]", s.focusFgColor, s.focusBgColor) + s.legend + "[::]"
 		}
-		tview.Print(screen, legend, rect.Min.X, rect.Max.Y, rect.Dx(), tview.AlignCenter, tcell.ColorWhite)
+		tview.Print(screen, legend, rect.Min.X, rect.Max.Y-1, rect.Dx(), tview.AlignCenter, tcell.ColorWhite)
 	}
 }
 
 func (s *SparkLine) drawBlock(r image.Rectangle, screen tcell.Screen, x, y int, b block, c tcell.Color) {
 	style := tcell.StyleDefault.Foreground(c).Background(s.bgColor)
 
-	zeroY := r.Max.Y - r.Dy()
+	zeroY, full := r.Min.Y, sparks[len(sparks)-1]
 	for range b.full {
-		screen.SetContent(x, y, sparks[len(sparks)-1], nil, style)
+		screen.SetContent(x, y, full, nil, style)
 		y--
-		if y <= zeroY {
+		if y < zeroY {
 			break
 		}
 	}
@@ -137,41 +174,22 @@ func (s *SparkLine) drawBlock(r image.Rectangle, screen tcell.Screen, x, y int, 
 }
 
 func (s *SparkLine) cutSet(width int) {
-	if width <= 0 || len(s.data) == 0 {
+	if width <= 0 || s.series.Empty() {
 		return
 	}
-
-	if len(s.data) >= width*2 {
-		s.data = s.data[len(s.data)-width:]
+	if len(s.series) > width {
+		s.series.Truncate(width)
 	}
 }
 
-func (s *SparkLine) computeMax() int64 {
-	var maxVal int64
-	for _, d := range s.data {
-		m := d.Max()
-		if maxVal < m {
-			maxVal = m
-		}
+func (*SparkLine) makeBlock(v, scale float64) block {
+	sc := (v * scale)
+	scaled := math.Round(sc)
+	p, b := int(scaled)%len(sparks), block{full: int(scaled / float64(len(sparks)))}
+	if v < 0 {
+		return b
 	}
-
-	return maxVal
-}
-
-func toBlocks(m Metric, scale float64) blocks {
-	if m.Sum() <= 0 {
-		return blocks{}
-	}
-	return blocks{s1: makeBlocks(m.S1, scale), s2: makeBlocks(m.S2, scale)}
-}
-
-func makeBlocks(v int64, scale float64) block {
-	scaled := int(math.Round(float64(v) * scale))
-	p, b := scaled%len(sparks), block{full: scaled / len(sparks)}
-	if b.full == 0 && v > 0 && p == 0 {
-		p = 4
-	}
-	if v > 0 && p >= 0 && p < len(sparks) {
+	if p > 0 && p < len(sparks) {
 		b.partial = sparks[p]
 	}
 

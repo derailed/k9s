@@ -4,6 +4,8 @@
 package model1
 
 import (
+	"context"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,6 +52,9 @@ type Renderer interface {
 
 	// SetViewSetting sets custom view settings if any.
 	SetViewSetting(vs *config.ViewSetting)
+
+	// Healthy checks if the resource is healthy.
+	Healthy(ctx context.Context, o any) error
 }
 
 // Generic represents a generic resource.

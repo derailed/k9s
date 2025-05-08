@@ -98,7 +98,7 @@ func (f *Flash) Warnf(fmat string, args ...any) {
 
 // Err displays an error flash message.
 func (f *Flash) Err(err error) {
-	slog.Error("Flash failed", slogs.Error, err)
+	slog.Error("Flash error", slogs.Error, err)
 	f.SetMessage(FlashErr, err.Error())
 }
 
@@ -110,7 +110,7 @@ func (f *Flash) Errf(fmat string, args ...any) {
 			err = e
 		}
 	}
-	slog.Error("Flashing error",
+	slog.Error("Flash error",
 		slogs.Error, err,
 		slogs.Message, fmt.Sprintf(fmat, args...),
 	)

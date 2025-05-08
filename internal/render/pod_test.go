@@ -211,7 +211,7 @@ func TestPodSidecarRender(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "default/sleep", r.ID)
-	e := model1.Fields{"default", "sleep", "0", "●", "1/1", "Running", "0", "<unknown>", "100", "40", "50:250", "50:80", "200", "40", "80", "50", "10.244.0.8", "kind-control-plane", "default", "<none>"}
+	e := model1.Fields{"default", "sleep", "0", "●", "2/2", "Running", "0", "<unknown>", "100", "40", "50:250", "50:80", "200", "40", "80", "50", "10.244.0.8", "kind-control-plane", "default", "<none>"}
 	assert.Equal(t, e, r.Fields[:20])
 }
 

@@ -475,3 +475,31 @@ func TestCowCmd(t *testing.T) {
 		})
 	}
 }
+
+func TestArgs(t *testing.T) {
+	uu := map[string]struct {
+		cmd string
+		ok  bool
+		ctx string
+	}{
+		"empty": {},
+
+		"with-plain-context": {
+			cmd: "po @fred",
+			ok:  true,
+			ctx: "fred",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			ctx, ok := p.ContextArg()
+			assert.Equal(t, u.ok, ok)
+			if u.ok {
+				assert.Equal(t, u.ctx, ctx)
+			}
+		})
+	}
+}

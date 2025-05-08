@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	unlockedIC = "🖍"
-	lockedIC   = "🔑"
+	unlockedIC = "[RW]"
+	lockedIC   = "[R]"
 )
 
 // Namespaceable tracks namespaces.
