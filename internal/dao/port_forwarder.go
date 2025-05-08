@@ -141,7 +141,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 		return nil, fmt.Errorf("unable to forward port because pod is not running. Current status=%v", pod.Status.Phase)
 	}
 
-	auth, err = p.Client().CanI(ns, client.PodGVR.WithSubResource("portforward"), "", []string{client.CreateVerb})
+	auth, err = p.Client().CanI(ns, client.PodGVR.WithSubResource("portforward"), "", []string{client.GetVerb})
 	if err != nil {
 		return nil, err
 	}
