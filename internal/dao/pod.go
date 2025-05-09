@@ -393,7 +393,7 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 	for {
 		var item *LogItem
 		if bytes, err := r.ReadBytes('\n'); err == nil {
-			item = opts.ToLogItem(tview.EscapeBytes(bytes))
+			item = opts.ToLogItem(tview.EscapeBytes(opts.HandleJson(bytes)))
 		} else {
 			if errors.Is(err, io.EOF) {
 				e := fmt.Errorf("stream closed %w for %s", err, opts.Info())
