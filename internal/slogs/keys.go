@@ -218,4 +218,7 @@ const (
 
 	// Duration tracks a duration logger key.
 	Duration = "duration"
+
+	// Type tracks a type logger key.
+	Type = "type"
 )

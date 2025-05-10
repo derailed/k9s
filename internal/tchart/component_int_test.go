@@ -1,13 +1,10 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright Authors of K9s
-
 package tchart
 
 import (
 	"image"
 	"testing"
 
-	"github.com/derailed/tview"
+	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,9 +17,11 @@ func TestComponentAsRect(t *testing.T) {
 
 func TestComponentColorForSeries(t *testing.T) {
 	c := NewComponent("fred")
-	okC, errC := c.colorForSeries()
+	cc := c.colorForSeries()
 
-	assert.Equal(t, tview.Styles.PrimaryTextColor, okC)
-	assert.Equal(t, tview.Styles.FocusColor, errC)
-	assert.Equal(t, []string{"white", "green"}, c.GetSeriesColorNames())
+	assert.Len(t, cc, 3)
+	assert.Equal(t, tcell.ColorGreen, cc[0])
+	assert.Equal(t, tcell.ColorOrange, cc[1])
+	assert.Equal(t, tcell.ColorOrangeRed, cc[2])
+	assert.Equal(t, []string{"green", "orange", "orangered"}, c.GetSeriesColorNames())
 }

@@ -185,6 +185,9 @@ type (
 	Info struct {
 		SectionColor Color `json:"sectionColor" yaml:"sectionColor"`
 		FgColor      Color `json:"fgColor" yaml:"fgColor"`
+		CPUColor     Color `json:"cpuColor" yaml:"cpuColor"`
+		MEMColor     Color `json:"memColor" yaml:"memColor"`
+		K9sRevColor  Color `json:"k9sRevColor" yaml:"k9sRevColor"`
 	}
 
 	// Border tracks border styles.
@@ -242,6 +245,8 @@ type (
 		DefaultDialColors  Colors            `json:"defaultDialColors" yaml:"defaultDialColors"`
 		DefaultChartColors Colors            `json:"defaultChartColors" yaml:"defaultChartColors"`
 		ResourceColors     map[string]Colors `json:"resourceColors" yaml:"resourceColors"`
+		FocusFgColor       Color             `yaml:"focusFgColor"`
+		FocusBgColor       Color             `yaml:"focusBgColor"`
 	}
 )
 
@@ -293,6 +298,8 @@ func newCharts() Charts {
 			CPU: {Color("dodgerblue"), Color("darkslateblue")},
 			MEM: {Color("yellow"), Color("goldenrod")},
 		},
+		FocusFgColor: "white",
+		FocusBgColor: "aqua",
 	}
 }
 
@@ -399,6 +406,9 @@ func newInfo() Info {
 	return Info{
 		SectionColor: "white",
 		FgColor:      "orange",
+		CPUColor:     "lawngreen",
+		MEMColor:     "darkturquoise",
+		K9sRevColor:  "aqua",
 	}
 }
 

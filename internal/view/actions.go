@@ -214,8 +214,11 @@ func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 				errs = errors.Join(errs, e)
 			}
 			if errs != nil {
-				r.App().cowCmd(errs.Error())
-				return
+				if !strings.Contains(errs.Error(), "signal: interrupt") {
+					slog.Error("Plugin command failed", slogs.Error, errs)
+					r.App().cowCmd(errs.Error())
+					return
+				}
 			}
 			go func() {
 				for st := range statusChan {

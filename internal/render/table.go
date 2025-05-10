@@ -19,7 +19,7 @@ import (
 
 const ageTableCol = "Age"
 
-var DurationColumns = sets.New("First Seen", "Last Seen")
+var ageCols = sets.New("Last Seen", "First Seen", "Age")
 
 // Table renders a tabular resource to screen.
 type Table struct {
@@ -73,7 +73,10 @@ func (t *Table) defaultHeader() model1.Header {
 			t.setAgeIndex(i)
 			continue
 		}
-		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name), Attrs: model1.Attrs{Time: DurationColumns.Has(c.Name)}})
+		h = append(h, model1.HeaderColumn{
+      Name: strings.ToUpper(c.Name), 
+      Attrs: model1.Attrs{Time: ageCols.Has(c.Name)},
+    })
 	}
 	if t.getAgeIndex() > 0 {
 		h = append(h, model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}})

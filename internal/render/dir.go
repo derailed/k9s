@@ -4,6 +4,7 @@
 package render
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -20,6 +21,11 @@ type Dir struct{}
 // IsGeneric identifies a generic handler.
 func (Dir) IsGeneric() bool {
 	return false
+}
+
+// Healthy checks if the resource is healthy.
+func (Dir) Healthy(context.Context, any) error {
+	return nil
 }
 
 // ColorerFunc colors a resource row.

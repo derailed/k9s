@@ -137,7 +137,7 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 
 	pf.SetActive(true)
 	if err := f.ForwardPorts(); err != nil {
-		v.App().Flash().Err(err)
+		v.App().Flash().Warnf("PortForward failed for %s: %s. Deleting!", pf.ID(), err)
 	}
 	v.App().QueueUpdateDraw(func() {
 		v.App().factory.DeleteForwarder(pf.ID())

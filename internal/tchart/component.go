@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright Authors of K9s
-
 package tchart
 
 import (
@@ -11,11 +8,6 @@ import (
 	"github.com/derailed/tview"
 )
 
-const (
-	okColor, faultColor         = tcell.ColorPaleGreen, tcell.ColorOrangeRed
-	okColorName, faultColorName = "palegreen", "orangered"
-)
-
 // Component represents a graphic component.
 type Component struct {
 	*tview.Box
@@ -24,8 +16,7 @@ type Component struct {
 	focusFgColor, focusBgColor string
 	seriesColors               []tcell.Color
 	dimmed                     tcell.Style
-	id                         string
-	legend                     string
+	id, legend                 string
 	blur                       func(tcell.Key)
 	mx                         sync.RWMutex
 }
@@ -33,11 +24,15 @@ type Component struct {
 // NewComponent returns a new component.
 func NewComponent(id string) *Component {
 	return &Component{
-		Box:          tview.NewBox(),
-		id:           id,
-		noColor:      tcell.ColorDefault,
-		seriesColors: []tcell.Color{tview.Styles.PrimaryTextColor, tview.Styles.FocusColor},
-		dimmed:       tcell.StyleDefault.Background(tview.Styles.PrimitiveBackgroundColor).Foreground(tcell.ColorGray).Dim(true),
+		Box:     tview.NewBox(),
+		id:      id,
+		noColor: tcell.ColorDefault,
+		seriesColors: []tcell.Color{
+			tcell.ColorGreen,
+			tcell.ColorOrange,
+			tcell.ColorOrangeRed,
+		},
+		dimmed: tcell.StyleDefault.Background(tview.Styles.PrimitiveBackgroundColor).Foreground(tcell.ColorGray).Dim(true),
 	}
 }
 
@@ -48,6 +43,8 @@ func (c *Component) SetFocusColorNames(fg, bg string) {
 
 // SetBackgroundColor sets the graph bg color.
 func (c *Component) SetBackgroundColor(color tcell.Color) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	c.Box.SetBackgroundColor(color)
 	c.bgColor = color
 	c.dimmed = c.dimmed.Background(color)
@@ -68,7 +65,6 @@ func (c *Component) SetLegend(l string) {
 // InputHandler returns the handler for this primitive.
 func (c *Component) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return c.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-		//nolint:exhaustive
 		switch key := event.Key(); key {
 		case tcell.KeyEnter:
 		case tcell.KeyBacktab, tcell.KeyTab:
@@ -80,7 +76,7 @@ func (c *Component) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 	})
 }
 
-// IsDial returns true if chart is a dial.
+// IsDial returns true if chart is a dial
 func (*Component) IsDial() bool {
 	return false
 }
@@ -103,6 +99,9 @@ func (c *Component) GetSeriesColorNames() []string {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
 
+	if len(c.seriesColors) < 3 {
+		return []string{"green", "orange", "red"}
+	}
 	nn := make([]string, 0, len(c.seriesColors))
 	for _, color := range c.seriesColors {
 		for name, co := range tcell.ColorNames {
@@ -111,21 +110,14 @@ func (c *Component) GetSeriesColorNames() []string {
 			}
 		}
 	}
-	if len(nn) < 2 {
-		nn = append(nn, okColorName, faultColorName)
-	}
 
 	return nn
 }
 
-func (c *Component) colorForSeries() (cool, fault tcell.Color) {
+func (c *Component) colorForSeries() []tcell.Color {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-	if len(c.seriesColors) == 2 {
-		return c.seriesColors[0], c.seriesColors[1]
-	}
-
-	return okColor, faultColor
+	return c.seriesColors
 }
 
 func (c *Component) asRect() image.Rectangle {

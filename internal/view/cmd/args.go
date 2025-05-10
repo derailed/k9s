@@ -27,9 +27,6 @@ func newArgs(p *Interpreter, aa []string) args {
 	for i := 0; i < len(aa); i++ {
 		a := strings.TrimSpace(aa[i])
 		switch {
-		case strings.Index(a, contextFlag) == 0:
-			arguments[contextKey] = a[1:]
-
 		case strings.Index(a, fuzzyFlag) == 0:
 			if a == fuzzyFlag {
 				i++
@@ -54,20 +51,26 @@ func newArgs(p *Interpreter, aa []string) args {
 				arguments[labelKey] = strings.ToLower(a)
 			}
 
+		case strings.Index(a, contextFlag) == 0:
+			arguments[contextKey] = a[1:]
+
 		default:
 			switch {
 			case p.IsContextCmd():
 				arguments[contextKey] = a
+
 			case p.IsDirCmd():
 				if _, ok := arguments[topicKey]; !ok {
 					arguments[topicKey] = a
 				}
+
 			case p.IsXrayCmd():
 				if _, ok := arguments[topicKey]; ok {
 					arguments[nsKey] = strings.ToLower(a)
 				} else {
 					arguments[topicKey] = strings.ToLower(a)
 				}
+
 			default:
 				arguments[nsKey] = strings.ToLower(a)
 			}

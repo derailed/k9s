@@ -4,6 +4,7 @@
 package render
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/derailed/k9s/internal/config"
@@ -63,4 +64,9 @@ func (*Base) ColorerFunc() model1.ColorerFunc {
 // Happy returns true if resource is happy, false otherwise.
 func (*Base) Happy(string, *model1.Row) bool {
 	return true
+}
+
+// Healthy checks if the resource is healthy.
+func (*Base) Healthy(context.Context, any) error {
+	return nil
 }

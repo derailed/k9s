@@ -4,13 +4,16 @@
 package render
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
+	"golang.org/x/exp/slog"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -91,6 +94,23 @@ func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 	}
 
 	return nil
+}
+
+// Healthy checks component health.
+func (n Namespace) Healthy(_ context.Context, o any) error {
+	res, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		slog.Error("Expected *Unstructured, but got", slogs.Type, fmt.Sprintf("%T", o))
+		return nil
+	}
+	var ns v1.Namespace
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &ns)
+	if err != nil {
+		slog.Error("Failed to convert Unstructured to Namespace", slogs.Type, fmt.Sprintf("%T", o), slog.String("error", err.Error()))
+		return nil
+	}
+
+	return n.diagnose(ns.Status.Phase)
 }
 
 func (Namespace) diagnose(phase v1.NamespacePhase) error {
