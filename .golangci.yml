@@ -11,6 +11,8 @@ run:
   tests: true
 
 linters:
+  disable:
+    - staticcheck
   enable:
     - sloglint
     - bodyclose

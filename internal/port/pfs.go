@@ -40,7 +40,7 @@ func (aa PFAnns) ToTunnels(address string, _ ContainerPortSpecs, available PortC
 			return pts, err
 		}
 		if !available(pt) {
-			return pts, fmt.Errorf("Port %s is not available on host", pt.LocalPort)
+			return pts, fmt.Errorf("port %s is not available on host", pt.LocalPort)
 		}
 		pts = append(pts, pt)
 	}

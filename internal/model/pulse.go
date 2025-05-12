@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -11,14 +10,12 @@ import (
 	"github.com/derailed/k9s/internal/health"
 )
 
-const defaultRefreshRate = 1 * time.Minute
-
 // PulseListener represents a health model listener.
 type PulseListener interface {
 	// PulseChanged notifies the model data changed.
 	PulseChanged(*health.Check)
 
-	// TreeFailed notifies the health check failed.
+	// PulseFailed notifies the health check failed.
 	PulseFailed(error)
 
 	// MetricsChanged update metrics time series.
@@ -27,18 +24,16 @@ type PulseListener interface {
 
 // Pulse tracks multiple resources health.
 type Pulse struct {
-	gvr         *client.GVR
-	namespace   string
-	listeners   []PulseListener
-	refreshRate time.Duration
-	health      *PulseHealth
+	gvr       *client.GVR
+	namespace string
+	listeners []PulseListener
+	health    *PulseHealth
 }
 
 // NewPulse returns a new pulse.
 func NewPulse(gvr *client.GVR) *Pulse {
 	return &Pulse{
-		gvr:         gvr,
-		refreshRate: defaultRefreshRate,
+		gvr: gvr,
 	}
 }
 

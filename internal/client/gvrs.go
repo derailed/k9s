@@ -20,6 +20,9 @@ var (
 	NodeGVR = NewGVR("v1/nodes")
 	SvcGVR  = NewGVR("v1/services")
 
+	// Discovery...
+	EpsGVR = NewGVR("discovery.k8s.io/v1/endpointslices")
+
 	// Autoscaling...
 	HpaGVR = NewGVR("autoscaling/v1/horizontalpodautoscalers")
 
