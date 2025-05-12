@@ -84,6 +84,11 @@ var Registry = map[*client.GVR]ResourceMeta{
 		Renderer: new(render.Alias),
 	},
 
+	// Discovery...
+	client.EpsGVR: {
+		Renderer: new(render.EndpointSlice),
+	},
+
 	// Core...
 	client.EpGVR: {
 		Renderer: new(render.Endpoints),
@@ -124,6 +129,7 @@ var Registry = map[*client.GVR]ResourceMeta{
 		Renderer: new(render.PersistentVolumeClaim),
 	},
 	client.EvGVR: {
+		DAO:      new(dao.Table),
 		Renderer: new(render.Event),
 	},
 
