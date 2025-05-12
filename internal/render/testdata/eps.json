@@ -1,0 +1,51 @@
+{
+  "apiVersion": "discovery.k8s.io/v1",
+  "kind": "EndpointSlice",
+  "metadata": {
+      "creationTimestamp": "2025-04-17T22:14:13Z",
+      "name": "fred",
+      "namespace": "blee"
+  },
+  "addressType": "IPv4",
+  "endpoints": [
+      {
+          "addresses": [
+              "172.20.0.2"
+          ],
+          "conditions": {
+              "ready": true,
+              "serving": true,
+              "terminating": false
+          },
+          "nodeName": "n-1",
+          "targetRef": {
+              "kind": "Pod",
+              "name": "zorg",
+              "namespace": "kube-system"
+          }
+      },
+      {
+          "addresses": [
+              "172.20.0.3"
+          ],
+          "conditions": {
+              "ready": true,
+              "serving": true,
+              "terminating": false
+          },
+          "nodeName": "n-1",
+          "targetRef": {
+              "kind": "Pod",
+              "name": "zorg",
+              "namespace": "kube-system"
+          }
+      }
+  ],
+  "ports": [
+      {
+          "name": "peer-service",
+          "port": 4244,
+          "protocol": "TCP"
+      }
+  ]
+}
