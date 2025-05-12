@@ -10,6 +10,8 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const pulseRate = 15 * time.Second
@@ -96,6 +98,7 @@ func (h *PulseHealth) Watch(ctx context.Context, ns string) HealthChan {
 }
 
 func (h *PulseHealth) checkPulse(ctx context.Context, ns string, c HealthChan) error {
+	slog.Debug("Checking pulses...")
 	for _, gvr := range PulseGVRs {
 		check, err := h.check(ctx, ns, gvr)
 		if err != nil {
@@ -110,8 +113,8 @@ func (h *PulseHealth) check(ctx context.Context, ns string, gvr *client.GVR) (He
 	meta, ok := Registry[gvr]
 	if !ok {
 		meta = ResourceMeta{
-			DAO:      &dao.Table{},
-			Renderer: &render.Generic{},
+			DAO:      new(dao.Table),
+			Renderer: new(render.Table),
 		}
 	}
 	if meta.DAO == nil {
@@ -124,11 +127,31 @@ func (h *PulseHealth) check(ctx context.Context, ns string, gvr *client.GVR) (He
 		return HealthPoint{}, err
 	}
 	c := HealthPoint{GVR: gvr, Total: len(oo)}
-	for _, o := range oo {
-		if err := meta.Renderer.Healthy(ctx, o); err != nil {
-			c.Faults++
+	if isTable(oo) {
+		ta := oo[0].(*metav1.Table)
+		c.Total = len(ta.Rows)
+		for _, row := range ta.Rows {
+			if err := meta.Renderer.Healthy(ctx, row); err != nil {
+				c.Faults++
+			}
+		}
+	} else {
+		for _, o := range oo {
+			if err := meta.Renderer.Healthy(ctx, o); err != nil {
+				c.Faults++
+			}
 		}
 	}
+	slog.Debug("Checked", slogs.GVR, gvr, slogs.Config, c)
 
 	return c, nil
+}
+
+func isTable(oo []runtime.Object) bool {
+	if len(oo) == 0 || len(oo) > 1 {
+		return false
+	}
+	_, ok := oo[0].(*metav1.Table)
+
+	return ok
 }

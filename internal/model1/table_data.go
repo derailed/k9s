@@ -272,7 +272,7 @@ func (t *TableData) Render(_ context.Context, r Renderer, oo []runtime.Object) e
 	t.Update(rows)
 	t.SetHeader(t.namespace, r.Header(t.namespace))
 	if t.HeaderCount() == 0 {
-		return fmt.Errorf("fail to list resource %s", t.gvr)
+		return fmt.Errorf("no data found for resource %s", t.gvr)
 	}
 
 	return nil
