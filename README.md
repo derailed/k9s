@@ -442,7 +442,7 @@ You can now override the context portForward default address configuration by se
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
       # Show full resource GVR (Group/Version/Resource) vs just R. Default: false.
-      useGVRTitleFormat: false
+      useFullGVRTitle: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
