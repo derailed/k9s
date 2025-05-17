@@ -27,8 +27,9 @@ var (
 	HpaGVR = NewGVR("autoscaling/v1/horizontalpodautoscalers")
 
 	// Batch...
-	CjGVR  = NewGVR("batch/v1/cronjobs")
-	JobGVR = NewGVR("batch/v1/jobs")
+	CjBetaGVR = NewGVR("batch/v1beta1/cronjobs")
+	CjGVR     = NewGVR("batch/v1/cronjobs")
+	JobGVR    = NewGVR("batch/v1/jobs")
 
 	// Misc...
 	CrdGVR = NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")
