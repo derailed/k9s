@@ -85,48 +85,6 @@ func TestTableViewFilter(t *testing.T) {
 	assert.Equal(t, 5, v.GetRowCount())
 }
 
-func TestTableViewSort(t *testing.T) {
-	v := NewTable(client.NewGVR("test"))
-	require.NoError(t, v.Init(makeContext(t)))
-	v.SetModel(new(mockTableModel))
-
-	uu := map[string]struct {
-		sortCol  string
-		sorted   []string
-		reversed []string
-	}{
-		"by_name": {
-			sortCol:  "NAME",
-			sorted:   []string{"r0", "r1", "r2", "r3"},
-			reversed: []string{"r3", "r2", "r1", "r0"},
-		},
-		"by_age": {
-			sortCol:  "AGE",
-			sorted:   []string{"r0", "r1", "r2", "r3"},
-			reversed: []string{"r3", "r2", "r1", "r0"},
-		},
-		"by_fred": {
-			sortCol:  "FRED",
-			sorted:   []string{"r3", "r2", "r0", "r1"},
-			reversed: []string{"r1", "r0", "r2", "r3"},
-		},
-	}
-
-	for k := range uu {
-		u := uu[k]
-		v.SortColCmd(u.sortCol, true)(nil)
-		assert.Len(t, u.sorted, v.GetRowCount()-1)
-		for i, s := range u.sorted {
-			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
-		}
-		v.SortInvertCmd(nil)
-		assert.Len(t, u.reversed, v.GetRowCount()-1)
-		for i, s := range u.reversed {
-			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
-		}
-	}
-}
-
 // ----------------------------------------------------------------------------
 // Helpers...
 

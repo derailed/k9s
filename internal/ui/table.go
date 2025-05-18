@@ -326,16 +326,7 @@ func (t *Table) GetNamespace() string {
 }
 
 func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
-	if client.IsAllNamespaces(data.GetNamespace()) {
-		t.actions.Add(
-			KeyShiftP,
-			NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false),
-		)
-	} else {
-		t.actions.Delete(KeyShiftP)
-	}
 	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
-
 	return data
 }
 
@@ -442,22 +433,6 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 		}
 		t.SetCell(r, col, cell)
 		col++
-	}
-}
-
-// SortColCmd designates a sorted column.
-func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(*tcell.EventKey) *tcell.EventKey {
-		sc := t.getSortCol()
-		sc.ASC = !sc.ASC
-		if sc.Name != name {
-			sc.ASC = asc
-		}
-		sc.Name = name
-		t.setSortCol(sc)
-		t.setMSort(true)
-		t.Refresh()
-		return nil
 	}
 }
 
