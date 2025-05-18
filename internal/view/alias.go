@@ -51,9 +51,6 @@ func (a *Alias) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, true),
-		ui.KeyShiftR:   ui.NewKeyAction("Sort Resource", a.GetTable().SortColCmd("RESOURCE", true), false),
-		ui.KeyShiftC:   ui.NewKeyAction("Sort Command", a.GetTable().SortColCmd("COMMAND", true), false),
-		ui.KeyShiftA:   ui.NewKeyAction("Sort ApiGroup", a.GetTable().SortColCmd("API-GROUP", true), false),
 	})
 }
 

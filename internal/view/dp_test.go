@@ -17,5 +17,5 @@ func TestDeploy(t *testing.T) {
 
 	require.NoError(t, v.Init(makeCtx(t)))
 	assert.Equal(t, "Deployments", v.Name())
-	assert.Len(t, v.Hints(), 17)
+	assert.Len(t, v.Hints(), 15)
 }

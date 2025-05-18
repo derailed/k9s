@@ -18,12 +18,12 @@ import (
 
 type (
 	// SortChange changes the column on which to sort
-	SortChange bool
+	SortChange int
 )
 
 const (
-	SortNextCol SortChange = true
-	SortPrevCol SortChange = false
+	SortNextCol SortChange = +1
+	SortPrevCol SortChange = -1
 )
 
 const (

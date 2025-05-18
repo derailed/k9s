@@ -288,18 +288,17 @@ func (t *Table) SetSortCol(name string, asc bool) {
 	t.setSortCol(model1.SortColumn{Name: name, ASC: asc})
 }
 
-func (t *Table) GetSortCol() (string, bool) {
-	return t.sortCol.Name, t.sortCol.ASC
-}
-
 func (t *Table) isVisible(h model1.HeaderColumn) bool {
+	if h.Hide {
+		return false
+	}
+	if h.Wide && !t.wide {
+		return false
+	}
 	if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 		return false
 	}
 	if h.MX && !t.hasMetrics {
-		return false
-	}
-	if h.Wide && !t.wide {
 		return false
 	}
 	if h.VS && vul.ImgScanner == nil {
@@ -340,13 +339,6 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	return data
 }
 
-func (t *Table) shouldExcludeColumn(h model1.HeaderColumn) bool {
-	return (h.Hide || (!t.wide && h.Wide)) ||
-		(h.Name == "NAMESPACE" && !t.GetModel().ClusterWide()) ||
-		(h.MX && !t.hasMetrics) ||
-		(h.VS && vul.ImgScanner == nil)
-}
-
 func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.Clear()
 	fg := t.styles.Table().Header.FgColor.Color()
@@ -354,7 +346,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 
 	var col int
 	for _, h := range cdata.Header() {
-		if t.shouldExcludeColumn(h) {
+		if !t.isVisible(h) {
 			continue
 		}
 		t.AddHeaderCell(col, h)
@@ -412,9 +404,6 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 				slogs.Cell, c,
 				slogs.HeaderSize, len(h),
 			)
-			continue
-		}
-		if h[c].Hide || (!t.wide && h[c].Wide) {
 			continue
 		}
 
@@ -475,40 +464,40 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 // SortColChange changes on which column to sort
 func (t *Table) SortColChange(direction SortChange) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
+		data := t.model.Peek()
 		sortCol := t.sortCol.Name
-		sortColIdx := -1
-		newSortColIdx := -1
-		prevSortColIdx := -1
-		header := t.GetModel().Peek().GetHeader()
+		header := data.GetHeader()
 
+		// Build a slice of visible header columns and their indices.
+		type colInfo struct {
+			Idx  int
+			Name string
+		}
+		var visibleCols []colInfo
 		for i, h := range header {
-			if !t.isVisible(h) {
-				continue
+			if t.isVisible(h) {
+				visibleCols = append(visibleCols, colInfo{Idx: i, Name: h.Name})
 			}
+		}
+		if len(visibleCols) == 0 {
+			return nil
+		}
 
-			if h.Name == sortCol {
-				sortColIdx = i
+		// Find current sort column index in visibleCols.
+		curIdx := 0
+		for i, c := range visibleCols {
+			if c.Name == sortCol {
+				curIdx = i
 				break
 			}
-
-			prevSortColIdx = i
 		}
 
-		if direction == SortPrevCol {
-			newSortColIdx = prevSortColIdx
-		} else {
-			for i := sortColIdx + 1; i < len(header); i++ {
-				if t.isVisible(header[i]) {
-					newSortColIdx = i
-					break
-				}
-			}
-		}
+		// Move by direction (+1 or -1), wrap around if out of range.
+		newIdx := (curIdx + int(direction) + len(visibleCols)) % len(visibleCols)
 
-		if newSortColIdx != -1 {
-			t.sortCol.Name = header[newSortColIdx].Name
-			t.Refresh()
-		}
+		t.sortCol.Name = visibleCols[newIdx].Name
+		t.setMSort(true)
+		t.doRefresh(data)
 
 		return nil
 	}
@@ -528,14 +517,19 @@ func (t *Table) ClearMarks() {
 	t.Refresh()
 }
 
-// Refresh update the table data.
-func (t *Table) Refresh() {
-	data := t.model.Peek()
+// doRefresh updates the table data using the provided model data.
+func (t *Table) doRefresh(data *model1.TableData) {
 	if data.HeaderCount() == 0 {
 		return
 	}
 	cdata := t.Update(data, t.hasMetrics)
 	t.UpdateUI(cdata, data)
+}
+
+// Refresh update the table data.
+func (t *Table) Refresh() {
+	data := t.model.Peek()
+	t.doRefresh(data)
 }
 
 // GetSelectedRow returns the entire selected row or nil if nothing selected.
