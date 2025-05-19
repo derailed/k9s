@@ -195,7 +195,14 @@ func (c *Configurator) activeSkin() (string, bool) {
 		return skin, false
 	}
 
-	if ct, err := c.Config.K9s.ActiveContext(); err == nil && ct.Skin != "" {
+	if env_skin := os.Getenv("K9S_SKIN"); env_skin != "" {
+		if _, err := os.Stat(config.SkinFileFromName(env_skin)); err == nil {
+			skin = env_skin
+			slog.Debug("Loading env skin", slogs.Skin, skin)
+		}
+	}
+
+	if ct, err := c.Config.K9s.ActiveContext(); err == nil && skin == "" && ct.Skin != "" {
 		if _, err := os.Stat(config.SkinFileFromName(ct.Skin)); err == nil {
 			skin = ct.Skin
 			slog.Debug("Loading context skin",
