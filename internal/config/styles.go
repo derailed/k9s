@@ -98,6 +98,7 @@ type (
 		LogoColorInfo  Color `json:"logoColorInfo" yaml:"logoColorInfo"`
 		LogoColorWarn  Color `json:"logoColorWarn" yaml:"logoColorWarn"`
 		LogoColorError Color `json:"logoColorError" yaml:"logoColorError"`
+		LogoUrl        string `json:"logoUrl" yaml:"logoUrl"`
 	}
 
 	// Dialog tracks dialog styles.
@@ -343,6 +344,7 @@ func newBody() Body {
 		LogoColorInfo:  "green",
 		LogoColorWarn:  "mediumvioletred",
 		LogoColorError: "red",
+		LogoUrl:        "",
 	}
 }
 
@@ -571,6 +573,7 @@ func (s *Styles) Views() Views {
 
 // Load K9s configuration from file.
 func (s *Styles) Load(path string) error {
+	s.K9s.Body.LogoUrl = ""
 	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
