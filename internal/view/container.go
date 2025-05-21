@@ -120,7 +120,14 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 		SingleContainer: true,
 		ShowTimestamp:   cfg.ShowTime,
 		Previous:        prev,
+		DecodeJson:      cfg.DecodeJson,
+		Json: dao.JsonOptions{
+			Debug:             c.App().Config.Json.JsonConfig.Debug,
+			GlobalExpressions: c.App().Config.Json.JsonConfig.GlobalExpressions,
+			Templates:         dao.TemplatesFromConfig(c.App().Config.Json.JsonConfig),
+		},
 	}
+	opts.Json.SetCurrentTemplateByName(c.App().Config.Json.JsonConfig.DefaultTemplate)
 
 	return &opts, nil
 }

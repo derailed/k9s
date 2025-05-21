@@ -22,6 +22,7 @@ type Logger struct {
 	TextWrap          bool  `json:"textWrap" yaml:"textWrap"`
 	DisableAutoscroll bool  `json:"disableAutoscroll" yaml:"disableAutoscroll"`
 	ShowTime          bool  `json:"showTime" yaml:"showTime"`
+	DecodeJson        bool  `json:"decodeJson" yaml:"decodeJson"`
 }
 
 // NewLogger returns a new instance.
