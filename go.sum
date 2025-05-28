@@ -2619,8 +2619,8 @@ k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff h1:/usPimJzUKKu+m+TE36gUy
 k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff/go.mod h1:5jIi+8yX4RIb8wk3XwBo5Pq2ccx4FP10ohkbSKCZoK8=
 k8s.io/kubectl v0.33.0 h1:HiRb1yqibBSCqic4pRZP+viiOBAnIdwYDpzUFejs07g=
 k8s.io/kubectl v0.33.0/go.mod h1:gAlGBuS1Jq1fYZ9AjGWbI/5Vk3M/VW2DK4g10Fpyn/0=
-k8s.io/metrics v0.33.0 h1:sKe5sC9qb1RakMhs8LWYNuN2ne6OTCWexj8Jos3rO2Y=
-k8s.io/metrics v0.33.0/go.mod h1:XewckTFXmE2AJiP7PT3EXaY7hi7bler3t2ZLyOdQYzU=
+k8s.io/metrics v0.33.1 h1:Ypd5ITCf+fM+LDNFk7hESXTc3vh02CQYGiwRoVRaGsM=
+k8s.io/metrics v0.33.1/go.mod h1:wK8cFTK5ykBdhL0Wy4RZwLH28XM7j/Klc+NQrMRWVxg=
 k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 h1:M3sRQVHv7vB20Xc2ybTt7ODCeFj6JSWYFzOFnYeS6Ro=
 k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 lukechampine.com/uint128 v1.1.1/go.mod h1:c4eWIwlEGaxC/+H1VguhU4PHXNWDCDMUlWdIWl2j1gk=
