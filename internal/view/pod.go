@@ -274,8 +274,7 @@ func (p *Pod) sanitizeCmd(*tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", magicPrompt)
-	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, func() {
+	sanitizeFunc := func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*p.App().Conn().Config().CallTimeout())
 		defer cancel()
 		total, err := s.Sanitize(ctx, p.GetTable().GetModel().GetNamespace())
@@ -285,7 +284,14 @@ func (p *Pod) sanitizeCmd(*tcell.EventKey) *tcell.EventKey {
 		}
 		p.App().Flash().Infof("Sanitized %d %s", total, p.GVR())
 		p.Refresh()
-	}, func() {})
+	}
+
+	if p.App().Config.IsSanitizeConfirmationDisabled() {
+		sanitizeFunc()
+	} else {
+		msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", magicPrompt)
+		dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, sanitizeFunc, func() {})
+	}
 
 	return nil
 }

@@ -6,33 +6,36 @@ package config
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_k9sOverrides(t *testing.T) {
 	var (
-		trueVal = true
-		cmd     = "po"
-		dir     = "/tmp/blee"
+		trueVal  = true
+		falseVal = false
+		cmd      = "po"
+		dir      = "/tmp/blee"
 	)
 
 	uu := map[string]struct {
-		k                  *K9s
-		rate               int
-		ro, hl, cl, sl, ll bool
+		k                       *K9s
+		rate                    int
+		ro, hl, cl, sl, ll, dsc bool
 	}{
 		"plain": {
 			k: &K9s{
-				LiveViewAutoRefresh: false,
-				ScreenDumpDir:       "",
-				RefreshRate:         10,
-				MaxConnRetry:        0,
-				ReadOnly:            false,
-				NoExitOnCtrlC:       false,
-				UI:                  UI{},
-				SkipLatestRevCheck:  false,
-				DisablePodCounting:  false,
+				LiveViewAutoRefresh:         false,
+				ScreenDumpDir:               "",
+				RefreshRate:                 10,
+				MaxConnRetry:                0,
+				ReadOnly:                    false,
+				NoExitOnCtrlC:               false,
+				UI:                          UI{},
+				SkipLatestRevCheck:          false,
+				DisablePodCounting:          false,
+				DisableSanitizeConfirmation: false,
 			},
 			rate: 10,
 		},
@@ -50,8 +53,9 @@ func Test_k9sOverrides(t *testing.T) {
 					Crumbsless: true,
 					Splashless: true,
 				},
-				SkipLatestRevCheck: false,
-				DisablePodCounting: false,
+				SkipLatestRevCheck:          false,
+				DisablePodCounting:          false,
+				DisableSanitizeConfirmation: true,
 			},
 			rate: 10,
 			ro:   true,
@@ -59,6 +63,7 @@ func Test_k9sOverrides(t *testing.T) {
 			ll:   true,
 			cl:   true,
 			sl:   true,
+			dsc:  true,
 		},
 		"overrides": {
 			k: &K9s{
@@ -91,6 +96,20 @@ func Test_k9sOverrides(t *testing.T) {
 			cl:   true,
 			sl:   true,
 		},
+		"overrides-from-activeConfig": {
+			k: &K9s{
+				ReadOnly:                    true,
+				DisableSanitizeConfirmation: true,
+				activeConfig: &data.Config{
+					Context: &data.Context{
+						ReadOnly:                    &falseVal,
+						DisableSanitizeConfirmation: &falseVal,
+					},
+				},
+			},
+			ro:  false,
+			dsc: false,
+		},
 	}
 
 	for k := range uu {
@@ -102,6 +121,7 @@ func Test_k9sOverrides(t *testing.T) {
 			assert.Equal(t, u.sl, u.k.IsSplashless())
 			assert.Equal(t, u.hl, u.k.IsHeadless())
 			assert.Equal(t, u.ll, u.k.IsLogoless())
+			assert.Equal(t, u.dsc, u.k.IsSanitizeConfirmationDisabled())
 		})
 	}
 }

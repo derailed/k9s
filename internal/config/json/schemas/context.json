@@ -9,6 +9,7 @@
       "properties": {
         "cluster": { "type": "string" },
         "readOnly": {"type": "boolean"},
+        "disableSanitizeConfirmation": { "type": "boolean" },
         "skin": { "type": "string" },
         "proxy": {
           "oneOf": [
