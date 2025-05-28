@@ -13,14 +13,15 @@ import (
 
 // Context tracks K9s context configuration.
 type Context struct {
-	ClusterName  string       `yaml:"cluster,omitempty"`
-	ReadOnly     *bool        `yaml:"readOnly,omitempty"`
-	Skin         string       `yaml:"skin,omitempty"`
-	Namespace    *Namespace   `yaml:"namespace"`
-	View         *View        `yaml:"view"`
-	FeatureGates FeatureGates `yaml:"featureGates"`
-	Proxy        *Proxy       `yaml:"proxy"`
-	mx           sync.RWMutex
+	ClusterName                 string       `yaml:"cluster,omitempty"`
+	ReadOnly                    *bool        `yaml:"readOnly,omitempty"`
+	Skin                        string       `yaml:"skin,omitempty"`
+	Namespace                   *Namespace   `yaml:"namespace"`
+	View                        *View        `yaml:"view"`
+	FeatureGates                FeatureGates `yaml:"featureGates"`
+	Proxy                       *Proxy       `yaml:"proxy"`
+	DisableSanitizeConfirmation *bool        `yaml:"disableSanitizeConfirmation"`
+	mx                          sync.RWMutex
 }
 
 // NewContext creates a new cluster configuration.
