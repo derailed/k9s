@@ -51,6 +51,7 @@ type K9s struct {
 	Logger              Logger     `json:"logger" yaml:"logger"`
 	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
 	DefaultView         string     `json:"defaultView" yaml:"defaultView"`
+	DisableSanitizeConfirmation bool       `json:"disableSanitizeConfirmation" yaml:"disableSanitizeConfirmation"`
 	manualRefreshRate   float32
 	manualReadOnly      *bool
 	manualCommand       *string
@@ -150,6 +151,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.ShellPod = k1.ShellPod
 	k.Logger = k1.Logger
 	k.ImageScans = k1.ImageScans
+	k.DisableSanitizeConfirmation = k1.DisableSanitizeConfirmation
 	if k1.Thresholds != nil {
 		k.Thresholds = k1.Thresholds
 	}
@@ -418,6 +420,15 @@ func (k *K9s) IsReadOnly() bool {
 	}
 
 	return ro
+}
+
+// IsSanitizeConfirmationDisabled returns the sanitize confirmation setting.
+func (k *K9s) IsSanitizeConfirmationDisabled() bool {
+	if cfg := k.getActiveConfig(); cfg != nil && cfg.Context.DisableSanitizeConfirmation != nil {
+		return *cfg.Context.DisableSanitizeConfirmation
+	}
+
+	return k.DisableSanitizeConfirmation
 }
 
 // Validate the current configuration.
