@@ -387,6 +387,9 @@ K9s uses aliases to navigate most K8s resources.
 | Launch pulses view                                                              | `:`pulses or pu⏎              |                                                                        |
 | Launch XRay view                                                                | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
 | Launch Popeye view                                                              | `:`popeye or pop⏎             | See [popeye](#popeye)                                                  |
+| Sort by previous column                                                         | `<`                           | Sorts by the previous column in the table                              |
+| Sort by next column                                                             | `>`                           | Sorts by the next column in the table                                  |
+| Reverse sort order on selected column                                           | `R`                           | Reverses the sort order on the currently selected column               |
 
 ---
 
