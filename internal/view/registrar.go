@@ -16,6 +16,7 @@ func loadCustomViewers() MetaViewers {
 	batchViewers(m)
 	crdViewers(m)
 	helmViewers(m)
+	openshiftViewers(m)
 
 	return m
 }
@@ -143,5 +144,11 @@ func batchViewers(vv MetaViewers) {
 func crdViewers(vv MetaViewers) {
 	vv[client.CrdGVR] = MetaViewer{
 		viewerFn: NewCRD,
+	}
+}
+
+func openshiftViewers(vv MetaViewers) {
+	vv[client.NewGVR("project.openshift.io/v1/projects")] = MetaViewer{
+		viewerFn: NewNamespace,
 	}
 }
