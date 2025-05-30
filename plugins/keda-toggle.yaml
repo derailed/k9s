@@ -15,7 +15,7 @@ plugins:
     - |
       ANNOTATION="autoscaling.keda.sh/paused-replicas"
 
-      if kubectl get scaledobject $NAME -n $NAMESPACE -o yaml | grep -q "$ANNOTATION: \"0\""; then
+      if kubectl get scaledobject $NAME -n $NAMESPACE --context $CONTEXT -o yaml | grep -q "$ANNOTATION: \"0\""; then
         # If annotation found, remove it
         kubectl annotate scaledobject $NAME "$ANNOTATION"- -n $NAMESPACE --context $CONTEXT >/dev/null && echo "Keda autoscaling for $NAME enabled"
       else
