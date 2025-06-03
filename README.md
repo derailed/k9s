@@ -438,7 +438,7 @@ You can now override the context portForward default address configuration by se
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
       # Show full resource GVR (Group/Version/Resource) vs just R. Default: false.
@@ -1039,7 +1039,7 @@ Example: Dracula Skin ;)
 You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. See this repo `skins` directory for examples.
 You can skin k9s by default by specifying a UI.skin attribute. You can also change K9s skins based on the context you are connecting too.
 In this case, you can specify a skin field on your cluster config aka `skin: dracula` (just the name of the skin file without the extension!) and copy this repo
-`skins/dracula.yaml` to `$XDG_CONFIG_HOME/k9s/skins/` directory.
+`skins/dracula.yaml` to `$XDG_CONFIG_HOME/k9s/skins/` directory. You can also change the skin by setting `K9S_SKIN` in the environment, e.g. `export K9S_SKIN="dracula"`.
 
 In the case where your cluster spans several contexts, you can add a skin context configuration to your context configuration.
 This is a collection of {context_name, skin} tuples (please see example below!)
