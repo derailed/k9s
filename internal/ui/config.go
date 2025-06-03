@@ -199,23 +199,26 @@ func (c *Configurator) activeSkin() (string, bool) {
 		if _, err := os.Stat(config.SkinFileFromName(env_skin)); err == nil {
 			skin = env_skin
 			slog.Debug("Loading env skin", slogs.Skin, skin)
+			return skin, true
 		}
 	}
 
-	if ct, err := c.Config.K9s.ActiveContext(); err == nil && skin == "" && ct.Skin != "" {
+	if ct, err := c.Config.K9s.ActiveContext(); err == nil && ct.Skin != "" {
 		if _, err := os.Stat(config.SkinFileFromName(ct.Skin)); err == nil {
 			skin = ct.Skin
 			slog.Debug("Loading context skin",
 				slogs.Skin, skin,
 				slogs.Context, c.Config.K9s.ActiveContextName(),
 			)
+			return skin, true
 		}
 	}
 
-	if sk := c.Config.K9s.UI.Skin; skin == "" && sk != "" {
+	if sk := c.Config.K9s.UI.Skin; sk != "" {
 		if _, err := os.Stat(config.SkinFileFromName(sk)); err == nil {
 			skin = sk
 			slog.Debug("Loading global skin", slogs.Skin, skin)
+			return skin, true
 		}
 	}
 
