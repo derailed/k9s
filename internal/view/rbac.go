@@ -31,7 +31,6 @@ func NewRbac(gvr *client.GVR) ResourceViewer {
 
 func (r *Rbac) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
-	aa.Add(ui.KeyShiftA, ui.NewKeyAction("Sort API-Group", r.GetTable().SortColCmd("API-GROUP", true), false))
 }
 
 func showRules(app *App, _ ui.Tabular, gvr *client.GVR, path string) {

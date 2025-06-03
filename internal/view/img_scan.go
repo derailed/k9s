@@ -43,12 +43,6 @@ func (*ImageScan) Name() string { return imgScanTitle }
 
 func (i *ImageScan) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlZ, tcell.KeyCtrlW)
-	aa.Bulk(ui.KeyMap{
-		ui.KeyShiftL: ui.NewKeyAction("Sort Lib", i.GetTable().SortColCmd("LIBRARY", false), true),
-		ui.KeyShiftS: ui.NewKeyAction("Sort Severity", i.GetTable().SortColCmd("SEVERITY", false), true),
-		ui.KeyShiftF: ui.NewKeyAction("Sort Fixed-in", i.GetTable().SortColCmd("FIXED-IN", false), true),
-		ui.KeyShiftV: ui.NewKeyAction("Sort Vulnerability", i.GetTable().SortColCmd("VULNERABILITY", false), true),
-	})
 }
 
 func (*ImageScan) viewCVE(app *App, _ ui.Tabular, _ *client.GVR, path string) {

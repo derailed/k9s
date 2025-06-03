@@ -17,5 +17,5 @@ func TestSecretNew(t *testing.T) {
 
 	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "Secrets", s.Name())
-	assert.Len(t, s.Hints(), 8)
+	assert.Len(t, s.Hints(), 9)
 }

@@ -288,6 +288,25 @@ func (t *Table) SetSortCol(name string, asc bool) {
 	t.setSortCol(model1.SortColumn{Name: name, ASC: asc})
 }
 
+func (t *Table) isVisible(h model1.HeaderColumn) bool {
+	if h.Hide {
+		return false
+	}
+	if h.Wide && !t.wide {
+		return false
+	}
+	if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
+		return false
+	}
+	if h.MX && !t.hasMetrics {
+		return false
+	}
+	if h.VS && vul.ImgScanner == nil {
+		return false
+	}
+	return true
+}
+
 // Update table content.
 func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableData {
 	if t.decorateFn != nil {
@@ -307,24 +326,8 @@ func (t *Table) GetNamespace() string {
 }
 
 func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
-	if client.IsAllNamespaces(data.GetNamespace()) {
-		t.actions.Add(
-			KeyShiftP,
-			NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false),
-		)
-	} else {
-		t.actions.Delete(KeyShiftP)
-	}
 	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
-
 	return data
-}
-
-func (t *Table) shouldExcludeColumn(h model1.HeaderColumn) bool {
-	return (h.Hide || (!t.wide && h.Wide)) ||
-		(h.Name == "NAMESPACE" && !t.GetModel().ClusterWide()) ||
-		(h.MX && !t.hasMetrics) ||
-		(h.VS && vul.ImgScanner == nil)
 }
 
 func (t *Table) UpdateUI(cdata, data *model1.TableData) {
@@ -334,7 +337,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 
 	var col int
 	for _, h := range cdata.Header() {
-		if t.shouldExcludeColumn(h) {
+		if !t.isVisible(h) {
 			continue
 		}
 		t.AddHeaderCell(col, h)
@@ -358,6 +361,20 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 		return true
 	})
 
+	colIndex, ok := cdata.Header().IndexOf(t.sortCol.Name, false)
+	if ok {
+		events := cdata.GetRowEvents()
+		events.Sort(
+			cdata.GetNamespace(),
+			colIndex,
+			t.sortCol.Name == "AGE",
+			data.Header().IsMetricsCol(colIndex),
+			t.sortCol.Name == "CAPACITY",
+			t.sortCol.ASC,
+		)
+		cdata.SetRowEvents(events)
+	}
+
 	t.updateSelection(true)
 	t.UpdateTitle()
 }
@@ -380,7 +397,8 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 			)
 			continue
 		}
-		if t.shouldExcludeColumn(h[c]) {
+
+		if !t.isVisible(h[c]) {
 			continue
 		}
 
@@ -418,18 +436,44 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 	}
 }
 
-// SortColCmd designates a sorted column.
-func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(*tcell.EventKey) *tcell.EventKey {
-		sc := t.getSortCol()
-		sc.ASC = !sc.ASC
-		if sc.Name != name {
-			sc.ASC = asc
+// SortColChange changes on which column to sort
+func (t *Table) SortColChange(direction SortChange) func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		data := t.model.Peek()
+		sortCol := t.sortCol.Name
+		header := data.GetHeader()
+
+		// Build a slice of visible header columns and their indices.
+		type colInfo struct {
+			Idx  int
+			Name string
 		}
-		sc.Name = name
-		t.setSortCol(sc)
+		var visibleCols []colInfo
+		for i, h := range header {
+			if t.isVisible(h) {
+				visibleCols = append(visibleCols, colInfo{Idx: i, Name: h.Name})
+			}
+		}
+		if len(visibleCols) == 0 {
+			return nil
+		}
+
+		// Find current sort column index in visibleCols.
+		curIdx := 0
+		for i, c := range visibleCols {
+			if c.Name == sortCol {
+				curIdx = i
+				break
+			}
+		}
+
+		// Move by direction (+1 or -1), wrap around if out of range.
+		newIdx := (curIdx + int(direction) + len(visibleCols)) % len(visibleCols)
+
+		t.sortCol.Name = visibleCols[newIdx].Name
 		t.setMSort(true)
-		t.Refresh()
+		t.doRefresh(data)
+
 		return nil
 	}
 }
@@ -448,14 +492,19 @@ func (t *Table) ClearMarks() {
 	t.Refresh()
 }
 
-// Refresh update the table data.
-func (t *Table) Refresh() {
-	data := t.model.Peek()
+// doRefresh updates the table data using the provided model data.
+func (t *Table) doRefresh(data *model1.TableData) {
 	if data.HeaderCount() == 0 {
 		return
 	}
 	cdata := t.Update(data, t.hasMetrics)
 	t.UpdateUI(cdata, data)
+}
+
+// Refresh update the table data.
+func (t *Table) Refresh() {
+	data := t.model.Peek()
+	t.doRefresh(data)
 }
 
 // GetSelectedRow returns the entire selected row or nil if nothing selected.

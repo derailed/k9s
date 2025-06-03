@@ -33,7 +33,6 @@ func NewStatefulSet(gvr *client.GVR) ResourceViewer {
 			),
 		),
 	)
-	s.AddBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showPods)
 
 	return &s
@@ -50,10 +49,6 @@ func (s *StatefulSet) logOptions(prev bool) (*dao.LogOptions, error) {
 	}
 
 	return podLogOptions(s.App(), path, prev, &sts.ObjectMeta, &sts.Spec.Template.Spec), nil
-}
-
-func (s *StatefulSet) bindKeys(aa *ui.KeyActions) {
-	aa.Add(ui.KeyShiftR, ui.NewKeyAction("Sort Ready", s.GetTable().SortColCmd(readyCol, true), false))
 }
 
 func (s *StatefulSet) showPods(app *App, _ ui.Tabular, _ *client.GVR, path string) {
