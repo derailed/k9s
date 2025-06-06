@@ -16,7 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/mock"
-	m "github.com/petergtz/pegomock"
+	m "github.com/petergtz/pegomock/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/cli-runtime/pkg/genericclioptions"

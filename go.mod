@@ -20,7 +20,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/petergtz/pegomock v2.9.0+incompatible
+	github.com/petergtz/pegomock/v4 v4.1.0
 	github.com/rakyll/hey v0.1.4
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/spf13/cobra v1.9.1
@@ -246,7 +246,6 @@ require (
 	github.com/nix-community/go-nix v0.0.0-20250101154619-4bdde671e0a1 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/nwaples/rardecode/v2 v2.1.0 // indirect
-	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.35.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
