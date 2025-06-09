@@ -5,6 +5,8 @@ package dao
 
 import (
 	"bytes"
+
+	"github.com/derailed/k9s/internal/config"
 )
 
 // LogChan represents a channel for logs.
@@ -67,10 +69,10 @@ func (l *LogItem) Size() int {
 }
 
 // Render returns a log line as string.
-func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+func (l *LogItem) Render(paint string, showTime bool, styles *config.Styles, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if showTime && index > 0 {
-		bb.WriteString("[gray::b]")
+		bb.WriteString("[" + string(styles.K9s.Views.Log.TimeColor) + "::b]")
 		bb.Write(l.Bytes[:index])
 		bb.WriteString(" ")
 		if l := 30 - len(l.Bytes[:index]); l > 0 {
