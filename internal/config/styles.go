@@ -147,6 +147,7 @@ type (
 	Log struct {
 		FgColor   Color        `json:"fgColor" yaml:"fgColor"`
 		BgColor   Color        `json:"bgColor" yaml:"bgColor"`
+		TimeColor Color        `json:"timeColor" yaml:"timeColor"`
 		Indicator LogIndicator `json:"indicator" yaml:"indicator"`
 	}
 
@@ -371,6 +372,7 @@ func newLog() Log {
 	return Log{
 		FgColor:   "lightskyblue",
 		BgColor:   "black",
+		TimeColor: "gray",
 		Indicator: newLogIndicator(),
 	}
 }

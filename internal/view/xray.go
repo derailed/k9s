@@ -300,7 +300,8 @@ func (x *Xray) showLogs(spec *xray.NodeSpec, prev bool) {
 		Container: co,
 		Previous:  prev,
 	}
-	if err := x.app.inject(NewLog(client.PodGVR, &opts), false); err != nil {
+	styles := x.App().Configurator.Styles
+	if err := x.app.inject(NewLog(client.PodGVR, &opts, styles), false); err != nil {
 		x.app.Flash().Err(err)
 	}
 }
