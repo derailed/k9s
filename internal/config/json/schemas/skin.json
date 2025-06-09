@@ -165,6 +165,7 @@
                 "properties": {
                   "fgColor": {"type": "string"},
                   "bgColor": {"type": "string"},
+                  "timeColor": {"type": "string"},
                   "indicator": {
                     "type": "object",
                     "additionalProperties": {
