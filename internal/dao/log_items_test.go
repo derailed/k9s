@@ -18,6 +18,7 @@ func init() {
 }
 
 func TestLogItemsFilter(t *testing.T) {
+	timeColor := "gray"
 	uu := map[string]struct {
 		q       string
 		opts    dao.LogOptions
@@ -74,7 +75,7 @@ func TestLogItemsFilter(t *testing.T) {
 
 	for k := range uu {
 		u := uu[k]
-		ii := dao.NewLogItems()
+		ii := dao.NewLogItems(timeColor)
 		ii.Add(
 			dao.NewLogItem([]byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))),
 			dao.NewLogItemFromString("Bumble bee tuna. will be back. will win."),
@@ -98,6 +99,7 @@ func TestLogItemsFilter(t *testing.T) {
 }
 
 func TestLogItemsRender(t *testing.T) {
+	timeColor := "gray"
 	uu := map[string]struct {
 		opts dao.LogOptions
 		e    string
@@ -131,7 +133,7 @@ func TestLogItemsRender(t *testing.T) {
 
 	s := []byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))
 	for k := range uu {
-		ii := dao.NewLogItems()
+		ii := dao.NewLogItems(timeColor)
 		ii.Add(dao.NewLogItem(s))
 		u := uu[k]
 		_, n := client.Namespaced(u.opts.Path)

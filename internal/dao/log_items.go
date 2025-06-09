@@ -32,12 +32,14 @@ type LogItems struct {
 	items     []*LogItem
 	podColors podColors
 	mx        sync.RWMutex
+	timeColor string
 }
 
 // NewLogItems returns a new instance.
-func NewLogItems() *LogItems {
+func NewLogItems(timeColor string) *LogItems {
 	return &LogItems{
 		podColors: make(map[string]string),
+		timeColor: timeColor,
 	}
 }
 
@@ -84,6 +86,7 @@ func (l *LogItems) Subset(index int) *LogItems {
 	return &LogItems{
 		items:     l.items[index:],
 		podColors: l.podColors,
+		timeColor: l.timeColor,
 	}
 }
 
@@ -127,7 +130,7 @@ func (l *LogItems) Lines(index int, showTime bool, ll [][]byte) {
 
 	for i, item := range l.items[index:] {
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.Render(l.podColorFor(item.ID()), showTime, l.timeColor, bb)
 		ll[i] = bb.Bytes()
 	}
 }
@@ -140,7 +143,7 @@ func (l *LogItems) StrLines(index int, showTime bool) []string {
 	ll := make([]string, len(l.items[index:]))
 	for i, item := range l.items[index:] {
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.Render(l.podColorFor(item.ID()), showTime, l.timeColor, bb)
 		ll[i] = bb.String()
 	}
 
@@ -151,7 +154,7 @@ func (l *LogItems) StrLines(index int, showTime bool) []string {
 func (l *LogItems) Render(index int, showTime bool, ll [][]byte) {
 	for i, item := range l.items[index:] {
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.Render(l.podColorFor(item.ID()), showTime, l.timeColor, bb)
 		ll[i] = bb.Bytes()
 	}
 }
