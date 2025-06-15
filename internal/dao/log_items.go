@@ -31,14 +31,14 @@ type LogItems struct {
 	items     []*LogItem
 	podColors map[string]string
 	mx        sync.RWMutex
-	styles       *config.Styles
+	styles    *config.Styles
 }
 
 // NewLogItems returns a new instance.
 func NewLogItems(styles *config.Styles) *LogItems {
 	return &LogItems{
 		podColors: make(map[string]string),
-		styles: styles,
+		styles:    styles,
 	}
 }
 
