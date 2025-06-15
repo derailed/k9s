@@ -19,6 +19,10 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 )
 
+const (
+	defaultPromptPrefix = ">"
+)
+
 // K9s tracks K9s configuration options.
 type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
@@ -313,6 +317,22 @@ func (k *K9s) Override(k9sFlags *Flags) {
 	}
 	k.manualCommand = k9sFlags.Command
 	k.manualScreenDumpDir = k9sFlags.ScreenDumpDir
+}
+
+// GetCommandPromptPrefix returns commandPromptPrefix setting.
+func (k *K9s) GetCommandPromptPrefix() string {
+	if k.UI.CommandPromptPrefix != "" {
+		return k.UI.CommandPromptPrefix
+	}
+	return defaultPromptPrefix
+}
+
+// GetFilterPromptPrefix returns filterPromptPrefix setting.
+func (k *K9s) GetFilterPromptPrefix() string {
+	if k.UI.FilterPromptPrefix != "" {
+		return k.UI.FilterPromptPrefix
+	}
+	return defaultPromptPrefix
 }
 
 // IsHeadless returns headless setting.

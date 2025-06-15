@@ -28,6 +28,12 @@ type UI struct {
 	// Crumbsless toggles nav crumb display.
 	Crumbsless bool `json:"crumbsless" yaml:"crumbsless"`
 
+	// CommandPromptPrefix set custom prompt in command mode.
+	CommandPromptPrefix string `json:"commandPromptPrefix" yaml:"commandPromptPrefix"`
+
+	// filterPromptPrefix set custom prompt in filter mode.
+	FilterPromptPrefix string `json:"filterPromptPrefix" yaml:"filterPromptPrefix"`
+
 	// Splashless disables the splash screen on startup.
 	Splashless bool `json:"splashless" yaml:"splashless"`
 

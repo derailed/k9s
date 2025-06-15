@@ -431,6 +431,10 @@ You can now override the context portForward default address configuration by se
       logoless: false
       # Set to true to hide K9s crumbs. Default false
       crumbsless: false
+      # Set custom prompt prefix in command mode. Default to '>'
+      commandPromptPrefix: ""
+      # Set custom prompt prefix in filter mode. Default to '>'
+      filterPromptPrefix: ""
       # Set to true to suppress the K9s splash screen on start. Default false. Note that for larger clusters or higher latency connections, there may be no resources visible initially until local caches have finished populating.
       splashless: false
       # Toggles icons display as not all terminal support these chars. Default: true

@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/mock"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -146,4 +147,36 @@ func TestAppScreenDumpDir(t *testing.T) {
 
 	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, "/tmp/k9s-test/screen-dumps", cfg.K9s.AppScreenDumpDir())
+}
+
+// Tests that, when a user set a custom prompt prefix for command mode, the prompt will have the custom prefix instead of default
+func TestCustomCommandPromptPrefix(t *testing.T) {
+	var cfg ui.Configurator
+	cfg.Config = mock.NewMockConfig(t)
+	cfg.Config.K9s.UI.CommandPromptPrefix = "$"
+	assert.Equal(t, "$", cfg.Config.K9s.GetCommandPromptPrefix())
+}
+
+// Tests that, when a user not set a custom prompt prefix for command mode, the prompt will have the default prefix
+func TestDefaultCommandPromptPrefix(t *testing.T) {
+	var cfg ui.Configurator
+	cfg.Config = mock.NewMockConfig(t)
+	cfg.Config.K9s.UI.CommandPromptPrefix = ""
+	assert.Equal(t, ">", cfg.Config.K9s.GetCommandPromptPrefix())
+}
+
+// Tests that, when a user set a custom prompt prefix for filter mode, the prompt will have the custom prefix instead of default
+func TestCustomFilterPromptPrefix(t *testing.T) {
+	var cfg ui.Configurator
+	cfg.Config = mock.NewMockConfig(t)
+	cfg.Config.K9s.UI.FilterPromptPrefix = "/"
+	assert.Equal(t, "/", cfg.Config.K9s.GetFilterPromptPrefix())
+}
+
+// Tests that, when a user not set a custom prompt prefix for filter mode, the prompt will have the default prefix
+func TestDefaultFilterPromptPrefix(t *testing.T) {
+	var cfg ui.Configurator
+	cfg.Config = mock.NewMockConfig(t)
+	cfg.Config.K9s.UI.FilterPromptPrefix = ""
+	assert.Equal(t, ">", cfg.Config.K9s.GetFilterPromptPrefix())
 }

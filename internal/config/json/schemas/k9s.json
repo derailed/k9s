@@ -26,6 +26,8 @@
             "headless": {"type": "boolean"},
             "logoless": {"type": "boolean"},
             "crumbsless": {"type": "boolean"},
+            "commandPromptPrefix": {"type": "string"},
+            "filterPromptPrefix": {"type": "string"},
             "splashless": {"type": "boolean"},
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
