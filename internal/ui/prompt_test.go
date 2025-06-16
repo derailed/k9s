@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
@@ -22,7 +23,7 @@ func TestCmdNew(t *testing.T) {
 		m.Add(r)
 	}
 
-	assert.Equal(t, "\x00> [::b]blee\n", v.GetText(false))
+	assert.Equal(t, "\x00 [::b]blee\n", v.GetText(false))
 }
 
 func TestCmdUpdate(t *testing.T) {
@@ -34,13 +35,15 @@ func TestCmdUpdate(t *testing.T) {
 	m.SetText("blee", "")
 	m.Add('!')
 
-	assert.Equal(t, "\x00> [::b]blee!\n", v.GetText(false))
+	assert.Equal(t, "\x00 [::b]blee!\n", v.GetText(false))
 	assert.False(t, v.InCmdMode())
 }
 
 func TestCmdMode(t *testing.T) {
+	var cfg ui.Configurator
+	cfg.Config = mock.NewMockConfig(t)
 	m := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v := ui.NewPrompt(&ui.App{Configurator: cfg}, true, config.NewStyles())
 	v.SetModel(m)
 	m.AddListener(v)
 
@@ -51,8 +54,10 @@ func TestCmdMode(t *testing.T) {
 }
 
 func TestPrompt_Deactivate(t *testing.T) {
+	var cfg ui.Configurator
+	cfg.Config = mock.NewMockConfig(t)
 	m := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v := ui.NewPrompt(&ui.App{Configurator: cfg}, true, config.NewStyles())
 	v.SetModel(m)
 	m.AddListener(v)
 
@@ -65,8 +70,10 @@ func TestPrompt_Deactivate(t *testing.T) {
 
 // Tests that, when active, the prompt has the appropriate color
 func TestPromptColor(t *testing.T) {
+	var cfg ui.Configurator
+	cfg.Config = mock.NewMockConfig(t)
 	styles := config.NewStyles()
-	app := ui.App{}
+	app := ui.App{Configurator: cfg}
 
 	// Make sure to have different values to be sure that the prompt color actually changes depending on its type
 	assert.NotEqual(t,
@@ -105,7 +112,9 @@ func TestPromptColor(t *testing.T) {
 
 // Tests that, when a change of style occurs, the prompt will have the appropriate color when active
 func TestPromptStyleChanged(t *testing.T) {
-	app := ui.App{}
+	var cfg ui.Configurator
+	cfg.Config = mock.NewMockConfig(t)
+	app := ui.App{Configurator: cfg}
 	styles := config.NewStyles()
 	newStyles := config.NewStyles()
 	newStyles.K9s.Prompt.Border = config.PromptBorder{
