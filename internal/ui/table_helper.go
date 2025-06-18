@@ -60,12 +60,11 @@ func TrimCell(tv *SelectTable, row, col int) string {
 
 // TrimLabelSelector extracts label query.
 func TrimLabelSelector(s string) (labels.Selector, error) {
-	var selStr string
 	if strings.Index(s, "-l") == 0 {
-		selStr = strings.TrimSpace(s[2:])
+		s = strings.TrimSpace(s[2:])
 	}
 
-	return labels.Parse(selStr)
+	return labels.Parse(s)
 }
 
 // SkinTitle decorates a title.
