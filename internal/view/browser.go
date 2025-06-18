@@ -386,6 +386,8 @@ func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if hasFilter {
 			b.GetModel().SetLabelSelector(labels.Everything())
 			b.Refresh()
+			b.App().cmdHistory.Push(b.command.Cmd(), "")
+			b.App().cmdHistory.Forward()
 		}
 		return b.App().PrevCmd(evt)
 	}
