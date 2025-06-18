@@ -12,10 +12,15 @@ const MaxHistory = 20
 
 // History represents a command history.
 type History struct {
-	commands             []string
+	commands             []FilteredCommand
 	limit                int
 	activeCommandIndex   int
 	previousCommandIndex int
+}
+
+type FilteredCommand struct {
+	Command string
+	Filter  string
 }
 
 // NewHistory returns a new instance.
@@ -99,19 +104,19 @@ func (h *History) PopN(n int) bool {
 }
 
 // List returns the current command history.
-func (h *History) List() []string {
+func (h *History) List() []FilteredCommand {
 	return h.commands
 }
 
 // Push adds a new item.
-func (h *History) Push(c string) {
+func (h *History) Push(c, f string) {
 	if c == "" {
 		return
 	}
 
 	c = strings.ToLower(c)
 	if len(h.commands) < h.limit {
-		h.commands = append(h.commands, c)
+		h.commands = append(h.commands, FilteredCommand{c, f})
 		h.previousCommandIndex = h.activeCommandIndex
 		h.activeCommandIndex = len(h.commands) - 1
 		return

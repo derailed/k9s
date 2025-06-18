@@ -332,7 +332,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 
 			ci := cmd.NewInterpreter(podCmd)
 			cmds := c.app.cmdHistory.List()
-			currentCommand := cmds[c.app.cmdHistory.CurrentIndex()]
+			currentCommand := cmds[c.app.cmdHistory.CurrentIndex()].Command
 			if currentCommand != podCmd {
 				ci = ci.Reset(currentCommand)
 			}
@@ -353,7 +353,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 		return err
 	}
 	if pushCmd {
-		c.app.cmdHistory.Push(p.GetLine())
+		c.app.cmdHistory.Push(p.GetLine(), "")
 	}
 	slog.Debug("History", slogs.Stack, c.app.cmdHistory.List())
 
