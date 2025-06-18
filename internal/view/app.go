@@ -47,26 +47,24 @@ const (
 type App struct {
 	version string
 	*ui.App
-	Content       *PageStack
-	command       *Command
-	factory       *watch.Factory
-	cancelFn      context.CancelFunc
-	clusterModel  *model.ClusterInfo
-	cmdHistory    *model.History
-	filterHistory *model.History
-	conRetry      int32
-	showHeader    bool
-	showLogo      bool
-	showCrumbs    bool
+	Content      *PageStack
+	command      *Command
+	factory      *watch.Factory
+	cancelFn     context.CancelFunc
+	clusterModel *model.ClusterInfo
+	cmdHistory   *model.History
+	conRetry     int32
+	showHeader   bool
+	showLogo     bool
+	showCrumbs   bool
 }
 
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:           ui.NewApp(cfg, cfg.K9s.ActiveContextName()),
-		cmdHistory:    model.NewHistory(model.MaxHistory),
-		filterHistory: model.NewHistory(model.MaxHistory),
-		Content:       NewPageStack(),
+		App:        ui.NewApp(cfg, cfg.K9s.ActiveContextName()),
+		cmdHistory: model.NewHistory(model.MaxHistory),
+		Content:    NewPageStack(),
 	}
 	a.ReloadStyles()
 
@@ -195,7 +193,11 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			if a.cmdHistory.Empty() {
 				return
 			}
-			return a.cmdHistory.List()
+			r := []string{}
+			for _, c := range a.cmdHistory.List() {
+				r = append(r, c.Command)
+			}
+			return r
 		}
 
 		ls := strings.ToLower(s)
@@ -664,7 +666,7 @@ func (a *App) dirCmd(path string, pushCmd bool) error {
 		}
 	}
 	if pushCmd {
-		a.cmdHistory.Push("dir " + path)
+		a.cmdHistory.Push("dir "+path, "")
 	}
 
 	return a.inject(NewDir(path), true)
@@ -712,7 +714,12 @@ func (a *App) previousCommand(evt *tcell.EventKey) *tcell.EventKey {
 		a.App.Flash().Warn("Can't go back any further")
 		return evt
 	}
-	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	c := cmds[a.cmdHistory.CurrentIndex()]
+	if c.Filter != "" {
+		a.gotoResource(c.Command+" /"+c.Filter, "", true, false)
+	} else {
+		a.gotoResource(c.Command, "", true, false)
+	}
 	return nil
 }
 
@@ -726,9 +733,12 @@ func (a *App) nextCommand(evt *tcell.EventKey) *tcell.EventKey {
 		a.App.Flash().Warn("Can't go forward any further")
 		return evt
 	}
-	// We go to the resource before updating the history so that
-	// gotoResource doesn't add this command to the history
-	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	c := cmds[a.cmdHistory.CurrentIndex()]
+	if c.Filter != "" {
+		a.gotoResource(c.Command+" /"+c.Filter, "", true, false)
+	} else {
+		a.gotoResource(c.Command, "", true, false)
+	}
 	return nil
 }
 
@@ -743,7 +753,12 @@ func (a *App) lastCommand(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	a.cmdHistory.Last()
-	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	c := cmds[a.cmdHistory.CurrentIndex()]
+	if c.Filter != "" {
+		a.gotoResource(c.Command+" /"+c.Filter, "", true, false)
+	} else {
+		a.gotoResource(c.Command, "", true, false)
+	}
 
 	return nil
 }
