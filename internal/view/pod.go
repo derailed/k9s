@@ -184,6 +184,7 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	no := NewNode(client.NodeGVR)
 	no.SetInstance(pod.Spec.NodeName)
+
 	if err := p.App().inject(no, false); err != nil {
 		p.App().Flash().Err(err)
 	}

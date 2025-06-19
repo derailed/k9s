@@ -110,11 +110,20 @@ func (h *History) Push(c string) {
 	}
 
 	c = strings.ToLower(c)
+
+	// If we're not at the end, truncate forward history
+	if h.activeCommandIndex < len(h.commands)-1 {
+		h.commands = h.commands[:h.activeCommandIndex+1]
+	}
+
+	// Enforce history limit
 	if len(h.commands) < h.limit {
 		h.commands = append(h.commands, c)
-		h.previousCommandIndex = h.activeCommandIndex
 		h.activeCommandIndex = len(h.commands) - 1
-		return
+	} else {
+		// Remove the oldest entry and append the new one
+		h.commands = append(h.commands[1:], c)
+		h.activeCommandIndex = len(h.commands) - 1
 	}
 }
 
