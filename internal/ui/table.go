@@ -62,9 +62,10 @@ type Table struct {
 func NewTable(gvr *client.GVR) *Table {
 	return &Table{
 		SelectTable: &SelectTable{
-			Table: tview.NewTable(),
-			model: model.NewTable(gvr),
-			marks: make(map[string]struct{}),
+			Table:           tview.NewTable(),
+			model:           model.NewTable(gvr),
+			marks:           make(map[string]struct{}),
+			lastSelectedRow: -1,
 		},
 		ctx:     context.Background(),
 		gvr:     gvr,
@@ -205,6 +206,9 @@ func (t *Table) StylesChanged(s *config.Styles) {
 			Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
 	t.selFgColor = s.Table().CursorFgColor.Color()
 	t.selBgColor = s.Table().CursorBgColor.Color()
+	t.markColor = s.Table().MarkColor.Color()
+	t.fgColor = s.Table().FgColor.Color()
+	t.bgColor = s.Table().BgColor.Color()
 	t.Refresh()
 }
 
@@ -368,9 +372,15 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 		color = t.colorerFn
 	}
 
-	marked := t.IsMarked(re.Row.ID)
-	var col int
 	ns := t.GetModel().GetNamespace()
+	t.fgColor = color(ns, h, &re)
+	t.bgColor = t.styles.Table().BgColor.Color()
+
+	marked := t.IsMarked(re.Row.ID)
+	selectedRow, _ := t.GetSelection()
+	selected := selectedRow == r
+
+	var col int
 	for c, field := range re.Row.Fields {
 		if c >= len(h) {
 			slog.Error("Field/header overflow detected. Check your mappings!",
@@ -405,14 +415,26 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 		cell := tview.NewTableCell(field)
 		cell.SetExpansion(1)
 		cell.SetAlign(h[c].Align)
+
 		fgColor := color(ns, h, &re)
+		bgColor := t.styles.Table().BgColor.Color()
+
+		if selected {
+			fgColor = t.styles.Table().CursorFgColor.Color()
+			if marked {
+				bgColor = t.styles.Table().MarkColor.Color()
+			} else {
+				bgColor = t.styles.Table().CursorBgColor.Color()
+			}
+		} else {
+			if marked {
+				fgColor = t.styles.Table().MarkColor.Color()
+			}
+		}
 		cell.SetTextColor(fgColor)
-		if marked {
-			cell.SetTextColor(t.styles.Table().MarkColor.Color())
-		}
-		if col == 0 {
-			cell.SetReference(re.Row.ID)
-		}
+		cell.SetBackgroundColor(bgColor)
+
+		cell.SetReference(re.Row.ID)
 		t.SetCell(r, col, cell)
 		col++
 	}
