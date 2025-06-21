@@ -426,10 +426,8 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 			} else {
 				bgColor = t.styles.Table().CursorBgColor.Color()
 			}
-		} else {
-			if marked {
-				fgColor = t.styles.Table().MarkColor.Color()
-			}
+		} else if marked {
+			fgColor = t.styles.Table().MarkColor.Color()
 		}
 		cell.SetTextColor(fgColor)
 		cell.SetBackgroundColor(bgColor)
