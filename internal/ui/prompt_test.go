@@ -14,15 +14,52 @@ import (
 )
 
 func TestCmdNew(t *testing.T) {
-	v := ui.NewPrompt(nil, true, config.NewStyles())
-	m := model.NewFishBuff(':', model.CommandBuffer)
-	v.SetModel(m)
-	m.AddListener(v)
-	for _, r := range "blee" {
-		m.Add(r)
+	uu := map[string]struct {
+		mode   rune
+		kind   model.BufferKind
+		noIcon bool
+		e      string
+	}{
+		"cmd": {
+			mode:   ':',
+			noIcon: true,
+			kind:   model.CommandBuffer,
+			e:      " > [::b]blee\n",
+		},
+
+		"cmd-ic": {
+			mode: ':',
+			kind: model.CommandBuffer,
+			e:    "🐶> [::b]blee\n",
+		},
+
+		"search": {
+			mode:   '/',
+			kind:   model.FilterBuffer,
+			noIcon: true,
+			e:      " / [::b]blee\n",
+		},
+
+		"search-ic": {
+			mode: '/',
+			kind: model.FilterBuffer,
+			e:    "🐩/ [::b]blee\n",
+		},
 	}
 
-	assert.Equal(t, "\x00> [::b]blee\n", v.GetText(false))
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			v := ui.NewPrompt(nil, u.noIcon, config.NewStyles())
+			m := model.NewFishBuff(u.mode, u.kind)
+			v.SetModel(m)
+			m.AddListener(v)
+			for _, r := range "blee" {
+				m.Add(r)
+			}
+			m.SetActive(true)
+			assert.Equal(t, u.e, v.GetText(false))
+		})
+	}
 }
 
 func TestCmdUpdate(t *testing.T) {
@@ -34,7 +71,7 @@ func TestCmdUpdate(t *testing.T) {
 	m.SetText("blee", "")
 	m.Add('!')
 
-	assert.Equal(t, "\x00> [::b]blee!\n", v.GetText(false))
+	assert.Equal(t, "\x00\x00 [::b]blee!\n", v.GetText(false))
 	assert.False(t, v.InCmdMode())
 }
 
