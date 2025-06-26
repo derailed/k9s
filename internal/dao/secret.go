@@ -63,7 +63,6 @@ func (s *Secret) Decode(encodedDescription, path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	decodedSecrets := make([]string, 0, len(data))
 	for k, v := range data {
 		line := fmt.Sprintf("%s: %s", k, v)
@@ -88,7 +87,6 @@ func ExtractSecrets(o runtime.Object) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	secretData := make(map[string]string, len(secret.Data))
 	for k, val := range secret.Data {
 		secretData[k] = string(val)

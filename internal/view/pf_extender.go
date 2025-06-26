@@ -203,7 +203,6 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 
 		return startFwdCB(v, path, pts)
 	}
-
 	ShowPortForwards(v, path, ports, anns, cb)
 
 	return nil
