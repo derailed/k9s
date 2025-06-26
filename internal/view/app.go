@@ -707,12 +707,12 @@ func (a *App) previousCommand(evt *tcell.EventKey) *tcell.EventKey {
 	if evt != nil && evt.Rune() == rune(ui.KeyLeftBracket) && a.Prompt().InCmdMode() {
 		return evt
 	}
-	cmds := a.cmdHistory.List()
-	if !a.cmdHistory.Back() {
+	c, ok := a.cmdHistory.Back()
+	if !ok {
 		a.App.Flash().Warn("Can't go back any further")
 		return evt
 	}
-	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	a.gotoResource(c, "", true, false)
 	return nil
 }
 
@@ -721,14 +721,14 @@ func (a *App) nextCommand(evt *tcell.EventKey) *tcell.EventKey {
 	if evt != nil && evt.Rune() == rune(ui.KeyRightBracket) && a.Prompt().InCmdMode() {
 		return evt
 	}
-	cmds := a.cmdHistory.List()
-	if !a.cmdHistory.Forward() {
+	c, ok := a.cmdHistory.Forward()
+	if !ok {
 		a.App.Flash().Warn("Can't go forward any further")
 		return evt
 	}
 	// We go to the resource before updating the history so that
 	// gotoResource doesn't add this command to the history
-	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	a.gotoResource(c, "", true, false)
 	return nil
 }
 
@@ -737,13 +737,12 @@ func (a *App) lastCommand(evt *tcell.EventKey) *tcell.EventKey {
 	if evt != nil && evt.Rune() == ui.KeyDash && a.Prompt().InCmdMode() {
 		return evt
 	}
-	cmds := a.cmdHistory.List()
-	if len(cmds) < 1 {
+	c, ok := a.cmdHistory.Top()
+	if !ok {
 		a.App.Flash().Warn("No previous view to switch to")
 		return evt
 	}
-	a.cmdHistory.Last()
-	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	a.gotoResource(c, "", true, false)
 
 	return nil
 }

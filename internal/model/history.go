@@ -12,117 +12,102 @@ const MaxHistory = 20
 
 // History represents a command history.
 type History struct {
-	commands             []string
-	limit                int
-	activeCommandIndex   int
-	previousCommandIndex int
+	commands   []string
+	limit      int
+	currentIdx int
 }
 
 // NewHistory returns a new instance.
 func NewHistory(limit int) *History {
 	return &History{
-		limit: limit,
+		limit:      limit,
+		currentIdx: -1,
 	}
 }
 
-// Last switches the current and previous history index positions so the
-// new command referenced by the index is the previous command
-func (h *History) Last() bool {
-	if h.Empty() {
-		return false
-	}
-
-	h.activeCommandIndex, h.previousCommandIndex = h.previousCommandIndex, h.activeCommandIndex
-	return true
+// List returns the command history.
+func (h *History) List() []string {
+	return h.commands
 }
 
-// Back moves the history position index back by one
-func (h *History) Back() bool {
-	if h.Empty() {
-		return false
+// Top returns the last command in the history if present.
+func (h *History) Top() (string, bool) {
+	h.currentIdx = len(h.commands) - 1
+
+	return h.at(h.currentIdx)
+}
+
+// Last returns the nth command prior to last.
+func (h *History) Last(idx int) (string, bool) {
+	h.currentIdx = len(h.commands) - idx
+
+	return h.at(h.currentIdx)
+}
+
+func (h *History) at(idx int) (string, bool) {
+	if idx < 0 || idx >= len(h.commands) {
+		return "", false
 	}
 
-	// Return if there are no more commands left in the backward history
-	if h.activeCommandIndex == 0 {
-		return false
-	}
+	return h.commands[idx], true
+}
 
-	h.previousCommandIndex = h.activeCommandIndex
-	h.activeCommandIndex--
-	return true
+// Back moves the history position index back by one.
+func (h *History) Back() (string, bool) {
+	if h.Empty() || h.currentIdx <= 0 {
+		return "", false
+	}
+	h.currentIdx--
+
+	return h.at(h.currentIdx)
 }
 
 // Forward moves the history position index forward by one
-func (h *History) Forward() bool {
-	if h.Empty() {
-		return false
+func (h *History) Forward() (string, bool) {
+	h.currentIdx++
+	if h.Empty() || h.currentIdx >= len(h.commands) {
+		return "", false
 	}
 
-	// Return if there are no more commands left in the forward history
-	if h.activeCommandIndex >= len(h.commands)-1 {
-		return false
-	}
-
-	h.previousCommandIndex = h.activeCommandIndex
-	h.activeCommandIndex++
-	return true
-}
-
-// CurrentIndex returns the current index of the active command in the history
-func (h *History) CurrentIndex() int {
-	return h.activeCommandIndex
-}
-
-// PreviousIndex returns the index of the command that was the most recent
-// active command in the history
-func (h *History) PreviousIndex() int {
-	return h.previousCommandIndex
+	return h.at(h.currentIdx)
 }
 
 // Pop removes the single most recent history item
 // and returns a bool if the list changed.
 func (h *History) Pop() bool {
-	return h.PopN(1)
+	return h.popN(1)
 }
 
 // PopN removes the N most recent history item
 // and returns a bool if the list changed.
 // Argument specifies how many to remove from the history
-func (h *History) PopN(n int) bool {
-	cmdLength := len(h.commands)
-	if cmdLength == 0 {
+func (h *History) popN(n int) bool {
+	pop := len(h.commands) - n
+	if h.Empty() || pop < 0 {
 		return false
 	}
+	h.commands = h.commands[:pop]
+	h.currentIdx = len(h.commands) - 1
 
-	h.commands = h.commands[:cmdLength-n]
 	return true
-}
-
-// List returns the current command history.
-func (h *History) List() []string {
-	return h.commands
 }
 
 // Push adds a new item.
 func (h *History) Push(c string) {
-	if c == "" {
+	if c == "" || len(h.commands) >= h.limit {
 		return
 	}
-
-	c = strings.ToLower(c)
-	if len(h.commands) < h.limit {
-		h.commands = append(h.commands, c)
-		h.previousCommandIndex = h.activeCommandIndex
-		h.activeCommandIndex = len(h.commands) - 1
-		return
+	if h.currentIdx < len(h.commands)-1 {
+		h.commands = h.commands[:h.currentIdx+1]
 	}
+	h.commands = append(h.commands, strings.ToLower(c))
+	h.currentIdx = len(h.commands) - 1
 }
 
 // Clear clears out the stack.
 func (h *History) Clear() {
 	h.commands = nil
-	h.activeCommandIndex = 0
-	h.previousCommandIndex = 0
+	h.currentIdx = -1
 }
 
 // Empty returns true if no history.

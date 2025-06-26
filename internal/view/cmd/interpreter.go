@@ -27,6 +27,15 @@ func NewInterpreter(s string) *Interpreter {
 	return &c
 }
 
+func (c *Interpreter) TrimNS() string {
+	if !c.HasNS() {
+		return c.line
+	}
+	ns, _ := c.NSArg()
+
+	return strings.TrimSpace(strings.Replace(c.line, ns, "", 1))
+}
+
 func (c *Interpreter) grok() {
 	ff := strings.Fields(c.line)
 	if len(ff) == 0 {
