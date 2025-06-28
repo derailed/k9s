@@ -72,7 +72,7 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 			return
 		}
 	}
-	if err := l.App().inject(NewLog(l.GVR(), opts), false); err != nil {
+	if err := l.App().inject(NewLog(l.GVR(), opts, l.App().Configurator.Styles), false); err != nil {
 		l.App().Flash().Err(err)
 	}
 }
