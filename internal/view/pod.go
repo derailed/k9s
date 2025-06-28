@@ -516,12 +516,12 @@ func fetchContainers(meta *metav1.ObjectMeta, spec *v1.PodSpec, allContainers bo
 			nn = append(nn, spec.Containers[i].Name)
 		}
 	}
-	if !allContainers {
-		return nn
-	}
 
 	for i := range spec.InitContainers {
-		nn = append(nn, spec.InitContainers[i].Name)
+		isSidecar := spec.InitContainers[i].RestartPolicy != nil && *spec.InitContainers[i].RestartPolicy == v1.ContainerRestartPolicyAlways
+		if allContainers || isSidecar {
+			nn = append(nn, spec.InitContainers[i].Name)
+		}
 	}
 	for i := range spec.EphemeralContainers {
 		nn = append(nn, spec.EphemeralContainers[i].Name)
