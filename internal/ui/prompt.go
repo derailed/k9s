@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultPrompt = "%c> [::b]%s"
+	defaultPrompt = "%c%s [::b]%s"
 	defaultSpacer = 4
 )
 
@@ -78,13 +78,14 @@ type PromptModel interface {
 type Prompt struct {
 	*tview.TextView
 
-	app     *App
-	noIcons bool
-	icon    rune
-	styles  *config.Styles
-	model   PromptModel
-	spacer  int
-	mx      sync.RWMutex
+	app                *App
+	noIcons            bool
+	icon               rune
+	customPromptPrefix string
+	styles             *config.Styles
+	model              PromptModel
+	spacer             int
+	mx                 sync.RWMutex
 }
 
 // NewPrompt returns a new command view.
@@ -235,7 +236,7 @@ func (p *Prompt) write(text, suggest string) {
 		txt += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
 	}
 	p.StylesChanged(p.styles)
-	_, _ = fmt.Fprintf(p, defaultPrompt, p.icon, txt)
+	_, _ = fmt.Fprintf(p, defaultPrompt, p.icon, p.customPromptPrefix, txt)
 }
 
 // ----------------------------------------------------------------------------
@@ -263,6 +264,7 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 		p.SetBorder(true)
 		p.SetTextColor(p.styles.FgColor())
 		p.SetBorderColor(p.colorFor(kind))
+		p.customPromptPrefix = p.CustomPromptPrefixFor(kind)
 		p.icon = p.iconFor(kind)
 		p.activate()
 		return
@@ -272,6 +274,17 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	p.SetBorder(false)
 	p.SetBackgroundColor(p.styles.BgColor())
 	p.Clear()
+}
+
+// CustomPromptPrefixFor set custom prompt if any
+func (p *Prompt) CustomPromptPrefixFor(k model.BufferKind) string {
+	//nolint:exhaustive
+	switch k {
+	case model.CommandBuffer:
+		return p.app.Config.K9s.GetCommandPromptPrefix()
+	default:
+		return p.app.Config.K9s.GetFilterPromptPrefix()
+	}
 }
 
 func (p *Prompt) iconFor(k model.BufferKind) rune {

@@ -12,6 +12,8 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    commandPromptPrefix: ""
+    filterPromptPrefix: ""
     splashless: false
     reactive: false
     noIcons: false
