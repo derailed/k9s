@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -26,7 +29,7 @@ func (p *PageStack) Init(ctx context.Context) (err error) {
 	if p.app, err = extractApp(ctx); err != nil {
 		return err
 	}
-	p.Stack.AddListener(p)
+	p.AddListener(p)
 
 	return nil
 }

@@ -1,29 +1,33 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"encoding/csv"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/rs/zerolog/log"
 )
 
-func computeFilename(screenDumpDir, context, ns, title, path string) (string, error) {
+func computeFilename(dumpPath, ns, title, path string) (string, error) {
 	now := time.Now().UnixNano()
 
-	dir := filepath.Join(screenDumpDir, context)
+	dir := dumpPath
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	name := title + "-" + config.SanitizeFilename(path)
+	name := title + "-" + data.SanitizeFileName(path)
 	if path == "" {
 		name = title
 	}
@@ -38,17 +42,17 @@ func computeFilename(screenDumpDir, context, ns, title, path string) (string, er
 	return strings.ToLower(filepath.Join(dir, fName)), nil
 }
 
-func saveTable(screenDumpDir, context, title, path string, data *render.TableData) (string, error) {
-	ns := data.Namespace
+func saveTable(dir, title, path string, mdata *model1.TableData) (string, error) {
+	ns := mdata.GetNamespace()
 	if client.IsClusterWide(ns) {
 		ns = client.NamespaceAll
 	}
 
-	fPath, err := computeFilename(screenDumpDir, context, ns, title, path)
+	fPath, err := computeFilename(dir, ns, title, path)
 	if err != nil {
 		return "", err
 	}
-	log.Debug().Msgf("Saving Table to %s", fPath)
+	slog.Debug("Saving table to disk", slogs.FileName, fPath)
 
 	mod := os.O_CREATE | os.O_WRONLY
 	out, err := os.OpenFile(fPath, mod, 0600)
@@ -57,20 +61,20 @@ func saveTable(screenDumpDir, context, title, path string, data *render.TableDat
 	}
 	defer func() {
 		if err := out.Close(); err != nil {
-			log.Error().Err(err).Msg("Closing file")
+			slog.Error("Closing file failed",
+				slogs.Path, fPath,
+				slogs.Error, err,
+			)
 		}
 	}()
 
 	w := csv.NewWriter(out)
-	if err := w.Write(data.Header.Columns(true)); err != nil {
-		return "", err
-	}
+	_ = w.Write(mdata.ColumnNames(true))
 
-	for _, re := range data.RowEvents {
-		if err := w.Write(re.Row.Fields); err != nil {
-			return "", err
-		}
-	}
+	mdata.RowsRange(func(_ int, re model1.RowEvent) bool {
+		_ = w.Write(re.Row.Fields)
+		return true
+	})
 	w.Flush()
 	if err := w.Error(); err != nil {
 		return "", err

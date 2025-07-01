@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dialog
 
 import (
@@ -25,7 +28,7 @@ var propagationOptions []string = []string{
 }
 
 // ShowDelete pops a resource deletion dialog.
-func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
+func ShowDelete(styles *config.Dialog, pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
 	propagation, force := "", false
 	f := tview.NewForm()
 	f.SetItemPadding(0)
@@ -60,7 +63,7 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 		dismiss(pages)
 		cancel()
 	})
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		b := f.GetButton(i)
 		if b == nil {
 			continue

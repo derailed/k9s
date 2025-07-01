@@ -1,0 +1,33 @@
+# Removes all finalizers from the selected resource. Finalizers are namespaced keys that tell Kubernetes to wait
+# until specific conditions are met before it fully deletes resources marked for deletion.
+# Before deleting an object you need to ensure that all finalizers has been removed. Usually this would be done
+# by the specific controller but under some circumstances it is possible to encounter a set of objects blocked
+# for deletion.
+# This plugin makes this task easier by providing a shortcut to directly removing them all.
+# Be careful when using this plugin as it may leave dangling resources or instantly deleting resources that were
+# blocked by the finalizers.
+# Author: github.com/jalvarezit
+plugins:
+  remove_finalizers:
+    shortCut: Ctrl-F
+    confirm: true
+    dangerous: true
+    scopes:
+      - all
+    description: |
+      Removes all finalizers from selected resource. Be careful when using it,
+      it may leave dangling resources or delete them
+    command: kubectl
+    background: true
+    args:
+      - patch
+      - --context
+      - $CONTEXT
+      - --namespace
+      - $NAMESPACE
+      - $RESOURCE_NAME.$RESOURCE_GROUP
+      - $NAME
+      - -p
+      - '{"metadata":{"finalizers":null}}'
+      - --type
+      - merge

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package color
 
 import (
@@ -43,7 +46,7 @@ func Highlight(bb []byte, ii []int, c int) []byte {
 	b := make([]byte, 0, len(bb))
 	for i, j := 0, 0; i < len(bb); i++ {
 		if j < len(ii) && ii[j] == i {
-			b = append(b, colorizeByte(bb[i], 209)...)
+			b = append(b, colorizeByte(bb[i], c)...)
 			j++
 		} else {
 			b = append(b, bb[i])

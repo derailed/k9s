@@ -1,63 +1,101 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config_test
 
 import (
+	"maps"
+	"os"
+	"path"
+	"slices"
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestAliasClear(t *testing.T) {
+	a := testAliases()
+	a.Clear()
+
+	assert.Empty(t, slices.Collect(maps.Keys(a.Alias)))
+}
+
+func TestAliasKeys(t *testing.T) {
+	a := testAliases()
+	kk := maps.Keys(a.Alias)
+
+	assert.Equal(t, []string{"a1", "a11", "a2", "a3"}, slices.Sorted(kk))
+}
+
+func TestAliasShortNames(t *testing.T) {
+	a := testAliases()
+	ess := config.ShortNames{
+		gvr1: []string{"a1", "a11"},
+		gvr2: []string{"a2"},
+		gvr3: []string{"a3"},
+	}
+	ss := a.ShortNames()
+	assert.Len(t, ss, len(ess))
+	for k, v := range ss {
+		v1, ok := ess[k]
+		assert.True(t, ok, "missing: %q", k)
+		slices.Sort(v)
+		assert.Equal(t, v1, v)
+	}
+}
 
 func TestAliasDefine(t *testing.T) {
 	type aliasDef struct {
-		cmd     string
+		gvr     *client.GVR
 		aliases []string
 	}
 
-	uu := []struct {
-		name               string
+	uu := map[string]struct {
 		aliases            []aliasDef
-		registeredCommands map[string]string
+		registeredCommands map[string]*client.GVR
 	}{
-		{
-			name: "simple aliases",
+		"simple": {
 			aliases: []aliasDef{
 				{
-					cmd:     "one",
+					gvr:     client.NewGVR("one"),
 					aliases: []string{"blee", "duh"},
 				},
 			},
-			registeredCommands: map[string]string{
-				"blee": "one",
-				"duh":  "one",
+			registeredCommands: map[string]*client.GVR{
+				"blee": client.NewGVR("one"),
+				"duh":  client.NewGVR("one"),
 			},
 		},
-		{
-			name: "duplicated aliases",
+		"duplicates": {
 			aliases: []aliasDef{
 				{
-					cmd:     "one",
+					gvr:     client.NewGVR("one"),
 					aliases: []string{"blee", "duh"},
 				}, {
-					cmd:     "two",
+					gvr:     client.NewGVR("two"),
 					aliases: []string{"blee", "duh", "fred", "zorg"},
 				},
 			},
-			registeredCommands: map[string]string{
-				"blee": "one",
-				"duh":  "one",
-				"fred": "two",
-				"zorg": "two",
+			registeredCommands: map[string]*client.GVR{
+				"blee": client.NewGVR("one"),
+				"duh":  client.NewGVR("one"),
+				"fred": client.NewGVR("two"),
+				"zorg": client.NewGVR("two"),
 			},
 		},
 	}
 
-	for i := range uu {
-		u := uu[i]
-		t.Run(u.name, func(t *testing.T) {
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
 			configAlias := config.NewAliases()
 			for _, aliases := range u.aliases {
 				for _, a := range aliases.aliases {
-					configAlias.Define(aliases.cmd, a)
+					configAlias.Define(aliases.gvr, a)
 				}
 			}
 			for alias, cmd := range u.registeredCommands {
@@ -70,18 +108,41 @@ func TestAliasDefine(t *testing.T) {
 }
 
 func TestAliasesLoad(t *testing.T) {
+	config.AppConfigDir = "testdata/aliases"
 	a := config.NewAliases()
+	require.NoError(t, a.Load(path.Join(config.AppConfigDir, "plain.yaml")))
 
-	assert.Nil(t, a.LoadFileAliases("testdata/alias.yml"))
-	assert.Equal(t, 2, len(a.Alias))
+	assert.Len(t, a.Alias, 55)
 }
 
 func TestAliasesSave(t *testing.T) {
-	a := config.NewAliases()
-	a.Alias["test"] = "fred"
-	a.Alias["blee"] = "duh"
+	require.NoError(t, data.EnsureFullPath("/tmp/test-aliases", data.DefaultDirMod))
+	defer require.NoError(t, os.RemoveAll("/tmp/test-aliases"))
 
-	assert.Nil(t, a.SaveAliases("/tmp/a.yml"))
-	assert.Nil(t, a.LoadFileAliases("/tmp/a.yml"))
-	assert.Equal(t, 2, len(a.Alias))
+	config.AppAliasesFile = "/tmp/test-aliases/aliases.yaml"
+	a := testAliases()
+	c := len(a.Alias)
+
+	assert.Len(t, a.Alias, c)
+	require.NoError(t, a.Save())
+	require.NoError(t, a.LoadFile(config.AppAliasesFile))
+	assert.Len(t, a.Alias, c)
+}
+
+// Helpers...
+
+var (
+	gvr1 = client.NewGVR("gvr1")
+	gvr2 = client.NewGVR("gvr2")
+	gvr3 = client.NewGVR("gvr3")
+)
+
+func testAliases() *config.Aliases {
+	a := config.NewAliases()
+	a.Alias["a1"] = gvr1
+	a.Alias["a11"] = gvr1
+	a.Alias["a2"] = gvr2
+	a.Alias["a3"] = gvr3
+
+	return a
 }

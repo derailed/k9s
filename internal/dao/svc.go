@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -29,7 +32,7 @@ func (s *Service) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, er
 	if err != nil {
 		return nil, err
 	}
-	if svc.Spec.Selector == nil || len(svc.Spec.Selector) == 0 {
+	if len(svc.Spec.Selector) == 0 {
 		return nil, fmt.Errorf("no valid selector found on Service %s", opts.Path)
 	}
 
@@ -48,7 +51,7 @@ func (s *Service) Pod(fqn string) (string, error) {
 
 // GetInstance returns a service instance.
 func (s *Service) GetInstance(fqn string) (*v1.Service, error) {
-	o, err := s.GetFactory().Get(s.gvr.String(), fqn, true, labels.Everything())
+	o, err := s.getFactory().Get(s.gvr, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +69,7 @@ func (s *Service) GetInstance(fqn string) (*v1.Service, error) {
 // Helpers...
 
 func podFromSelector(f Factory, ns string, sel map[string]string) (string, error) {
-	oo, err := f.List("v1/pods", ns, true, labels.Set(sel).AsSelector())
+	oo, err := f.List(client.PodGVR, ns, true, labels.Set(sel).AsSelector())
 	if err != nil {
 		return "", err
 	}

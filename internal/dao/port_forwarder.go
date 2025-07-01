@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -9,18 +12,20 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/port"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 )
+
+const defaultTimeout = 30 * time.Second
 
 // PortForwarder tracks a port forward stream.
 type PortForwarder struct {
@@ -43,9 +48,14 @@ func NewPortForwarder(f Factory) *PortForwarder {
 	}
 }
 
+// String dumps as string.
+func (p *PortForwarder) String() string {
+	return fmt.Sprintf("%s|%s", p.path, p.tunnel)
+}
+
 // Age returns the port forward age.
-func (p *PortForwarder) Age() string {
-	return time.Since(p.age).String()
+func (p *PortForwarder) Age() time.Time {
+	return p.age
 }
 
 // Active returns the forward status.
@@ -61,6 +71,11 @@ func (p *PortForwarder) SetActive(b bool) {
 // Port returns the port mapping.
 func (p *PortForwarder) Port() string {
 	return p.tunnel.PortMap()
+}
+
+// Address returns the port Address.
+func (p *PortForwarder) Address() string {
+	return p.tunnel.Address
 }
 
 // ContainerPort returns the container port.
@@ -85,9 +100,11 @@ func (p *PortForwarder) Container() string {
 
 // Stop terminates a port forward.
 func (p *PortForwarder) Stop() {
-	log.Debug().Msgf("<<< Stopping PortForward %s", p.ID())
 	p.active = false
-	close(p.stopChan)
+	if p.stopChan != nil {
+		close(p.stopChan)
+		p.stopChan = nil
+	}
 }
 
 // FQN returns the portforward unique id.
@@ -105,7 +122,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 	p.path, p.tunnel, p.age = path, tt, time.Now()
 
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods", []string{client.GetVerb})
+	auth, err := p.Client().CanI(ns, client.PodGVR, n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +132,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 
 	podName := strings.Split(n, "|")[0]
 	var res Pod
-	res.Init(p, client.NewGVR("v1/pods"))
+	res.Init(p, client.PodGVR)
 	pod, err := res.GetInstance(client.FQN(ns, podName))
 	if err != nil {
 		return nil, err
@@ -124,7 +141,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 		return nil, fmt.Errorf("unable to forward port because pod is not running. Current status=%v", pod.Status.Phase)
 	}
 
-	auth, err = p.Client().CanI(ns, "v1/pods:portforward", []string{client.CreateVerb})
+	auth, err = p.Client().CanI(ns, client.PodGVR.WithSubResource("portforward"), "", []string{client.CreateVerb})
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +170,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 	return p.forwardPorts("POST", req.URL(), tt.Address, tt.PortMap())
 }
 
-func (p *PortForwarder) forwardPorts(method string, url *url.URL, addr, portMap string) (*portforward.PortForwarder, error) {
+func (p *PortForwarder) forwardPorts(method string, u *url.URL, addr, portMap string) (*portforward.PortForwarder, error) {
 	cfg, err := p.Client().Config().RESTConfig()
 	if err != nil {
 		return nil, err
@@ -162,7 +179,19 @@ func (p *PortForwarder) forwardPorts(method string, url *url.URL, addr, portMap 
 	if err != nil {
 		return nil, err
 	}
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, method, url)
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport, Timeout: defaultTimeout}, method, u)
+
+	if !cmdutil.PortForwardWebsockets.IsDisabled() {
+		tunnelingDialer, err := portforward.NewSPDYOverWebsocketDialer(u, cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		// First attempt tunneling (websocket) dialer, then fallback to spdy dialer.
+		dialer = portforward.NewFallbackDialer(tunnelingDialer, dialer, func(err error) bool {
+			return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
+		})
+	}
 
 	return portforward.NewOnAddresses(dialer, []string{addr}, []string{portMap}, p.stopChan, p.readyChan, p.Out, p.ErrOut)
 }
@@ -183,8 +212,8 @@ func codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
 	gv := schema.GroupVersion{Group: "", Version: "v1"}
 	metav1.AddToGroupVersion(scheme, gv)
-	scheme.AddKnownTypes(gv, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
-	scheme.AddKnownTypes(metav1beta1.SchemeGroupVersion, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
+	scheme.AddKnownTypes(gv, &metav1.Table{}, &metav1.TableOptions{})
+	scheme.AddKnownTypes(metav1.SchemeGroupVersion, &metav1.Table{}, &metav1.TableOptions{})
 
 	return serializer.NewCodecFactory(scheme), runtime.NewParameterCodec(scheme)
 }

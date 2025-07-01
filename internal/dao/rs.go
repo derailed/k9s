@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -16,14 +21,28 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
+var (
+	_ ImageLister = (*ReplicaSet)(nil)
+)
+
 // ReplicaSet represents a replicaset K8s resource.
 type ReplicaSet struct {
 	Resource
 }
 
+// ListImages lists container images.
+func (r *ReplicaSet) ListImages(_ context.Context, fqn string) ([]string, error) {
+	rs, err := r.Load(r.Factory, fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&rs.Spec.Template.Spec), nil
+}
+
 // Load returns a given instance.
-func (r *ReplicaSet) Load(f Factory, path string) (*appsv1.ReplicaSet, error) {
-	o, err := f.Get("apps/v1/replicasets", path, true, labels.Everything())
+func (*ReplicaSet) Load(f Factory, path string) (*appsv1.ReplicaSet, error) {
+	o, err := f.Get(client.RsGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +57,7 @@ func (r *ReplicaSet) Load(f Factory, path string) (*appsv1.ReplicaSet, error) {
 }
 
 func getRSRevision(rs *appsv1.ReplicaSet) (int64, error) {
-	revision := rs.ObjectMeta.Annotations["deployment.kubernetes.io/revision"]
+	revision := rs.Annotations["deployment.kubernetes.io/revision"]
 	if rs.Status.Replicas != 0 {
 		return 0, errors.New("can not rollback current replica")
 	}
@@ -50,8 +69,8 @@ func getRSRevision(rs *appsv1.ReplicaSet) (int64, error) {
 	return int64(vers), nil
 }
 
-func controllerInfo(rs *appsv1.ReplicaSet) (string, string, string, error) {
-	for _, ref := range rs.ObjectMeta.OwnerReferences {
+func controllerInfo(rs *appsv1.ReplicaSet) (name, kind, group string, err error) {
+	for _, ref := range rs.OwnerReferences {
 		if ref.Controller == nil {
 			continue
 		}
@@ -61,7 +80,8 @@ func controllerInfo(rs *appsv1.ReplicaSet) (string, string, string, error) {
 		}
 		return ref.Name, ref.Kind, group, nil
 	}
-	return "", "", "", fmt.Errorf("Unable to find controller for ReplicaSet %s", rs.ObjectMeta.Name)
+
+	return "", "", "", fmt.Errorf("unable to find controller for replicaset: %s", rs.Name)
 }
 
 // Rollback reverses the last deployment.
@@ -95,7 +115,8 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 	}
 
 	var ddp Deployment
-	dp, err := ddp.Load(r.Factory, client.FQN(rs.Namespace, name))
+	ddp.Init(r.Factory, client.DpGVR)
+	dp, err := ddp.GetInstance(client.FQN(rs.Namespace, name))
 	if err != nil {
 		return err
 	}

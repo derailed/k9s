@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view_test
 
 import (
@@ -37,7 +40,7 @@ func BenchmarkLogIndicatorRefresh(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		v.Refresh()
 	}
 }

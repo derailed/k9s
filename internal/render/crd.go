@@ -1,47 +1,75 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var defaultCRDHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "GROUP"},
+	model1.HeaderColumn{Name: "KIND"},
+	model1.HeaderColumn{Name: "VERSIONS"},
+	model1.HeaderColumn{Name: "SCOPE"},
+	model1.HeaderColumn{Name: "ALIASES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
 
 // CustomResourceDefinition renders a K8s CustomResourceDefinition to screen.
 type CustomResourceDefinition struct {
 	Base
 }
 
-// Header returns a header rbw.
-func (CustomResourceDefinition) Header(string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VERSIONS"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
-	}
+// Header returns a header row.
+func (c CustomResourceDefinition) Header(_ string) model1.Header {
+	return c.doHeader(defaultCRDHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (c CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
+func (c CustomResourceDefinition) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected CustomResourceDefinition, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 
+	if err := c.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if c.specs.isEmpty() {
+		return nil
+	}
+	cols, err := c.specs.realize(raw, defaultCRDHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var crd v1.CustomResourceDefinition
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &crd)
 	if err != nil {
 		return err
 	}
 
-	versions := make([]string, 0, 3)
+	versions := make([]string, 0, len(crd.Spec.Versions))
 	for _, v := range crd.Spec.Versions {
 		if v.Served {
 			n := v.Name
@@ -52,22 +80,26 @@ func (c CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error
 		}
 	}
 	if len(versions) == 0 {
-		log.Warn().Msgf("unable to assert CRD versions for %s", crd.GetName())
+		slog.Warn("Unable to assert CRD versions", slogs.FQN, crd.Name)
 	}
 
-	r.ID = client.FQN(client.ClusterScope, crd.GetName())
-	r.Fields = Fields{
-		crd.GetName(),
+	r.ID = client.MetaFQN(&crd.ObjectMeta)
+	r.Fields = model1.Fields{
+		crd.Spec.Names.Plural,
+		crd.Spec.Group,
+		crd.Spec.Names.Kind,
 		naStrings(versions),
+		string(crd.Spec.Scope),
+		naStrings(crd.Spec.Names.ShortNames),
 		mapToIfc(crd.GetLabels()),
-		asStatus(c.diagnose(crd.GetName(), crd.Spec.Versions)),
-		toAge(crd.GetCreationTimestamp()),
+		AsStatus(c.diagnose(crd.Name, crd.Spec.Versions)),
+		ToAge(crd.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (c CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefinitionVersion) error {
+func (CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefinitionVersion) error {
 	if len(vv) == 0 {
 		return fmt.Errorf("unable to assert CRD servers versions for %s", n)
 	}
@@ -84,7 +116,7 @@ func (c CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefin
 			if v.DeprecationWarning != nil {
 				ee = append(ee, fmt.Errorf("%s", *v.DeprecationWarning))
 			} else {
-				ee = append(ee, fmt.Errorf("%s[%s] is deprecated!", n, v.Name))
+				ee = append(ee, fmt.Errorf("%s[%s] is deprecated", n, v.Name))
 			}
 		}
 	}
@@ -101,20 +133,4 @@ func (c CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefin
 	}
 
 	return errors.New(strings.Join(errs, " - "))
-}
-
-func extractMetaField(m map[string]interface{}, field string) string {
-	f, ok := m[field]
-	if !ok {
-		log.Error().Err(fmt.Errorf("failed to extract field from meta %s", field))
-		return NAValue
-	}
-
-	fs, ok := f.(string)
-	if !ok {
-		log.Error().Err(fmt.Errorf("failed to extract string from field %s", field))
-		return NAValue
-	}
-
-	return fs
 }

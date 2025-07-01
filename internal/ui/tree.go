@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -15,7 +18,7 @@ type KeyListenerFunc func()
 type Tree struct {
 	*tview.TreeView
 
-	actions      KeyActions
+	actions      *KeyActions
 	selectedItem string
 	cmdBuff      *model.FishBuff
 	expandNodes  bool
@@ -28,13 +31,13 @@ func NewTree() *Tree {
 	return &Tree{
 		TreeView:    tview.NewTreeView(),
 		expandNodes: true,
-		actions:     make(KeyActions),
+		actions:     NewKeyActions(),
 		cmdBuff:     model.NewFishBuff('/', model.FilterBuffer),
 	}
 }
 
 // Init initializes the view.
-func (t *Tree) Init(ctx context.Context) error {
+func (t *Tree) Init(context.Context) error {
 	t.BindKeys()
 	t.SetBorder(true)
 	t.SetBorderAttributes(tcell.AttrBold)
@@ -72,7 +75,7 @@ func (t *Tree) SetKeyListenerFn(f KeyListenerFunc) {
 }
 
 // Actions returns active menu bindings.
-func (t *Tree) Actions() KeyActions {
+func (t *Tree) Actions() *KeyActions {
 	return t.actions
 }
 
@@ -82,31 +85,31 @@ func (t *Tree) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (t *Tree) ExtraHints() map[string]string {
+func (*Tree) ExtraHints() map[string]string {
 	return nil
 }
 
 // BindKeys binds default mnemonics.
 func (t *Tree) BindKeys() {
-	t.Actions().Add(KeyActions{
+	t.Actions().Merge(NewKeyActionsFromMap(KeyMap{
 		KeySpace: NewKeyAction("Expand/Collapse", t.noopCmd, true),
 		KeyX:     NewKeyAction("Expand/Collapse All", t.toggleCollapseCmd, true),
-	})
+	}))
 }
 
 func (t *Tree) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	if a, ok := t.actions[AsKey(evt)]; ok {
+	if a, ok := t.actions.Get(AsKey(evt)); ok {
 		return a.Action(evt)
 	}
 
 	return evt
 }
 
-func (t *Tree) noopCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (*Tree) noopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (t *Tree) toggleCollapseCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Tree) toggleCollapseCmd(*tcell.EventKey) *tcell.EventKey {
 	t.expandNodes = !t.expandNodes
 	t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 		if parent != nil {

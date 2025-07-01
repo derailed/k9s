@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
+	"fmt"
+	"log/slog"
 	"sync"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -92,9 +97,7 @@ func (s *Stack) Push(c Component) {
 	}
 
 	s.mx.Lock()
-	{
-		s.components = append(s.components, c)
-	}
+	s.components = append(s.components, c)
 	s.mx.Unlock()
 	s.notify(StackPush, c)
 }
@@ -107,11 +110,11 @@ func (s *Stack) Pop() (Component, bool) {
 
 	var c Component
 	s.mx.Lock()
-	{
-		c = s.components[len(s.components)-1]
-		s.components = s.components[:len(s.components)-1]
-	}
+	c = s.components[len(s.components)-1]
+	c.Stop()
+	s.components = s.components[:len(s.components)-1]
 	s.mx.Unlock()
+
 	s.notify(StackPop, c)
 
 	return c, true
@@ -163,6 +166,8 @@ func (s *Stack) Top() Component {
 		return nil
 	}
 
+	s.mx.RLock()
+	defer s.mx.RUnlock()
 	return s.components[len(s.components)-1]
 }
 
@@ -182,9 +187,9 @@ func (s *Stack) notify(a StackAction, c Component) {
 
 // Dump prints out the stack.
 func (s *Stack) Dump() {
-	log.Debug().Msgf("--- Stack Dump %p---", s)
+	slog.Debug("Stack Dump", slogs.Stack, fmt.Sprintf("%p", s))
 	for i, c := range s.components {
-		log.Debug().Msgf("%d -- %s -- %#v", i, c.Name(), c)
+		slog.Debug(fmt.Sprintf("%d -- %s -- %#v", i, c.Name(), c))
 	}
-	log.Debug().Msg("------------------")
+	slog.Debug("------------------")
 }

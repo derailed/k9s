@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -15,10 +18,10 @@ import (
 type StatefulSet struct{}
 
 // Render renders an xray node.
-func (s *StatefulSet) Render(ctx context.Context, ns string, o interface{}) error {
+func (s *StatefulSet) Render(ctx context.Context, ns string, o any) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Unstructured, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	var sts appsv1.StatefulSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sts)
@@ -28,10 +31,10 @@ func (s *StatefulSet) Render(ctx context.Context, ns string, o interface{}) erro
 
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	root := NewTreeNode("apps/v1/statefulsets", client.FQN(sts.Namespace, sts.Name))
+	root := NewTreeNode(client.StsGVR, client.FQN(sts.Namespace, sts.Name))
 	oo, err := locatePods(ctx, sts.Namespace, sts.Spec.Selector)
 	if err != nil {
 		return err
@@ -53,7 +56,7 @@ func (s *StatefulSet) Render(ctx context.Context, ns string, o interface{}) erro
 		return nil
 	}
 
-	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, sts.Namespace)
+	gvr, nsID := client.NsGVR, client.FQN(client.ClusterScope, sts.Namespace)
 	nsn := parent.Find(gvr, nsID)
 	if nsn == nil {
 		nsn = NewTreeNode(gvr, nsID)

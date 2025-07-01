@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -11,8 +14,10 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -35,10 +40,14 @@ type Help struct {
 // NewHelp returns a new help viewer.
 func NewHelp(app *App) *Help {
 	return &Help{
-		Table: NewTable(client.NewGVR("help")),
+		Table: NewTable(client.HlpGVR),
 		hints: app.Content.Top().Hints,
 	}
 }
+
+func (*Help) SetCommand(*cmd.Interpreter)      {}
+func (*Help) SetFilter(string)                 {}
+func (*Help) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the component.
 func (h *Help) Init(ctx context.Context) error {
@@ -71,7 +80,7 @@ func (h *Help) StylesChanged(s *config.Styles) {
 
 func (h *Help) bindKeys() {
 	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS, ui.KeySlash)
-	h.Actions().Set(ui.KeyActions{
+	h.Actions().Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, true),
 		ui.KeyHelp:      ui.NewKeyAction("Back", h.app.PrevCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Back", h.app.PrevCmd, false),
@@ -146,7 +155,7 @@ func (h *Help) addExtras(extras map[string]string, col, size int) {
 	}
 }
 
-func (h *Help) showNav() model.MenuHints {
+func (*Help) showNav() model.MenuHints {
 	return model.MenuHints{
 		{
 			Mnemonic:    "g",
@@ -180,12 +189,24 @@ func (h *Help) showNav() model.MenuHints {
 			Mnemonic:    "j",
 			Description: "Down",
 		},
+		{
+			Mnemonic:    "[",
+			Description: "History Back",
+		},
+		{
+			Mnemonic:    "]",
+			Description: "History Forward",
+		},
+		{
+			Mnemonic:    "-",
+			Description: "Last Used Command",
+		},
 	}
 }
 
 func (h *Help) showHotKeys() (model.MenuHints, error) {
 	hh := config.NewHotKeys()
-	if err := hh.Load(); err != nil {
+	if err := hh.Load(h.App().Config.ContextHotkeysPath()); err != nil {
 		return nil, fmt.Errorf("no hotkey configuration found")
 	}
 	kk := make(sort.StringSlice, 0, len(hh.HotKey))
@@ -204,7 +225,7 @@ func (h *Help) showHotKeys() (model.MenuHints, error) {
 	return mm, nil
 }
 
-func (h *Help) showGeneral() model.MenuHints {
+func (*Help) showGeneral() model.MenuHints {
 	return model.MenuHints{
 		{
 			Mnemonic:    "?",
@@ -321,8 +342,8 @@ func (h *Help) updateStyle() {
 		info    = style.Foreground(h.app.Styles.K9s.Help.FgColor.Color())
 		heading = style.Foreground(h.app.Styles.K9s.Help.SectionColor.Color())
 	)
-	for col := 0; col < h.GetColumnCount(); col++ {
-		for row := 0; row < h.GetRowCount(); row++ {
+	for col := range h.GetColumnCount() {
+		for row := range h.GetRowCount() {
 			c := h.GetCell(row, col)
 			if c == nil {
 				continue
@@ -364,7 +385,7 @@ func (h *Help) titleCell(title string) *tview.TableCell {
 	return c
 }
 
-func padCellWithRef(s string, width int, ref interface{}) *tview.TableCell {
+func padCellWithRef(s string, width int, ref any) *tview.TableCell {
 	return padCell(s, width).SetReference(ref)
 }
 

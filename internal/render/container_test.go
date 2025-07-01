@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
@@ -5,8 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,21 +25,20 @@ func TestContainer(t *testing.T) {
 		Container: makeContainer(),
 		Status:    makeContainerStatus(),
 		MX:        makeContainerMetrics(),
-		IsInit:    false,
 		Age:       makeAge(),
 	}
-	var r render.Row
-	assert.Nil(t, c.Render(cres, "blee", &r))
+	var r model1.Row
+	require.NoError(t, c.Render(cres, "blee", &r))
 	assert.Equal(t, "fred", r.ID)
-	assert.Equal(t, render.Fields{
+	assert.Equal(t, model1.Fields{
+		"",
 		"fred",
 		"●",
 		"img",
 		"false",
 		"Running",
-		"false",
 		"0",
-		"off:off",
+		"off:off:off",
 		"10",
 		"20",
 		"20:20",
@@ -51,20 +55,20 @@ func TestContainer(t *testing.T) {
 }
 
 func BenchmarkContainerRender(b *testing.B) {
-	var c render.Container
-
-	cres := render.ContainerRes{
-		Container: makeContainer(),
-		Status:    makeContainerStatus(),
-		MX:        makeContainerMetrics(),
-		IsInit:    false,
-		Age:       makeAge(),
-	}
-	var r render.Row
+	var (
+		c    render.Container
+		r    model1.Row
+		cres = render.ContainerRes{
+			Container: makeContainer(),
+			Status:    makeContainerStatus(),
+			MX:        makeContainerMetrics(),
+			Age:       makeAge(),
+		}
+	)
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		_ = c.Render(cres, "blee", &r)
 	}
 }

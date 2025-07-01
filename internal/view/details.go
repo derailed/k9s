@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -9,19 +12,25 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
-const detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
+const (
+	detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
+	contentTXT      = "text"
+	contentYAML     = "yaml"
+)
 
 // Details represents a generic text viewer.
 type Details struct {
 	*tview.Flex
 
 	text                      *tview.TextView
-	actions                   ui.KeyActions
+	actions                   *ui.KeyActions
 	app                       *App
 	title, subject            string
 	cmdBuff                   *model.FishBuff
@@ -29,25 +38,31 @@ type Details struct {
 	currentRegion, maxRegions int
 	searchable                bool
 	fullScreen                bool
+	contentType               string
 }
 
 // NewDetails returns a details viewer.
-func NewDetails(app *App, title, subject string, searchable bool) *Details {
+func NewDetails(app *App, title, subject, contentType string, searchable bool) *Details {
 	d := Details{
-		Flex:       tview.NewFlex(),
-		text:       tview.NewTextView(),
-		app:        app,
-		title:      title,
-		subject:    subject,
-		actions:    make(ui.KeyActions),
-		cmdBuff:    model.NewFishBuff('/', model.FilterBuffer),
-		model:      model.NewText(),
-		searchable: searchable,
+		Flex:        tview.NewFlex(),
+		text:        tview.NewTextView(),
+		app:         app,
+		title:       title,
+		subject:     subject,
+		actions:     ui.NewKeyActions(),
+		cmdBuff:     model.NewFishBuff('/', model.FilterBuffer),
+		model:       model.NewText(),
+		searchable:  searchable,
+		contentType: contentType,
 	}
 	d.AddItem(d.text, 0, 1, true)
 
 	return &d
 }
+
+func (*Details) SetCommand(*cmd.Interpreter)      {}
+func (*Details) SetFilter(string)                 {}
+func (*Details) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the viewer.
 func (d *Details) Init(_ context.Context) error {
@@ -64,6 +79,7 @@ func (d *Details) Init(_ context.Context) error {
 
 	d.app.Styles.AddListener(d)
 	d.StylesChanged(d.app.Styles)
+	d.setFullScreen(d.app.Config.K9s.UI.DefaultsToFullScreen)
 
 	d.app.Prompt().SetModel(d.cmdBuff)
 	d.cmdBuff.AddListener(d)
@@ -82,32 +98,30 @@ func (d *Details) InCmdMode() bool {
 
 // TextChanged notifies the model changed.
 func (d *Details) TextChanged(lines []string) {
-	d.text.SetText(colorizeYAML(d.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
+	switch d.contentType {
+	case contentYAML:
+		d.text.SetText(colorizeYAML(d.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
+	default:
+		d.text.SetText(strings.Join(lines, "\n"))
+	}
 	d.text.ScrollToBeginning()
 }
 
 // TextFiltered notifies when the filter changed.
 func (d *Details) TextFiltered(lines []string, matches fuzzy.Matches) {
-	d.currentRegion, d.maxRegions = 0, 0
-
-	ll := make([]string, len(lines))
-	copy(ll, lines)
-	for _, m := range matches {
-		loc, line := m.MatchedIndexes, ll[m.Index]
-		ll[m.Index] = line[:loc[0]] + fmt.Sprintf(`<<<"search_%d">>>`, d.maxRegions) + line[loc[0]:loc[1]] + `<<<"">>>` + line[loc[1]:]
-		d.maxRegions++
-	}
+	d.currentRegion, d.maxRegions = 0, len(matches)
+	ll := linesWithRegions(lines, matches)
 
 	d.text.SetText(colorizeYAML(d.app.Styles.Views().Yaml, strings.Join(ll, "\n")))
 	d.text.Highlight()
-	if d.maxRegions > 0 {
+	if len(matches) > 0 {
 		d.text.Highlight("search_0")
 		d.text.ScrollToHighlight()
 	}
 }
 
 // BufferChanged indicates the buffer was changed.
-func (d *Details) BufferChanged(_, _ string) {}
+func (*Details) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
 func (d *Details) BufferCompleted(text, _ string) {
@@ -121,7 +135,7 @@ func (d *Details) BufferActive(state bool, k model.BufferKind) {
 }
 
 func (d *Details) bindKeys() {
-	d.actions.Set(ui.KeyActions{
+	d.actions.Bulk(ui.KeyMap{
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", d.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", d.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", d.saveCmd, false),
@@ -139,7 +153,7 @@ func (d *Details) bindKeys() {
 }
 
 func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	if a, ok := d.actions[ui.AsKey(evt)]; ok {
+	if a, ok := d.actions.Get(ui.AsKey(evt)); ok {
 		return a.Action(evt)
 	}
 
@@ -148,15 +162,16 @@ func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 // StylesChanged notifies the skin changed.
 func (d *Details) StylesChanged(s *config.Styles) {
-	d.SetBackgroundColor(d.app.Styles.BgColor())
-	d.text.SetTextColor(d.app.Styles.FgColor())
-	d.SetBorderFocusColor(d.app.Styles.Frame().Border.FocusColor.Color())
+	d.SetBackgroundColor(s.BgColor())
+	d.text.SetTextColor(s.FgColor())
+	d.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
 	d.TextChanged(d.model.Peek())
 }
 
 // Update updates the view content.
 func (d *Details) Update(buff string) *Details {
 	d.model.SetText(buff)
+
 	return d
 }
 
@@ -170,7 +185,7 @@ func (d *Details) SetSubject(s string) {
 }
 
 // Actions returns menu actions.
-func (d *Details) Actions() ui.KeyActions {
+func (d *Details) Actions() *ui.KeyActions {
 	return d.actions
 }
 
@@ -178,7 +193,7 @@ func (d *Details) Actions() ui.KeyActions {
 func (d *Details) Name() string { return d.title }
 
 // Start starts the view updater.
-func (d *Details) Start() {}
+func (*Details) Start() {}
 
 // Stop terminates the updater.
 func (d *Details) Stop() {
@@ -191,7 +206,7 @@ func (d *Details) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (d *Details) ExtraHints() map[string]string {
+func (*Details) ExtraHints() map[string]string {
 	return nil
 }
 
@@ -216,16 +231,20 @@ func (d *Details) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	d.fullScreen = !d.fullScreen
-	d.SetFullScreen(d.fullScreen)
-	d.Box.SetBorder(!d.fullScreen)
-	if d.fullScreen {
-		d.Box.SetBorderPadding(0, 0, 0, 0)
-	} else {
-		d.Box.SetBorderPadding(0, 0, 1, 1)
-	}
+	d.setFullScreen(!d.fullScreen)
 
 	return nil
+}
+
+func (d *Details) setFullScreen(isFullScreen bool) {
+	d.fullScreen = isFullScreen
+	d.SetFullScreen(isFullScreen)
+	d.SetBorder(!isFullScreen)
+	if isFullScreen {
+		d.SetBorderPadding(0, 0, 0, 0)
+	} else {
+		d.SetBorderPadding(0, 0, 1, 1)
+	}
 }
 
 func (d *Details) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -244,7 +263,7 @@ func (d *Details) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (d *Details) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (d *Details) filterCmd(*tcell.EventKey) *tcell.EventKey {
 	d.model.Filter(d.cmdBuff.GetText())
 	d.cmdBuff.SetActive(false)
 	d.updateTitle()
@@ -261,7 +280,7 @@ func (d *Details) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (d *Details) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (d *Details) eraseCmd(*tcell.EventKey) *tcell.EventKey {
 	if !d.cmdBuff.IsActive() {
 		return nil
 	}
@@ -286,8 +305,8 @@ func (d *Details) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(d.app.Config.K9s.GetScreenDumpDir(), d.app.Config.K9s.CurrentContextDir(), d.title, d.text.GetText(true)); err != nil {
+func (d *Details) saveCmd(*tcell.EventKey) *tcell.EventKey {
+	if path, err := saveYAML(d.app.Config.K9s.ContextScreenDumpDir(), d.title, d.text.GetText(true)); err != nil {
 		d.app.Flash().Err(err)
 	} else {
 		d.app.Flash().Infof("Log %s saved successfully!", path)
@@ -302,9 +321,12 @@ func (d *Details) updateTitle() {
 	}
 	fmat := fmt.Sprintf(detailsTitleFmt, d.title, d.subject)
 
-	buff := d.cmdBuff.GetText()
+	var (
+		buff   = d.cmdBuff.GetText()
+		styles = d.app.Styles.Frame()
+	)
 	if buff == "" {
-		d.SetTitle(ui.SkinTitle(fmat, d.app.Styles.Frame()))
+		d.SetTitle(ui.SkinTitle(fmat, &styles))
 		return
 	}
 
@@ -312,5 +334,5 @@ func (d *Details) updateTitle() {
 		buff += fmt.Sprintf("[%d:%d]", d.currentRegion+1, d.maxRegions)
 	}
 	fmat += fmt.Sprintf(ui.SearchFmt, buff)
-	d.SetTitle(ui.SkinTitle(fmat, d.app.Styles.Frame()))
+	d.SetTitle(ui.SkinTitle(fmat, &styles))
 }

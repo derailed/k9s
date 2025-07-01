@@ -1,0 +1,114 @@
+# -----------------------------------------------------------------------------
+# Everforest Light
+# https://github.com/sainnhe/everforest/blob/master/palette.md#dark
+# -----------------------------------------------------------------------------
+#
+text: &text "#5c6a72"
+base: &base "#f2efdf"
+overlay: &overlay "#fffbef"
+muted: &muted "#edeada"
+red: &red "#f85552"
+blue: &blue "#3a94c5"
+yellow: &yellow "#dfa000"
+green: &green "#35a77c"
+pink: &pink "#df69ba"
+orange: &orange "#f57d26"
+
+# Skin...
+k9s:
+  # General K9s styles
+  body:
+    fgColor: *text
+    bgColor: *base
+    logoColor: *green
+  # Command prompt styles
+  prompt:
+    fgColor: *text
+    bgColor: *base
+    suggestColor: *green
+    border:
+      command: *orange
+      default: *blue
+  # ClusterInfoView styles.
+  info:
+    fgColor: *green
+    sectionColor: *text
+  # Dialog styles.
+  dialog:
+    fgColor: *text
+    bgColor: *base
+    buttonFgColor: *text
+    buttonBgColor: *green
+    buttonFocusFgColor: *yellow
+    buttonFocusBgColor: *green
+    labelFgColor: *yellow
+    fieldFgColor: *text
+  frame:
+    # Borders styles.
+    border:
+      fgColor: *overlay
+      focusColor: *overlay
+    menu:
+      fgColor: *text
+      keyColor: *green
+      # Used for favorite namespaces
+      numKeyColor: *green
+    # CrumbView attributes for history navigation.
+    crumbs:
+      fgColor: *text
+      bgColor: *overlay
+      activeColor: *overlay
+    # Resource status and update styles
+    status:
+      newColor: *green
+      modifyColor: *red
+      addColor: *blue
+      errorColor: *pink
+      highlightcolor: *yellow
+      killColor: *muted
+      completedColor: *muted
+    # Border title styles.
+    title:
+      fgColor: *text
+      bgColor: *overlay
+      highlightColor: *yellow
+      counterColor: *green
+      filterColor: *green
+  views:
+    # Charts skins...
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - *green
+        - *pink
+      defaultChartColors:
+        - *green
+        - *pink
+    # TableView attributes.
+    table:
+      fgColor: *text
+      bgColor: *base
+      # Header row styles.
+      header:
+        fgColor: *text
+        bgColor: *base
+        sorterColor: *red
+    # Xray view attributes.
+    xray:
+      fgColor: *text
+      bgColor: *base
+      cursorColor: *overlay
+      graphicColor: *green
+      showIcons: false
+    # YAML info styles.
+    yaml:
+      keyColor: *green
+      colonColor: *green
+      valueColor: *text
+    # Logs styles.
+    logs:
+      fgColor: *text
+      bgColor: *base
+      indicator:
+        fgColor: *text
+        bgColor: *base

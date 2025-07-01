@@ -1,41 +1,65 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var defaultPVCHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: "VOLUME"},
+	model1.HeaderColumn{Name: "CAPACITY", Attrs: model1.Attrs{Capacity: true}},
+	model1.HeaderColumn{Name: "ACCESS MODES"},
+	model1.HeaderColumn{Name: "STORAGECLASS"},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
 
 // PersistentVolumeClaim renders a K8s PersistentVolumeClaim to screen.
 type PersistentVolumeClaim struct {
 	Base
 }
 
-// Header returns a header rbw.
-func (PersistentVolumeClaim) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "VOLUME"},
-		HeaderColumn{Name: "CAPACITY", Capacity: true},
-		HeaderColumn{Name: "ACCESS MODES"},
-		HeaderColumn{Name: "STORAGECLASS"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
-	}
+// Header returns a header row.
+func (p PersistentVolumeClaim) Header(_ string) model1.Header {
+	return p.doHeader(defaultPVCHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
+func (p PersistentVolumeClaim) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected PersistentVolumeClaim, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+
+	if err := p.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if p.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := p.specs.realize(raw, defaultPVCHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (p PersistentVolumeClaim) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var pvc v1.PersistentVolumeClaim
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pvc)
 	if err != nil {
@@ -43,7 +67,7 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	phase := pvc.Status.Phase
-	if pvc.ObjectMeta.DeletionTimestamp != nil {
+	if pvc.DeletionTimestamp != nil {
 		phase = "Terminating"
 	}
 
@@ -61,8 +85,8 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		}
 	}
 
-	r.ID = client.MetaFQN(pvc.ObjectMeta)
-	r.Fields = Fields{
+	r.ID = client.MetaFQN(&pvc.ObjectMeta)
+	r.Fields = model1.Fields{
 		pvc.Namespace,
 		pvc.Name,
 		string(phase),
@@ -71,8 +95,8 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		accessModes,
 		class,
 		mapToStr(pvc.Labels),
-		asStatus(p.diagnose(string(phase))),
-		toAge(pvc.GetCreationTimestamp()),
+		AsStatus(p.diagnose(string(phase))),
+		ToAge(pvc.GetCreationTimestamp()),
 	}
 
 	return nil

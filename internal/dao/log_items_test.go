@@ -1,17 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao_test
 
 import (
 	"fmt"
+	"log/slog"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestLogItemsFilter(t *testing.T) {

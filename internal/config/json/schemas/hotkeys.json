@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s hotkeys schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "hotKeys": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "shortCut": {"type": "string"},
+          "override": { "type": "boolean" },
+          "description": {"type": "string"},
+          "command": {"type": "string"},
+          "keepHistory": {"type": "boolean"}
+        }
+      }
+    }
+  },
+  "required": ["hotKeys"]
+}

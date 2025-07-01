@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -28,9 +31,10 @@ type LogOptions struct {
 
 // Info returns the option pod and container info.
 func (o *LogOptions) Info() string {
-	if len(o.Container) != 0 {
+	if o.Container != "" {
 		return fmt.Sprintf("%s (%s)", o.Path, o.Container)
 	}
+
 	return o.Path
 }
 
@@ -128,7 +132,7 @@ func (o *LogOptions) ToLogItem(bytes []byte) *LogItem {
 	return item
 }
 
-func (o *LogOptions) ToErrLogItem(err error) *LogItem {
+func (*LogOptions) ToErrLogItem(err error) *LogItem {
 	t := time.Now().UTC().Format(time.RFC3339Nano)
 	item := NewLogItem([]byte(fmt.Sprintf("%s [orange::b]%s[::-]\n", t, err)))
 	item.IsError = true

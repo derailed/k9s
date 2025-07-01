@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -17,52 +22,84 @@ type ReplicaSet struct {
 }
 
 // ColorerFunc colors a resource row.
-func (r ReplicaSet) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+func (ReplicaSet) ColorerFunc() model1.ColorerFunc {
+	return model1.DefaultColorer
 }
 
 // Header returns a header row.
-func (ReplicaSet) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
-		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
-		HeaderColumn{Name: "READY", Align: tview.AlignRight},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
-	}
+func (r ReplicaSet) Header(_ string) model1.Header {
+	return r.doHeader(defaultRSHeader)
+}
+
+var defaultRSHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
-func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
+func (r ReplicaSet) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected ReplicaSet, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := r.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if r.specs.isEmpty() {
+		return nil
+	}
+	cols, err := r.specs.realize(raw, defaultRSHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (r ReplicaSet) defaultRow(raw *unstructured.Unstructured, row *model1.Row) error {
 	var rs appsv1.ReplicaSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &rs)
 	if err != nil {
 		return err
 	}
 
-	row.ID = client.MetaFQN(rs.ObjectMeta)
-	row.Fields = Fields{
+	var (
+		cc        = rs.Spec.Template.Spec.Containers
+		cos, imgs = make([]string, 0, len(cc)), make([]string, 0, len(cc))
+	)
+	for i := range cc {
+		cos, imgs = append(cos, cc[i].Name), append(imgs, cc[i].Image)
+	}
+
+	row.ID = client.MetaFQN(&rs.ObjectMeta)
+	row.Fields = model1.Fields{
 		rs.Namespace,
 		rs.Name,
+		computeVulScore(rs.Namespace, rs.Labels, &rs.Spec.Template.Spec),
 		strconv.Itoa(int(*rs.Spec.Replicas)),
 		strconv.Itoa(int(rs.Status.Replicas)),
 		strconv.Itoa(int(rs.Status.ReadyReplicas)),
+		strings.Join(cos, ","),
+		strings.Join(imgs, ","),
 		mapToStr(rs.Labels),
-		asStatus(r.diagnose(rs)),
-		toAge(rs.GetCreationTimestamp()),
+		AsStatus(r.diagnose(&rs)),
+		ToAge(rs.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (ReplicaSet) diagnose(rs appsv1.ReplicaSet) error {
+func (ReplicaSet) diagnose(rs *appsv1.ReplicaSet) error {
 	if rs.Status.Replicas != rs.Status.ReadyReplicas {
 		if rs.Status.Replicas == 0 {
 			return fmt.Errorf("did not phase down correctly expecting 0 replicas but got %d", rs.Status.ReadyReplicas)

@@ -1,0 +1,36 @@
+# Manage cert-manager Certificate resources via cmctl.
+# See: https://github.com/cert-manager/cmctl
+plugins:
+  cert-status:
+    shortCut: Shift-S
+    confirm: false
+    description: Certificate status
+    scopes:
+      - certificates
+    command: bash
+    background: false
+    args:
+      - -c
+      - "cmctl status certificate --context $CONTEXT -n $NAMESPACE $NAME |& less"
+  cert-renew:
+    shortCut: Shift-R
+    confirm: false
+    description: Certificate renew
+    scopes:
+      - certificates
+    command: bash
+    background: false
+    args:
+      - -c
+      - "cmctl renew --context $CONTEXT -n $NAMESPACE $NAME |& less"
+  secret-inspect:
+    shortCut: Shift-I
+    confirm: false
+    description: Inspect secret
+    scopes:
+      - secrets
+    command: bash
+    background: false
+    args:
+      - -c
+      - "cmctl inspect secret --context $CONTEXT -n $NAMESPACE $NAME |& less"

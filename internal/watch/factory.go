@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package watch
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
@@ -16,7 +22,7 @@ import (
 
 const (
 	defaultResync   = 10 * time.Minute
-	defaultWaitTime = 250 * time.Millisecond
+	defaultWaitTime = 500 * time.Millisecond
 )
 
 // Factory tracks various resource informers.
@@ -29,9 +35,9 @@ type Factory struct {
 }
 
 // NewFactory returns a new informers factory.
-func NewFactory(client client.Connection) *Factory {
+func NewFactory(clt client.Connection) *Factory {
 	return &Factory{
-		client:     client,
+		client:     clt,
 		factories:  make(map[string]di.DynamicSharedInformerFactory),
 		forwarders: NewForwarders(),
 	}
@@ -42,10 +48,10 @@ func (f *Factory) Start(ns string) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
 
-	log.Debug().Msgf("Factory START with ns `%q", ns)
+	slog.Debug("Factory started", slogs.Namespace, ns)
 	f.stopChan = make(chan struct{})
 	for ns, fac := range f.factories {
-		log.Debug().Msgf("Starting factory in ns %q", ns)
+		slog.Debug("Starting factory for ns", slogs.Namespace, ns)
 		fac.Start(f.stopChan)
 	}
 }
@@ -66,20 +72,20 @@ func (f *Factory) Terminate() {
 }
 
 // List returns a resource collection.
-func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
-	inf, err := f.CanForResource(ns, gvr, client.MonitorAccess)
+func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Selector) ([]runtime.Object, error) {
+	if client.IsAllNamespace(ns) {
+		ns = client.BlankNamespace
+	}
+	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
 	if err != nil {
 		return nil, err
-	}
-	if client.IsAllNamespace(ns) {
-		ns = client.AllNamespaces
 	}
 
 	var oo []runtime.Object
 	if client.IsClusterScoped(ns) {
-		oo, err = inf.Lister().List(labels)
+		oo, err = inf.Lister().List(lbls)
 	} else {
-		oo, err = inf.Lister().ByNamespace(ns).List(labels)
+		oo, err = inf.Lister().ByNamespace(ns).List(lbls)
 	}
 	if !wait || (wait && inf.Informer().HasSynced()) {
 		return oo, err
@@ -87,14 +93,14 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 
 	f.waitForCacheSync(ns)
 	if client.IsClusterScoped(ns) {
-		return inf.Lister().List(labels)
+		return inf.Lister().List(lbls)
 	}
-	return inf.Lister().ByNamespace(ns).List(labels)
+	return inf.Lister().ByNamespace(ns).List(lbls)
 }
 
 // HasSynced checks if given informer is up to date.
-func (f *Factory) HasSynced(gvr, ns string) (bool, error) {
-	inf, err := f.CanForResource(ns, gvr, client.MonitorAccess)
+func (f *Factory) HasSynced(gvr *client.GVR, ns string) (bool, error) {
+	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
 	if err != nil {
 		return false, err
 	}
@@ -103,8 +109,12 @@ func (f *Factory) HasSynced(gvr, ns string) (bool, error) {
 }
 
 // Get retrieves a given resource.
-func (f *Factory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runtime.Object, error) {
+func (f *Factory) Get(gvr *client.GVR, fqn string, wait bool, _ labels.Selector) (runtime.Object, error) {
 	ns, n := namespaced(fqn)
+	if client.IsAllNamespace(ns) {
+		ns = client.BlankNamespace
+	}
+
 	inf, err := f.CanForResource(ns, gvr, []string{client.GetVerb})
 	if err != nil {
 		return nil, err
@@ -123,12 +133,13 @@ func (f *Factory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runtime.
 	if client.IsClusterScoped(ns) {
 		return inf.Lister().Get(n)
 	}
+
 	return inf.Lister().ByNamespace(ns).Get(n)
 }
 
 func (f *Factory) waitForCacheSync(ns string) {
 	if client.IsClusterWide(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 
 	f.mx.RLock()
@@ -152,7 +163,11 @@ func (f *Factory) WaitForCacheSync() {
 	for ns, fac := range f.factories {
 		m := fac.WaitForCacheSync(f.stopChan)
 		for k, v := range m {
-			log.Debug().Msgf("CACHE `%q Loaded %t:%s", ns, v, k)
+			slog.Debug("CACHE `%q Loaded %t:%s",
+				slogs.Namespace, ns,
+				slogs.ResGrpVersion, v,
+				slogs.ResKind, k,
+			)
 		}
 	}
 }
@@ -179,14 +194,14 @@ func (f *Factory) SetActiveNS(ns string) error {
 func (f *Factory) isClusterWide() bool {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
-	_, ok := f.factories[client.AllNamespaces]
+	_, ok := f.factories[client.BlankNamespace]
 
 	return ok
 }
 
 // CanForResource return an informer is user has access.
-func (f *Factory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
-	auth, err := f.Client().CanI(ns, gvr, verbs)
+func (f *Factory) CanForResource(ns string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error) {
+	auth, err := f.Client().CanI(ns, gvr, "", verbs)
 	if err != nil {
 		return nil, err
 	}
@@ -198,14 +213,17 @@ func (f *Factory) CanForResource(ns, gvr string, verbs []string) (informers.Gene
 }
 
 // ForResource returns an informer for a given resource.
-func (f *Factory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
+func (f *Factory) ForResource(ns string, gvr *client.GVR) (informers.GenericInformer, error) {
 	fact, err := f.ensureFactory(ns)
 	if err != nil {
 		return nil, err
 	}
-	inf := fact.ForResource(toGVR(gvr))
+	inf := fact.ForResource(gvr.GVR())
 	if inf == nil {
-		log.Error().Err(fmt.Errorf("MEOW! No informer for %q:%q", ns, gvr))
+		slog.Error("No informer found",
+			slogs.GVR, gvr,
+			slogs.Namespace, ns,
+		)
 		return inf, nil
 	}
 
@@ -218,7 +236,7 @@ func (f *Factory) ForResource(ns, gvr string) (informers.GenericInformer, error)
 
 func (f *Factory) ensureFactory(ns string) (di.DynamicSharedInformerFactory, error) {
 	if client.IsClusterWide(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 	f.mx.Lock()
 	defer f.mx.Unlock()
@@ -251,7 +269,10 @@ func (f *Factory) AddForwarder(pf Forwarder) {
 // DeleteForwarder deletes portforward for a given container.
 func (f *Factory) DeleteForwarder(path string) {
 	count := f.forwarders.Kill(path)
-	log.Warn().Msgf("Deleted (%d) portforward for %q", count, path)
+	slog.Warn("Deleted portforward",
+		slogs.Count, count,
+		slogs.GVR, path,
+	)
 }
 
 // Forwarders returns all portforwards.
@@ -272,21 +293,30 @@ func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
 	return fwd, ok
 }
 
-// BOZO!! Review!!!
 // ValidatePortForwards check if pods are still around for portforwards.
+// BOZO!! Review!!!
 func (f *Factory) ValidatePortForwards() {
 	for k, fwd := range f.forwarders {
 		tokens := strings.Split(k, ":")
 		if len(tokens) != 2 {
-			log.Error().Msgf("Invalid fwd keys %q", k)
+			slog.Error("Invalid port-forward key", slogs.Key, k)
 			return
 		}
 		paths := strings.Split(tokens[0], "|")
 		if len(paths) < 1 {
-			log.Error().Msgf("Invalid path %q", tokens[0])
+			slog.Error("Invalid port-forward path", slogs.Path, tokens[0])
 		}
-		_, err := f.Get("v1/pods", paths[0], false, labels.Everything())
+		o, err := f.Get(client.PodGVR, paths[0], false, labels.Everything())
 		if err != nil {
+			fwd.Stop()
+			delete(f.forwarders, k)
+			continue
+		}
+		var pod v1.Pod
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
+			continue
+		}
+		if pod.GetCreationTimestamp().Unix() > fwd.Age().Unix() {
 			fwd.Stop()
 			delete(f.forwarders, k)
 		}

@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"sync/atomic"
@@ -12,9 +16,9 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/xray"
-	"github.com/rs/zerolog/log"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -31,7 +35,7 @@ type TreeListener interface {
 
 // Tree represents a tree model.
 type Tree struct {
-	gvr         client.GVR
+	gvr         *client.GVR
 	namespace   string
 	root        *xray.TreeNode
 	listeners   []TreeListener
@@ -41,7 +45,7 @@ type Tree struct {
 }
 
 // NewTree returns a new model.
-func NewTree(gvr client.GVR) *Tree {
+func NewTree(gvr *client.GVR) *Tree {
 	return &Tree{
 		gvr:         gvr,
 		refreshRate: 2 * time.Second,
@@ -129,7 +133,7 @@ func (t *Tree) Peek() *xray.TreeNode {
 }
 
 // Describe describes a given resource.
-func (t *Tree) Describe(ctx context.Context, gvr, path string) (string, error) {
+func (t *Tree) Describe(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	meta, err := t.getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -144,7 +148,7 @@ func (t *Tree) Describe(ctx context.Context, gvr, path string) (string, error) {
 }
 
 // ToYAML returns a resource yaml.
-func (t *Tree) ToYAML(ctx context.Context, gvr, path string) (string, error) {
+func (t *Tree) ToYAML(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	meta, err := t.getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -159,7 +163,7 @@ func (t *Tree) ToYAML(ctx context.Context, gvr, path string) (string, error) {
 }
 
 func (t *Tree) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Tree-model canceled -- %q", t.gvr)
+	defer slog.Debug("Tree-model canceled", slogs.GVR, t.gvr)
 
 	rate := initTreeRefreshRate
 	for {
@@ -176,13 +180,13 @@ func (t *Tree) updater(ctx context.Context) {
 
 func (t *Tree) refresh(ctx context.Context) {
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)
 
 	if err := t.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msg("Reconcile failed")
+		slog.Error("Reconcile failed", slogs.Error, err)
 		t.fireTreeLoadFailed(err)
 		return
 	}
@@ -206,11 +210,10 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	}
 
 	ns := client.CleanseNamespace(t.namespace)
-	res := t.gvr.R()
-	root := xray.NewTreeNode(res, res)
+	root := xray.NewTreeNode(t.gvr, t.gvr.R())
 	ctx = context.WithValue(ctx, xray.KeyParent, root)
 	if _, ok := meta.TreeRenderer.(*xray.Generic); ok {
-		table, ok := oo[0].(*metav1beta1.Table)
+		table, ok := oo[0].(*metav1.Table)
 		if !ok {
 			return fmt.Errorf("expecting a Table but got %T", oo[0])
 		}
@@ -223,7 +226,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 
 	root.Sort()
 	if t.query != "" {
-		t.root = root.Filter(t.query, rxFilter)
+		t.root = root.Filter(t.query, rxMatch)
 	}
 	if t.root == nil || t.root.Diff(root) {
 		t.root = root
@@ -234,11 +237,11 @@ func (t *Tree) reconcile(ctx context.Context) error {
 }
 
 func (t *Tree) resourceMeta() ResourceMeta {
-	meta, ok := Registry[t.gvr.String()]
+	meta, ok := Registry[t.gvr]
 	if !ok {
 		meta = ResourceMeta{
 			DAO:      &dao.Table{},
-			Renderer: &render.Generic{},
+			Renderer: &render.Table{},
 		}
 	}
 	if meta.DAO == nil {
@@ -260,13 +263,13 @@ func (t *Tree) fireTreeLoadFailed(err error) {
 	}
 }
 
-func (t *Tree) getMeta(ctx context.Context, gvr string) (ResourceMeta, error) {
+func (t *Tree) getMeta(ctx context.Context, gvr *client.GVR) (ResourceMeta, error) {
 	meta := t.resourceMeta()
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
-	meta.DAO.Init(factory, client.NewGVR(gvr))
+	meta.DAO.Init(factory, gvr)
 
 	return meta, nil
 }
@@ -274,7 +277,7 @@ func (t *Tree) getMeta(ctx context.Context, gvr string) (ResourceMeta, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func rxFilter(q, path string) bool {
+func rxMatch(q, path string) bool {
 	rx := regexp.MustCompile(`(?i)` + q)
 
 	tokens := strings.Split(path, "::")
@@ -290,16 +293,21 @@ func treeHydrate(ctx context.Context, ns string, oo []runtime.Object, re TreeRen
 	if re == nil {
 		return fmt.Errorf("no tree renderer defined for this resource")
 	}
+	pool := internal.NewWorkerPool(ctx, internal.DefaultPoolSize)
 	for _, o := range oo {
-		if err := re.Render(ctx, ns, o); err != nil {
-			return err
-		}
+		pool.Add(func(_ context.Context) error {
+			return re.Render(ctx, ns, o)
+		})
+	}
+	errs := pool.Drain()
+	if len(errs) > 0 {
+		return errs[0]
 	}
 
 	return nil
 }
 
-func genericTreeHydrate(ctx context.Context, ns string, table *metav1beta1.Table, re TreeRenderer) error {
+func genericTreeHydrate(ctx context.Context, ns string, table *metav1.Table, re TreeRenderer) error {
 	tre, ok := re.(*xray.Generic)
 	if !ok {
 		return fmt.Errorf("expecting xray.Generic renderer but got %T", re)

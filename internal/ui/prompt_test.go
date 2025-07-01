@@ -1,49 +1,65 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui_test
 
 import (
-	"github.com/derailed/tcell/v2"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCmdNew(t *testing.T) {
 	v := ui.NewPrompt(nil, true, config.NewStyles())
-	model := model.NewFishBuff(':', model.CommandBuffer)
-	v.SetModel(model)
-	model.AddListener(v)
+	m := model.NewFishBuff(':', model.CommandBuffer)
+	v.SetModel(m)
+	m.AddListener(v)
 	for _, r := range "blee" {
-		model.Add(r)
+		m.Add(r)
 	}
 
 	assert.Equal(t, "\x00> [::b]blee\n", v.GetText(false))
 }
 
 func TestCmdUpdate(t *testing.T) {
-	model := model.NewFishBuff(':', model.CommandBuffer)
+	m := model.NewFishBuff(':', model.CommandBuffer)
 	v := ui.NewPrompt(nil, true, config.NewStyles())
-	v.SetModel(model)
+	v.SetModel(m)
 
-	model.AddListener(v)
-	model.SetText("blee", "")
-	model.Add('!')
+	m.AddListener(v)
+	m.SetText("blee", "")
+	m.Add('!')
 
 	assert.Equal(t, "\x00> [::b]blee!\n", v.GetText(false))
 	assert.False(t, v.InCmdMode())
 }
 
 func TestCmdMode(t *testing.T) {
-	model := model.NewFishBuff(':', model.CommandBuffer)
+	m := model.NewFishBuff(':', model.CommandBuffer)
 	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
-	v.SetModel(model)
-	model.AddListener(v)
+	v.SetModel(m)
+	m.AddListener(v)
 
 	for _, f := range []bool{false, true} {
-		model.SetActive(f)
+		m.SetActive(f)
 		assert.Equal(t, f, v.InCmdMode())
+	}
+}
+
+func TestPrompt_Deactivate(t *testing.T) {
+	m := model.NewFishBuff(':', model.CommandBuffer)
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(m)
+	m.AddListener(v)
+
+	m.SetActive(true)
+	if assert.True(t, v.InCmdMode()) {
+		v.Deactivate()
+		assert.False(t, v.InCmdMode())
 	}
 }
 
@@ -53,7 +69,10 @@ func TestPromptColor(t *testing.T) {
 	app := ui.App{}
 
 	// Make sure to have different values to be sure that the prompt color actually changes depending on its type
-	assert.NotEqual(t, styles.Prompt().Border.DefaultColor.Color(), styles.Prompt().Border.CommandColor.Color())
+	assert.NotEqual(t,
+		styles.Prompt().Border.DefaultColor.Color(),
+		styles.Prompt().Border.CommandColor.Color(),
+	)
 
 	testCases := []struct {
 		kind          model.BufferKind
@@ -73,14 +92,14 @@ func TestPromptColor(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		model := model.NewFishBuff(':', testCase.kind)
+		m := model.NewFishBuff(':', testCase.kind)
 		prompt := ui.NewPrompt(&app, true, styles)
 
-		prompt.SetModel(model)
-		model.AddListener(prompt)
+		prompt.SetModel(m)
+		m.AddListener(prompt)
 
-		model.SetActive(true)
-		assert.Equal(t, prompt.GetBorderColor(), testCase.expectedColor)
+		m.SetActive(true)
+		assert.Equal(t, testCase.expectedColor, prompt.GetBorderColor())
 	}
 }
 
@@ -116,17 +135,17 @@ func TestPromptStyleChanged(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		model := model.NewFishBuff(':', testCase.kind)
+		m := model.NewFishBuff(':', testCase.kind)
 		prompt := ui.NewPrompt(&app, true, styles)
 
-		model.SetActive(true)
+		m.SetActive(true)
 
-		prompt.SetModel(model)
-		model.AddListener(prompt)
+		prompt.SetModel(m)
+		m.AddListener(prompt)
 
 		prompt.StylesChanged(newStyles)
 
-		model.SetActive(true)
-		assert.Equal(t, prompt.GetBorderColor(), testCase.expectedColor)
+		m.SetActive(true)
+		assert.Equal(t, testCase.expectedColor, prompt.GetBorderColor())
 	}
 }

@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s aliases schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "aliases": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "required": []
+    }
+  },
+  "required": ["aliases"]
+}

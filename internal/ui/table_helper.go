@@ -1,16 +1,19 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
-	"github.com/sahilm/fuzzy"
+	"github.com/derailed/k9s/internal/slogs"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -21,10 +24,10 @@ const (
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
 	// NSTitleFmt represents a namespaced view title.
-	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	NSTitleFmt = " [fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	// TitleFmt represents a standard view title.
-	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	TitleFmt = " [fg:bg:b]%s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	descIndicator = "↓"
 	ascIndicator  = "↑"
@@ -36,19 +39,11 @@ const (
 	NoNSFmat = "%s-%d.csv"
 )
 
-var (
-	// LabelRx identifies a label query.
-	LabelRx = regexp.MustCompile(`\A\-l`)
-
-	inverseRx = regexp.MustCompile(`\A\!`)
-
-	fuzzyRx = regexp.MustCompile(`\A\-f`)
-)
-
 func mustExtractStyles(ctx context.Context) *config.Styles {
 	styles, ok := ctx.Value(internal.KeyStyles).(*config.Styles)
 	if !ok {
-		log.Fatal().Msg("Expecting valid styles")
+		slog.Error("Expecting valid styles. Exiting!")
+		os.Exit(1)
 	}
 	return styles
 }
@@ -57,58 +52,39 @@ func mustExtractStyles(ctx context.Context) *config.Styles {
 func TrimCell(tv *SelectTable, row, col int) string {
 	c := tv.GetCell(row, col)
 	if c == nil {
-		log.Error().Err(fmt.Errorf("No cell at location [%d:%d]", row, col)).Msg("Trim cell failed!")
+		slog.Error("Trim cell failed", slogs.Error, fmt.Errorf("no cell at [%d:%d]", row, col))
 		return ""
 	}
 	return strings.TrimSpace(c.Text)
 }
 
-// IsLabelSelector checks if query is a label query.
-func IsLabelSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return LabelRx.MatchString(s)
-}
-
-// IsFuzzySelector checks if query is fuzzy.
-func IsFuzzySelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return fuzzyRx.MatchString(s)
-}
-
-// IsInverseSelector checks if inverse char has been provided.
-func IsInverseSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return inverseRx.MatchString(s)
-}
-
 // TrimLabelSelector extracts label query.
-func TrimLabelSelector(s string) string {
-	return strings.TrimSpace(s[2:])
+func TrimLabelSelector(s string) (labels.Selector, error) {
+	var selStr string
+	if strings.Index(s, "-l") == 0 {
+		selStr = strings.TrimSpace(s[2:])
+	}
+
+	return labels.Parse(selStr)
 }
 
 // SkinTitle decorates a title.
-func SkinTitle(fmat string, style config.Frame) string {
+func SkinTitle(fmat string, style *config.Frame) string {
 	bgColor := style.Title.BgColor
 	if bgColor == config.DefaultColor {
 		bgColor = config.TransparentColor
 	}
-	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String(), -1)
+	fmat = strings.ReplaceAll(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String())
 	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor.String(), 1)
 	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor.String(), 1)
 	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor.String(), 1)
 	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor.String(), 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+bgColor.String()+":", -1)
+	fmat = strings.ReplaceAll(fmat, ":bg:", ":"+bgColor.String()+":")
 
 	return fmat
 }
 
-func sortIndicator(sort, asc bool, style config.Table, name string) string {
+func sortIndicator(sort, asc bool, style *config.Table, name string) string {
 	if !sort {
 		return name
 	}
@@ -126,78 +102,4 @@ func formatCell(field string, padding int) string {
 	}
 
 	return field
-}
-
-func filterToast(data *render.TableData) *render.TableData {
-	validX := data.Header.IndexOf("VALID", true)
-	if validX == -1 {
-		return data
-	}
-
-	toast := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	for _, re := range data.RowEvents {
-		if re.Row.Fields[validX] != "" {
-			toast.RowEvents = append(toast.RowEvents, re)
-		}
-	}
-
-	return &toast
-}
-
-func rxFilter(q string, inverse bool, data *render.TableData) (*render.TableData, error) {
-	if inverse {
-		q = q[1:]
-	}
-	rx, err := regexp.Compile(`(?i)(` + q + `)`)
-	if err != nil {
-		return data, fmt.Errorf("%w -- %s", err, q)
-	}
-
-	filtered := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	ageIndex := -1
-	if data.Header.HasAge() {
-		ageIndex = data.Header.IndexOf("AGE", true)
-	}
-	const spacer = " "
-	for _, re := range data.RowEvents {
-		ff := re.Row.Fields
-		if ageIndex > 0 {
-			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
-		}
-		fields := strings.Join(ff, spacer)
-		if (inverse && !rx.MatchString(fields)) ||
-			((!inverse) && rx.MatchString(fields)) {
-			filtered.RowEvents = append(filtered.RowEvents, re)
-		}
-	}
-
-	return &filtered, nil
-}
-
-func fuzzyFilter(q string, data *render.TableData) *render.TableData {
-	q = strings.TrimSpace(q)
-	ss := make([]string, 0, len(data.RowEvents))
-	for _, re := range data.RowEvents {
-		ss = append(ss, re.Row.ID)
-	}
-
-	filtered := render.TableData{
-		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
-		Namespace: data.Namespace,
-	}
-	mm := fuzzy.Find(q, ss)
-	for _, m := range mm {
-		filtered.RowEvents = append(filtered.RowEvents, data.RowEvents[m.Index])
-	}
-
-	return &filtered
 }

@@ -1,15 +1,33 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var defaultDPHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "UP-TO-DATE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
 
 // Deployment renders a K8s Deployment to screen.
 type Deployment struct {
@@ -17,47 +35,73 @@ type Deployment struct {
 }
 
 // ColorerFunc colors a resource row.
-func (d Deployment) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+func (Deployment) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
+
+		idx, ok := h.IndexOf("READY", true)
+		if !ok {
+			return c
+		}
+		ready := strings.TrimSpace(re.Row.Fields[idx])
+		tt := strings.Split(ready, "/")
+		if len(tt) == 2 && tt[1] == "0" {
+			return model1.PendingColor
+		}
+
+		return c
+	}
 }
 
 // Header returns a header row.
-func (Deployment) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "READY", Align: tview.AlignRight},
-		HeaderColumn{Name: "UP-TO-DATE", Align: tview.AlignRight},
-		HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
-	}
+func (d Deployment) Header(_ string) model1.Header {
+	return d.doHeader(defaultDPHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (d Deployment) Render(o interface{}, ns string, r *Row) error {
+func (d Deployment) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Deployment, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := d.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if d.specs.isEmpty() {
+		return nil
+	}
+	cols, err := d.specs.realize(raw, defaultDPHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
 
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var dp appsv1.Deployment
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &dp)
 	if err != nil {
 		return err
 	}
 
-	r.ID = client.MetaFQN(dp.ObjectMeta)
-	r.Fields = Fields{
+	var desired int32
+	if dp.Spec.Replicas != nil {
+		desired = *dp.Spec.Replicas
+	}
+	r.ID = client.MetaFQN(&dp.ObjectMeta)
+	r.Fields = model1.Fields{
 		dp.Namespace,
 		dp.Name,
-		strconv.Itoa(int(dp.Status.AvailableReplicas)) + "/" + strconv.Itoa(int(dp.Status.Replicas)),
+		computeVulScore(dp.Namespace, dp.Labels, &dp.Spec.Template.Spec),
+		strconv.Itoa(int(dp.Status.AvailableReplicas)) + "/" + strconv.Itoa(int(desired)),
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
 		mapToStr(dp.Labels),
-		asStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
-		toAge(dp.GetCreationTimestamp()),
+		AsStatus(d.diagnose(desired, dp.Status.AvailableReplicas)),
+		ToAge(dp.GetCreationTimestamp()),
 	}
 
 	return nil
@@ -67,5 +111,6 @@ func (Deployment) diagnose(desired, avail int32) error {
 	if desired != avail {
 		return fmt.Errorf("desiring %d replicas got %d available", desired, avail)
 	}
+
 	return nil
 }

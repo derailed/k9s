@@ -1,19 +1,34 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
+
+var defaultJOBHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "COMPLETIONS"},
+	model1.HeaderColumn{Name: "DURATION"},
+	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
 
 // Job renders a K8s Job to screen.
 type Job struct {
@@ -21,58 +36,62 @@ type Job struct {
 }
 
 // Header returns a header row.
-func (Job) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "COMPLETIONS"},
-		HeaderColumn{Name: "DURATION"},
-		HeaderColumn{Name: "SELECTOR", Wide: true},
-		HeaderColumn{Name: "CONTAINERS", Wide: true},
-		HeaderColumn{Name: "IMAGES", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
-	}
+func (j Job) Header(_ string) model1.Header {
+	return j.doHeader(defaultJOBHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (j Job) Render(o interface{}, ns string, r *Row) error {
+func (j Job) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Job, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := j.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if j.specs.isEmpty() {
+		return nil
+	}
+	cols, err := j.specs.realize(raw, defaultJOBHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var job batchv1.Job
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &job)
 	if err != nil {
 		return err
 	}
-	ready := toCompletion(job.Spec, job.Status)
+	ready := toCompletion(&job.Spec, &job.Status)
 
-	cc, ii := toContainers(job.Spec.Template.Spec)
+	cc, ii := toContainers(&job.Spec.Template.Spec)
 
-	r.ID = client.MetaFQN(job.ObjectMeta)
-	r.Fields = Fields{
+	r.ID = client.MetaFQN(&job.ObjectMeta)
+	r.Fields = model1.Fields{
 		job.Namespace,
 		job.Name,
+		computeVulScore(job.Namespace, job.Labels, &job.Spec.Template.Spec),
 		ready,
-		toDuration(job.Status),
-		jobSelector(job.Spec),
+		toDuration(&job.Status),
+		jobSelector(&job.Spec),
 		cc,
 		ii,
-		asStatus(j.diagnose(ready, job.Status.CompletionTime)),
-		toAge(job.GetCreationTimestamp()),
+		AsStatus(j.diagnose(ready, &job.Status)),
+		ToAge(job.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (Job) diagnose(ready string, completed *metav1.Time) error {
-	if completed == nil {
-		return nil
-	}
+func (Job) diagnose(ready string, status *batchv1.JobStatus) error {
 	tokens := strings.Split(ready, "/")
-	if tokens[0] != tokens[1] {
-		return fmt.Errorf("expecting %s completion got %s", tokens[1], tokens[0])
+	if tokens[0] != tokens[1] && status.Failed > 0 {
+		return fmt.Errorf("%d pods failed", status.Failed)
 	}
 	return nil
 }
@@ -82,7 +101,7 @@ func (Job) diagnose(ready string, completed *metav1.Time) error {
 
 const maxShow = 2
 
-func toContainers(p v1.PodSpec) (string, string) {
+func toContainers(p *v1.PodSpec) (containers, images string) {
 	cc, ii := parseContainers(p.InitContainers)
 	cn, ci := parseContainers(p.Containers)
 
@@ -100,15 +119,15 @@ func toContainers(p v1.PodSpec) (string, string) {
 }
 
 func parseContainers(cos []v1.Container) (nn, ii []string) {
-	for _, co := range cos {
-		nn = append(nn, co.Name)
-		ii = append(ii, co.Image)
+	nn, ii = make([]string, 0, len(cos)), make([]string, 0, len(cos))
+	for i := range cos {
+		nn, ii = append(nn, cos[i].Name), append(ii, cos[i].Image)
 	}
 
 	return nn, ii
 }
 
-func toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s string) {
+func toCompletion(spec *batchv1.JobSpec, status *batchv1.JobStatus) (s string) {
 	if spec.Completions != nil {
 		return strconv.Itoa(int(status.Succeeded)) + "/" + strconv.Itoa(int(*spec.Completions))
 	}
@@ -125,18 +144,10 @@ func toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s string) {
 	return strconv.Itoa(int(status.Succeeded)) + "/1"
 }
 
-func toDuration(status batchv1.JobStatus) string {
-	if status.StartTime == nil {
+func toDuration(status *batchv1.JobStatus) string {
+	if status.StartTime == nil || status.CompletionTime == nil {
 		return MissingValue
 	}
 
-	var d time.Duration
-	switch {
-	case status.CompletionTime == nil:
-		d = time.Since(status.StartTime.Time)
-	default:
-		d = status.CompletionTime.Sub(status.StartTime.Time)
-	}
-
-	return duration.HumanDuration(d)
+	return duration.HumanDuration(status.CompletionTime.Sub(status.StartTime.Time))
 }

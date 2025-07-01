@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view_test
 
 import (
@@ -7,17 +10,18 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func init() {
-	dao.MetaAccess.RegisterMeta("dir", metav1.APIResource{
-		Name:         "dir",
+	dao.MetaAccess.RegisterMeta(client.DirGVR.String(), &metav1.APIResource{
+		Name:         "dirs",
 		SingularName: "dir",
 		Kind:         "Directory",
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("v1/pods", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.PodGVR.String(), &metav1.APIResource{
 		Name:         "pods",
 		SingularName: "pod",
 		Namespaced:   true,
@@ -25,7 +29,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("v1/namespaces", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.NsGVR.String(), &metav1.APIResource{
 		Name:         "namespaces",
 		SingularName: "namespace",
 		Namespaced:   true,
@@ -33,7 +37,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("v1/services", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.SvcGVR.String(), &metav1.APIResource{
 		Name:         "services",
 		SingularName: "service",
 		Namespaced:   true,
@@ -41,7 +45,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("v1/secrets", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.SecGVR.String(), &metav1.APIResource{
 		Name:         "secrets",
 		SingularName: "secret",
 		Namespaced:   true,
@@ -49,7 +53,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("scheduling.k8s.io/v1/priorityclasses", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.PcGVR.String(), &metav1.APIResource{
 		Name:         "priorityclasses",
 		SingularName: "priorityclass",
 		Namespaced:   false,
@@ -57,7 +61,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("v1/configmaps", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.CmGVR.String(), &metav1.APIResource{
 		Name:         "configmaps",
 		SingularName: "configmap",
 		Namespaced:   true,
@@ -66,7 +70,7 @@ func init() {
 		Categories:   []string{"k9s"},
 	})
 
-	dao.MetaAccess.RegisterMeta("references", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.RefGVR.String(), &metav1.APIResource{
 		Name:         "references",
 		SingularName: "reference",
 		Namespaced:   true,
@@ -74,7 +78,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("aliases", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.AliGVR.String(), &metav1.APIResource{
 		Name:         "aliases",
 		SingularName: "alias",
 		Namespaced:   true,
@@ -82,7 +86,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("containers", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.CoGVR.String(), &metav1.APIResource{
 		Name:         "containers",
 		SingularName: "container",
 		Namespaced:   true,
@@ -90,7 +94,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("contexts", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.CtGVR.String(), &metav1.APIResource{
 		Name:         "contexts",
 		SingularName: "context",
 		Namespaced:   true,
@@ -98,7 +102,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("subjects", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("subjects", &metav1.APIResource{
 		Name:         "subjects",
 		SingularName: "subject",
 		Namespaced:   true,
@@ -106,7 +110,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("rbac", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.RbacGVR.String(), &metav1.APIResource{
 		Name:         "rbacs",
 		SingularName: "rbac",
 		Namespaced:   true,
@@ -114,7 +118,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("portforwards", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.PfGVR.String(), &metav1.APIResource{
 		Name:         "portforwards",
 		SingularName: "portforward",
 		Namespaced:   true,
@@ -123,7 +127,7 @@ func init() {
 		Categories:   []string{"k9s"},
 	})
 
-	dao.MetaAccess.RegisterMeta("screendumps", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.SdGVR.String(), &metav1.APIResource{
 		Name:         "screendumps",
 		SingularName: "screendump",
 		Namespaced:   true,
@@ -131,7 +135,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("apps/v1/statefulsets", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.StsGVR.String(), &metav1.APIResource{
 		Name:         "statefulsets",
 		SingularName: "statefulset",
 		Namespaced:   true,
@@ -139,7 +143,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("apps/v1/daemonsets", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.DsGVR.String(), &metav1.APIResource{
 		Name:         "daemonsets",
 		SingularName: "daemonset",
 		Namespaced:   true,
@@ -147,7 +151,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("apps/v1/deployments", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.DpGVR.String(), &metav1.APIResource{
 		Name:         "deployments",
 		SingularName: "deployment",
 		Namespaced:   true,
@@ -155,7 +159,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.MetaAccess.RegisterMeta("v1/persistentvolumeclaims", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta(client.PvcGVR.String(), &metav1.APIResource{
 		Name:         "persistentvolumeclaims",
 		SingularName: "persistentvolumeclaim",
 		Namespaced:   true,
@@ -166,9 +170,9 @@ func init() {
 }
 
 func TestServiceNew(t *testing.T) {
-	s := view.NewService(client.NewGVR("v1/services"))
+	s := view.NewService(client.SvcGVR)
 
-	assert.Nil(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "Services", s.Name())
-	assert.Equal(t, 10, len(s.Hints()))
+	assert.Len(t, s.Hints(), 12)
 }

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -81,11 +84,11 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 	}
 
 	if !l.SingleContainer && l.Container != "" {
-		if len(l.Pod) > 0 {
+		if l.Pod != "" {
 			bb.WriteString(" ")
 		}
 		bb.WriteString("[" + paint + "::b]" + l.Container + "[-::-] ")
-	} else if len(l.Pod) > 0 {
+	} else if l.Pod != "" {
 		bb.WriteString("[-::] ")
 	}
 

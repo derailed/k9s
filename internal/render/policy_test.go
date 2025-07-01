@@ -1,16 +1,21 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
 	"errors"
 	"testing"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPolicyResMerge(t *testing.T) {
 	uu := map[string]struct {
-		p1, p2, e render.PolicyRes
+		p1, p2, e *render.PolicyRes
 		err       error
 	}{
 		"simple": {
@@ -43,7 +48,7 @@ func TestPolicyResMerge(t *testing.T) {
 func TestPolicyRender(t *testing.T) {
 	var p render.Policy
 
-	var r render.Row
+	var r model1.Row
 	o := render.PolicyRes{
 		Namespace:      "blee",
 		Binding:        "fred",
@@ -54,9 +59,9 @@ func TestPolicyRender(t *testing.T) {
 		Verbs:          []string{"get", "list", "watch"},
 	}
 
-	assert.Nil(t, p.Render(o, "fred", &r))
+	require.NoError(t, p.Render(&o, "fred", &r))
 	assert.Equal(t, "blee/res", r.ID)
-	assert.Equal(t, render.Fields{
+	assert.Equal(t, model1.Fields{
 		"blee",
 		"res",
 		"grp",

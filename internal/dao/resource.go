@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -22,20 +25,17 @@ type Resource struct {
 
 // List returns a collection of resources.
 func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	strLabel, _ := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
-	if strLabel != "" {
-		if sel, err := labels.Parse(strLabel); err == nil {
-			lsel = sel
-		}
+	if sel, ok := ctx.Value(internal.KeyLabels).(labels.Selector); ok {
+		lsel = sel
 	}
 
-	return r.GetFactory().List(r.gvr.String(), ns, false, lsel)
+	return r.getFactory().List(r.gvr, ns, false, lsel)
 }
 
 // Get returns a resource instance if found, else an error.
 func (r *Resource) Get(_ context.Context, path string) (runtime.Object, error) {
-	return r.GetFactory().Get(r.gvr.String(), path, true, labels.Everything())
+	return r.getFactory().Get(r.gvr, path, true, labels.Everything())
 }
 
 // ToYAML returns a resource yaml.

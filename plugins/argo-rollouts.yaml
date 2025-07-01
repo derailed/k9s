@@ -1,0 +1,51 @@
+# Manage argo-rollouts
+# See https://argoproj.github.io/argo-rollouts/
+# <g> Get rollout details
+# <w> Watch rollout progress
+# <p> (with confirmation) Promote rollout
+# <r> (with confirmation) Restart rollout
+plugins:
+  argo-rollouts-get:
+    shortCut: g
+    confirm: false
+    description: Get details
+    scopes:
+      - rollouts
+    command: bash
+    background: false
+    args:
+      - -c
+      - kubectl argo rollouts get rollout $NAME --context $CONTEXT -n $NAMESPACE |& less
+  argo-rollouts-watch:
+    shortCut: w
+    confirm: false
+    description: Watch progress
+    scopes:
+      - rollouts
+    command: bash
+    background: false
+    args:
+      - -c
+      - kubectl argo rollouts get rollout $NAME --context $CONTEXT -n $NAMESPACE -w
+  argo-rollouts-promote:
+    shortCut: p
+    confirm: true
+    description: Promote
+    scopes:
+      - rollouts
+    command: bash
+    background: false
+    args:
+      - -c
+      - kubectl argo rollouts promote $NAME --context $CONTEXT -n $NAMESPACE |& less
+  argo-rollouts-restart:
+    shortCut: r
+    confirm: true
+    description: Restart
+    scopes:
+      - rollouts
+    command: bash
+    background: false
+    args:
+      - -c
+      - kubectl argo rollouts restart $NAME --context $CONTEXT -n $NAMESPACE |& less

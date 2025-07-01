@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,12 +17,15 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -33,21 +40,22 @@ const (
 type Log struct {
 	*tview.Flex
 
-	app           *App
-	logs          *Logger
-	indicator     *LogIndicator
-	ansiWriter    io.Writer
-	model         *model.Log
-	cancelFn      context.CancelFunc
-	cancelUpdates bool
-	mx            sync.Mutex
-	follow        bool
+	app               *App
+	logs              *Logger
+	indicator         *LogIndicator
+	ansiWriter        io.Writer
+	model             *model.Log
+	cancelFn          context.CancelFunc
+	cancelUpdates     bool
+	mx                sync.Mutex
+	follow            bool
+	requestOneRefresh bool
 }
 
 var _ model.Component = (*Log)(nil)
 
 // NewLog returns a new viewer.
-func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
+func NewLog(gvr *client.GVR, opts *dao.LogOptions) *Log {
 	l := Log{
 		Flex:   tview.NewFlex(),
 		model:  model.NewLog(gvr, opts, defaultFlushTimeout),
@@ -56,6 +64,10 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 
 	return &l
 }
+
+func (*Log) SetCommand(*cmd.Interpreter)      {}
+func (*Log) SetFilter(string)                 {}
+func (*Log) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
@@ -75,8 +87,8 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.indicator.Refresh()
 
 	l.logs = NewLogger(l.app)
-	if err = l.logs.Init(ctx); err != nil {
-		return err
+	if e := l.logs.Init(ctx); e != nil {
+		return e
 	}
 	l.logs.SetBorderPadding(0, 0, 1, 1)
 	l.logs.SetText("[orange::d]" + logMessage)
@@ -105,13 +117,13 @@ func (l *Log) InCmdMode() bool {
 
 // LogCanceled indicates no more logs are coming.
 func (l *Log) LogCanceled() {
-	log.Debug().Msgf("LOGS_CANCELED!!!")
+	slog.Debug("Logs watcher canceled!")
 	l.Flush([][]byte{[]byte("\n🏁 [red::b]Stream exited! No more logs...")})
 }
 
 // LogStop disables log flushes.
 func (l *Log) LogStop() {
-	log.Debug().Msgf("LOG_STOP!!!")
+	slog.Debug("Logs watcher stopped!")
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
@@ -141,7 +153,7 @@ func (l *Log) LogFailed(err error) {
 			l.logs.Clear()
 		}
 		if _, err = l.ansiWriter.Write([]byte(tview.Escape(color.Colorize(err.Error(), color.Red)))); err != nil {
-			log.Error().Err(err).Msgf("Writing log error")
+			slog.Error("Log line write failed", slogs.Error, err)
 		}
 	})
 }
@@ -163,7 +175,7 @@ func (l *Log) BufferCompleted(text, _ string) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (l *Log) BufferChanged(_, _ string) {}
+func (*Log) BufferChanged(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
 func (l *Log) BufferActive(state bool, k model.BufferKind) {
@@ -188,7 +200,7 @@ func (l *Log) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (l *Log) ExtraHints() map[string]string {
+func (*Log) ExtraHints() map[string]string {
 	return nil
 }
 
@@ -196,7 +208,6 @@ func (l *Log) cancel() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	if l.cancelFn != nil {
-		log.Debug().Msgf("!!! LOG-VIEWER CANCELED !!!")
 		l.cancelFn()
 		l.cancelFn = nil
 	}
@@ -231,10 +242,10 @@ func (l *Log) Stop() {
 }
 
 // Name returns the component name.
-func (l *Log) Name() string { return logTitle }
+func (*Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
-	l.logs.Actions().Set(ui.KeyActions{
+	l.logs.Actions().Bulk(ui.KeyMap{
 		ui.Key0:         ui.NewKeyAction("tail", l.sinceCmd(-1), true),
 		ui.Key1:         ui.NewKeyAction("head", l.sinceCmd(0), true),
 		ui.Key2:         ui.NewKeyAction("1m", l.sinceCmd(60), true),
@@ -254,9 +265,7 @@ func (l *Log) bindKeys() {
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
 	})
 	if l.model.HasDefaultContainer() {
-		l.logs.Actions().Set(ui.KeyActions{
-			ui.KeyA: ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true),
-		})
+		l.logs.Actions().Add(ui.KeyA, ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true))
 	}
 }
 
@@ -308,16 +317,19 @@ func (l *Log) updateTitle() {
 	if l.model.LogOptions().Previous {
 		title = " Previous Logs"
 	}
-	path, co := l.model.GetPath(), l.model.GetContainer()
+	var (
+		path, co = l.model.GetPath(), l.model.GetContainer()
+		styles   = l.app.Styles.Frame()
+	)
 	if co == "" {
-		title += ui.SkinTitle(fmt.Sprintf(logFmt, path, since), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(logFmt, path, since), &styles)
 	} else {
-		title += ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), &styles)
 	}
 
 	buff := l.logs.cmdBuff.GetText()
 	if buff != "" {
-		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), &styles)
 	}
 	l.SetTitle(title)
 }
@@ -338,10 +350,13 @@ func (l *Log) Flush(lines [][]byte) {
 		}
 	}()
 
-	if len(lines) == 0 || !l.indicator.AutoScroll() || l.cancelUpdates {
+	if len(lines) == 0 || (!l.requestOneRefresh && !l.indicator.AutoScroll()) || l.cancelUpdates {
 		return
 	}
-	for i := 0; i < len(lines); i++ {
+	if l.requestOneRefresh {
+		l.requestOneRefresh = false
+	}
+	for i := range lines {
 		if l.cancelUpdates {
 			break
 		}
@@ -356,7 +371,7 @@ func (l *Log) Flush(lines [][]byte) {
 // Actions...
 
 func (l *Log) sinceCmd(n int) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(*tcell.EventKey) *tcell.EventKey {
 		l.logs.Clear()
 		ctx := l.getContext()
 		if n == 0 {
@@ -364,6 +379,7 @@ func (l *Log) sinceCmd(n int) func(evt *tcell.EventKey) *tcell.EventKey {
 		} else {
 			l.model.SetSinceSeconds(ctx, int64(n))
 		}
+		l.requestOneRefresh = true
 		l.updateTitle()
 
 		return nil
@@ -383,6 +399,7 @@ func (l *Log) toggleAllContainers(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !l.logs.cmdBuff.IsActive() {
+		_, _ = fmt.Fprintln(l.ansiWriter)
 		return evt
 	}
 
@@ -395,7 +412,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContextDir(), l.model.GetPath(), l.logs.GetText(true))
+	path, err := saveData(l.app.Config.K9s.ContextScreenDumpDir(), l.model.GetPath(), l.logs.GetText(true))
 	if err != nil {
 		l.app.Flash().Err(err)
 		return nil
@@ -409,28 +426,31 @@ func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(screenDumpDir, context, fqn, data string) (string, error) {
-	dir := filepath.Join(screenDumpDir, context)
+func saveData(dir, fqn, logs string) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", strings.Replace(fqn, "/", "-", 1), now)
-
-	path := filepath.Join(dir, fName)
+	f := fmt.Sprintf("%s-%d.log", fqn, time.Now().UnixNano())
+	path := filepath.Join(dir, data.SanitizeFileName(f))
 	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0600)
 	if err != nil {
-		log.Error().Err(err).Msgf("LogFile create %s", path)
+		slog.Error("Unable to save log file",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 		return "", nil
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Error().Err(err).Msg("Closing Log file")
+			slog.Error("Closing Log file failed",
+				slogs.Path, path,
+				slogs.Error, err,
+			)
 		}
 	}()
-	if _, err := file.Write([]byte(data)); err != nil {
+	if _, err := file.WriteString(logs); err != nil {
 		return "", err
 	}
 
@@ -444,7 +464,7 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
 	_, _, w, _ := l.GetRect()
-	fmt.Fprintf(l.ansiWriter, "\n[white:-:b]%s[-:-:-]", strings.Repeat("─", w-4))
+	_, _ = fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
 	l.follow = true
 
 	return nil
@@ -500,7 +520,7 @@ func (l *Log) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) toggleFullScreen() {
 	l.SetFullScreen(l.indicator.FullScreen())
-	l.Box.SetBorder(!l.indicator.FullScreen())
+	l.SetBorder(!l.indicator.FullScreen())
 	if l.indicator.FullScreen() {
 		l.logs.SetBorderPadding(0, 0, 0, 0)
 	} else {

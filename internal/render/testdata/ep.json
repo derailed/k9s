@@ -3,10 +3,29 @@
   "kind": "Endpoints",
   "metadata": {
     "creationTimestamp": "2019-07-10T23:10:43Z",
-    "name": "dictionary1",
-    "namespace": "default",
-    "resourceVersion": "36684456",
-    "selfLink": "/api/v1/namespaces/default/endpoints/dictionary1",
-    "uid": "f119c74f-a367-11e9-990f-42010a800218"
-  }
+    "name": "blee",
+    "namespace": "ns-1"
+  },
+  "subsets": [
+    {
+        "addresses": [
+            {
+                "ip": "10.0.0.67",
+                "nodeName": "n-1",
+                "targetRef": {
+                    "kind": "Pod",
+                    "name": "blah",
+                    "namespace": "blee"
+                }
+            }
+        ],
+        "ports": [
+            {
+                "name": "http",
+                "port": 8080,
+                "protocol": "TCP"
+            }
+        ]
+    }
+]
 }

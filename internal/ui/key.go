@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import "github.com/derailed/tcell/v2"
@@ -73,10 +76,13 @@ const (
 	KeyX
 	KeyY
 	KeyZ
-	KeyHelp  = 63
-	KeySlash = 47
-	KeyColon = 58
-	KeySpace = 32
+	KeyHelp         = 63
+	KeySlash        = 47
+	KeyColon        = 58
+	KeySpace        = 32
+	KeyDash         = 45
+	KeyLeftBracket  = 91
+	KeyRightBracket = 93
 )
 
 // Define Shift Keys.

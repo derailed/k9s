@@ -1,39 +1,49 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"reflect"
-	"regexp"
 	"strings"
 	"sync/atomic"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 )
 
 // Describe tracks describable resources.
 type Describe struct {
-	gvr         client.GVR
+	gvr         *client.GVR
 	inUpdate    int32
 	path        string
 	query       string
 	lines       []string
 	refreshRate time.Duration
 	listeners   []ResourceViewerListener
+	decode      bool
 }
 
 // NewDescribe returns a new describe resource model.
-func NewDescribe(gvr client.GVR, path string) *Describe {
+func NewDescribe(gvr *client.GVR, path string) *Describe {
 	return &Describe{
 		gvr:         gvr,
 		path:        path,
 		refreshRate: defaultReaderRefreshRate,
 	}
+}
+
+// GVR returns the resource gvr.
+func (d *Describe) GVR() *client.GVR {
+	return d.gvr
 }
 
 // GetPath returns the active resource path.
@@ -42,7 +52,7 @@ func (d *Describe) GetPath() string {
 }
 
 // SetOptions toggle model options.
-func (d *Describe) SetOptions(context.Context, ViewerToggleOpts) {}
+func (*Describe) SetOptions(context.Context, ViewerToggleOpts) {}
 
 // Filter filters the model.
 func (d *Describe) Filter(q string) {
@@ -58,29 +68,14 @@ func (d *Describe) filter(q string, lines []string) fuzzy.Matches {
 	if q == "" {
 		return nil
 	}
-	if dao.IsFuzzySelector(q) {
-		return d.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
+	if f, ok := internal.IsFuzzySelector(q); ok {
+		return d.fuzzyFilter(strings.TrimSpace(f), lines)
 	}
-	return d.rxFilter(q, lines)
+	return rxFilter(q, lines)
 }
 
 func (*Describe) fuzzyFilter(q string, lines []string) fuzzy.Matches {
 	return fuzzy.Find(q, lines)
-}
-
-func (*Describe) rxFilter(q string, lines []string) fuzzy.Matches {
-	rx, err := regexp.Compile(`(?i)` + q)
-	if err != nil {
-		return nil
-	}
-	matches := make(fuzzy.Matches, 0, len(lines))
-	for i, l := range lines {
-		if loc := rx.FindStringIndex(l); len(loc) == 2 {
-			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: loc})
-		}
-	}
-
-	return matches
 }
 
 func (d *Describe) fireResourceChanged(lines []string, matches fuzzy.Matches) {
@@ -96,7 +91,7 @@ func (d *Describe) fireResourceFailed(err error) {
 }
 
 // ClearFilter clear out the filter.
-func (d *Describe) ClearFilter() {
+func (*Describe) ClearFilter() {
 }
 
 // Peek returns current model state.
@@ -119,7 +114,7 @@ func (d *Describe) Watch(ctx context.Context) error {
 }
 
 func (d *Describe) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Describe canceled -- %q", d.gvr)
+	defer slog.Debug("Describe canceled", slogs.GVR, d.gvr)
 
 	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
 	delay := defaultReaderRefreshRate
@@ -131,7 +126,7 @@ func (d *Describe) updater(ctx context.Context) {
 			if err := d.refresh(ctx); err != nil {
 				d.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("Describe gave up!")
+					slog.Error("Describe gave up!", slogs.Error, err)
 					return
 				}
 			} else {
@@ -144,13 +139,16 @@ func (d *Describe) updater(ctx context.Context) {
 
 func (d *Describe) refresh(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&d.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return nil
 	}
 	defer atomic.StoreInt32(&d.inUpdate, 0)
 
 	if err := d.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msgf("reconcile failed %q", d.gvr)
+		slog.Error("reconcile failed",
+			slogs.GVR, d.gvr,
+			slogs.Error, err,
+		)
 		d.fireResourceFailed(err)
 		return err
 	}
@@ -174,11 +172,7 @@ func (d *Describe) reconcile(ctx context.Context) error {
 }
 
 // Describe describes a given resource.
-func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (string, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("Describe model elapsed: %v", time.Since(t))
-	}(time.Now())
-
+func (d *Describe) describe(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	meta, err := getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -186,6 +180,10 @@ func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (s
 	desc, ok := meta.DAO.(dao.Describer)
 	if !ok {
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
+	}
+
+	if desc, ok := meta.DAO.(*dao.Secret); ok {
+		desc.SetDecodeData(d.decode)
 	}
 
 	return desc.Describe(path)
@@ -209,4 +207,9 @@ func (d *Describe) RemoveListener(l ResourceViewerListener) {
 	if victim >= 0 {
 		d.listeners = append(d.listeners[:victim], d.listeners[victim+1:]...)
 	}
+}
+
+// Toggle toggles the decode flag.
+func (d *Describe) Toggle() {
+	d.decode = !d.decode
 }

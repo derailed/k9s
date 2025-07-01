@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view_test
 
 import (
@@ -6,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStatefulSetNew(t *testing.T) {
-	s := view.NewStatefulSet(client.NewGVR("apps/v1/statefulsets"))
+	s := view.NewStatefulSet(client.StsGVR)
 
-	assert.Nil(t, s.Init(makeCtx()))
+	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "StatefulSets", s.Name())
-	assert.Equal(t, 12, len(s.Hints()))
+	assert.Len(t, s.Hints(), 14)
 }

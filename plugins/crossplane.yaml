@@ -1,0 +1,37 @@
+plugins:
+  # crossplane-trace list all the relationships with a resource (Claim, Composite, or Managed Resource)
+  # Requires 'crossplane' cli binary installed
+  crossplane-trace:
+    shortCut: t
+    confirm: false
+    description: "Crossplane Trace"
+    scopes:
+      - all
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        if [ -n "$NAMESPACE" ]; then
+          crossplane beta trace --context $CONTEXT -n $NAMESPACE $RESOURCE_NAME.$RESOURCE_GROUP $NAME -owide | less -K
+        else
+          crossplane beta trace --context $CONTEXT $RESOURCE_NAME.$RESOURCE_GROUP $NAME -owide | less -K
+        fi
+  # crossplane-watch requires 'crossplane' cli and 'viddy' binaries installed
+  # 'viddy' is a modern implementation of 'watch' command written in rust. Read more on https://github.com/sachaos/viddy.
+  crossplane-watch:
+    shortCut: w
+    confirm: false
+    description: "Crossplane Watch"
+    scopes:
+      - all
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        if [ -n "$NAMESPACE" ]; then
+          viddy -pw 'crossplane beta trace --context $CONTEXT -n $NAMESPACE $RESOURCE_NAME.$RESOURCE_GROUP $NAME -owide'
+        else
+          viddy -pw 'crossplane beta trace --context $CONTEXT $RESOURCE_NAME.$RESOURCE_GROUP $NAME -owide'
+        fi

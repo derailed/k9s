@@ -1,13 +1,16 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -52,7 +55,7 @@ func (f *Flash) StylesChanged(s *config.Styles) {
 
 // Watch watches for flash changes.
 func (f *Flash) Watch(ctx context.Context, c model.FlashChan) {
-	defer log.Debug().Msgf("Flash Watch Canceled!")
+	defer slog.Debug("Flash Watch Canceled!")
 	for {
 		select {
 		case <-ctx.Done():
@@ -82,10 +85,10 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 }
 
 func (f *Flash) flashEmoji(l model.FlashLevel) string {
-	if f.app.Config.K9s.NoIcons {
+	if f.app.Config.K9s.UI.NoIcons {
 		return ""
 	}
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch l {
 	case model.FlashWarn:
 		return emoDoh
@@ -99,7 +102,7 @@ func (f *Flash) flashEmoji(l model.FlashLevel) string {
 // Helpers...
 
 func flashColor(l model.FlashLevel) tcell.Color {
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch l {
 	case model.FlashWarn:
 		return tcell.ColorOrange

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -5,11 +8,11 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
@@ -31,10 +34,10 @@ type Dir struct {
 }
 
 // NewDir returns a new instance.
-func NewDir(path string) ResourceViewer {
+func NewDir(s string) ResourceViewer {
 	d := Dir{
-		ResourceViewer: NewBrowser(client.NewGVR("dir")),
-		path:           path,
+		ResourceViewer: NewBrowser(client.DirGVR),
+		path:           s,
 	}
 	d.GetTable().SetBorderFocusColor(tcell.ColorAliceBlue)
 	d.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorAliceBlue).Attributes(tcell.AttrNone))
@@ -57,22 +60,32 @@ func (d *Dir) dirContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyPath, d.path)
 }
 
-func (d *Dir) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyA: ui.NewKeyAction("Apply", d.applyCmd, true),
-		ui.KeyD: ui.NewKeyAction("Delete", d.delCmd, true),
-		ui.KeyE: ui.NewKeyAction("Edit", d.editCmd, true),
+func (d *Dir) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyA: ui.NewKeyActionWithOpts("Apply", d.applyCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
+		ui.KeyD: ui.NewKeyActionWithOpts("Delete", d.delCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
+		ui.KeyE: ui.NewKeyActionWithOpts("Edit", d.editCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
 	})
 }
 
-func (d *Dir) bindKeys(aa ui.KeyActions) {
+func (d *Dir) bindKeys(aa *ui.KeyActions) {
+	// !!BOZO!! Lame!
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD, tcell.KeyCtrlZ)
-	if !d.App().Config.K9s.IsReadOnly() {
+	if !d.App().Config.IsReadOnly() {
 		d.bindDangerousKeys(aa)
 	}
-	aa.Add(ui.KeyActions{
-		ui.KeyY:        ui.NewKeyAction("YAML", d.viewCmd, true),
+	aa.Bulk(ui.KeyMap{
+		ui.KeyY:        ui.NewKeyAction(yamlAction, d.viewCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", d.gotoCmd, true),
 	})
 }
@@ -93,7 +106,7 @@ func (d *Dir) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(d.App(), "YAML", sel, true).Update(string(yaml))
+	details := NewDetails(d.App(), yamlAction, sel, contentYAML, true).Update(string(yaml))
 	if err := d.App().inject(details, false); err != nil {
 		d.App().Flash().Err(err)
 	}
@@ -119,7 +132,7 @@ func (d *Dir) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	d.Stop()
 	defer d.Start()
-	if !edit(d.App(), shellOpts{clear: true, args: []string{sel}}) {
+	if !edit(d.App(), &shellOpts{clear: true, args: []string{sel}}) {
 		d.App().Flash().Errf("Failed to launch editor")
 	}
 
@@ -160,7 +173,7 @@ func isKustomized(sel string) bool {
 	}
 	kk := []string{kustomizeNoExt, kustomizeYAML, kustomizeYML}
 	for _, f := range ff {
-		if config.InList(kk, f.Name()) {
+		if slices.Contains(kk, f.Name()) {
 			return true
 		}
 	}
@@ -206,14 +219,14 @@ func (d *Dir) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, "apply")
 		args = append(args, opts...)
 		args = append(args, sel)
-		res, err := runKu(d.App(), shellOpts{clear: false, args: args})
+		res, err := runKu(d.App(), &shellOpts{clear: false, args: args})
 		if err != nil {
 			res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
 		} else {
 			res = "message:\n" + fmtResults(res)
 		}
 
-		details := NewDetails(d.App(), "Applied Manifest", sel, true).Update(res)
+		details := NewDetails(d.App(), "Applied Manifest", sel, contentYAML, true).Update(res)
 		if err := d.App().inject(details, false); err != nil {
 			d.App().Flash().Err(err)
 		}
@@ -241,18 +254,19 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 	d.Stop()
 	defer d.Start()
 	msg := fmt.Sprintf("Delete resource(s) in %s %s", msgResource, sel)
-	dialog.ShowConfirm(d.App().Styles.Dialog(), d.App().Content.Pages, "Confirm Delete", msg, func() {
+	dlg := d.App().Styles.Dialog()
+	dialog.ShowConfirm(&dlg, d.App().Content.Pages, "Confirm Delete", msg, func() {
 		args := make([]string, 0, 10)
 		args = append(args, "delete")
 		args = append(args, opts...)
 		args = append(args, sel)
-		res, err := runKu(d.App(), shellOpts{clear: false, args: args})
+		res, err := runKu(d.App(), &shellOpts{clear: false, args: args})
 		if err != nil {
 			res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
 		} else {
 			res = "message:\n" + fmtResults(res)
 		}
-		details := NewDetails(d.App(), "Deleted Manifest", sel, true).Update(res)
+		details := NewDetails(d.App(), "Deleted Manifest", sel, contentYAML, true).Update(res)
 		if err := d.App().inject(details, false); err != nil {
 			d.App().Flash().Err(err)
 		}

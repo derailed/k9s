@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dialog
 
 import (
@@ -12,7 +15,7 @@ import (
 func TestErrorDialog(t *testing.T) {
 	p := ui.NewPages()
 
-	ShowError(config.Dialog{}, p, "Yo")
+	ShowError(new(config.Dialog), p, "Yo")
 
 	d := p.GetPrimitive(dialogKey).(*tview.ModalForm)
 	assert.NotNil(t, d)

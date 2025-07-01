@@ -1,0 +1,103 @@
+# -----------------------------------------------------------------------------
+# K9s Nightfox Theme
+# Based on the Nightfox.nvim color scheme:
+# https://github.com/EdenEast/nightfox.nvim
+# -----------------------------------------------------------------------------
+
+# Styles...
+foreground: &foreground "#cdcecf"
+background: &background "#192330"
+current_line: &current_line "#2b3b51"
+selection: &selection "#2b3b51"
+comment: &comment "#738091"
+cyan: &cyan "#63cdcf"
+green: &green "#81b29a"
+orange: &orange "#f4a261"
+magenta: &magenta "#9d79d6"
+blue: &blue "#719cd6"
+red: &red "#c94f6d"
+
+# Skin...
+k9s:
+  body:
+    fgColor: *foreground
+    bgColor: *background
+    logoColor: *blue
+  prompt:
+    fgColor: *foreground
+    bgColor: *background
+    suggestColor: *orange
+  info:
+    fgColor: *magenta
+    sectionColor: *foreground
+  dialog:
+    fgColor: *foreground
+    bgColor: *background
+    buttonFgColor: *foreground
+    buttonBgColor: *magenta
+    buttonFocusFgColor: white
+    buttonFocusBgColor: *cyan
+    labelFgColor: *orange
+    fieldFgColor: *foreground
+  frame:
+    border:
+      fgColor: *selection
+      focusColor: *current_line
+    menu:
+      fgColor: *foreground
+      keyColor: *magenta
+      numKeyColor: *magenta
+    crumbs:
+      fgColor: *foreground
+      bgColor: *current_line
+      activeColor: *current_line
+    status:
+      newColor: *cyan
+      modifyColor: *blue
+      addColor: *green
+      errorColor: *red
+      highlightColor: *orange
+      killColor: *comment
+      completedColor: *comment
+    title:
+      fgColor: *foreground
+      bgColor: *current_line
+      highlightColor: *orange
+      counterColor: *blue
+      filterColor: *magenta
+  views:
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - *blue
+        - *red
+      defaultChartColors:
+        - *blue
+        - *red
+    table:
+      fgColor: *foreground
+      bgColor: *background
+      cursorFgColor: *selection
+      cursorBgColor: *current_line
+      header:
+        fgColor: *foreground
+        bgColor: *background
+        sorterColor: *cyan
+    xray:
+      fgColor: *foreground
+      bgColor: *background
+      cursorColor: *current_line
+      graphicColor: *blue
+      showIcons: false
+    yaml:
+      keyColor: *magenta
+      colonColor: *blue
+      valueColor: *foreground
+    logs:
+      fgColor: *foreground
+      bgColor: *background
+      indicator:
+        fgColor: *foreground
+        bgColor: *selection
+        toggleOnColor: *magenta
+        toggleOffColor: *blue

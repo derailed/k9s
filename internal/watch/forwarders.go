@@ -1,11 +1,16 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package watch
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/port"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/client-go/tools/portforward"
 )
 
@@ -23,8 +28,11 @@ type Forwarder interface {
 	// Container returns a container name.
 	Container() string
 
-	// Ports returns the port mapping.
+	// Port returns the port mapping.
 	Port() string
+
+	// Address returns the host address.
+	Address() string
 
 	// FQN returns the full port-forward name.
 	FQN() string
@@ -36,7 +44,7 @@ type Forwarder interface {
 	SetActive(bool)
 
 	// Age returns forwarder age.
-	Age() string
+	Age() time.Time
 
 	// HasPortMapping returns true if port mapping exists.
 	HasPortMapping(string) bool
@@ -50,9 +58,9 @@ func NewForwarders() Forwarders {
 	return make(map[string]Forwarder)
 }
 
-// BOZO!! Review!!!
 // IsPodForwarded checks if pod has a forward.
 func (ff Forwarders) IsPodForwarded(fqn string) bool {
+	fqn += "|"
 	for k := range ff {
 		if strings.HasPrefix(k, fqn) {
 			return true
@@ -64,9 +72,9 @@ func (ff Forwarders) IsPodForwarded(fqn string) bool {
 
 // IsContainerForwarded checks if pod has a forward.
 func (ff Forwarders) IsContainerForwarded(fqn, co string) bool {
-	prefix := fqn + "|" + co
+	fqn += "|" + co
 	for k := range ff {
-		if strings.HasPrefix(k, prefix) {
+		if strings.HasPrefix(k, fqn) {
 			return true
 		}
 	}
@@ -77,7 +85,7 @@ func (ff Forwarders) IsContainerForwarded(fqn, co string) bool {
 // DeleteAll stops and delete all port-forwards.
 func (ff Forwarders) DeleteAll() {
 	for k, f := range ff {
-		log.Debug().Msgf("Deleting forwarder %s", f.ID())
+		slog.Debug("Deleting forwarder", slogs.ID, f.ID())
 		f.Stop()
 		delete(ff, k)
 	}
@@ -91,12 +99,11 @@ func (ff Forwarders) Kill(path string) int {
 	// The '|' is added to make sure we do not delete port forwards from other pods that have the same prefix
 	// Without the `|` port forwards for pods, default/web-0 and default/web-0-bla would be both deleted
 	// even if we want only port forwards for default/web-0 to be deleted
-	prefix := fmt.Sprintf("%s|", path)
-
+	prefix := path + "|"
 	for k, f := range ff {
 		if k == path || strings.HasPrefix(k, prefix) {
 			stats++
-			log.Debug().Msgf("Stop + Delete port-forward %s", k)
+			slog.Debug("Stop and delete port-forward", slogs.Name, k)
 			f.Stop()
 			delete(ff, k)
 		}
@@ -107,8 +114,8 @@ func (ff Forwarders) Kill(path string) int {
 
 // Dump for debug!
 func (ff Forwarders) Dump() {
-	log.Debug().Msgf("----------- PORT-FORWARDS --------------")
+	slog.Debug("----------- PORT-FORWARDS --------------")
 	for k, f := range ff {
-		log.Debug().Msgf("  %s -- %#v", k, f)
+		slog.Debug(fmt.Sprintf("  %s -- %s", k, f))
 	}
 }

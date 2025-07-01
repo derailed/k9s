@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package color_test
 
 import (
@@ -44,7 +47,7 @@ func TestHighlight(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, string(color.Highlight([]byte(u.text), u.indices, u.color)))
+			assert.Equal(t, u.e, string(color.Highlight(u.text, u.indices, u.color)))
 		})
 	}
 }

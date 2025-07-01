@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -19,10 +22,10 @@ import (
 type Deployment struct{}
 
 // Render renders an xray node.
-func (d *Deployment) Render(ctx context.Context, ns string, o interface{}) error {
+func (d *Deployment) Render(ctx context.Context, ns string, o any) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Unstructured, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	var dp appsv1.Deployment
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &dp)
@@ -32,10 +35,10 @@ func (d *Deployment) Render(ctx context.Context, ns string, o interface{}) error
 
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	root := NewTreeNode("apps/v1/deployments", client.FQN(dp.Namespace, dp.Name))
+	root := NewTreeNode(client.DpGVR, client.FQN(dp.Namespace, dp.Name))
 	oo, err := locatePods(ctx, dp.Namespace, dp.Spec.Selector)
 	if err != nil {
 		return err
@@ -55,7 +58,7 @@ func (d *Deployment) Render(ctx context.Context, ns string, o interface{}) error
 	if root.IsLeaf() {
 		return nil
 	}
-	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, dp.Namespace)
+	gvr, nsID := client.NsGVR, client.FQN(client.ClusterScope, dp.Namespace)
 	nsn := parent.Find(gvr, nsID)
 	if nsn == nil {
 		nsn = NewTreeNode(gvr, nsID)
@@ -96,8 +99,8 @@ func locatePods(ctx context.Context, ns string, sel *metav1.LabelSelector) ([]ru
 
 	f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
-		return nil, fmt.Errorf("Expecting a factory but got %T", ctx.Value(internal.KeyFactory))
+		return nil, fmt.Errorf("expecting a factory but got %T", ctx.Value(internal.KeyFactory))
 	}
 
-	return f.List("v1/pods", ns, false, fsel.AsSelector())
+	return f.List(client.PodGVR, ns, false, fsel.AsSelector())
 }

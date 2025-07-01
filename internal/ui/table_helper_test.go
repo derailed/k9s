@@ -1,42 +1,63 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
-func TestIsLabelSelector(t *testing.T) {
+func TestTruncate(t *testing.T) {
 	uu := map[string]struct {
-		sel string
-		e   bool
+		s, e string
 	}{
-		"cool":       {"-l app=fred,env=blee", true},
-		"noMode":     {"app=fred,env=blee", false},
-		"noSpace":    {"-lapp=fred,env=blee", true},
-		"wrongLabel": {"-f app=fred,env=blee", false},
+		"empty": {},
+		"max": {
+			s: "/app.kubernetes.io/instance=prom,app.kubernetes.io/name=prometheus,app.kubernetes.io/component=server",
+			e: "/app.kubernetes.io/instance=prom,app.kubernetes.i…",
+		},
+		"less": {
+			s: "app=fred,env=blee",
+			e: "app=fred,env=blee",
+		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, IsLabelSelector(u.sel))
+			assert.Equal(t, u.e, render.Truncate(u.s, 50))
 		})
 	}
 }
 
 func TestTrimLabelSelector(t *testing.T) {
+	sel, _ := labels.Parse("app=fred,env=blee")
 	uu := map[string]struct {
-		sel, e string
+		sel string
+		err error
+		e   labels.Selector
 	}{
-		"cool":    {"-l app=fred,env=blee", "app=fred,env=blee"},
-		"noSpace": {"-lapp=fred,env=blee", "app=fred,env=blee"},
+		"cool": {
+			sel: "-l app=fred,env=blee",
+			e:   sel,
+		},
+
+		"no-space": {
+			sel: "-lapp=fred,env=blee",
+			e:   sel,
+		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, TrimLabelSelector(u.sel))
+			sel, err := TrimLabelSelector(u.sel)
+			assert.Equal(t, u.err, err)
+			assert.Equal(t, u.e, sel)
 		})
 	}
 }

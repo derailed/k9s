@@ -1,28 +1,37 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
+	"errors"
+	"io/fs"
+	"log/slog"
 	"os"
-	"path/filepath"
 	"sync"
 
-	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v2"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
+	"github.com/derailed/k9s/internal/slogs"
+	"github.com/derailed/k9s/internal/view/cmd"
+	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// K9sAlias manages K9s aliases.
-var K9sAlias = filepath.Join(K9sHome(), "alias.yml")
+type (
+	// Alias tracks shortname to GVR mappings.
+	Alias map[string]*client.GVR
 
-// Alias tracks shortname to GVR mappings.
-type Alias map[string]string
+	// ShortNames represents a collection of shortnames for aliases.
+	ShortNames map[*client.GVR][]string
 
-// ShortNames represents a collection of shortnames for aliases.
-type ShortNames map[string][]string
-
-// Aliases represents a collection of aliases.
-type Aliases struct {
-	Alias Alias `yaml:"alias"`
-	mx    sync.RWMutex
-}
+	// Aliases represents a collection of aliases.
+	Aliases struct {
+		Alias Alias `yaml:"aliases"`
+		mx    sync.RWMutex
+	}
+)
 
 // NewAliases return a new alias.
 func NewAliases() *Aliases {
@@ -31,15 +40,17 @@ func NewAliases() *Aliases {
 	}
 }
 
-// Keys returns all aliases keys.
-func (a *Aliases) Keys() []string {
+func (a *Aliases) AliasesFor(gvr *client.GVR) sets.Set[string] {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
 
-	ss := make([]string, 0, len(a.Alias))
-	for k := range a.Alias {
-		ss = append(ss, k)
+	ss := sets.New[string]()
+	for alias, aliasGVR := range a.Alias {
+		if aliasGVR == gvr {
+			ss.Insert(alias)
+		}
 	}
+
 	return ss
 }
 
@@ -70,62 +81,86 @@ func (a *Aliases) Clear() {
 	}
 }
 
+func (a *Aliases) Resolve(command string) (*client.GVR, string, bool) {
+	agvr, ok := a.Get(command)
+	if !ok {
+		return nil, "", false
+	}
+
+	p := cmd.NewInterpreter(agvr.String())
+	gvr, ok := a.Get(p.Cmd())
+	if !ok {
+		return agvr, "", true
+	}
+
+	return gvr, p.Args(), true
+}
+
 // Get retrieves an alias.
-func (a *Aliases) Get(k string) (string, bool) {
+func (a *Aliases) Get(alias string) (*client.GVR, bool) {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
 
-	v, ok := a.Alias[k]
-	return v, ok
+	gvr, ok := a.Alias[alias]
+
+	return gvr, ok
 }
 
 // Define declares a new alias.
-func (a *Aliases) Define(gvr string, aliases ...string) {
+func (a *Aliases) Define(gvr *client.GVR, aliases ...string) {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
-	// BOZO!! Could not get full events struct using this api group??
-	if gvr == "events.k8s.io/v1/events" || gvr == "extensions/v1beta1" {
-		return
-	}
-
 	for _, alias := range aliases {
-		if _, ok := a.Alias[alias]; ok {
-			continue
+		if _, ok := a.Alias[alias]; !ok && alias != "" {
+			a.Alias[alias] = gvr
 		}
-		a.Alias[alias] = gvr
 	}
 }
 
 // Load K9s aliases.
-func (a *Aliases) Load() error {
+func (a *Aliases) Load(path string) error {
 	a.loadDefaultAliases()
-	return a.LoadFileAliases(K9sAlias)
+	f, err := EnsureAliasesCfgFile()
+	if err != nil {
+		slog.Error("Unable to gen config aliases", slogs.Error, err)
+	}
+	// load global alias file
+	if err := a.LoadFile(f); err != nil {
+		return err
+	}
+
+	// load context specific aliases if any
+	return a.LoadFile(path)
 }
 
-// LoadFileAliases loads alias from a given file.
-func (a *Aliases) LoadFileAliases(path string) error {
-	f, err := os.ReadFile(path)
-	if err == nil {
-		var aa Aliases
-		if err := yaml.Unmarshal(f, &aa); err != nil {
-			return err
-		}
+// LoadFile loads alias from a given file.
+func (a *Aliases) LoadFile(path string) error {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
 
-		a.mx.Lock()
-		defer a.mx.Unlock()
-		for k, v := range aa.Alias {
-			a.Alias[k] = v
-		}
+	bb, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := data.JSONValidator.Validate(json.AliasesSchema, bb); err != nil {
+		slog.Warn("Aliases validation failed", slogs.Error, err)
+	}
+
+	a.mx.Lock()
+	defer a.mx.Unlock()
+	if err := yaml.Unmarshal(bb, a); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (a *Aliases) declare(key string, aliases ...string) {
-	a.Alias[key] = key
+func (a *Aliases) declare(gvr *client.GVR, aliases ...string) {
+	a.Alias[gvr.String()] = gvr
 	for _, alias := range aliases {
-		a.Alias[alias] = key
+		a.Alias[alias] = gvr
 	}
 }
 
@@ -133,45 +168,36 @@ func (a *Aliases) loadDefaultAliases() {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
-	a.Alias["dp"] = "apps/v1/deployments"
-	a.Alias["sec"] = "v1/secrets"
-	a.Alias["jo"] = "batch/v1/jobs"
-	a.Alias["cr"] = "rbac.authorization.k8s.io/v1/clusterroles"
-	a.Alias["crb"] = "rbac.authorization.k8s.io/v1/clusterrolebindings"
-	a.Alias["ro"] = "rbac.authorization.k8s.io/v1/roles"
-	a.Alias["rb"] = "rbac.authorization.k8s.io/v1/rolebindings"
-	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
-
-	a.declare("help", "h", "?")
-	a.declare("quit", "q", "q!", "qa", "Q")
-	a.declare("aliases", "alias", "a")
-	a.declare("popeye", "pop")
-	a.declare("helm", "charts", "chart", "hm")
-	a.declare("dir", "d")
-	a.declare("contexts", "context", "ctx")
-	a.declare("users", "user", "usr")
-	a.declare("groups", "group", "grp")
-	a.declare("portforwards", "portforward", "pf")
-	a.declare("benchmarks", "bench", "benchmark", "be")
-	a.declare("screendumps", "screendump", "sd")
-	a.declare("pulses", "pulse", "pu", "hz")
-	a.declare("xrays", "xray", "x")
+	a.declare(client.HlpGVR, "h", "?")
+	a.declare(client.QGVR, "q", "q!", "qa", "Q")
+	a.declare(client.AliGVR, "alias", "a")
+	a.declare(client.HmGVR, "charts", "chart", "hm")
+	a.declare(client.DirGVR, "dir", "d")
+	a.declare(client.CtGVR, "context", "ctx")
+	a.declare(client.UsrGVR, "user", "usr")
+	a.declare(client.GrpGVR, "group", "grp")
+	a.declare(client.PfGVR, "portforward", "pf")
+	a.declare(client.BeGVR, "benchmark", "bench")
+	a.declare(client.SdGVR, "screendump", "sd")
+	a.declare(client.PuGVR, "pulse", "pu", "hz")
+	a.declare(client.XGVR, "xray", "x")
+	a.declare(client.WkGVR, "workload", "wk")
 }
 
 // Save alias to disk.
 func (a *Aliases) Save() error {
-	log.Debug().Msg("[Config] Saving Aliases...")
-	return a.SaveAliases(K9sAlias)
+	slog.Debug("Saving Aliases...")
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.saveAliases(AppAliasesFile)
 }
 
 // SaveAliases saves aliases to a given file.
-func (a *Aliases) SaveAliases(path string) error {
-	if err := EnsureDirPath(path, DefaultDirMod); err != nil {
+func (a *Aliases) saveAliases(path string) error {
+	if err := data.EnsureDirPath(path, data.DefaultDirMod); err != nil {
 		return err
 	}
-	cfg, err := yaml.Marshal(a)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, cfg, 0644)
+
+	return data.SaveYAML(path, a)
 }

@@ -33,7 +33,7 @@ alias:
 
 ### Plug For Plugins
 
-As of this release and based on some users feedback we've moved the plugin section that used to live in the main K9s configuration file out to it's own file. So as of this release we've added a new file in K9s home dir called `plugin.yml`. This is where you will define/share your K9s plugins and define your own commands and menu mnemonics. Here is an example for defining a custom command to show logs.
+As of this release and based on some users feedback we've moved the plugin section that used to live in the main K9s configuration file out to its own file. So as of this release we've added a new file in K9s home dir called `plugin.yml`. This is where you will define/share your K9s plugins and define your own commands and menu mnemonics. Here is an example for defining a custom command to show logs.
 
 ```yaml
 # plugin.yml
@@ -65,7 +65,7 @@ Special K9s env vars you will have access to are currently for your commands or 
 * GROUPS
 * COL[0-9+]
 
-I will setup an plugin/alias repo so we can share these with all K9sers. Please ping me if interested in contributing/sharing your commands. Thank you!!
+I will setup a plugin/alias repo so we can share these with all K9sers. Please ping me if interested in contributing/sharing your commands. Thank you!!
 
 ### Aye Aye Capt'ain!!
 
@@ -81,7 +81,7 @@ You can now use commands like `svc fred` while in command mode to directly navig
 
 #### Sticky Filters
 
-You can now keep filters sticky allowing you to filter a view bases on regex, fuzzy or labels and keep the filter live while switching resources. This provides for an horizontal navigation to view the various resources for a given application. Thank you so much [Nobert](https://github.com/ncsibra) for your continuous awesome feedback!!
+You can now keep filters sticky allowing you to filter a view bases on regex, fuzzy or labels and keep the filter live while switching resources. This provides for a horizontal navigation to view the various resources for a given application. Thank you so much [Nobert](https://github.com/ncsibra) for your continuous awesome feedback!!
 
 ### New Resources
 

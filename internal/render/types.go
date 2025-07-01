@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 const (
@@ -42,7 +45,7 @@ const (
 	UnknownValue = "<unknown>"
 
 	// UnsetValue represent an unset value.
-	UnsetValue = ""
+	UnsetValue = "<unset>"
 
 	// ZeroValue represents a zero value.
 	ZeroValue = "0"

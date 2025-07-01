@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view_test
 
 import (
@@ -6,12 +9,13 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPVCNew(t *testing.T) {
-	v := view.NewPersistentVolumeClaim(client.NewGVR("v1/persistentvolumeclaims"))
+	v := view.NewPersistentVolumeClaim(client.PvcGVR)
 
-	assert.Nil(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx(t)))
 	assert.Equal(t, "PersistentVolumeClaims", v.Name())
-	assert.Equal(t, 10, len(v.Hints()))
+	assert.Len(t, v.Hints(), 11)
 }

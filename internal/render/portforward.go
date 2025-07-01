@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -18,14 +24,17 @@ type Forwarder interface {
 	// Container returns a container name.
 	Container() string
 
-	// Ports returns container exposed ports.
+	// Port returns container exposed port.
 	Port() string
+
+	// Address returns the host address.
+	Address() string
 
 	// Active returns forwarder current state.
 	Active() bool
 
 	// Age returns forwarder age.
-	Age() string
+	Age() time.Time
 }
 
 // PortForward renders a portforwards to screen.
@@ -34,29 +43,29 @@ type PortForward struct {
 }
 
 // ColorerFunc colors a resource row.
-func (PortForward) ColorerFunc() ColorerFunc {
-	return func(ns string, _ Header, re RowEvent) tcell.Color {
+func (PortForward) ColorerFunc() model1.ColorerFunc {
+	return func(string, model1.Header, *model1.RowEvent) tcell.Color {
 		return tcell.ColorSkyblue
 	}
 }
 
 // Header returns a header row.
-func (PortForward) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "CONTAINER"},
-		HeaderColumn{Name: "PORTS"},
-		HeaderColumn{Name: "URL"},
-		HeaderColumn{Name: "C"},
-		HeaderColumn{Name: "N"},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (PortForward) Header(string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "CONTAINER"},
+		model1.HeaderColumn{Name: "PORTS"},
+		model1.HeaderColumn{Name: "URL"},
+		model1.HeaderColumn{Name: "C"},
+		model1.HeaderColumn{Name: "N"},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
+func (PortForward) Render(o any, _ string, r *model1.Row) error {
 	pf, ok := o.(ForwardRes)
 	if !ok {
 		return fmt.Errorf("expecting a ForwardRes but got %T", o)
@@ -66,16 +75,16 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 	r.ID = pf.ID()
 	ns, n := client.Namespaced(r.ID)
 
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		ns,
 		trimContainer(n),
 		pf.Container(),
 		pf.Port(),
-		UrlFor(pf.Config.Host, pf.Config.Path, ports[0]),
+		UrlFor(pf.Config.Host, pf.Config.Path, ports[0], pf.Address()),
 		AsThousands(int64(pf.Config.C)),
 		AsThousands(int64(pf.Config.N)),
 		"",
-		pf.Age(),
+		ToAge(metav1.Time{Time: pf.Age()}),
 	}
 
 	return nil
@@ -94,9 +103,9 @@ func trimContainer(n string) string {
 }
 
 // UrlFor computes fq url for a given benchmark configuration.
-func UrlFor(host, path, port string) string {
+func UrlFor(host, path, port, address string) string {
 	if host == "" {
-		host = "localhost"
+		host = address
 	}
 	if path == "" {
 		path = "/"
@@ -118,7 +127,7 @@ type ForwardRes struct {
 }
 
 // GetObjectKind returns a schema object.
-func (f ForwardRes) GetObjectKind() schema.ObjectKind {
+func (ForwardRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 

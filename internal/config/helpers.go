@@ -1,76 +1,76 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
+	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
-	"regexp"
 
-	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
-	// DefaultDirMod default unix perms for k9s directory.
-	DefaultDirMod os.FileMode = 0755
-	// DefaultFileMod default unix perms for k9s files.
-	DefaultFileMod os.FileMode = 0600
+	envPFAddress          = "K9S_DEFAULT_PF_ADDRESS"
+	defaultPortFwdAddress = "localhost"
 )
 
-var invalidPathCharsRX = regexp.MustCompile(`[:]+`)
-
-// SanitizeFilename sanitizes the dump filename.
-func SanitizeFilename(name string) string {
-	return invalidPathCharsRX.ReplaceAllString(name, "-")
+// IsBoolSet checks if a bool ptr is set.
+func IsBoolSet(b *bool) bool {
+	return b != nil && *b
 }
 
-// InList check if string is in a collection of strings.
-func InList(ll []string, n string) bool {
-	for _, l := range ll {
-		if l == n {
-			return true
-		}
-	}
-	return false
+func isStringSet(s *string) bool {
+	return s != nil && *s != ""
 }
 
-// InNSList check if ns is in an ns collection.
-func InNSList(nn []interface{}, ns string) bool {
-	ss := make([]string, len(nn))
-	for i, n := range nn {
-		if nsp, ok := n.(v1.Namespace); ok {
-			ss[i] = nsp.Name
-		}
+func isYamlFile(file string) bool {
+	ext := filepath.Ext(file)
+
+	return ext == ".yml" || ext == ".yaml"
+}
+
+// isEnvSet checks if env var is set.
+func isEnvSet(env string) bool {
+	return os.Getenv(env) != ""
+}
+
+// UserTmpDir returns the temp dir with the current user name.
+func UserTmpDir() (string, error) {
+	u, err := user.Current()
+	if err != nil {
+		return "", err
 	}
-	return InList(ss, ns)
+
+	dir := filepath.Join(os.TempDir(), u.Username, AppName)
+
+	return dir, nil
 }
 
 // MustK9sUser establishes current user identity or fail.
 func MustK9sUser() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Die on retrieving user info")
+		envUsr := os.Getenv("USER")
+		if envUsr != "" {
+			return envUsr
+		}
+		envUsr = os.Getenv("LOGNAME")
+		if envUsr != "" {
+			return envUsr
+		}
+		slog.Error("Die on retrieving user info", slogs.Error, err)
+		os.Exit(1)
 	}
 	return usr.Username
 }
 
-// EnsureDirPath ensures a directory exist from the given path.
-func EnsureDirPath(path string, mod os.FileMode) error {
-	return EnsureFullPath(filepath.Dir(path), mod)
-}
-
-// EnsureFullPath ensures a directory exist from the given path.
-func EnsureFullPath(path string, mod os.FileMode) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err = os.MkdirAll(path, mod); err != nil {
-			return err
-		}
+func defaultPFAddress() string {
+	if a := os.Getenv(envPFAddress); a != "" {
+		return a
 	}
 
-	return nil
-}
-
-// IsBoolSet checks if a bool prt is set.
-func IsBoolSet(b *bool) bool {
-	return b != nil && *b
+	return defaultPortFwdAddress
 }

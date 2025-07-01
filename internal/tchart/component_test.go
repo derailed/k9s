@@ -11,15 +11,7 @@ import (
 func TestCoSeriesColorNames(t *testing.T) {
 	c := tchart.NewComponent("fred")
 
-	c.SetSeriesColors(tcell.ColorGreen, tcell.ColorBlue)
+	c.SetSeriesColors(tcell.ColorGreen, tcell.ColorBlue, tcell.ColorRed)
 
-	assert.Equal(t, []string{"green", "blue"}, c.GetSeriesColorNames())
-}
-
-func TestComponentAsRect(t *testing.T) {
-	c := tchart.NewComponent("fred")
-
-	c.SetSeriesColors(tcell.ColorGreen, tcell.ColorBlue)
-
-	assert.Equal(t, []string{"green", "blue"}, c.GetSeriesColorNames())
+	assert.Equal(t, []string{"green", "blue", "red"}, c.GetSeriesColorNames())
 }

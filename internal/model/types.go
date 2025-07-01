@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
@@ -6,9 +9,11 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -30,6 +35,7 @@ type ViewerToggleOpts map[string]bool
 type ResourceViewer interface {
 	GetPath() string
 	Filter(string)
+	GVR() *client.GVR
 	ClearFilter()
 	Peek() []string
 	SetOptions(context.Context, ViewerToggleOpts)
@@ -37,6 +43,14 @@ type ResourceViewer interface {
 	Refresh(context.Context) error
 	AddListener(ResourceViewerListener)
 	RemoveListener(ResourceViewerListener)
+}
+
+// EncDecResourceViewer interface extends the ResourceViewer interface and
+// adds a `Toggle` that allows the user to switch between encoded or decoded
+// state of the view.
+type EncDecResourceViewer interface {
+	ResourceViewer
+	Toggle()
 }
 
 // Igniter represents a runnable view.
@@ -80,21 +94,19 @@ type Component interface {
 	Igniter
 	Hinter
 	Commander
+	Filterer
+	Viewer
 }
 
-// Renderer represents a resource renderer.
-type Renderer interface {
-	// IsGeneric identifies a generic handler.
-	IsGeneric() bool
+// Viewer represents a resource viewer.
+type Viewer interface {
+	// SetCommand sets the current command.
+	SetCommand(*cmd.Interpreter)
+}
 
-	// Render converts raw resources to tabular data.
-	Render(o interface{}, ns string, row *render.Row) error
-
-	// Header returns the resource header.
-	Header(ns string) render.Header
-
-	// ColorerFunc returns a row colorer function.
-	ColorerFunc() render.ColorerFunc
+type Filterer interface {
+	SetFilter(string)
+	SetLabelSelector(labels.Selector)
 }
 
 // Cruder performs crud operations.
@@ -125,12 +137,12 @@ type Describer interface {
 
 // TreeRenderer represents an xray node.
 type TreeRenderer interface {
-	Render(ctx context.Context, ns string, o interface{}) error
+	Render(ctx context.Context, ns string, o any) error
 }
 
 // ResourceMeta represents model info about a resource.
 type ResourceMeta struct {
 	DAO          dao.Accessor
-	Renderer     Renderer
+	Renderer     model1.Renderer
 	TreeRenderer TreeRenderer
 }

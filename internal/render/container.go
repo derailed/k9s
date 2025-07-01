@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -7,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
@@ -15,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
+
+const falseStr = "false"
 
 // ContainerWithMetrics represents a container and it's metrics.
 type ContainerWithMetrics interface {
@@ -40,81 +46,86 @@ type Container struct {
 }
 
 // ColorerFunc colors a resource row.
-func (c Container) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		if !Happy(ns, h, re.Row) {
-			return ErrColor
-		}
+func (Container) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
 
-		stateCol := h.IndexOf("STATE", true)
-		if stateCol == -1 {
-			return DefaultColorer(ns, h, re)
+		idx, ok := h.IndexOf("STATE", true)
+		if !ok {
+			return c
 		}
-		switch strings.TrimSpace(re.Row.Fields[stateCol]) {
+		switch strings.TrimSpace(re.Row.Fields[idx]) {
 		case Pending:
-			return PendingColor
+			return model1.PendingColor
 		case ContainerCreating, PodInitializing:
-			return AddColor
+			return model1.AddColor
 		case Terminating, Initialized:
-			return HighlightColor
+			return model1.HighlightColor
 		case Completed:
-			return CompletedColor
+			return model1.CompletedColor
 		case Running:
-			return DefaultColorer(ns, h, re)
+			return c
 		default:
-			return ErrColor
+			return model1.ErrColor
 		}
 	}
 }
 
 // Header returns a header row.
-func (Container) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "PF"},
-		HeaderColumn{Name: "IMAGE"},
-		HeaderColumn{Name: "READY"},
-		HeaderColumn{Name: "STATE"},
-		HeaderColumn{Name: "INIT"},
-		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
-		HeaderColumn{Name: "PROBES(L:R)"},
-		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight},
-		HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight},
-		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "PORTS"},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
-	}
+func (Container) Header(_ string) model1.Header {
+	return defaultCOHeader
+}
+
+// Header returns a header row.
+var defaultCOHeader = model1.Header{
+	model1.HeaderColumn{Name: "IDX"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "PF"},
+	model1.HeaderColumn{Name: "IMAGE"},
+	model1.HeaderColumn{Name: "READY"},
+	model1.HeaderColumn{Name: "STATE"},
+	model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "PROBES(L:R:S)"},
+	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "PORTS"},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
-func (c Container) Render(o interface{}, name string, r *Row) error {
-	co, ok := o.(ContainerRes)
+func (c Container) Render(o any, _ string, row *model1.Row) error {
+	cr, ok := o.(ContainerRes)
 	if !ok {
-		return fmt.Errorf("Expected ContainerRes, but got %T", o)
+		return fmt.Errorf("expected ContainerRes, but got %T", o)
 	}
 
-	cur, res := gatherMetrics(co.Container, co.MX)
-	ready, state, restarts := "false", MissingValue, "0"
-	if co.Status != nil {
-		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
+	return c.defaultRow(cr, row)
+}
+
+func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
+	cur, res := gatherMetrics(cr.Container, cr.MX)
+	ready, state, restarts := falseStr, MissingValue, "0"
+	if cr.Status != nil {
+		ready, state, restarts = boolToStr(cr.Status.Ready), ToContainerState(cr.Status.State), strconv.Itoa(int(cr.Status.RestartCount))
 	}
 
-	r.ID = co.Container.Name
-	r.Fields = Fields{
-		co.Container.Name,
+	r.ID = cr.Container.Name
+	r.Fields = model1.Fields{
+		cr.Idx,
+		cr.Container.Name,
 		"●",
-		co.Container.Image,
+		cr.Container.Image,
 		ready,
 		state,
-		boolToStr(co.IsInit),
 		restarts,
-		probe(co.Container.LivenessProbe) + ":" + probe(co.Container.ReadinessProbe),
+		probe(cr.Container.LivenessProbe) + ":" + probe(cr.Container.ReadinessProbe) + ":" + probe(cr.Container.StartupProbe),
 		toMc(cur.cpu),
 		toMi(cur.mem),
 		toMc(res.cpu) + ":" + toMc(res.lcpu),
@@ -123,9 +134,9 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		client.ToPercentageStr(cur.cpu, res.lcpu),
 		client.ToPercentageStr(cur.mem, res.mem),
 		client.ToPercentageStr(cur.mem, res.lmem),
-		ToContainerPorts(co.Container.Ports),
-		asStatus(c.diagnose(state, ready)),
-		toAge(co.Age),
+		ToContainerPorts(cr.Container.Ports),
+		AsStatus(c.diagnose(state, ready)),
+		ToAge(cr.Age),
 	}
 
 	return nil
@@ -137,7 +148,7 @@ func (Container) diagnose(state, ready string) error {
 		return nil
 	}
 
-	if ready == "false" {
+	if ready == falseStr {
 		return errors.New("container is not ready")
 	}
 	return nil
@@ -146,16 +157,29 @@ func (Container) diagnose(state, ready string) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+func containerRequests(co *v1.Container) v1.ResourceList {
+	req := co.Resources.Requests
+	if len(req) != 0 {
+		return req
+	}
+	lim := co.Resources.Limits
+	if len(lim) != 0 {
+		return lim
+	}
+
+	return nil
+}
+
 func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric) {
 	rList, lList := containerRequests(co), co.Resources.Limits
 	if rList.Cpu() != nil {
 		r.cpu = rList.Cpu().MilliValue()
 	}
-	if lList.Cpu() != nil {
-		r.lcpu = lList.Cpu().MilliValue()
-	}
 	if rList.Memory() != nil {
 		r.mem = rList.Memory().Value()
+	}
+	if lList.Cpu() != nil {
+		r.lcpu = lList.Cpu().MilliValue()
 	}
 	if lList.Memory() != nil {
 		r.lmem = lList.Memory().Value()
@@ -176,7 +200,7 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric
 func ToContainerPorts(pp []v1.ContainerPort) string {
 	ports := make([]string, len(pp))
 	for i, p := range pp {
-		if len(p.Name) > 0 {
+		if p.Name != "" {
 			ports[i] = p.Name + ":"
 		}
 		ports[i] += strconv.Itoa(int(p.ContainerPort))
@@ -226,12 +250,12 @@ type ContainerRes struct {
 	Container *v1.Container
 	Status    *v1.ContainerStatus
 	MX        *mv1beta1.ContainerMetrics
-	IsInit    bool
+	Idx       string
 	Age       metav1.Time
 }
 
 // GetObjectKind returns a schema object.
-func (c ContainerRes) GetObjectKind() schema.ObjectKind {
+func (ContainerRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 

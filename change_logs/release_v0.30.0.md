@@ -1,0 +1,313 @@
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s-xmas.png" align="center" width="800" height="auto"/>
+
+# Release v0.30.0
+
+## Notes
+
+Thank you to all that contributed with flushing out issues and enhancements for K9s!
+I'll try to mark some of these issues as fixed. But if you don't mind grab the latest rev
+and see if we're happier with some of the fixes!
+If you've filed an issue please help me verify and close.
+
+Your support, kindness and awesome suggestions to make K9s better are, as ever, very much noted and appreciated!
+Also big thanks to all that have allocated their own time to help others on both slack and on this repo!!
+
+As you may know, K9s is not pimped out by corps with deep pockets, thus if you feel K9s is helping your Kubernetes journey,
+please consider joining our [sponsorship program](https://github.com/sponsors/derailed) and/or make some noise on social! [@kitesurfer](https://twitter.com/kitesurfer)
+
+On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
+
+---
+
+## ♫ Sounds Behind The Release ♭
+
+Going back to the classics...
+
+* [Home For Christmas - Fats Domino](https://www.youtube.com/watch?v=ykAVdPz8o1Q)
+* [Our Love - Al Jarreau](https://www.youtube.com/watch?v=9ztMe6GIwi8)
+* [Body And Soul - Louis Armstrong](https://www.youtube.com/watch?v=2Gnz69TbqHQ)
+* [On The Dunes - Donald Fagen](https://www.youtube.com/watch?v=QoVT3XcMVvk)
+* [Ciao - Lucio Dalla](https://www.youtube.com/watch?v=qcqXcmKu_I4)
+* [Basin Street Blues - Louis Prima](https://www.youtube.com/watch?v=IijXXXpUefM&list=RDIijXXXpUefM&start_radio=1)
+
+---
+
+## A Word From Our Sponsors...
+
+To all the good folks below that opted to `pay it forward` and join our sponsorship program, I salute you!!
+
+* [Bojan](https://github.com/rbojan)
+
+> Sponsorship cancellations since the last release: **5!** 🥹
+
+---
+
+## 🎄 Feature Release! 🎄
+
+🎅 Merry Christmas to all and Best wishes for the new year!!🧑‍🎄
+
+---
+
+### Videos Are In The Can!
+
+Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgjmw) for up coming content...
+
+* [K9s v0.30.0 Sneak peek](https://youtu.be/mVBc1XneRJ4)
+* [Vulnerability Scans](https://youtu.be/ULkl0MsaidU)
+
+---
+
+### Breaking Bad!
+
+> ☢️ !!Prior to installing v0.30.0!! Please be sure to backup your k9s configs directories or move them somewhere safe!!
+
+> ☢️ Please watch the v0.30.0 Sneak peek series (links below) for detailed information.
+>
+> ☢️ Most K9s configuration files have either split or changed location or names on this drop!!
+
+> We recommend moving your current k9s config dirs to another location and start k9s from scratch and let it create and initialize the various configs
+> to their new spec and location. You can then use your existing setup and patch with the new layout/spec.
+> As of v0.30.0 all config files now use the `*.yaml` extension. We did our best to update all the docs to match the new version.
+> If you find doc issues either file an issue or better yet submit a PR!
+
+Some of you might say: `You're on the roll their bud! Two breaking changes drops in a row!!`
+Per the wise words of my beloved Grand mama! `One can't cook a decent meal without creating a mess!`
+Not to mention we're still at v0.x.y so `Open season on breaking changes` is very much in full effect.
+
+Tho I have tested this drop quite a bit, there is a strong chance that I've broken some stuff.
+The key here is to walk the fine line of improving k9s code base and features set with minimal impact to you.
+As you know by now, I am committed to ease the pain and resolve issues quickly to get you all back up and running.
+
+From the scope changes in this release, I would caution that this drop will likely break you!
+If so, worry not! We will fix the duds so we are `Happy as a Hippo` once again.
+
+There was a few issues with the way K9s persists it's configuration and various artifacts. So we rewrote it!
+First and foremost all k9s related YAML resources, will now use the standard ".yaml" extension.
+I think we've bloated the code checking for both extensions with no real actionable value!
+
+As it stands the main K9s configuration `config.yml` will now be static. These settings are now readonly! All the dynamic configurations that K9s manages now live in a new directory aka `clusters`. The clusters directory manages your k8s cluster/context configurations. So things like active view, namespace, favorites, etc... now live in this directory. K9s configurations are still managed using either xdg `XDG_CONFIG_HOME` or you can set `K9S_CONFIG_DIR` to specify your preferred k9s configs location. Also all config files will now use the ".yaml" extension vs ".yml"!!
+
+So the main k9s configuration (static) now looks like this:
+
+```yaml
+# $XDG_CONFIG_HOME/k9s/config.yaml
+# File will be autogenerated with all the default fixins if not found in the config specification.
+k9s:
+  liveViewAutoRefresh: false
+  refreshRate: 2
+  maxConnRetry: 5
+  readOnly: false
+  noExitOnCtrlC: false
+  ui: # NOTE! New level!!
+    enableMouse: false
+    headless: false
+    logoless: false
+    crumbsless: false
+    noIcons: false
+  skipLatestRevCheck: false
+  disablePodCounting: false
+  # ShellPod configuration applies to all your clusters
+  shellPod:
+    image: busybox:1.35.0
+    namespace: default
+    limits:
+      cpu: 100m
+      memory: 100Mi
+  # ImageScan config changed from v0.29.0!
+  imageScans:
+    enable: false
+    # Now figures exclusions ie excludes certain namespaces or specific workload labels
+    exclusions:
+      # Exclude the following namespaces for image vulscans!
+      namespaces:
+        - kube-system
+        - fred
+      # Exclude the following labels from image vulscans!
+      labels:
+        k8s-app:
+          - kindnet
+          - bozo
+        env:
+          - dev
+  logger:
+    tail: 100
+    buffer: 5000
+    sinceSeconds: -1
+    fullScreenLogs: false
+    textWrap: false
+    showTime: false
+  thresholds:
+    cpu:
+      critical: 90
+      warn: 70
+    memory:
+      critical: 90
+      warn: 70
+```
+
+Next context specific configurations that are managed by you and k9s live in the XDG data directory
+i.e `$XDG_DATA_HOME/k9s/clusters` or `$K9S_CONFIG_DIR/clusters` if the env var is set.
+
+```text
+$XDG_DATA_HOME/k9s
+// Clusters tracks visited kubeconfig cluster/contexts
+├── clusters
+│   ├── fred
+│   │   └── bozo
+│   │       └── config.yaml
+│   ├── bozorg
+│   │   ├── kind-bozo-1
+│   │   │   └── config.yaml
+│   │   ├── kind-bozo-2
+│   │   │   └── config.yaml
+│   │   └── kind-bozo-3
+│   │       └── config.yaml
+│   └── bumblebeetuna
+│       └── blee
+│           └── config.yaml
+└── skins
+    ├── black_and_wtf.yaml
+    ├── dracula.yaml
+    ├── in_the_navy.yml
+    ├── ...
+```
+
+Now looking at a given context configuration i.e cluster-1/context-1/config.yaml
+
+```yaml
+# $XDG_DATA_HOME/k9s/clusters/bumblebeetuna/blee/config.yaml
+k9s:
+  cluster: bumblebeetuna
+  readOnly: false # [New!] you can now single out a given context and make it readonly. Woof!
+  skin: in_the_navy # [NEW!] you can also skin individual contexts. Woof Woof!
+  namespace:
+    active: all
+    lockFavorites: false
+    favorites:
+    - all
+    - kube-system
+    - default
+  view:
+    active: dp
+  featureGates:
+    nodeShell: false
+  portForwardAddress: localhost
+```
+
+Transient artifacts ie k9s logs, screen-dumps, benchmarks etc now live in the state config dir.
+
+```text
+$XDG_STATE_HOME/k9s
+├── k9s.log # K9s log files
+└── screen-dumps
+    └── bumblebeetuna # Screen dumps location for context blee
+        └── blee
+            └── deployments-kube-system-1703018199222861000.csv
+```
+
+If you get stuck or if my instructions are just `clear as mud`... `k9s info` is always your friend!!
+
+I feel this is an improvement (tho I might be unanimous on this!) especially for folks dealing with multi-clusters or swapping out there kubeconfigs...
+
+> NOTE! Paint is still fresh on this deal. Proceed with caution and please help us flush this feature out!
+
+---
+
+# Got Prompt?
+
+In this drop, we've also given the k9s command prompt aka `:xxx` some love.
+You have the ability to specify filter directly in the prompt.
+
+So for example, you can now run something like `:po /fred` to run pod view with a filter to just show pods containing `fred`. Likewise `:po k8s-app=fred,env=blee` to filter by labels.
+And now for the`Krampus` special... you can see pods in a different context all together via `:pod @ctx-2`.
+Finally you can combo and send the `whole enchilada` via `:po k8s-app=fred /blee ns-1 @ctx-x`
+Did I mention with completion where applicable? Yes Please!!
+Compliments of [Jayson Wang](https://github.com/wjiec). Be sure to thank him!!
+
+Put these frequent flyers command in an alias and now you can nav your clusters with `even more style`!
+
+---
+
+# All Is Love?
+
+🎵 `On The twentieth day of Christmas my true love gave to me... Ten workloads a-leaping??...` 🎵
+
+This is a feature reported by many of you and its (finally!) here. As of this drop, we intro the `workload` view aka `wk` which is similar to `kubectl get all`. I was reluctant to intro it given the potential hazards on larger clusters but figured why not? YOLO. I think using it in combo with the prompt updates it could pack a serious punch to observe workload related artifacts.
+
+---
+
+# Vulnerability Scan Exclusions...
+
+As it seems customary with all k9s new features, folks want to turn them off ;(
+The `Vulscan` feature did not get out unscathed ;(
+As it was rightfully so pointed out, you may want to opted out scans for images that you do not control.
+Tho I think it might be a good idea to run wide open once in a while to see if your cluster has any holes??
+For this reason, we've opted to intro an exclusion section under the image scan configuration to exclude certain images from the scans.
+
+Here is a sample configuration:
+
+```yaml
+k9s:
+  liveViewAutoRefresh: false
+  refreshRate: 2
+  ui:
+    enableMouse: false
+    headless: false
+    logoless: false
+    crumbsless: false
+    noIcons: false
+  imageScans:
+    enable: true
+    exclusions:
+      # Skip scans on these namespaces
+      namespaces:
+        - ns-1
+        - ns-2
+      # Skip scans for pods matching these labels
+      labels:
+        - app:
+          - fred
+          - blee
+          - duh
+        - env:
+          - dev
+```
+
+This is a bit of a blur now, but I think that it! We hope you guys will dig this drop or at least the concepts as likely this is going to be `Open Season` on bugs ;(
+
+🎵 `On The second day of Christmas my true love gave to me... Eleven buggers bugging??...` 🎵
+
+Lastly looks like the sponsorship stream is down to an alarming trickle so if you dig this project and find it useful be sure `to give til it hurts!`
+
+---
+
+🎅 Best wishes to you and yours for good health and happiness this holiday season!! 🎉
+
+AndJoy!
+Fernand
+
+---
+
+## Resolved Issues
+
+* [#2346](https://github.com/derailed/k9s/issues/2346) k9s should not write state to config.yaml
+* [#2335](https://github.com/derailed/k9s/issues/2335) Restore 0.28 column order on pod view bug
+* [#2331](https://github.com/derailed/k9s/issues/2331) Set a shortcut key to run Vuln Scanning on a resource. Don't scan every resource at every startup.
+* [#2283](https://github.com/derailed/k9s/issues/2283) Adding auto complete in search bar
+
+---
+
+## Contributed PRs
+
+Please be sure to give `Big Thanks!` and `ATTA Girls/Boys!` to all the fine contributors for making K9s better for all of us!!
+
+* [#2357](https://github.com/derailed/k9s/pull/2357) Added ln check for snap
+* [#2350](https://github.com/derailed/k9s/pull/2350) Add symlink into snap
+* [#2348](https://github.com/derailed/k9s/pull/2348) Fix(misc plugins): split up multiline commands, use less -K everywhere
+* [#2343](https://github.com/derailed/k9s/pull/2343) Passing on the correct suggestion parameters
+* [#2341](https://github.com/derailed/k9s/pull/2340) Adding value, yaml and describe views to helm-history
+* [#2340](https://github.com/derailed/k9s/pull/2340) Add pkgx to installation section
+
+---
+
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/imhotep_logo.png" width="32" height="auto"/> © 2023 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)

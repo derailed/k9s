@@ -1,21 +1,26 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package perf
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/derailed/k9s/internal/dao"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/rakyll/hey/requester"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -25,22 +30,17 @@ const (
 	k9sUA        = "k9s/"
 )
 
-var (
-	// K9sBenchDir directory to store K9s Benchmark files.
-	K9sBenchDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-bench-%s", config.MustK9sUser()))
-)
-
 // Benchmark puts a workload under load.
 type Benchmark struct {
 	canceled bool
-	config   config.BenchConfig
+	config   *config.BenchConfig
 	worker   *requester.Work
 	cancelFn context.CancelFunc
 	mx       sync.RWMutex
 }
 
 // NewBenchmark returns a new benchmark.
-func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, error) {
+func NewBenchmark(base, version string, cfg *config.BenchConfig) (*Benchmark, error) {
 	b := Benchmark{config: cfg}
 	if err := b.init(base, version); err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, err
 func (b *Benchmark) init(base, version string) error {
 	var ctx context.Context
 	ctx, b.cancelFn = context.WithTimeout(context.Background(), benchTimeout)
-	req, err := http.NewRequestWithContext(ctx, b.config.HTTP.Method, base, nil)
+	req, err := http.NewRequestWithContext(ctx, b.config.HTTP.Method, base, http.NoBody)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (b *Benchmark) init(base, version string) error {
 		req.SetBasicAuth(b.config.Auth.User, b.config.Auth.Password)
 	}
 	req.Header = b.config.HTTP.Headers
-	log.Debug().Msgf("Benchmarking Request %s", req.URL.String())
+	slog.Debug("Benchmarking Request", slogs.URL, req.URL.String())
 
 	ua := req.UserAgent()
 	if ua == "" {
@@ -73,8 +73,7 @@ func (b *Benchmark) init(base, version string) error {
 	}
 	req.Header.Set("User-Agent", ua)
 
-	log.Debug().Msgf("Using bench config N:%d--C:%d", b.config.N, b.config.C)
-
+	slog.Debug(fmt.Sprintf("Using bench config N:%d--C:%d", b.config.N, b.config.C))
 	b.worker = &requester.Work{
 		Request:     req,
 		RequestBody: []byte(b.config.HTTP.Body),
@@ -107,39 +106,49 @@ func (b *Benchmark) Canceled() bool {
 }
 
 // Run starts a benchmark.
-func (b *Benchmark) Run(cluster string, done func()) {
-	log.Debug().Msgf("Running benchmark on cluster %s", cluster)
+func (b *Benchmark) Run(cluster, ct string, done func()) {
+	slog.Debug("Running benchmark",
+		slogs.Cluster, cluster,
+		slogs.Context, ct,
+	)
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
 	// this call will block until the benchmark is complete or times out.
 	b.worker.Run()
 	b.worker.Stop()
 	if buff.Len() > 0 {
-		if err := b.save(cluster, buff); err != nil {
-			log.Error().Err(err).Msg("Saving Benchmark")
+		if err := b.save(cluster, ct, buff); err != nil {
+			slog.Error("Saving Benchmark", slogs.Error, err)
 		}
 	}
 	done()
 }
 
-func (b *Benchmark) save(cluster string, r io.Reader) error {
-	dir := filepath.Join(K9sBenchDir, cluster)
-	if err := os.MkdirAll(dir, 0744); err != nil {
+func (b *Benchmark) save(cluster, ct string, r io.Reader) error {
+	ns, n := client.Namespaced(b.config.Name)
+	n = strings.ReplaceAll(n, "|", "_")
+	n = strings.ReplaceAll(n, ":", "_")
+	dir, err := config.EnsureBenchmarksDir(cluster, ct)
+	if err != nil {
 		return err
 	}
+	bf := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
+	if e := data.EnsureDirPath(bf, data.DefaultDirMod); e != nil {
+		return e
+	}
 
-	ns, n := client.Namespaced(b.config.Name)
-	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, dao.BenchRx.ReplaceAllString(n, "_"), time.Now().UnixNano()))
-	f, err := os.Create(file)
+	f, err := os.Create(bf)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if e := f.Close(); e != nil {
-			log.Fatal().Err(e).Msg("Bench save")
+			slog.Error("Benchmark file close failed",
+				slogs.Error, e,
+				slogs.Path, bf,
+			)
 		}
 	}()
-
 	if _, err = io.Copy(f, r); err != nil {
 		return err
 	}

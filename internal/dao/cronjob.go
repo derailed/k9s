@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,14 +20,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-const (
-	maxJobNameSize = 42
-	jobGVR         = "batch/v1/jobs"
-)
+const maxJobNameSize = 42
 
 var (
-	_ Accessor = (*CronJob)(nil)
-	_ Runnable = (*CronJob)(nil)
+	_ Accessor    = (*CronJob)(nil)
+	_ Runnable    = (*CronJob)(nil)
+	_ ImageLister = (*CronJob)(nil)
 )
 
 // CronJob represents a cronjob K8s resource.
@@ -30,10 +33,20 @@ type CronJob struct {
 	Generic
 }
 
+// ListImages lists container images.
+func (c *CronJob) ListImages(_ context.Context, fqn string) ([]string, error) {
+	cj, err := c.GetInstance(fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&cj.Spec.JobTemplate.Spec.Template.Spec), nil
+}
+
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
-	ns, _ := client.Namespaced(path)
-	auth, err := c.Client().CanI(ns, jobGVR, []string{client.GetVerb, client.CreateVerb})
+	ns, n := client.Namespaced(path)
+	auth, err := c.Client().CanI(ns, c.gvr, n, []string{client.GetVerb, client.CreateVerb})
 	if err != nil {
 		return err
 	}
@@ -41,7 +54,7 @@ func (c *CronJob) Run(path string) error {
 		return fmt.Errorf("user is not authorized to run jobs")
 	}
 
-	o, err := c.GetFactory().Get(c.GVR(), path, true, labels.Everything())
+	o, err := c.getFactory().Get(c.gvr, path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -54,18 +67,19 @@ func (c *CronJob) Run(path string) error {
 	if len(cj.Name) >= maxJobNameSize {
 		jobName = cj.Name[0:maxJobNameSize]
 	}
-	true := true
+	trueVal := true
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      jobName + "-manual-" + rand.String(3),
-			Namespace: ns,
-			Labels:    cj.Spec.JobTemplate.Labels,
+			Name:        jobName + "-manual-" + rand.String(3),
+			Namespace:   ns,
+			Labels:      cj.Spec.JobTemplate.Labels,
 			Annotations: cj.Spec.JobTemplate.Annotations,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion:         c.gvr.GV().String(),
 					Kind:               "CronJob",
-					BlockOwnerDeletion: &true,
+					BlockOwnerDeletion: &trueVal,
+					Controller:         &trueVal,
 					Name:               cj.Name,
 					UID:                cj.UID,
 				},
@@ -85,9 +99,9 @@ func (c *CronJob) Run(path string) error {
 }
 
 // ScanSA scans for serviceaccount refs.
-func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+func (c *CronJob) ScanSA(_ context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := c.GetFactory().List(c.GVR(), ns, wait, labels.Everything())
+	oo, err := c.getFactory().List(c.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -110,10 +124,26 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 	return refs, nil
 }
 
+// GetInstance fetch a matching cronjob.
+func (c *CronJob) GetInstance(fqn string) (*batchv1.CronJob, error) {
+	o, err := c.getFactory().Get(c.gvr, fqn, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var cj batchv1.CronJob
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
+	if err != nil {
+		return nil, errors.New("expecting cronjob resource")
+	}
+
+	return &cj, nil
+}
+
 // ToggleSuspend toggles suspend/resume on a CronJob.
 func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 	ns, n := client.Namespaced(path)
-	auth, err := c.Client().CanI(ns, c.GVR(), []string{client.GetVerb, client.UpdateVerb})
+	auth, err := c.Client().CanI(ns, c.gvr, n, []string{client.GetVerb, client.UpdateVerb})
 	if err != nil {
 		return err
 	}
@@ -133,8 +163,8 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 		current := !*cj.Spec.Suspend
 		cj.Spec.Suspend = &current
 	} else {
-		true := true
-		cj.Spec.Suspend = &true
+		trueVal := true
+		cj.Spec.Suspend = &trueVal
 	}
 	_, err = dial.BatchV1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
 
@@ -142,9 +172,9 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 }
 
 // Scan scans for cluster resource refs.
-func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (c *CronJob) Scan(_ context.Context, gvr *client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := c.GetFactory().List(c.GVR(), ns, wait, labels.Everything())
+	oo, err := c.getFactory().List(c.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +187,7 @@ func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, e
 			return nil, errors.New("expecting CronJob resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case client.CmGVR:
 			if !hasConfigMap(&cj.Spec.JobTemplate.Spec.Template.Spec, n) {
 				continue
 			}
@@ -165,10 +195,13 @@ func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, e
 				GVR: c.GVR(),
 				FQN: client.FQN(cj.Namespace, cj.Name),
 			})
-		case "v1/secrets":
+		case client.SecGVR:
 			found, err := hasSecret(c.Factory, &cj.Spec.JobTemplate.Spec.Template.Spec, cj.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				slog.Warn("Failed to locate secret",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {
@@ -178,7 +211,7 @@ func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, e
 				GVR: c.GVR(),
 				FQN: client.FQN(cj.Namespace, cj.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case client.PcGVR:
 			if !hasPC(&cj.Spec.JobTemplate.Spec.Template.Spec, n) {
 				continue
 			}

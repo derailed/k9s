@@ -1,28 +1,27 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"context"
 	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type (
-	// SortFn represent a function that can sort columnar data.
-	SortFn func(rows render.Rows, sortCol SortColumn)
-
-	// SortColumn represents a sortable column.
-	SortColumn struct {
-		name string
-		asc  bool
-	}
+const (
+	unlockedIC = "[RW]"
+	lockedIC   = "[R]"
 )
 
-// Namespaceable represents a namespaceable model.
+// Namespaceable tracks namespaces.
 type Namespaceable interface {
 	// ClusterWide returns true if the model represents resource in all namespaces.
 	ClusterWide() bool
@@ -37,7 +36,7 @@ type Namespaceable interface {
 	InNamespace(string) bool
 }
 
-// Lister represents a viewable resource.
+// Lister tracks resource getter.
 type Lister interface {
 	// Get returns a resource instance.
 	Get(ctx context.Context, path string) (runtime.Object, error)
@@ -51,17 +50,20 @@ type Tabular interface {
 	// SetInstance sets parent resource path.
 	SetInstance(string)
 
-	// SetLabelFilter sets the label filter.
-	SetLabelFilter(string)
+	// SetLabelSelector sets the label selector.
+	SetLabelSelector(labels.Selector)
+
+	// GetLabelSelector fetch the label filter.
+	GetLabelSelector() labels.Selector
 
 	// Empty returns true if model has no data.
 	Empty() bool
 
-	// Count returns the model data count.
-	Count() int
+	// RowCount returns the model data count.
+	RowCount() int
 
 	// Peek returns current model data.
-	Peek() *render.TableData
+	Peek() *model1.TableData
 
 	// Watch watches a given resource for changes.
 	Watch(context.Context) error
@@ -80,4 +82,7 @@ type Tabular interface {
 
 	// Delete a resource.
 	Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error
+
+	// SetViewSetting injects custom cols specification.
+	SetViewSetting(context.Context, *config.ViewSetting)
 }

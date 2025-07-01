@@ -18,7 +18,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### Performance... With feelings!
 
-Ran thru another perf pass and hope I've pushed the needle in the right direction? K9s is now leveraging informers which I think came out of CRDs work. Our initial assessments shows numbers to μsecond updates, down from milliseconds 🎉. Hopefully the outputs are still correct as I have the tendency to make things much faster with incorrect results ;( We hope to hear back from you with a report from your clusters and assessments and brace for good news? This was a deep cycle thru K9s core and more perf will be gain, once we get a chance to vet this new strategy. I'd like to take this opportunity to thank you all for your patience and incredible kindness and support. We certainly hope this drop won't turn out to be a dud as I am fresh out of prozac patches 😩
+Ran thru another perf pass and hope I've pushed the needle in the right direction? K9s is now leveraging informers which I think came out of CRDs work. Our initial assessments shows numbers to μsecond updates, down from milliseconds 🎉. Hopefully the outputs are still correct as I have the tendency to make things much faster with incorrect results ;( We hope to hear back from you with a report from your clusters and assessments and brace for good news? This was a deep cycle thru K9s core and more perf will be gained, once we get a chance to vet this new strategy. I'd like to take this opportunity to thank you all for your patience and incredible kindness and support. We certainly hope this drop won't turn out to be a dud as I am fresh out of prozac patches 😩
 
 ---
 

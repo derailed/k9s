@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -9,13 +13,15 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 var (
-	keyValRX = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s(.+)\z`)
-	keyRX    = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s*\z`)
+	keyValRX = regexp.MustCompile(`\A(\s*)([\w\-./\s]+):\s(.+)\z`)
+	keyRX    = regexp.MustCompile(`\A(\s*)([\w\-./\s]+):\s*\z`)
+	searchRX = regexp.MustCompile(`<<<("search_\d+")>>>(.+)<<<"">>>`)
 )
 
 const (
@@ -26,7 +32,6 @@ const (
 
 func colorizeYAML(style config.Yaml, raw string) string {
 	lines := strings.Split(tview.Escape(raw), "\n")
-
 	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor.String(), 1)
 	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.ColonColor.String(), 1)
 	fullFmt = strings.Replace(fullFmt, "[val", "["+style.ValueColor.String(), 1)
@@ -56,34 +61,41 @@ func colorizeYAML(style config.Yaml, raw string) string {
 	return strings.Join(buff, "\n")
 }
 
-func enableRegion(str string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(str, "<<<", "["), ">>>", "]")
+func enableRegion(s string) string {
+	if searchRX.MatchString(s) {
+		return strings.ReplaceAll(strings.ReplaceAll(s, "<<<", "["), ">>>", "]")
+	}
+
+	return s
 }
 
-func saveYAML(screenDumpDir, context, name, data string) (string, error) {
-	dir := filepath.Join(screenDumpDir, context)
+func saveYAML(dir, name, raw string) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.yml", config.SanitizeFilename(name), now)
-
-	path := filepath.Join(dir, fName)
+	fName := fmt.Sprintf("%s--%d.yaml", data.SanitizeFileName(name), time.Now().Unix())
+	fpath := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
-	file, err := os.OpenFile(path, mod, 0600)
+	file, err := os.OpenFile(fpath, mod, 0600)
 	if err != nil {
-		log.Error().Err(err).Msgf("YAML create %s", path)
+		slog.Error("Unable to open YAML file",
+			slogs.Path, fpath,
+			slogs.Error, err,
+		)
 		return "", nil
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Error().Err(err).Msg("Closing yaml file")
+			slog.Error("Closing yaml file failed",
+				slogs.Path, fpath,
+				slogs.Error, err,
+			)
 		}
 	}()
-	if _, err := file.Write([]byte(data)); err != nil {
+	if _, err := file.WriteString(raw); err != nil {
 		return "", err
 	}
 
-	return path, nil
+	return fpath, nil
 }

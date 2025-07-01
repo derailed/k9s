@@ -1,0 +1,42 @@
+# Forwards logs to bunyan cli for formatting
+# Install Bunyan: https://www.npmjs.com/package/bunyan
+plugins:
+  bunyanlogsp:
+    shortCut: Ctrl-L
+    confirm: false
+    description: "Logs (bunyan)"
+    scopes:
+      - pod
+    command: bash
+    background: false
+    args:
+      - -ic
+      - | 
+        kubectl logs -f $NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
+        exit 0 
+  bunyanlogsd:
+    shortCut: Ctrl-L
+    confirm: false
+    description: "Logs (bunyan)"
+    scopes:
+      - deployment
+    command: bash
+    background: false
+    args:
+      - -ic
+      - |
+        kubectl logs -f deployment/$NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
+        exit 0
+  bunyanlogss:
+    shortCut: Ctrl-L
+    confirm: false
+    description: "Logs (bunyan)"
+    scopes:
+      - service
+    command: bash
+    background: false
+    args:
+      - -ic
+      - |
+        kubectl logs -f service/$NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
+        exit 0

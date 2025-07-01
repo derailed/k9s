@@ -1,0 +1,95 @@
+plugins:
+  # https://grafana.com/docs/loki/latest/query/logcli/
+  # you must set the LOKI_ADDR environment variable ("export LOKI_ADDR=https://loki.internal" in bash) before starting k9s to use logcli
+  loki-container:
+    shortCut: Shift-L
+    description: "loki fmt"
+    scopes:
+    - containers
+    command: logcli
+    background: false
+    args:
+    - query
+    - "{ namespace = \"$NAMESPACE\", pod = \"$POD\", container = \"$NAME\" }"
+    - -f
+  loki-container-raw:
+    shortCut: Ctrl-E
+    description: "loki raw"
+    scopes:
+    - containers
+    command: logcli
+    background: false
+    args:
+    - query
+    - "{ namespace = \"$NAMESPACE\", pod = \"$POD\", container = \"$NAME\" }"
+    - -f
+    - -oraw
+  loki-pods:
+    shortCut: Shift-L
+    description: "loki fmt"
+    scopes:
+    - po
+    command: logcli
+    background: false
+    args:
+    - query
+    - "{ namespace = \"$NAMESPACE\", pod = \"$NAME\" }"
+    - -f
+  loki-pods-raw:
+    shortCut: Ctrl-L
+    description: "loki raw"
+    scopes:
+    - po
+    command: logcli
+    background: false
+    args:
+    - query
+    - "{ namespace = \"$NAMESPACE\", pod = \"$NAME\" }"
+    - -f
+    - -oraw
+  loki-node:
+    shortCut: Shift-L
+    description: "loki fmt"
+    scopes:
+    - node
+    command: logcli
+    background: false
+    args:
+    - query
+    - "{ node_name = \"$NAME\" }"
+    - -f
+  loki-node-raw:
+    shortCut: Ctrl-L
+    description: "loki raw"
+    scopes:
+    - node
+    command: logcli
+    background: false
+    args:
+    - query
+    - "{ node_name = \"$NAME\" }"
+    - -f
+    - -oraw
+  loki-ns:
+    shortCut: Shift-L
+    description: "loki fmt"
+    scopes:
+    - namespace
+    command: logcli
+    background: false
+    args:
+    - query
+    - "{ namespace = \"$NAME\" }"
+    - -f
+  loki-ns-raw:
+    shortCut: Ctrl-L
+    description: "loki raw"
+    scopes:
+    - namespace
+    command: logcli
+    background: false
+    args:
+    - query
+    - "{ namespace = \"$NAME\" }"
+    - -f
+    - -oraw

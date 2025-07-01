@@ -1,13 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -15,14 +20,25 @@ import (
 )
 
 var (
-	_ Accessor = (*Job)(nil)
-	_ Nuker    = (*Job)(nil)
-	_ Loggable = (*Job)(nil)
+	_ Accessor    = (*Job)(nil)
+	_ Nuker       = (*Job)(nil)
+	_ Loggable    = (*Job)(nil)
+	_ ImageLister = (*Deployment)(nil)
 )
 
 // Job represents a K8s job resource.
 type Job struct {
 	Resource
+}
+
+// ListImages lists container images.
+func (j *Job) ListImages(_ context.Context, fqn string) ([]string, error) {
+	job, err := j.GetInstance(fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&job.Spec.Template.Spec), nil
 }
 
 // List returns a collection of resources.
@@ -46,7 +62,7 @@ func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 			continue
 		}
 
-		for _, r := range j.ObjectMeta.OwnerReferences {
+		for _, r := range j.OwnerReferences {
 			if r.Name == n {
 				ll = append(ll, o)
 			}
@@ -58,7 +74,7 @@ func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // TailLogs tail logs for all pods represented by this Job.
 func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
-	o, err := j.GetFactory().Get(j.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := j.getFactory().Get(j.gvr, opts.Path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -70,16 +86,31 @@ func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 	}
 
 	if job.Spec.Selector == nil || len(job.Spec.Selector.MatchLabels) == 0 {
-		return nil, fmt.Errorf("No valid selector found on Job %s", opts.Path)
+		return nil, fmt.Errorf("no valid selector found for job: %s", opts.Path)
 	}
 
 	return podLogs(ctx, job.Spec.Selector.MatchLabels, opts)
 }
 
+func (j *Job) GetInstance(fqn string) (*batchv1.Job, error) {
+	o, err := j.getFactory().Get(j.gvr, fqn, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var job batchv1.Job
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &job)
+	if err != nil {
+		return nil, errors.New("expecting a job resource")
+	}
+
+	return &job, nil
+}
+
 // ScanSA scans for serviceaccount refs.
-func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+func (j *Job) ScanSA(_ context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := j.GetFactory().List(j.GVR(), ns, wait, labels.Everything())
+	oo, err := j.getFactory().List(j.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +134,9 @@ func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 }
 
 // Scan scans for resource references.
-func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (j *Job) Scan(_ context.Context, gvr *client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := j.GetFactory().List(j.GVR(), ns, wait, labels.Everything())
+	oo, err := j.getFactory().List(j.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +149,7 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 			return nil, errors.New("expecting Job resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case client.CmGVR:
 			if !hasConfigMap(&job.Spec.Template.Spec, n) {
 				continue
 			}
@@ -126,10 +157,13 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
-		case "v1/secrets":
+		case client.SecGVR:
 			found, err := hasSecret(j.Factory, &job.Spec.Template.Spec, job.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				slog.Warn("Locate secret failed",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {
@@ -139,7 +173,7 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case client.PcGVR:
 			if !hasPC(&job.Spec.Template.Spec, n) {
 				continue
 			}

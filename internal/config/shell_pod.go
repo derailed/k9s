@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
-	"github.com/derailed/k9s/internal/client"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -12,12 +14,23 @@ type Limits map[v1.ResourceName]string
 
 // ShellPod represents k9s shell configuration.
 type ShellPod struct {
-	Image     string            `json:"image"`
-	Command   []string          `json:"command,omitempty"`
-	Args      []string          `json:"args,omitempty"`
-	Namespace string            `json:"namespace"`
-	Limits    Limits            `json:"resources,omitempty"`
-	Labels    map[string]string `json:"labels,omitempty"`
+	Image            string                    `json:"image" yaml:"image"`
+	Command          []string                  `json:"command,omitempty" yaml:"command,omitempty"`
+	Args             []string                  `json:"args,omitempty" yaml:"args,omitempty"`
+	Namespace        string                    `json:"namespace" yaml:"namespace"`
+	Limits           Limits                    `json:"limits,omitempty" yaml:"limits,omitempty"`
+	Labels           map[string]string         `json:"labels,omitempty" yaml:"labels,omitempty"`
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets,omitempty"`
+	ImagePullPolicy  v1.PullPolicy             `json:"imagePullPolicy,omitempty" yaml:"imagePullPolicy,omitempty"`
+	TTY              bool                      `json:"tty,omitempty" yaml:"tty,omitempty"`
+	HostPathVolume   []hostPathVolume          `json:"hostPathVolume,omitempty" yaml:"hostPathVolume,omitempty"`
+}
+
+type hostPathVolume struct {
+	Name      string `json:"name" yaml:"name"`
+	MountPath string `json:"mountPath" yaml:"mountPath"`
+	HostPath  string `json:"hostPath" yaml:"hostPath"`
+	ReadOnly  bool   `json:"readOnly,omitempty" yaml:"readOnly,omitempty"`
 }
 
 // NewShellPod returns a new instance.
@@ -30,7 +43,7 @@ func NewShellPod() *ShellPod {
 }
 
 // Validate validates the configuration.
-func (s *ShellPod) Validate(client.Connection, KubeSettings) {
+func (s *ShellPod) Validate() {
 	if s.Image == "" {
 		s.Image = defaultDockerShellImage
 	}

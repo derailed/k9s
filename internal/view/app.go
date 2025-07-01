@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"maps"
 	"os"
 	"os/signal"
 	"runtime"
@@ -18,13 +23,14 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/view/cmd"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -57,16 +63,29 @@ type App struct {
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:           ui.NewApp(cfg, cfg.K9s.CurrentContext),
+		App:           ui.NewApp(cfg, cfg.K9s.ActiveContextName()),
 		cmdHistory:    model.NewHistory(model.MaxHistory),
 		filterHistory: model.NewHistory(model.MaxHistory),
 		Content:       NewPageStack(),
 	}
+	a.ReloadStyles()
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
 	a.Views()["clusterInfo"] = NewClusterInfo(&a)
 
 	return &a
+}
+
+// ReloadStyles reloads skin file.
+func (a *App) ReloadStyles() {
+	a.RefreshStyles(a)
+}
+
+// UpdateClusterInfo updates clusterInfo panel
+func (a *App) UpdateClusterInfo() {
+	if a.factory != nil {
+		a.clusterModel.Reset(a.factory)
+	}
 }
 
 // ConOK checks the connection is cool, returns false otherwise.
@@ -75,15 +94,15 @@ func (a *App) ConOK() bool {
 }
 
 // Init initializes the application.
-func (a *App) Init(version string, rate int) error {
+func (a *App) Init(version string, _ int) error {
 	a.version = model.NormalizeVersion(version)
 
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := a.Content.Init(ctx); err != nil {
 		return err
 	}
-	a.Content.Stack.AddListener(a.Crumbs())
-	a.Content.Stack.AddListener(a.Menu())
+	a.Content.AddListener(a.Crumbs())
+	a.Content.AddListener(a.Menu())
 
 	a.App.Init()
 	a.SetInputCapture(a.keyboard)
@@ -94,13 +113,9 @@ func (a *App) Init(version string, rate int) error {
 	ns := a.Config.ActiveNamespace()
 
 	a.factory = watch.NewFactory(a.Conn())
-	ok, err := a.isValidNS(ns)
-	if !ok && err == nil {
-		return fmt.Errorf("invalid namespace %s", ns)
-	}
 	a.initFactory(ns)
 
-	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s.SkipLatestRevCheck)
+	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s)
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
 	if a.Conn().ConnectionOK() {
@@ -109,7 +124,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 
 	a.command = NewCommand(a)
-	if err := a.command.Init(); err != nil {
+	if err := a.command.Init(a.Config.ContextAliasesPath()); err != nil {
 		return err
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
@@ -117,7 +132,27 @@ func (a *App) Init(version string, rate int) error {
 	a.layout(ctx)
 	a.initSignals()
 
+	if a.Config.K9s.ImageScans.Enable {
+		a.initImgScanner(version)
+	}
+	a.ReloadStyles()
+
 	return nil
+}
+
+func (*App) stopImgScanner() {
+	if vul.ImgScanner != nil {
+		vul.ImgScanner.Stop()
+	}
+}
+
+func (a *App) initImgScanner(version string) {
+	defer func(t time.Time) {
+		slog.Debug("Scanner init time", slogs.Elapsed, time.Since(t))
+	}(time.Now())
+
+	vul.ImgScanner = vul.NewImageScanner(a.Config.K9s.ImageScans, slog.Default())
+	go vul.ImgScanner.Init("k9s", version)
 }
 
 func (a *App) layout(ctx context.Context) {
@@ -133,11 +168,13 @@ func (a *App) layout(ctx context.Context) {
 	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
-	a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version), true, true)
 	a.toggleHeader(!a.Config.K9s.IsHeadless(), !a.Config.K9s.IsLogoless())
+	if !a.Config.K9s.IsSplashless() {
+		a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version), true, true)
+	}
 }
 
-func (a *App) initSignals() {
+func (*App) initSignals() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP)
 
@@ -148,6 +185,11 @@ func (a *App) initSignals() {
 }
 
 func (a *App) suggestCommand() model.SuggestionFunc {
+	contextNames, err := a.contextNames()
+	if err != nil {
+		slog.Error("Failed to list contexts", slogs.Error, err)
+	}
+
 	return func(s string) (entries sort.StringSlice) {
 		if s == "" {
 			if a.cmdHistory.Empty() {
@@ -156,21 +198,37 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			return a.cmdHistory.List()
 		}
 
-		s = strings.ToLower(s)
-		for _, k := range a.command.alias.Aliases.Keys() {
-			if k == s {
-				continue
-			}
-			if strings.HasPrefix(k, s) {
-				entries = append(entries, strings.Replace(k, s, "", 1))
+		ls := strings.ToLower(s)
+		for alias := range maps.Keys(a.command.alias.Alias) {
+			if suggest, ok := cmd.ShouldAddSuggest(ls, alias); ok {
+				entries = append(entries, suggest)
 			}
 		}
+
+		namespaceNames, err := a.factory.Client().ValidNamespaceNames()
+		if err != nil {
+			slog.Error("Failed to obtain list of namespaces", slogs.Error, err)
+		}
+		entries = append(entries, cmd.SuggestSubCommand(s, namespaceNames, contextNames)...)
 		if len(entries) == 0 {
 			return nil
 		}
 		entries.Sort()
 		return
 	}
+}
+
+func (a *App) contextNames() ([]string, error) {
+	contexts, err := a.factory.Client().Config().Contexts()
+	if err != nil {
+		return nil, err
+	}
+	contextNames := make([]string, 0, len(contexts))
+	for ctxName := range contexts {
+		contextNames = append(contextNames, ctxName)
+	}
+
+	return contextNames, nil
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -182,21 +240,26 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) bindKeys() {
-	a.AddActions(ui.KeyActions{
-		ui.KeyShift9:   ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
-		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
-		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
-		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
-		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
-		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
-	})
+	a.AddActions(ui.NewKeyActionsFromMap(ui.KeyMap{
+		ui.KeyShift9:       ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
+		tcell.KeyCtrlE:     ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		tcell.KeyCtrlG:     ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
+		ui.KeyHelp:         ui.NewSharedKeyAction("Help", a.helpCmd, false),
+		ui.KeyLeftBracket:  ui.NewSharedKeyAction("Go Back", a.previousCommand, false),
+		ui.KeyRightBracket: ui.NewSharedKeyAction("Go Forward", a.nextCommand, false),
+		ui.KeyDash:         ui.NewSharedKeyAction("Last View", a.lastCommand, false),
+		tcell.KeyCtrlA:     ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
+		tcell.KeyEnter:     ui.NewKeyAction("Goto", a.gotoCmd, false),
+		tcell.KeyCtrlC:     ui.NewKeyAction("Quit", a.quitCmd, false),
+	}))
 }
 
-func (a *App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("GOR %d", runtime.NumGoroutine())
-	// bb := make([]byte, 5_000_000)
-	// runtime.Stack(bb, true)
-	// log.Debug().Msgf("GOR\n%s", string(bb))
+func (*App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
+	slog.Debug("GOR", slogs.GOR, runtime.NumGoroutine())
+	bb := make([]byte, 5_000_000)
+	runtime.Stack(bb, true)
+	slog.Debug("GOR stack", slogs.Stack, string(bb))
+
 	return evt
 }
 
@@ -209,7 +272,8 @@ func (a *App) toggleHeader(header, logo bool) {
 	a.showHeader, a.showLogo = header, logo
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
-		log.Fatal().Msg("Expecting valid flex view")
+		slog.Error("Expecting flex view main panel. Exiting!")
+		os.Exit(1)
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
@@ -224,7 +288,8 @@ func (a *App) toggleCrumbs(flag bool) {
 	a.showCrumbs = flag
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
-		log.Fatal().Msg("Expecting valid flex view")
+		slog.Error("Expecting valid flex view main panel. Exiting!")
+		os.Exit(1)
 	}
 	if a.showCrumbs {
 		if _, ok := flex.ItemAt(2).(*ui.Crumbs); !ok {
@@ -244,11 +309,13 @@ func (a *App) buildHeader() tview.Primitive {
 	}
 
 	clWidth := clusterInfoWidth
-	n, err := a.Conn().Config().CurrentClusterName()
-	if err == nil {
-		size := len(n) + clusterInfoPad
-		if size > clWidth {
-			clWidth = size
+	if a.Conn().ConnectionOK() {
+		n, err := a.Conn().Config().CurrentClusterName()
+		if err == nil {
+			size := len(n) + clusterInfoPad
+			if size > clWidth {
+				clWidth = size
+			}
 		}
 	}
 	header.AddItem(a.clusterInfo(), clWidth, 1, false)
@@ -275,17 +342,23 @@ func (a *App) Resume() {
 	ctx, a.cancelFn = context.WithCancel(context.Background())
 
 	go a.clusterUpdater(ctx)
-	if err := a.StylesWatcher(ctx, a); err != nil {
-		log.Warn().Err(err).Msgf("Styles watcher failed")
-	}
-	if err := a.CustomViewsWatcher(ctx, a); err != nil {
-		log.Warn().Err(err).Msgf("CustomView watcher failed")
+
+	if a.Config.K9s.UI.Reactive {
+		if err := a.ConfigWatcher(ctx, a); err != nil {
+			slog.Warn("ConfigWatcher failed", slogs.Error, err)
+		}
+		if err := a.SkinsDirWatcher(ctx, a); err != nil {
+			slog.Warn("SkinsWatcher failed", slogs.Error, err)
+		}
+		if err := a.CustomViewsWatcher(ctx, a); err != nil {
+			slog.Warn("CustomView watcher failed", slogs.Error, err)
+		}
 	}
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
 	if err := a.refreshCluster(ctx); err != nil {
-		log.Error().Err(err).Msgf("Cluster updater failed!")
+		slog.Error("Cluster updater failed!", slogs.Error, err)
 		return
 	}
 
@@ -294,13 +367,13 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debug().Msg("ClusterInfo updater canceled!")
+			slog.Debug("ClusterInfo updater canceled!")
 			return
 		case <-time.After(delay):
 			if err := a.refreshCluster(ctx); err != nil {
-				log.Error().Err(err).Msgf("ClusterUpdater failed")
+				slog.Error("Cluster updates failed. Giving up ;(", slogs.Error, err)
 				if delay = bf.NextBackOff(); delay == backoff.Stop {
-					a.BailOut()
+					a.BailOut(1)
 					return
 				}
 			} else {
@@ -329,11 +402,14 @@ func (a *App) refreshCluster(context.Context) error {
 		c.Stop()
 	}
 
-	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), int32(a.Config.K9s.MaxConnRetry)
+	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), a.Config.K9s.MaxConnRetry
 	if count >= maxConnRetry {
-		log.Error().Msgf("Conn check failed (%d/%d). Bailing out!", count, maxConnRetry)
+		slog.Error("Conn check failed. Bailing out!",
+			slogs.Retry, count,
+			slogs.MaxRetries, maxConnRetry,
+		)
 		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", count)
-		a.BailOut()
+		a.BailOut(1)
 	}
 	if count > 0 {
 		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d/%d]", count, maxConnRetry))
@@ -342,11 +418,13 @@ func (a *App) refreshCluster(context.Context) error {
 
 	// Reload alias
 	go func() {
-		if err := a.command.Reset(false); err != nil {
-			log.Error().Err(err).Msgf("Command reset failed")
+		if err := a.command.Reset(a.Config.ContextAliasesPath(), false); err != nil {
+			slog.Warn("Command reset failed", slogs.Error, err)
+			a.QueueUpdateDraw(func() {
+				a.Logo().Warn("Aliases load failed!")
+			})
 		}
 	}()
-
 	// Update cluster info
 	a.clusterModel.Refresh()
 
@@ -354,83 +432,67 @@ func (a *App) refreshCluster(context.Context) error {
 }
 
 func (a *App) switchNS(ns string) error {
-	if ns == client.ClusterScope {
-		ns = client.AllNamespaces
-	}
-	if ns == a.Config.ActiveNamespace() {
+	if a.Config.ActiveNamespace() == ns {
 		return nil
 	}
-
-	ok, err := a.isValidNS(ns)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return fmt.Errorf("invalid namespace %q", ns)
+	if ns == client.ClusterScope {
+		ns = client.BlankNamespace
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
-		return err
-	}
-	if err := a.Config.Save(); err != nil {
 		return err
 	}
 
 	return a.factory.SetActiveNS(ns)
 }
 
-func (a *App) isValidNS(ns string) (bool, error) {
-	if ns == client.AllNamespaces || ns == client.NamespaceAll {
-		return true, nil
+func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
+	contextName, ok := ci.HasContext()
+	if (!ok || a.Config.ActiveContextName() == contextName) && !force {
+		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), a.Conn().Config().CallTimeout())
-	defer cancel()
-	dial, err := a.Conn().Dial()
-	if err != nil {
-		return false, err
-	}
-	_, err = dial.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
-	if err != nil {
-		log.Warn().Err(err).Msgf("Validation failed for namespace: %q", ns)
-	}
-
-	return true, nil
-}
-
-func (a *App) switchContext(name string) error {
-	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
 	{
-		ns, err := a.Conn().Config().CurrentNamespaceName()
-		if err != nil {
-			log.Warn().Msg("No namespace specified in context. Using K9s config")
-		}
-		a.initFactory(ns)
-
-		if e := a.command.Reset(true); e != nil {
-			return e
-		}
-		if a.Config.ActiveView() == "" || isContextCmd(a.Config.ActiveView()) {
-			a.Config.SetActiveView("pod")
-		}
 		a.Config.Reset()
-		a.Config.K9s.CurrentContext = name
-		cluster, err := a.Conn().Config().CurrentClusterName()
+		ct, err := a.Config.ActivateContext(contextName)
 		if err != nil {
 			return err
 		}
-		a.Config.K9s.CurrentCluster = cluster
-		if err := a.Config.SetActiveNamespace(ns); err != nil {
-			log.Error().Err(err).Msg("unable to set active ns")
-		}
-		if err := a.Config.Save(); err != nil {
-			log.Error().Err(err).Msg("config save failed!")
+		if cns, ok := ci.NSArg(); ok {
+			ct.Namespace.Active = cns
 		}
 
-		a.Flash().Infof("Switching context to %s", name)
-		a.ReloadStyles(name)
-		a.gotoResource(a.Config.ActiveView(), "", true)
+		p := cmd.NewInterpreter(a.Config.ActiveView())
+		p.ResetContextArg()
+		if p.IsContextCmd() {
+			a.Config.SetActiveView(client.PodGVR.String())
+		}
+		ns := a.Config.ActiveNamespace()
+		if !a.Conn().IsValidNamespace(ns) {
+			slog.Warn("Unable to validate namespace", slogs.Namespace, ns)
+			if err := a.Config.SetActiveNamespace(ns); err != nil {
+				return err
+			}
+		}
+		a.Flash().Infof("Using %q namespace", ns)
+
+		if err := a.Config.Save(true); err != nil {
+			slog.Error("Fail to save config to disk", slogs.Subsys, "config", slogs.Error, err)
+		}
+		a.initFactory(ns)
+		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
+			return err
+		}
+
+		slog.Debug("Switching Context",
+			slogs.Context, contextName,
+			slogs.Namespace, ns,
+			slogs.View, a.Config.ActiveView(),
+		)
+		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
+		a.ReloadStyles()
+		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		a.clusterModel.Reset(a.factory)
 	}
 
@@ -443,18 +505,20 @@ func (a *App) initFactory(ns string) {
 }
 
 // BailOut exists the application.
-func (a *App) BailOut() {
+func (a *App) BailOut(exitCode int) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error().Msgf("Bailing out %v", err)
+			slog.Error("Bailout failed", slogs.Error, err)
 		}
 	}()
 
 	if err := nukeK9sShell(a); err != nil {
-		log.Error().Err(err).Msgf("nuking k9s shell pod")
+		slog.Error("Unable to nuke k9s shell pod", slogs.Error, err)
 	}
+
+	a.stopImgScanner()
 	a.factory.Terminate()
-	a.App.BailOut()
+	a.App.BailOut(exitCode)
 }
 
 // Run starts the application loop.
@@ -462,7 +526,9 @@ func (a *App) Run() error {
 	a.Resume()
 
 	go func() {
-		<-time.After(splashDelay)
+		if !a.Config.K9s.IsSplashless() {
+			<-time.After(splashDelay)
+		}
 		a.QueueUpdateDraw(func() {
 			a.Main.SwitchToPage("main")
 			// if command bar is already active, focus it
@@ -472,7 +538,7 @@ func (a *App) Run() error {
 		})
 	}()
 
-	if err := a.command.defaultCmd(); err != nil {
+	if err := a.command.defaultCmd(true); err != nil {
 		return err
 	}
 	a.SetRunning(true)
@@ -536,7 +602,7 @@ func (a *App) setIndicator(l model.FlashLevel, msg string) {
 }
 
 // PrevCmd pops the command stack.
-func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (a *App) PrevCmd(*tcell.EventKey) *tcell.EventKey {
 	if !a.Content.IsLast() {
 		a.Content.Pop()
 	}
@@ -572,7 +638,7 @@ func (a *App) toggleCrumbsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		a.gotoResource(a.GetCmd(), "", true)
+		a.gotoResource(a.GetCmd(), "", true, true)
 		a.ResetCmd()
 		return nil
 	}
@@ -581,11 +647,12 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) cowCmd(msg string) {
-	dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, msg)
+	d := a.Styles.Dialog()
+	dialog.ShowError(&d, a.Content.Pages, msg)
 }
 
-func (a *App) dirCmd(path string) error {
-	log.Debug().Msgf("DIR PATH %q", path)
+func (a *App) dirCmd(path string, pushCmd bool) error {
+	slog.Debug("Exec Dir command", slogs.Path, path)
 	_, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -596,18 +663,32 @@ func (a *App) dirCmd(path string) error {
 			path = dir
 		}
 	}
-	a.cmdHistory.Push("dir " + path)
+	if pushCmd {
+		a.cmdHistory.Push("dir " + path)
+	}
 
 	return a.inject(NewDir(path), true)
 }
 
-func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	top := a.Content.Top()
-
-	if a.CmdBuff().InCmdMode() || (top != nil && top.InCmdMode()) {
+func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.InCmdMode() {
 		return evt
 	}
 
+	if !a.Config.K9s.NoExitOnCtrlC {
+		a.BailOut(0)
+	}
+
+	// overwrite the default ctrl-c behavior of tview
+	return nil
+}
+
+func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == '?' && a.Prompt().InCmdMode() {
+		return evt
+	}
+
+	top := a.Content.Top()
 	if top != nil && top.Name() == "help" {
 		a.Content.Pop()
 		return nil
@@ -617,44 +698,89 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		a.Flash().Err(err)
 	}
 
+	a.Prompt().Deactivate()
 	return nil
 }
 
-func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.CmdBuff().InCmdMode() {
+// previousCommand returns to the command prior to the current one in the history
+func (a *App) previousCommand(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == rune(ui.KeyLeftBracket) && a.Prompt().InCmdMode() {
 		return evt
 	}
+	cmds := a.cmdHistory.List()
+	if !a.cmdHistory.Back() {
+		a.App.Flash().Warn("Can't go back any further")
+		return evt
+	}
+	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	return nil
+}
 
+// nextCommand returns to the command subsequent to the current one in the history
+func (a *App) nextCommand(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == rune(ui.KeyRightBracket) && a.Prompt().InCmdMode() {
+		return evt
+	}
+	cmds := a.cmdHistory.List()
+	if !a.cmdHistory.Forward() {
+		a.App.Flash().Warn("Can't go forward any further")
+		return evt
+	}
+	// We go to the resource before updating the history so that
+	// gotoResource doesn't add this command to the history
+	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+	return nil
+}
+
+// lastCommand switches between the last command and the current one a la `cd -`
+func (a *App) lastCommand(evt *tcell.EventKey) *tcell.EventKey {
+	if evt != nil && evt.Rune() == ui.KeyDash && a.Prompt().InCmdMode() {
+		return evt
+	}
+	cmds := a.cmdHistory.List()
+	if len(cmds) < 1 {
+		a.App.Flash().Warn("No previous view to switch to")
+		return evt
+	}
+	a.cmdHistory.Last()
+	a.gotoResource(cmds[a.cmdHistory.CurrentIndex()], "", true, false)
+
+	return nil
+}
+
+func (a *App) aliasCmd(*tcell.EventKey) *tcell.EventKey {
 	if a.Content.Top() != nil && a.Content.Top().Name() == aliasTitle {
 		a.Content.Pop()
 		return nil
 	}
 
-	if err := a.inject(NewAlias(client.NewGVR("aliases")), false); err != nil {
+	if err := a.inject(NewAlias(client.AliGVR), false); err != nil {
 		a.Flash().Err(err)
 	}
 
 	return nil
 }
 
-func (a *App) gotoResource(cmd, path string, clearStack bool) {
-	err := a.command.run(cmd, path, clearStack)
+func (a *App) gotoResource(c, path string, clearStack, pushCmd bool) {
+	err := a.command.run(cmd.NewInterpreter(c), path, clearStack, pushCmd)
 	if err != nil {
-		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
+		d := a.Styles.Dialog()
+		dialog.ShowError(&d, a.Content.Pages, err.Error())
 	}
 }
 
 func (a *App) inject(c model.Component, clearStack bool) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
-		log.Error().Err(err).Msgf("component init failed for %q", c.Name())
-		//dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
+		slog.Error("Component init failed",
+			slogs.Error, err,
+			slogs.CompName, c.Name(),
+		)
 		return err
 	}
 	if clearStack {
-		a.Content.Stack.Clear()
+		a.Content.Clear()
 	}
-
 	a.Content.Push(c)
 
 	return nil

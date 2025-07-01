@@ -1,22 +1,28 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
 	"context"
-	"regexp"
+	"fmt"
+	"log/slog"
 	"strings"
 	"sync/atomic"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 )
 
 // Values tracks Helm values representations.
 type Values struct {
-	gvr       client.GVR
+	factory   dao.Factory
+	gvr       *client.GVR
 	inUpdate  int32
 	path      string
 	query     string
@@ -27,32 +33,59 @@ type Values struct {
 }
 
 // NewValues return a new Helm values resource model.
-func NewValues(gvr client.GVR, path string) *Values {
+func NewValues(gvr *client.GVR, path string) *Values {
 	return &Values{
 		gvr:       gvr,
 		path:      path,
 		allValues: false,
-		lines:     getValues(path, false),
 	}
 }
 
-func getHelmDao() *dao.Helm {
-	return Registry["helm"].DAO.(*dao.Helm)
+// Init initializes the model.
+func (v *Values) Init(f dao.Factory) error {
+	v.factory = f
+
+	var err error
+	v.lines, err = v.getValues()
+
+	return err
 }
 
-func getValues(path string, allValues bool) []string {
-	vals, err := getHelmDao().GetValues(path, allValues)
+func (v *Values) getValues() ([]string, error) {
+	accessor, err := dao.AccessorFor(v.factory, v.gvr)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to get Helm values")
+		return nil, err
 	}
-	return strings.Split(string(vals), "\n")
+
+	valuer, ok := accessor.(dao.Valuer)
+	if !ok {
+		return nil, fmt.Errorf("resource %s is not Valuer", v.gvr)
+	}
+
+	values, err := valuer.GetValues(v.path, v.allValues)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(string(values), "\n"), nil
+}
+
+// GVR returns the resource gvr.
+func (v *Values) GVR() *client.GVR {
+	return v.gvr
 }
 
 // ToggleValues toggles between user supplied values and computed values.
-func (v *Values) ToggleValues() {
+func (v *Values) ToggleValues() error {
 	v.allValues = !v.allValues
-	lines := getValues(v.path, v.allValues)
+
+	lines, err := v.getValues()
+	if err != nil {
+		return err
+	}
+
 	v.lines = lines
+	return nil
 }
 
 // GetPath returns the active resource path.
@@ -82,29 +115,14 @@ func (v *Values) filter(q string, lines []string) fuzzy.Matches {
 	if q == "" {
 		return nil
 	}
-	if dao.IsFuzzySelector(q) {
-		return v.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
+	if f, ok := internal.IsFuzzySelector(q); ok {
+		return v.fuzzyFilter(strings.TrimSpace(f), lines)
 	}
-	return v.rxFilter(q, lines)
+	return rxFilter(q, lines)
 }
 
 func (*Values) fuzzyFilter(q string, lines []string) fuzzy.Matches {
 	return fuzzy.Find(q, lines)
-}
-
-func (*Values) rxFilter(q string, lines []string) fuzzy.Matches {
-	rx, err := regexp.Compile(`(?i)` + q)
-	if err != nil {
-		return nil
-	}
-	matches := make(fuzzy.Matches, 0, len(lines))
-	for i, l := range lines {
-		if loc := rx.FindStringIndex(l); len(loc) == 2 {
-			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: loc})
-		}
-	}
-
-	return matches
 }
 
 func (v *Values) fireResourceChanged(lines []string, matches fuzzy.Matches) {
@@ -145,7 +163,7 @@ func (v *Values) Watch(ctx context.Context) error {
 }
 
 func (v *Values) updater(ctx context.Context) {
-	defer log.Debug().Msgf("YAML canceled -- %q", v.gvr)
+	defer slog.Debug("YAML canceled", slogs.GVR, v.gvr)
 
 	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
 	delay := defaultReaderRefreshRate
@@ -157,7 +175,7 @@ func (v *Values) updater(ctx context.Context) {
 			if err := v.refresh(ctx); err != nil {
 				v.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("giving up retrieving chart values")
+					slog.Error("Giving up retrieving chart values", slogs.Error, err)
 					return
 				}
 			} else {
@@ -168,24 +186,20 @@ func (v *Values) updater(ctx context.Context) {
 	}
 }
 
-func (v *Values) refresh(ctx context.Context) error {
+func (v *Values) refresh(context.Context) error {
 	if !atomic.CompareAndSwapInt32(&v.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
-		return nil
+		slog.Debug("Dropping update...")
+		return fmt.Errorf("reconcile in progress. Dropping update")
 	}
 	defer atomic.StoreInt32(&v.inUpdate, 0)
 
-	if err := v.reconcile(ctx); err != nil {
-		return err
-	}
+	v.reconcile()
 
 	return nil
 }
 
-func (v *Values) reconcile(_ context.Context) error {
+func (v *Values) reconcile() {
 	v.fireResourceChanged(v.lines, v.filter(v.query, v.lines))
-
-	return nil
 }
 
 // AddListener adds a new model listener.

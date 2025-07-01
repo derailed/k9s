@@ -1,13 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,9 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
-	"k8s.io/kubectl/pkg/polymorphichelpers"
-	"k8s.io/kubectl/pkg/scheme"
 )
 
 var (
@@ -28,6 +30,7 @@ var (
 	_ Scalable        = (*StatefulSet)(nil)
 	_ Controller      = (*StatefulSet)(nil)
 	_ ContainsPodSpec = (*StatefulSet)(nil)
+	_ ImageLister     = (*StatefulSet)(nil)
 )
 
 // StatefulSet represents a K8s sts.
@@ -35,89 +38,29 @@ type StatefulSet struct {
 	Resource
 }
 
-// IsHappy check for happy sts.
-func (s *StatefulSet) IsHappy(sts appsv1.StatefulSet) bool {
-	return sts.Status.Replicas == sts.Status.ReadyReplicas
+// ListImages lists container images.
+func (s *StatefulSet) ListImages(_ context.Context, fqn string) ([]string, error) {
+	sts, err := s.GetInstance(s.Factory, fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&sts.Spec.Template.Spec), nil
 }
 
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(ctx context.Context, path string, replicas int32) error {
-	ns, n := client.Namespaced(path)
-	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets:scale", []string{client.GetVerb, client.UpdateVerb})
-	if err != nil {
-		return err
-	}
-	if !auth {
-		return fmt.Errorf("user is not authorized to scale statefulsets")
-	}
-
-	dial, err := s.Client().Dial()
-	if err != nil {
-		return err
-	}
-	scale, err := dial.AppsV1().StatefulSets(ns).GetScale(ctx, n, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	scale.Spec.Replicas = replicas
-	_, err = dial.AppsV1().StatefulSets(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
-
-	return err
+	return scaleRes(ctx, s.getFactory(), client.StsGVR, path, replicas)
 }
 
 // Restart a StatefulSet rollout.
-func (s *StatefulSet) Restart(ctx context.Context, path string) error {
-	o, err := s.GetFactory().Get("apps/v1/statefulsets", path, true, labels.Everything())
-	if err != nil {
-		return err
-	}
-	var sts appsv1.StatefulSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
-	if err != nil {
-		return err
-	}
-
-	auth, err := s.Client().CanI(sts.Namespace, "apps/v1/statefulsets", []string{client.PatchVerb})
-	if err != nil {
-		return err
-	}
-	if !auth {
-		return fmt.Errorf("user is not authorized to restart a statefulset")
-	}
-
-	dial, err := s.Client().Dial()
-	if err != nil {
-		return err
-	}
-
-	before, err := runtime.Encode(scheme.Codecs.LegacyCodec(appsv1.SchemeGroupVersion), &sts)
-	if err != nil {
-		return err
-	}
-
-	after, err := polymorphichelpers.ObjectRestarterFn(&sts)
-	if err != nil {
-		return err
-	}
-	diff, err := strategicpatch.CreateTwoWayMergePatch(before, after, sts)
-	if err != nil {
-		return err
-	}
-	_, err = dial.AppsV1().StatefulSets(sts.Namespace).Patch(
-		ctx,
-		sts.Name,
-		types.StrategicMergePatchType,
-		diff,
-		metav1.PatchOptions{},
-	)
-
-	return err
-
+func (s *StatefulSet) Restart(ctx context.Context, path string, opts *metav1.PatchOptions) error {
+	return restartRes[*appsv1.StatefulSet](ctx, s.getFactory(), client.StsGVR, path, opts)
 }
 
-// Load returns a statefulset instance.
-func (*StatefulSet) Load(f Factory, fqn string) (*appsv1.StatefulSet, error) {
-	o, err := f.Get("apps/v1/statefulsets", fqn, true, labels.Everything())
+// GetInstance returns a statefulset instance.
+func (*StatefulSet) GetInstance(f Factory, fqn string) (*appsv1.StatefulSet, error) {
+	o, err := f.Get(client.StsGVR, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +81,7 @@ func (s *StatefulSet) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan
 		return nil, errors.New("expecting StatefulSet resource")
 	}
 	if sts.Spec.Selector == nil || len(sts.Spec.Selector.MatchLabels) == 0 {
-		return nil, fmt.Errorf("No valid selector found on StatefulSet %s", opts.Path)
+		return nil, fmt.Errorf("no valid selector found on statefulset: %s", opts.Path)
 	}
 
 	return podLogs(ctx, sts.Spec.Selector.MatchLabels, opts)
@@ -155,7 +98,7 @@ func (s *StatefulSet) Pod(fqn string) (string, error) {
 }
 
 func (s *StatefulSet) getStatefulSet(fqn string) (*appsv1.StatefulSet, error) {
-	o, err := s.GetFactory().Get(s.gvr.String(), fqn, true, labels.Everything())
+	o, err := s.getFactory().Get(s.gvr, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -170,9 +113,9 @@ func (s *StatefulSet) getStatefulSet(fqn string) (*appsv1.StatefulSet, error) {
 }
 
 // ScanSA scans for serviceaccount refs.
-func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+func (s *StatefulSet) ScanSA(_ context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := s.GetFactory().List(s.GVR(), ns, wait, labels.Everything())
+	oo, err := s.getFactory().List(s.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -196,9 +139,9 @@ func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, 
 }
 
 // Scan scans for cluster resource refs.
-func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (s *StatefulSet) Scan(_ context.Context, gvr *client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := s.GetFactory().List(s.GVR(), ns, wait, labels.Everything())
+	oo, err := s.getFactory().List(s.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +154,7 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 			return nil, errors.New("expecting StatefulSet resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case client.CmGVR:
 			if !hasConfigMap(&sts.Spec.Template.Spec, n) {
 				continue
 			}
@@ -219,10 +162,13 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),
 			})
-		case "v1/secrets":
+		case client.SecGVR:
 			found, err := hasSecret(s.Factory, &sts.Spec.Template.Spec, sts.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				slog.Warn("Locate secret failed",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {
@@ -232,9 +178,9 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),
 			})
-		case "v1/persistentvolumeclaims":
-			for _, v := range sts.Spec.VolumeClaimTemplates {
-				if !strings.HasPrefix(n, v.Name+"-"+sts.Name) {
+		case client.PvcGVR:
+			for i := range sts.Spec.VolumeClaimTemplates {
+				if !strings.HasPrefix(n, sts.Spec.VolumeClaimTemplates[i].Name+"-"+sts.Name) {
 					continue
 				}
 				refs = append(refs, Ref{
@@ -249,7 +195,7 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case client.PcGVR:
 			if !hasPC(&sts.Spec.Template.Spec, n) {
 				continue
 			}
@@ -257,7 +203,6 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),
 			})
-
 		}
 	}
 
@@ -277,7 +222,7 @@ func (s *StatefulSet) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (s *StatefulSet) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := s.Client().CanI(ns, "apps/v1/statefulset", []string{client.PatchVerb})
+	auth, err := s.Client().CanI(ns, client.StsGVR, n, client.PatchAccess)
 	if err != nil {
 		return err
 	}

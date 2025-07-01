@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view_test
 
 import (
@@ -8,30 +11,32 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestAliasNew(t *testing.T) {
-	v := view.NewAlias(client.NewGVR("aliases"))
+	v := view.NewAlias(client.AliGVR)
 
-	assert.Nil(t, v.Init(makeContext()))
+	require.NoError(t, v.Init(makeContext(t)))
 	assert.Equal(t, "Aliases", v.Name())
-	assert.Equal(t, 6, len(v.Hints()))
+	assert.Len(t, v.Hints(), 6)
 }
 
 func TestAliasSearch(t *testing.T) {
-	v := view.NewAlias(client.NewGVR("aliases"))
-	assert.Nil(t, v.Init(makeContext()))
-	v.GetTable().SetModel(&mockModel{})
+	v := view.NewAlias(client.AliGVR)
+	require.NoError(t, v.Init(makeContext(t)))
+	v.GetTable().SetModel(new(mockModel))
 	v.GetTable().Refresh()
 	v.App().Prompt().SetModel(v.GetTable().CmdBuff())
 	v.App().Prompt().SendStrokes("blee")
@@ -41,8 +46,8 @@ func TestAliasSearch(t *testing.T) {
 }
 
 func TestAliasGoto(t *testing.T) {
-	v := view.NewAlias(client.NewGVR("aliases"))
-	assert.Nil(t, v.Init(makeContext()))
+	v := view.NewAlias(client.AliGVR)
+	require.NoError(t, v.Init(makeContext(t)))
 	v.GetTable().Select(0, 0)
 
 	b := buffL{}
@@ -61,41 +66,19 @@ type buffL struct {
 	changed int
 }
 
-func (b *buffL) BufferChanged(_, _ string) {
+func (b *buffL) BufferChanged(string, string) {
 	b.changed++
 }
-func (b *buffL) BufferCompleted(_, _ string) {}
+func (*buffL) BufferCompleted(string, string) {}
 
-func (b *buffL) BufferActive(state bool, kind model.BufferKind) {
+func (b *buffL) BufferActive(bool, model.BufferKind) {
 	b.active++
 }
 
-func makeContext() context.Context {
-	a := view.NewApp(config.NewConfig(ks{}))
+func makeContext(t testing.TB) context.Context {
+	a := view.NewApp(mock.NewMockConfig(t))
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
-}
-
-type ks struct{}
-
-func (k ks) CurrentContextName() (string, error) {
-	return "test", nil
-}
-
-func (k ks) CurrentClusterName() (string, error) {
-	return "test", nil
-}
-
-func (k ks) CurrentNamespaceName() (string, error) {
-	return "test", nil
-}
-
-func (k ks) ClusterNames() (map[string]struct{}, error) {
-	return map[string]struct{}{"test": {}}, nil
-}
-
-func (k ks) NamespaceNames(nn []v1.Namespace) []string {
-	return []string{"test"}
 }
 
 type mockModel struct{}
@@ -105,64 +88,66 @@ var (
 	_ ui.Suggester = (*mockModel)(nil)
 )
 
-func (t *mockModel) CurrentSuggestion() (string, bool)  { return "", false }
-func (t *mockModel) NextSuggestion() (string, bool)     { return "", false }
-func (t *mockModel) PrevSuggestion() (string, bool)     { return "", false }
-func (t *mockModel) ClearSuggestions()                  {}
-func (t *mockModel) SetInstance(string)                 {}
-func (t *mockModel) SetLabelFilter(string)              {}
-func (t *mockModel) Empty() bool                        { return false }
-func (t *mockModel) Count() int                         { return 1 }
-func (t *mockModel) HasMetrics() bool                   { return true }
-func (t *mockModel) Peek() *render.TableData            { return makeTableData() }
-func (t *mockModel) ClusterWide() bool                  { return false }
-func (t *mockModel) GetNamespace() string               { return "blee" }
-func (t *mockModel) SetNamespace(string)                {}
-func (t *mockModel) ToggleToast()                       {}
-func (t *mockModel) AddListener(model.TableListener)    {}
-func (t *mockModel) RemoveListener(model.TableListener) {}
-func (t *mockModel) Watch(context.Context) error        { return nil }
-func (t *mockModel) Refresh(context.Context) error      { return nil }
-func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
+func (*mockModel) SetViewSetting(context.Context, *config.ViewSetting) {}
+func (*mockModel) CurrentSuggestion() (string, bool)                   { return "", false }
+func (*mockModel) NextSuggestion() (string, bool)                      { return "", false }
+func (*mockModel) PrevSuggestion() (string, bool)                      { return "", false }
+func (*mockModel) ClearSuggestions()                                   {}
+func (*mockModel) SetInstance(string)                                  {}
+func (*mockModel) SetLabelSelector(labels.Selector)                    {}
+func (*mockModel) GetLabelSelector() labels.Selector                   { return nil }
+func (*mockModel) Empty() bool                                         { return false }
+func (*mockModel) RowCount() int                                       { return 1 }
+func (*mockModel) HasMetrics() bool                                    { return true }
+func (*mockModel) Peek() *model1.TableData                             { return makeTableData() }
+func (*mockModel) ClusterWide() bool                                   { return false }
+func (*mockModel) GetNamespace() string                                { return "blee" }
+func (*mockModel) SetNamespace(string)                                 {}
+func (*mockModel) ToggleToast()                                        {}
+func (*mockModel) AddListener(model.TableListener)                     {}
+func (*mockModel) RemoveListener(model.TableListener)                  {}
+func (*mockModel) Watch(context.Context) error                         { return nil }
+func (*mockModel) Refresh(context.Context) error                       { return nil }
+func (*mockModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
 
-func (t *mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
+func (*mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
 	return nil
 }
 
-func (t *mockModel) Describe(context.Context, string) (string, error) {
+func (*mockModel) Describe(context.Context, string) (string, error) {
 	return "", nil
 }
 
-func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
+func (*mockModel) ToYAML(context.Context, string) (string, error) {
 	return "", nil
 }
 
-func (t *mockModel) InNamespace(string) bool      { return true }
-func (t *mockModel) SetRefreshRate(time.Duration) {}
+func (*mockModel) InNamespace(string) bool      { return true }
+func (*mockModel) SetRefreshRate(time.Duration) {}
 
-func makeTableData() *render.TableData {
-	return &render.TableData{
-		Namespace: client.ClusterScope,
-		Header: render.Header{
-			render.HeaderColumn{Name: "RESOURCE"},
-			render.HeaderColumn{Name: "COMMAND"},
-			render.HeaderColumn{Name: "APIGROUP"},
+func makeTableData() *model1.TableData {
+	return model1.NewTableDataWithRows(
+		client.NewGVR("test"),
+		model1.Header{
+			model1.HeaderColumn{Name: "RESOURCE"},
+			model1.HeaderColumn{Name: "COMMAND"},
+			model1.HeaderColumn{Name: "APIGROUP"},
 		},
-		RowEvents: render.RowEvents{
-			render.RowEvent{
-				Row: render.Row{
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{
+				Row: model1.Row{
 					ID:     "r1",
-					Fields: render.Fields{"blee", "duh", "fred"},
+					Fields: model1.Fields{"blee", "duh", "fred"},
 				},
 			},
-			render.RowEvent{
-				Row: render.Row{
+			model1.RowEvent{
+				Row: model1.Row{
 					ID:     "r2",
-					Fields: render.Fields{"fred", "duh", "zorg"},
+					Fields: model1.Fields{"fred", "duh", "zorg"},
 				},
 			},
-		},
-	}
+		),
+	)
 }

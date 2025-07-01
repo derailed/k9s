@@ -1,0 +1,15 @@
+# watch events on selected resources
+# requires linux "watch" command
+# change '-n' to adjust refresh time in seconds
+plugins:
+  watch-events:
+    shortCut: Shift-E
+    confirm: false
+    description: Get Events
+    scopes:
+    - all
+    command: sh
+    background: false
+    args:
+    - -c
+    - "kubectl events --context $CONTEXT --namespace $NAMESPACE --for $RESOURCE_NAME.$RESOURCE_GROUP/$NAME --watch"

@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 )
 
 const (
@@ -20,7 +24,7 @@ const (
 	FlashErr
 )
 
-// LevelMessage tracks an message and severity.
+// LevelMessage tracks a message and severity.
 type LevelMessage struct {
 	Level FlashLevel
 	Text  string
@@ -77,37 +81,39 @@ func (f *Flash) Info(msg string) {
 }
 
 // Infof displays a formatted info flash message.
-func (f *Flash) Infof(fmat string, args ...interface{}) {
+func (f *Flash) Infof(fmat string, args ...any) {
 	f.Info(fmt.Sprintf(fmat, args...))
 }
 
 // Warn displays a warning flash message.
 func (f *Flash) Warn(msg string) {
-	log.Warn().Msg(msg)
+	slog.Warn(msg)
 	f.SetMessage(FlashWarn, msg)
 }
 
 // Warnf displays a formatted warning flash message.
-func (f *Flash) Warnf(fmat string, args ...interface{}) {
+func (f *Flash) Warnf(fmat string, args ...any) {
 	f.Warn(fmt.Sprintf(fmat, args...))
 }
 
 // Err displays an error flash message.
 func (f *Flash) Err(err error) {
-	log.Error().Msg(err.Error())
+	slog.Error("Flash error", slogs.Error, err)
 	f.SetMessage(FlashErr, err.Error())
 }
 
 // Errf displays a formatted error flash message.
-func (f *Flash) Errf(fmat string, args ...interface{}) {
+func (f *Flash) Errf(fmat string, args ...any) {
 	var err error
 	for _, a := range args {
-		switch e := a.(type) {
-		case error:
+		if e, ok := a.(error); ok {
 			err = e
 		}
 	}
-	log.Error().Err(err).Msgf(fmat, args...)
+	slog.Error("Flash error",
+		slogs.Error, err,
+		slogs.Message, fmt.Sprintf(fmat, args...),
+	)
 	f.SetMessage(FlashErr, fmt.Sprintf(fmat, args...))
 }
 

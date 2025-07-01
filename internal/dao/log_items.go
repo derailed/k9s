@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -7,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -167,25 +171,25 @@ func (l *LogItems) DumpDebug(m string) {
 }
 
 // Filter filters out log items based on given filter.
-func (l *LogItems) Filter(index int, q string, showTime bool) ([]int, [][]int, error) {
+func (l *LogItems) Filter(index int, q string, showTime bool) (matches []int, indices [][]int, err error) {
 	if q == "" {
-		return nil, nil, nil
+		return
 	}
-	if IsFuzzySelector(q) {
-		mm, ii := l.fuzzyFilter(index, strings.TrimSpace(q[2:]), showTime)
-		return mm, ii, nil
+	if f, ok := internal.IsFuzzySelector(q); ok {
+		matches, indices = l.fuzzyFilter(index, f, showTime)
+		return
 	}
-	matches, indices, err := l.filterLogs(index, q, showTime)
+	matches, indices, err = l.filterLogs(index, q, showTime)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 
 	return matches, indices, nil
 }
 
-func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]int) {
+func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) (matches []int, indices [][]int) {
 	q = strings.TrimSpace(q)
-	matches, indices := make([]int, 0, len(l.items)), make([][]int, 0, 10)
+	matches, indices = make([]int, 0, len(l.items)), make([][]int, 0, len(l.items))
 	mm := fuzzy.Find(q, l.StrLines(index, showTime))
 	for _, m := range mm {
 		matches = append(matches, m.Index)
@@ -195,9 +199,9 @@ func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]i
 	return matches, indices
 }
 
-func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]int, error) {
+func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int, indices [][]int, err error) {
 	var invert bool
-	if IsInverseSelector(q) {
+	if internal.IsInverseSelector(q) {
 		invert = true
 		q = q[1:]
 	}
@@ -205,7 +209,7 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]in
 	if err != nil {
 		return nil, nil, err
 	}
-	matches, indices := make([]int, 0, len(l.items)), make([][]int, 0, 10)
+	matches, indices = make([]int, 0, len(l.items)), make([][]int, 0, len(l.items))
 	ll := make([][]byte, len(l.items[index:]))
 	l.Lines(index, showTime, ll)
 	for i, line := range ll {

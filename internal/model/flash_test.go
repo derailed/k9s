@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model_test
 
 import (
@@ -77,7 +80,7 @@ func newFlash() *flash {
 	return &flash{}
 }
 
-func (f *flash) getMetrics() (int, model.FlashLevel, string) {
+func (f *flash) getMetrics() (val int, lvl model.FlashLevel, msg string) {
 	return f.set, f.level, f.msg
 }
 

@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -11,26 +16,31 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/fatih/color"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 const (
-	windowsOS      = "windows"
-	powerShell     = "powershell"
-	osBetaSelector = "beta.kubernetes.io/os"
-	osSelector     = "kubernetes.io/os"
-	trUpload       = "Upload"
-	trDownload     = "Download"
+	windowsOS        = "windows"
+	powerShell       = "powershell"
+	osSelector       = "kubernetes.io/os"
+	osBetaSelector   = "beta." + osSelector
+	trUpload         = "Upload"
+	trDownload       = "Download"
+	pfIndicator      = "[orange::b]Ⓕ"
+	defaultTxRetries = 999
+	magicPrompt      = "Yes Please!"
 )
 
 // Pod represents a pod viewer.
@@ -39,11 +49,15 @@ type Pod struct {
 }
 
 // NewPod returns a new viewer.
-func NewPod(gvr client.GVR) ResourceViewer {
+func NewPod(gvr *client.GVR) ResourceViewer {
 	var p Pod
 	p.ResourceViewer = NewPortForwardExtender(
-		NewImageExtender(
-			NewLogsExtender(NewBrowser(gvr), p.logOptions),
+		NewOwnerExtender(
+			NewVulnerabilityExtender(
+				NewImageExtender(
+					NewLogsExtender(NewBrowser(gvr), p.logOptions),
+				),
+			),
 		),
 	)
 	p.AddBindKeysFn(p.bindKeys)
@@ -53,42 +67,77 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	return &p
 }
 
-func (p *Pod) portForwardIndicator(data *render.TableData) {
+func (p *Pod) portForwardIndicator(data *model1.TableData) {
 	ff := p.App().factory.Forwarders()
 
-	col := data.IndexOfHeader("PF")
-	for _, re := range data.RowEvents {
-		if ff.IsPodForwarded(re.Row.ID) {
-			re.Row.Fields[col] = "[orange::b]Ⓕ"
-		}
+	defer decorateCpuMemHeaderRows(p.App(), data)
+	idx, ok := data.IndexOfHeader("PF")
+	if !ok {
+		return
 	}
-	decorateCpuMemHeaderRows(p.App(), data)
-}
 
-func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
-		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
-		ui.KeyA:        ui.NewKeyAction("Attach", p.attachCmd, true),
-		ui.KeyT:        ui.NewKeyAction("Transfer", p.transferCmd, true),
+	data.RowsRange(func(_ int, re model1.RowEvent) bool {
+		if ff.IsPodForwarded(re.Row.ID) {
+			re.Row.Fields[idx] = pfIndicator
+		}
+		return true
 	})
 }
 
-func (p *Pod) bindKeys(aa ui.KeyActions) {
-	if !p.App().Config.K9s.IsReadOnly() {
+func (p *Pod) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		tcell.KeyCtrlK: ui.NewKeyActionWithOpts(
+			"Kill",
+			p.killCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyS: ui.NewKeyActionWithOpts(
+			"Shell",
+			p.shellCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyA: ui.NewKeyActionWithOpts(
+			"Attach",
+			p.attachCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyT: ui.NewKeyActionWithOpts(
+			"Transfer",
+			p.transferCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyZ: ui.NewKeyActionWithOpts(
+			"Sanitize",
+			p.sanitizeCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+	})
+}
+
+func (p *Pod) bindKeys(aa *ui.KeyActions) {
+	if !p.App().Config.IsReadOnly() {
 		p.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
-		ui.KeyN:      ui.NewKeyAction("Show Node", p.showNode, true),
-		ui.KeyF:      ui.NewKeyAction("Show PortForward", p.showPFCmd, true),
+	aa.Bulk(ui.KeyMap{
+		ui.KeyO:      ui.NewKeyAction("Show Node", p.showNode, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
 		ui.KeyShiftI: ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd("IP", true), false),
 		ui.KeyShiftO: ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd("NODE", true), false),
 	})
-	aa.Add(resourceSorters(p.GetTable()))
+	aa.Merge(resourceSorters(p.GetTable()))
 }
 
 func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
@@ -102,28 +151,11 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	cc, cfg := fetchContainers(pod.ObjectMeta, pod.Spec, true), p.App().Config.K9s.Logger
-	opts := dao.LogOptions{
-		Path:            path,
-		Lines:           int64(cfg.TailCount),
-		SinceSeconds:    cfg.SinceSeconds,
-		SingleContainer: len(cc) == 1,
-		ShowTimestamp:   cfg.ShowTime,
-		Previous:        prev,
-	}
-	if c, ok := dao.GetDefaultContainer(pod.ObjectMeta, pod.Spec); ok {
-		opts.Container, opts.DefaultContainer = c, c
-	} else if len(cc) == 1 {
-		opts.Container = cc[0]
-	} else {
-		opts.AllContainers = true
-	}
-
-	return &opts, nil
+	return podLogOptions(p.App(), path, prev, &pod.ObjectMeta, &pod.Spec), nil
 }
 
-func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {
-	co := NewContainer(client.NewGVR("containers"))
+func (p *Pod) showContainers(app *App, _ ui.Tabular, _ *client.GVR, _ string) {
+	co := NewContainer(client.CoGVR)
 	co.SetContextFn(p.coContext)
 	if err := app.inject(co, false); err != nil {
 		app.Flash().Err(err)
@@ -150,38 +182,13 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Err(errors.New("no node assigned"))
 		return nil
 	}
-	no := NewNode(client.NewGVR("v1/nodes"))
+	no := NewNode(client.NodeGVR)
 	no.SetInstance(pod.Spec.NodeName)
-	//no.SetContextFn(nodeContext(pod.Spec.NodeName))
 	if err := p.App().inject(no, false); err != nil {
 		p.App().Flash().Err(err)
 	}
 
 	return nil
-}
-
-func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := p.GetTable().GetSelectedItem()
-	if path == "" {
-		return evt
-	}
-
-	if !p.App().factory.Forwarders().IsPodForwarded(path) {
-		p.App().Flash().Errf("no port-forward defined")
-		return nil
-	}
-	pf := NewPortForward(client.NewGVR("portforwards"))
-	pf.SetContextFn(p.portForwardContext)
-	if err := p.App().inject(pf, false); err != nil {
-		p.App().Flash().Err(err)
-	}
-
-	return nil
-}
-
-func (p *Pod) portForwardContext(ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
-	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
 }
 
 func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -230,7 +237,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if err := containerShellin(p.App(), p, path, ""); err != nil {
+	if err := containerShellIn(p.App(), p, path, ""); err != nil {
 		p.App().Flash().Err(err)
 	}
 
@@ -255,43 +262,75 @@ func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (p *Pod) sanitizeCmd(*tcell.EventKey) *tcell.EventKey {
+	res, err := dao.AccessorFor(p.App().factory, p.GVR())
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	s, ok := res.(dao.Sanitizer)
+	if !ok {
+		p.App().Flash().Err(fmt.Errorf("expecting a sanitizer for %q", p.GVR()))
+		return nil
+	}
+
+	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", magicPrompt)
+	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*p.App().Conn().Config().CallTimeout())
+		defer cancel()
+		total, err := s.Sanitize(ctx, p.GetTable().GetModel().GetNamespace())
+		if err != nil {
+			p.App().Flash().Err(err)
+			return
+		}
+		p.App().Flash().Infof("Sanitized %d %s", total, p.GVR())
+		p.Refresh()
+	}, func() {})
+
+	return nil
+}
+
+func (p *Pod) transferCmd(*tcell.EventKey) *tcell.EventKey {
 	path := p.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil
 	}
 
 	ns, n := client.Namespaced(path)
-	ack := func(from, to, co string, download, no_preserve bool) bool {
-		local := to
-		if !download {
-			local = from
+	ack := func(args dialog.TransferArgs) bool {
+		local := args.To
+		if !args.Download {
+			local = args.From
 		}
-		if _, err := os.Stat(local); !download && os.IsNotExist(err) {
+		if _, err := os.Stat(local); !args.Download && errors.Is(err, fs.ErrNotExist) {
 			p.App().Flash().Err(err)
 			return false
 		}
 
-		args := make([]string, 0, 10)
-		args = append(args, "cp")
-		args = append(args, strings.TrimSpace(from))
-		args = append(args, strings.TrimSpace(to))
-		args = append(args, fmt.Sprintf("--no-preserve=%t", no_preserve))
-		if co != "" {
-			args = append(args, "-c="+co)
+		opts := make([]string, 0, 10)
+		opts = append(opts,
+			"cp",
+			strings.TrimSpace(args.From),
+			strings.TrimSpace(args.To),
+			fmt.Sprintf("--no-preserve=%t", args.NoPreserve),
+			fmt.Sprintf("--retries=%d", args.Retries),
+		)
+		if args.CO != "" {
+			opts = append(opts, "-c="+args.CO)
 		}
+		opts = append(opts, fmt.Sprintf("--retries=%d", args.Retries))
 
-		opts := shellOpts{
+		cliOpts := shellOpts{
 			background: true,
-			args:       args,
+			args:       opts,
 		}
 		op := trUpload
-		if download {
+		if args.Download {
 			op = trDownload
 		}
 
-		fqn := path + ":" + co
-		if err := runK(p.App(), opts); err != nil {
+		fqn := path + ":" + args.CO
+		if err := runK(p.App(), &cliOpts); err != nil {
 			p.App().cowCmd(err.Error())
 		} else {
 			p.App().Flash().Infof("%s successful on %s!", op, fqn)
@@ -307,13 +346,15 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	opts := dialog.TransferDialogOpts{
 		Title:      "Transfer",
-		Containers: fetchContainers(pod.ObjectMeta, pod.Spec, false),
+		Containers: fetchContainers(&pod.ObjectMeta, &pod.Spec, false),
 		Message:    "Download Files",
 		Pod:        fmt.Sprintf("%s/%s:", ns, n),
 		Ack:        ack,
+		Retries:    defaultTxRetries,
 		Cancel:     func() {},
 	}
-	dialog.ShowUploads(p.App().Styles.Dialog(), p.App().Content.Pages, opts)
+	d := p.App().Styles.Dialog()
+	dialog.ShowUploads(&d, p.App().Content.Pages, &opts)
 
 	return nil
 }
@@ -321,7 +362,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func containerShellin(a *App, comp model.Component, path, co string) error {
+func containerShellIn(a *App, comp model.Component, path, co string) error {
 	if co != "" {
 		resumeShellIn(a, comp, path, co)
 		return nil
@@ -331,11 +372,17 @@ func containerShellin(a *App, comp model.Component, path, co string) error {
 	if err != nil {
 		return err
 	}
-	cc := fetchContainers(pod.ObjectMeta, pod.Spec, false)
+	if dco, ok := dao.GetDefaultContainer(&pod.ObjectMeta, &pod.Spec); ok {
+		resumeShellIn(a, comp, path, dco)
+		return nil
+	}
+
+	cc := fetchContainers(&pod.ObjectMeta, &pod.Spec, false)
 	if len(cc) == 1 {
 		resumeShellIn(a, comp, path, cc[0])
 		return nil
 	}
+
 	picker := NewPicker()
 	picker.populate(cc)
 	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
@@ -353,14 +400,18 @@ func resumeShellIn(a *App, c model.Component, path, co string) {
 }
 
 func shellIn(a *App, fqn, co string) {
-	os, err := getPodOS(a.factory, fqn)
+	platform, err := getPodOS(a.factory, fqn)
 	if err != nil {
-		log.Warn().Err(err).Msgf("os detect failed")
+		slog.Warn("OS detect failed", slogs.Error, err)
 	}
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+	args := computeShellArgs(fqn, co, a.Conn().Config().Flags(), platform)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	err = runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args})
+	err = runK(a, &shellOpts{
+		clear:  true,
+		banner: c.Sprintf(bannerFmt, fqn, co),
+		args:   args},
+	)
 	if err != nil {
 		a.Flash().Errf("Shell exec failed: %s", err)
 	}
@@ -376,7 +427,7 @@ func containerAttachIn(a *App, comp model.Component, path, co string) error {
 	if err != nil {
 		return err
 	}
-	cc := fetchContainers(pod.ObjectMeta, pod.Spec, false)
+	cc := fetchContainers(&pod.ObjectMeta, &pod.Spec, false)
 	if len(cc) == 1 {
 		resumeAttachIn(a, comp, path, cc[0])
 		return nil
@@ -401,31 +452,49 @@ func resumeAttachIn(a *App, c model.Component, path, co string) {
 }
 
 func attachIn(a *App, path, co string) {
-	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags().KubeConfig)
+	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags())
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	if err := runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}); err != nil {
+	if err := runK(a, &shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}); err != nil {
 		a.Flash().Errf("Attach exec failed: %s", err)
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string, os string) []string {
-	args := buildShellArgs("exec", path, co, kcfg)
-	if os == windowsOS {
+func computeShellArgs(path, co string, flags *genericclioptions.ConfigFlags, platform string) []string {
+	args := buildShellArgs("exec", path, co, flags)
+	if platform == windowsOS {
 		return append(args, "--", powerShell)
 	}
+
 	return append(args, "--", "sh", "-c", shellCheck)
 }
 
-func buildShellArgs(cmd, path, co string, kcfg *string) []string {
+func isFlagSet(flag *string) (string, bool) {
+	if flag == nil || *flag == "" {
+		return "", false
+	}
+
+	return *flag, true
+}
+
+func buildShellArgs(cmd, path, co string, flags *genericclioptions.ConfigFlags) []string {
 	args := make([]string, 0, 15)
+
 	args = append(args, cmd, "-it")
 	ns, po := client.Namespaced(path)
-	if ns != client.AllNamespaces {
+	if ns != client.BlankNamespace {
 		args = append(args, "-n", ns)
 	}
 	args = append(args, po)
-	if kcfg != nil && *kcfg != "" {
-		args = append(args, "--kubeconfig", *kcfg)
+	if flags != nil {
+		if v, ok := isFlagSet(flags.KubeConfig); ok {
+			args = append(args, "--kubeconfig", v)
+		}
+		if v, ok := isFlagSet(flags.Context); ok {
+			args = append(args, "--context", v)
+		}
+		if v, ok := isFlagSet(flags.BearerToken); ok {
+			args = append(args, "--token", v)
+		}
 	}
 	if co != "" {
 		args = append(args, "-c", co)
@@ -434,35 +503,35 @@ func buildShellArgs(cmd, path, co string, kcfg *string) []string {
 	return args
 }
 
-func fetchContainers(meta metav1.ObjectMeta, spec v1.PodSpec, allContainers bool) []string {
+func fetchContainers(meta *metav1.ObjectMeta, spec *v1.PodSpec, allContainers bool) []string {
 	nn := make([]string, 0, len(spec.Containers)+len(spec.InitContainers))
-
 	// put the default container as the first entry
-	defaultContainer, hasDefaultContainer := dao.GetDefaultContainer(meta, spec)
-	if hasDefaultContainer {
+	defaultContainer, ok := dao.GetDefaultContainer(meta, spec)
+	if ok {
 		nn = append(nn, defaultContainer)
 	}
 
-	for _, c := range spec.Containers {
-		if !hasDefaultContainer || c.Name != defaultContainer {
-			nn = append(nn, c.Name)
+	for i := range spec.Containers {
+		if spec.Containers[i].Name != defaultContainer {
+			nn = append(nn, spec.Containers[i].Name)
 		}
 	}
-	if !allContainers {
-		return nn
+
+	for i := range spec.InitContainers {
+		isSidecar := spec.InitContainers[i].RestartPolicy != nil && *spec.InitContainers[i].RestartPolicy == v1.ContainerRestartPolicyAlways
+		if allContainers || isSidecar {
+			nn = append(nn, spec.InitContainers[i].Name)
+		}
 	}
-	for _, c := range spec.InitContainers {
-		nn = append(nn, c.Name)
-	}
-	for _, c := range spec.EphemeralContainers {
-		nn = append(nn, c.Name)
+	for i := range spec.EphemeralContainers {
+		nn = append(nn, spec.EphemeralContainers[i].Name)
 	}
 
 	return nn
 }
 
 func fetchPod(f dao.Factory, path string) (*v1.Pod, error) {
-	o, err := f.Get("v1/pods", path, true, labels.Everything())
+	o, err := f.Get(client.PodGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -476,15 +545,18 @@ func fetchPod(f dao.Factory, path string) (*v1.Pod, error) {
 	return &pod, nil
 }
 
-func podIsRunning(f dao.Factory, path string) bool {
-	po, err := fetchPod(f, path)
+func podIsRunning(f dao.Factory, fqn string) bool {
+	po, err := fetchPod(f, fqn)
 	if err != nil {
-		log.Error().Err(err).Msg("unable to fetch pod")
+		slog.Error("Unable to fetch pod",
+			slogs.FQN, fqn,
+			slogs.Error, err,
+		)
 		return false
 	}
 
 	var re render.Pod
-	return re.Phase(po) == render.Running
+	return re.Phase(po.DeletionTimestamp, &po.Spec, &po.Status) == render.Running
 }
 
 func getPodOS(f dao.Factory, fqn string) (string, error) {
@@ -492,24 +564,36 @@ func getPodOS(f dao.Factory, fqn string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if os, ok := po.Spec.NodeSelector[osBetaSelector]; ok {
-		return os, nil
-	}
-	os, ok := po.Spec.NodeSelector[osSelector]
-	if !ok {
-		return "", fmt.Errorf("no os information available")
+	if podOS, ok := osFromSelector(po.Spec.NodeSelector); ok {
+		return podOS, nil
 	}
 
-	return os, nil
+	node, err := dao.FetchNode(context.Background(), f, po.Spec.NodeName)
+	if err == nil {
+		if nodeOS, ok := osFromSelector(node.Labels); ok {
+			return nodeOS, nil
+		}
+	}
+
+	return "", errors.New("no os information available")
 }
 
-func resourceSorters(t *Table) ui.KeyActions {
-	return ui.KeyActions{
+func osFromSelector(s map[string]string) (string, bool) {
+	if platform, ok := s[osBetaSelector]; ok {
+		return platform, ok
+	}
+	platform, ok := s[osSelector]
+
+	return platform, ok
+}
+
+func resourceSorters(t *Table) *ui.KeyActions {
+	return ui.NewKeyActionsFromMap(ui.KeyMap{
 		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", t.SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", t.SortColCmd(memCol, false), false),
 		ui.KeyShiftX:   ui.NewKeyAction("Sort CPU/R", t.SortColCmd("%CPU/R", false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort MEM/R", t.SortColCmd("%MEM/R", false), false),
 		tcell.KeyCtrlX: ui.NewKeyAction("Sort CPU/L", t.SortColCmd("%CPU/L", false), false),
 		tcell.KeyCtrlQ: ui.NewKeyAction("Sort MEM/L", t.SortColCmd("%MEM/L", false), false),
-	}
+	})
 }

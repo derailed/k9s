@@ -1,18 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -31,17 +35,19 @@ type CronJob struct {
 }
 
 // NewCronJob returns a new viewer.
-func NewCronJob(gvr client.GVR) ResourceViewer {
-	c := CronJob{ResourceViewer: NewBrowser(gvr)}
+func NewCronJob(gvr *client.GVR) ResourceViewer {
+	c := CronJob{ResourceViewer: NewVulnerabilityExtender(
+		NewOwnerExtender(NewBrowser(gvr)),
+	)}
 	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetEnterFn(c.showJobs)
 
 	return &c
 }
 
-func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr, path string) {
-	log.Debug().Msgf("Showing Jobs %q:%q -- %q", model.GetNamespace(), gvr, path)
-	o, err := app.factory.Get(gvr, path, true, labels.Everything())
+func (*CronJob) showJobs(app *App, _ ui.Tabular, gvr *client.GVR, fqn string) {
+	slog.Debug("Showing Jobs", slogs.GVR, gvr, slogs.FQN, fqn)
+	o, err := app.factory.Get(gvr, fqn, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -54,22 +60,26 @@ func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr, path string) {
 		return
 	}
 
-	v := NewJob(client.NewGVR("batch/v1/jobs"))
-	v.SetContextFn(jobCtx(path, string(cj.UID)))
+	ns, _ := client.Namespaced(fqn)
+	if err := app.Config.SetActiveNamespace(ns); err != nil {
+		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
+	}
+	v := NewJob(client.JobGVR)
+	v.SetContextFn(jobCtx(fqn, string(cj.UID)))
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func jobCtx(path, uid string) ContextFunc {
+func jobCtx(fqn, uid string) ContextFunc {
 	return func(ctx context.Context) context.Context {
-		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		ctx = context.WithValue(ctx, internal.KeyPath, fqn)
 		return context.WithValue(ctx, internal.KeyUID, uid)
 	}
 }
 
-func (c *CronJob) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (c *CronJob) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyT:      ui.NewKeyAction("Trigger", c.triggerCmd, true),
 		ui.KeyS:      ui.NewKeyAction("Suspend/Resume", c.toggleSuspendCmd, true),
 		ui.KeyShiftL: ui.NewKeyAction("Sort LastScheduled", c.GetTable().SortColCmd(lastScheduledCol, true), false),
@@ -77,13 +87,16 @@ func (c *CronJob) bindKeys(aa ui.KeyActions) {
 }
 
 func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
-	fqn := c.GetTable().GetSelectedItem()
-	if fqn == "" {
+	fqns := c.GetTable().GetSelectedItems()
+	if len(fqns) == 0 {
 		return evt
 	}
-
-	msg := fmt.Sprintf("Trigger Cronjob %s?", fqn)
-	dialog.ShowConfirm(c.App().Styles.Dialog(), c.App().Content.Pages, "Confirm Job Trigger", msg, func() {
+	msg := fmt.Sprintf("Trigger CronJob: %s?", fqns[0])
+	if len(fqns) > 1 {
+		msg = fmt.Sprintf("Trigger %d CronJobs?", len(fqns))
+	}
+	d := c.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, c.App().Content.Pages, "Confirm Job Trigger", msg, func() {
 		res, err := dao.AccessorFor(c.App().factory, c.GVR())
 		if err != nil {
 			c.App().Flash().Err(fmt.Errorf("no accessor for %q", c.GVR()))
@@ -95,101 +108,68 @@ func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
 			return
 		}
 
-		if err := runner.Run(fqn); err != nil {
-			c.App().Flash().Errf("Cronjob trigger failed %v", err)
-			return
+		for _, fqn := range fqns {
+			if err := runner.Run(fqn); err != nil {
+				c.App().Flash().Errf("CronJob trigger failed for %s: %v", fqn, err)
+			} else {
+				c.App().Flash().Infof("Triggered Job %s %s", c.GVR(), fqn)
+			}
 		}
-		c.App().Flash().Infof("Triggering Job %s %s", c.GVR(), fqn)
 	}, func() {})
 
 	return nil
 }
 
 func (c *CronJob) toggleSuspendCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := c.GetTable().GetSelectedItem()
+	table := c.GetTable()
+	sel := table.GetSelectedItem()
+
 	if sel == "" {
 		return evt
 	}
 
+	cell := table.GetCell(c.GetTable().GetSelectedRowIndex(), c.GetTable().NameColIndex()+2)
+
+	if cell == nil {
+		c.App().Flash().Errf("Unable to assert current status")
+		return nil
+	}
+
 	c.Stop()
 	defer c.Start()
-	c.showSuspendDialog(sel)
+
+	c.showSuspendDialog(cell, sel)
 
 	return nil
 }
 
-func (c *CronJob) showSuspendDialog(sel string) {
-	cell := c.GetTable().GetCell(c.GetTable().GetSelectedRowIndex(), c.GetTable().NameColIndex()+2)
-	if cell == nil {
-		c.App().Flash().Errf("Unable to assert current status")
-		return
-	}
-	suspended := strings.TrimSpace(cell.Text) == defaultSuspendStatus
+func (c *CronJob) showSuspendDialog(cell *tview.TableCell, sel string) {
 	title := "Suspend"
-	if suspended {
+
+	if strings.TrimSpace(cell.Text) == defaultSuspendStatus {
 		title = "Resume"
 	}
 
-	confirm := tview.NewModalForm(fmt.Sprintf("<%s>", title), c.makeSuspendForm(sel, !suspended))
-	confirm.SetText(fmt.Sprintf("%s CronJob %s?", title, sel))
-	confirm.SetDoneFunc(func(int, string) {
-		c.dismissDialog()
-	})
-	c.App().Content.AddPage(suspendDialogKey, confirm, false, false)
-	c.App().Content.ShowPage(suspendDialogKey)
-}
-
-func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
-	f := c.makeStyledForm()
-	action := "suspended"
-	if !suspend {
-		action = "resumed"
-	}
-
-	f.AddButton("Cancel", func() {
-		c.dismissDialog()
-	})
-	f.AddButton("OK", func() {
-		defer c.dismissDialog()
-
+	d := c.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, c.App().Content.Pages, title, sel, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
 		defer cancel()
-		if err := c.toggleSuspend(ctx, sel); err != nil {
-			log.Error().Err(err).Msgf("CronJob %s %s failed", sel, action)
-			c.App().Flash().Err(err)
-		} else {
-			c.App().Flash().Infof("CronJob %s %s successfully!", sel, action)
+
+		res, err := dao.AccessorFor(c.App().factory, c.GVR())
+		if err != nil {
+			c.App().Flash().Err(fmt.Errorf("no accessor for %q", c.GVR()))
+			return
 		}
-	})
 
-	return f
-}
+		cronJob, ok := res.(*dao.CronJob)
+		if !ok {
+			c.App().Flash().Errf("expecting a cron job for %q", c.GVR())
+			return
+		}
 
-func (c *CronJob) toggleSuspend(ctx context.Context, path string) error {
-	res, err := dao.AccessorFor(c.App().factory, c.GVR())
-	if err != nil {
-		return err
-	}
-	cronJob, ok := res.(*dao.CronJob)
-	if !ok {
-		return fmt.Errorf("expecting a scalable resource for %q", c.GVR())
-	}
-
-	return cronJob.ToggleSuspend(ctx, path)
-}
-
-func (c *CronJob) makeStyledForm() *tview.Form {
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
-
-	return f
-}
-
-func (c *CronJob) dismissDialog() {
-	c.App().Content.RemovePage(suspendDialogKey)
+		if err := cronJob.ToggleSuspend(ctx, sel); err != nil {
+			c.App().Flash().Errf("Cronjob %s failed for %v", strings.ToLower(title), err)
+			return
+		}
+	}, func() {})
 }

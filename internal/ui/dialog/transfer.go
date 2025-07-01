@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dialog
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
@@ -10,17 +14,24 @@ import (
 
 const confirmKey = "confirm"
 
-type TransferFn func(from, to, co string, download, no_preserve bool) bool
+type TransferFn func(TransferArgs) bool
+
+type TransferArgs struct {
+	From, To, CO         string
+	Download, NoPreserve bool
+	Retries              int
+}
 
 type TransferDialogOpts struct {
 	Containers     []string
 	Pod            string
 	Title, Message string
+	Retries        int
 	Ack            TransferFn
 	Cancel         cancelFunc
 }
 
-func ShowUploads(styles config.Dialog, pages *ui.Pages, opts TransferDialogOpts) {
+func ShowUploads(styles *config.Dialog, pages *ui.Pages, opts *TransferDialogOpts) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -35,50 +46,59 @@ func ShowUploads(styles config.Dialog, pages *ui.Pages, opts TransferDialogOpts)
 
 	modal := tview.NewModalForm("<"+opts.Title+">", f)
 
-	from, to := opts.Pod, ""
+	args := TransferArgs{
+		From:    opts.Pod,
+		Retries: opts.Retries,
+	}
 	var fromField, toField *tview.InputField
-	download := true
-	f.AddCheckbox("Download:", download, func(_ string, flag bool) {
+	args.Download = true
+	f.AddCheckbox("Download:", args.Download, func(_ string, flag bool) {
 		if flag {
 			modal.SetText(strings.Replace(opts.Message, "Upload", "Download", 1))
 		} else {
 			modal.SetText(strings.Replace(opts.Message, "Download", "Upload", 1))
 		}
-		download = flag
-		from, to = to, from
-		fromField.SetText(from)
-		toField.SetText(to)
+		args.Download = flag
+		args.From, args.To = args.To, args.From
+		fromField.SetText(args.From)
+		toField.SetText(args.To)
 	})
 
-	f.AddInputField("From:", from, 40, nil, func(t string) {
-		from = t
+	f.AddInputField("From:", args.From, 40, nil, func(v string) {
+		args.From = v
 	})
-	f.AddInputField("To:", to, 40, nil, func(t string) {
-		to = t
+	f.AddInputField("To:", args.To, 40, nil, func(v string) {
+		args.To = v
 	})
 	fromField, _ = f.GetFormItemByLabel("From:").(*tview.InputField)
 	toField, _ = f.GetFormItemByLabel("To:").(*tview.InputField)
 
-	var no_preserve bool
-	f.AddCheckbox("NoPreserve:", no_preserve, func(_ string, f bool) {
-		no_preserve = f
+	f.AddCheckbox("NoPreserve:", args.NoPreserve, func(_ string, f bool) {
+		args.NoPreserve = f
 	})
-	var co string
 	if len(opts.Containers) > 0 {
-		co = opts.Containers[0]
+		args.CO = opts.Containers[0]
 	}
-	f.AddInputField("Container:", co, 30, nil, func(t string) {
-		co = t
+	f.AddInputField("Container:", args.CO, 30, nil, func(v string) {
+		args.CO = v
+	})
+	retries := strconv.Itoa(opts.Retries)
+	f.AddInputField("Retries:", retries, 30, nil, func(v string) {
+		retries = v
+
+		if retriesInt, err := strconv.Atoi(retries); err == nil {
+			args.Retries = retriesInt
+		}
 	})
 
 	f.AddButton("OK", func() {
-		if !opts.Ack(from, to, co, download, no_preserve) {
+		if !opts.Ack(args) {
 			return
 		}
 		dismissConfirm(pages)
 		opts.Cancel()
 	})
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		b := f.GetButton(i)
 		if b == nil {
 			continue

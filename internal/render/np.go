@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -5,11 +8,27 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var defaultNPHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "POD-SELECTOR"},
+	model1.HeaderColumn{Name: "ING-SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "ING-PORTS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "ING-BLOCK", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "EGR-SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "EGR-PORTS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "EGR-BLOCK", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
 
 // NetworkPolicy renders a K8s NetworkPolicy to screen.
 type NetworkPolicy struct {
@@ -17,28 +36,33 @@ type NetworkPolicy struct {
 }
 
 // Header returns a header row.
-func (NetworkPolicy) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "ING-SELECTOR", Wide: true},
-		HeaderColumn{Name: "ING-PORTS"},
-		HeaderColumn{Name: "ING-BLOCK"},
-		HeaderColumn{Name: "EGR-SELECTOR", Wide: true},
-		HeaderColumn{Name: "EGR-PORTS"},
-		HeaderColumn{Name: "EGR-BLOCK"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
-	}
+func (p NetworkPolicy) Header(_ string) model1.Header {
+	return p.doHeader(defaultNPHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
+func (p NetworkPolicy) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected NetworkPolicy, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := p.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if p.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := p.specs.realize(raw, defaultNPHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var np netv1.NetworkPolicy
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &np)
 	if err != nil {
@@ -48,10 +72,18 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 	ip, is, ib := ingress(np.Spec.Ingress)
 	ep, es, eb := egress(np.Spec.Egress)
 
-	r.ID = client.MetaFQN(np.ObjectMeta)
-	r.Fields = Fields{
+	var podSel string
+	if len(np.Spec.PodSelector.MatchLabels) > 0 {
+		podSel = mapToStr(np.Spec.PodSelector.MatchLabels)
+	}
+	if len(np.Spec.PodSelector.MatchExpressions) > 0 {
+		podSel += "::" + expToStr(np.Spec.PodSelector.MatchExpressions)
+	}
+	r.ID = client.MetaFQN(&np.ObjectMeta)
+	r.Fields = model1.Fields{
 		np.Namespace,
 		np.Name,
+		podSel,
 		is,
 		ip,
 		ib,
@@ -60,7 +92,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 		eb,
 		mapToStr(np.Labels),
 		"",
-		toAge(np.GetCreationTimestamp()),
+		ToAge(np.GetCreationTimestamp()),
 	}
 
 	return nil
@@ -68,7 +100,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 
 // Helpers...
 
-func ingress(ii []netv1.NetworkPolicyIngressRule) (string, string, string) {
+func ingress(ii []netv1.NetworkPolicyIngressRule) (port, selector, block string) {
 	var ports, sels, blocks []string
 	for _, i := range ii {
 		if p := portsToStr(i.Ports); p != "" {
@@ -85,7 +117,7 @@ func ingress(ii []netv1.NetworkPolicyIngressRule) (string, string, string) {
 	return strings.Join(ports, ","), strings.Join(sels, ","), strings.Join(blocks, ",")
 }
 
-func egress(ee []netv1.NetworkPolicyEgressRule) (string, string, string) {
+func egress(ee []netv1.NetworkPolicyEgressRule) (port, selector, block string) {
 	var ports, sels, blocks []string
 	for _, e := range ee {
 		if p := portsToStr(e.Ports); p != "" {
@@ -117,7 +149,7 @@ func portsToStr(pp []netv1.NetworkPolicyPort) string {
 	return strings.Join(ports, ",")
 }
 
-func peersToStr(pp []netv1.NetworkPolicyPeer) (string, string) {
+func peersToStr(pp []netv1.NetworkPolicyPeer) (selector, ip string) {
 	sels := make([]string, 0, len(pp))
 	ips := make([]string, 0, len(pp))
 	for _, p := range pp {

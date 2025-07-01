@@ -1,0 +1,50 @@
+# Duplicate Pods, Deployments and StatefulSet for easy debugging
+# and troubleshooting.
+#
+# See https://github.com/Telemaco019/duplik8s
+plugins:
+  duplicate-pod:
+    shortCut: Ctrl-B
+    description: Duplicate Pod
+    scopes:
+      - po
+    command: kubectl
+    background: true
+    args:
+      - duplicate
+      - pod
+      - $NAME
+      - -n
+      - $NAMESPACE
+      - --context
+      - $CONTEXT
+  duplicate-deployment:
+    shortCut: Ctrl-T
+    description: Duplicate Deployment
+    scopes:
+      - deploy
+    command: kubectl
+    background: true
+    args:
+      - duplicate
+      - deploy
+      - $NAME
+      - -n
+      - $NAMESPACE
+      - --context
+      - $CONTEXT
+  duplicate-statefulset:
+    shortCut: Ctrl-T
+    description: Duplicate StatefulSet
+    scopes:
+      - statefulset
+    command: kubectl
+    background: true
+    args:
+      - duplicate
+      - statefulset
+      - $NAME
+      - -n
+      - $NAMESPACE
+      - --context
+      - $CONTEXT

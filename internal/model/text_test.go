@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model_test
 
 import (
@@ -81,7 +84,7 @@ func (l *textLis) TextChanged(ll []string) {
 	l.changed++
 }
 
-func (l *textLis) TextFiltered(ll []string, mm fuzzy.Matches) {
+func (l *textLis) TextFiltered(_ []string, mm fuzzy.Matches) {
 	l.matches = len(mm)
 	l.filtered++
 	if len(mm) > 0 && len(mm[0].MatchedIndexes) > 0 {

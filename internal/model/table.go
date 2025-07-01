@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -10,11 +14,12 @@ import (
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -22,8 +27,11 @@ const initRefreshRate = 300 * time.Millisecond
 
 // TableListener represents a table model listener.
 type TableListener interface {
+	// TableNoData notifies listener no data was found.
+	TableNoData(*model1.TableData)
+
 	// TableDataChanged notifies the model data changed.
-	TableDataChanged(*render.TableData)
+	TableDataChanged(*model1.TableData)
 
 	// TableLoadFailed notifies the load failed.
 	TableLoadFailed(error)
@@ -31,31 +39,52 @@ type TableListener interface {
 
 // Table represents a table model.
 type Table struct {
-	gvr         client.GVR
-	namespace   string
-	data        *render.TableData
-	listeners   []TableListener
-	inUpdate    int32
-	refreshRate time.Duration
-	instance    string
-	mx          sync.RWMutex
-	labelFilter string
+	gvr           *client.GVR
+	data          *model1.TableData
+	listeners     []TableListener
+	inUpdate      int32
+	refreshRate   time.Duration
+	instance      string
+	labelSelector labels.Selector
+	mx            sync.RWMutex
+	vs            *config.ViewSetting
 }
 
 // NewTable returns a new table model.
-func NewTable(gvr client.GVR) *Table {
+func NewTable(gvr *client.GVR) *Table {
 	return &Table{
 		gvr:         gvr,
-		data:        render.NewTableData(),
+		data:        model1.NewTableData(gvr),
 		refreshRate: 2 * time.Second,
 	}
 }
 
-// SetLabelFilter sets the labels filter.
-func (t *Table) SetLabelFilter(f string) {
+func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
 	t.mx.Lock()
-	t.labelFilter = f
+	t.vs = vs
 	t.mx.Unlock()
+
+	if ctx != context.Background() {
+		if err := t.reconcile(ctx); err != nil {
+			slog.Error("Refresh failed", slogs.GVR, t.gvr)
+		}
+	}
+}
+
+// SetLabelSelector sets the labels selector.
+func (t *Table) SetLabelSelector(sel labels.Selector) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.labelSelector = sel
+}
+
+// GetLabelSelector sets the labels selector.
+func (t *Table) GetLabelSelector() labels.Selector {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	return t.labelSelector
 }
 
 // SetInstance sets a single entry table.
@@ -65,6 +94,9 @@ func (t *Table) SetInstance(path string) {
 
 // AddListener adds a new model listener.
 func (t *Table) AddListener(l TableListener) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
 	t.listeners = append(t.listeners, l)
 }
 
@@ -80,8 +112,8 @@ func (t *Table) RemoveListener(l TableListener) {
 
 	if victim >= 0 {
 		t.mx.Lock()
-		defer t.mx.Unlock()
 		t.listeners = append(t.listeners[:victim], t.listeners[victim+1:]...)
+		t.mx.Unlock()
 	}
 }
 
@@ -127,18 +159,17 @@ func (t *Table) Delete(ctx context.Context, path string, propagation *metav1.Del
 
 // GetNamespace returns the model namespace.
 func (t *Table) GetNamespace() string {
-	return t.namespace
+	return t.data.GetNamespace()
 }
 
 // SetNamespace sets up model namespace.
 func (t *Table) SetNamespace(ns string) {
-	t.namespace = ns
-	t.data.Clear()
+	t.data.Reset(ns)
 }
 
 // InNamespace checks if current namespace matches desired namespace.
 func (t *Table) InNamespace(ns string) bool {
-	return len(t.data.RowEvents) > 0 && t.namespace == ns
+	return t.data.GetNamespace() == ns && !t.data.Empty()
 }
 
 // SetRefreshRate sets model refresh duration.
@@ -148,7 +179,7 @@ func (t *Table) SetRefreshRate(d time.Duration) {
 
 // ClusterWide checks if resource is scope for all namespaces.
 func (t *Table) ClusterWide() bool {
-	return client.IsClusterWide(t.namespace)
+	return client.IsClusterWide(t.data.GetNamespace())
 }
 
 // Empty returns true if no model data.
@@ -156,13 +187,13 @@ func (t *Table) Empty() bool {
 	return t.data.Empty()
 }
 
-// Count returns the row count.
-func (t *Table) Count() int {
-	return t.data.Count()
+// RowCount returns the row count.
+func (t *Table) RowCount() int {
+	return t.data.RowCount()
 }
 
 // Peek returns model data.
-func (t *Table) Peek() *render.TableData {
+func (t *Table) Peek() *model1.TableData {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
@@ -170,8 +201,6 @@ func (t *Table) Peek() *render.TableData {
 }
 
 func (t *Table) updater(ctx context.Context) {
-	defer log.Debug().Msgf("TABLE-UPDATER canceled -- %q", t.gvr)
-
 	bf := backoff.NewExponentialBackOff()
 	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxReaderRetryInterval
 	rate := initRefreshRate
@@ -182,10 +211,14 @@ func (t *Table) updater(ctx context.Context) {
 		case <-time.After(rate):
 			rate = t.refreshRate
 			err := backoff.Retry(func() error {
-				return t.refresh(ctx)
+				if err := t.refresh(ctx); err != nil {
+					slog.Error("Refresh failed", slogs.GVR, t.gvr)
+					return err
+				}
+				return nil
 			}, backoff.WithContext(bf, ctx))
 			if err != nil {
-				log.Error().Err(err).Msgf("Retry failed")
+				slog.Warn("Reconciler exited", slogs.Error, err)
 				t.fireTableLoadFailed(err)
 				return
 			}
@@ -195,7 +228,7 @@ func (t *Table) updater(ctx context.Context) {
 
 func (t *Table) refresh(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return nil
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)
@@ -203,7 +236,12 @@ func (t *Table) refresh(ctx context.Context) error {
 	if err := t.reconcile(ctx); err != nil {
 		return err
 	}
-	t.fireTableChanged(t.Peek())
+	data := t.Peek()
+	if data.RowCount() == 0 {
+		t.fireNoData(data)
+	} else {
+		t.fireTableChanged(data)
+	}
 
 	return nil
 }
@@ -215,25 +253,28 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	}
 	a.Init(factory, t.gvr)
 
-	ns := client.CleanseNamespace(t.namespace)
-	if client.IsClusterScoped(t.namespace) {
-		ns = client.AllNamespaces
+	t.mx.RLock()
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelSelector)
+	t.mx.RUnlock()
+
+	ns := client.CleanseNamespace(t.data.GetNamespace())
+	if client.IsClusterScoped(ns) {
+		ns = client.BlankNamespace
 	}
 
 	return a.List(ctx, ns)
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	t.mx.Lock()
-	defer t.mx.Unlock()
-	meta := resourceMeta(t.gvr)
-	if t.labelFilter != "" {
-		ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
-	}
 	var (
 		oo  []runtime.Object
 		err error
 	)
+	meta := resourceMeta(t.gvr)
+	if t.vs != nil {
+		meta.DAO.SetIncludeObject(true)
+	}
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelSelector)
 	if t.instance == "" {
 		oo, err = t.list(ctx, meta.DAO)
 	} else {
@@ -243,92 +284,41 @@ func (t *Table) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	r := meta.Renderer
+	r.SetViewSetting(t.vs)
 
-	var rows render.Rows
-	if len(oo) > 0 {
-		if meta.Renderer.IsGeneric() {
-			table, ok := oo[0].(*metav1beta1.Table)
-			if !ok {
-				return fmt.Errorf("expecting a meta table but got %T", oo[0])
-			}
-			rows = make(render.Rows, len(table.Rows))
-			if err := genericHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
-				return err
-			}
-		} else {
-			rows = make(render.Rows, len(oo))
-			if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
-				return err
-			}
-		}
-	}
-
-	// if labelSelector in place might as well clear the model data.
-	sel, ok := ctx.Value(internal.KeyLabels).(string)
-	if ok && sel != "" {
-		t.data.Clear()
-	}
-	t.data.Update(rows)
-	t.data.SetHeader(t.namespace, meta.Renderer.Header(t.namespace))
-
-	if len(t.data.Header) == 0 {
-		return fmt.Errorf("fail to list resource %s", t.gvr)
-	}
-
-	return nil
+	return t.data.Render(ctx, meta.Renderer, oo)
 }
 
-func (t *Table) fireTableChanged(data *render.TableData) {
+func (t *Table) fireTableChanged(data *model1.TableData) {
+	var ll []TableListener
 	t.mx.RLock()
-	defer t.mx.RUnlock()
+	ll = t.listeners
+	t.mx.RUnlock()
 
-	for _, l := range t.listeners {
+	for _, l := range ll {
 		l.TableDataChanged(data)
 	}
 }
 
+func (t *Table) fireNoData(data *model1.TableData) {
+	var ll []TableListener
+	t.mx.RLock()
+	ll = t.listeners
+	t.mx.RUnlock()
+
+	for _, l := range ll {
+		l.TableNoData(data)
+	}
+}
+
 func (t *Table) fireTableLoadFailed(err error) {
-	for _, l := range t.listeners {
+	var ll []TableListener
+	t.mx.RLock()
+	ll = t.listeners
+	t.mx.RUnlock()
+
+	for _, l := range ll {
 		l.TableLoadFailed(err)
 	}
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error {
-	for i, o := range oo {
-		if err := re.Render(o, ns, &rr[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Generic represents a generic resource.
-type Generic interface {
-	// SetTable sets up the resource tabular definition.
-	SetTable(ns string, table *metav1beta1.Table)
-
-	// Header returns a resource header.
-	Header(ns string) render.Header
-
-	// Render renders the resource.
-	Render(o interface{}, ns string, row *render.Row) error
-}
-
-func genericHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Renderer) error {
-	gr, ok := re.(Generic)
-	if !ok {
-		return fmt.Errorf("expecting generic renderer but got %T", re)
-	}
-	gr.SetTable(ns, table)
-	for i, row := range table.Rows {
-		if err := gr.Render(row, ns, &rr[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

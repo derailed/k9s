@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package client
 
 import (
@@ -52,22 +55,22 @@ func NewMetricsServer(c Connection) *MetricsServer {
 }
 
 // ClusterLoad retrieves all cluster nodes metrics.
-func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsList, mx *ClusterMetrics) error {
+func (*MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsList, mx *ClusterMetrics) error {
 	if nos == nil || nmx == nil {
 		return fmt.Errorf("invalid node or node metrics lists")
 	}
 	nodeMetrics := make(NodesMetrics, len(nos.Items))
-	for _, no := range nos.Items {
-		nodeMetrics[no.Name] = NodeMetrics{
-			AllocatableCPU: no.Status.Allocatable.Cpu().MilliValue(),
-			AllocatableMEM: no.Status.Allocatable.Memory().Value(),
+	for i := range nos.Items {
+		nodeMetrics[nos.Items[i].Name] = NodeMetrics{
+			AllocatableCPU: nos.Items[i].Status.Allocatable.Cpu().MilliValue(),
+			AllocatableMEM: nos.Items[i].Status.Allocatable.Memory().Value(),
 		}
 	}
-	for _, mx := range nmx.Items {
-		if node, ok := nodeMetrics[mx.Name]; ok {
-			node.CurrentCPU = mx.Usage.Cpu().MilliValue()
-			node.CurrentMEM = mx.Usage.Memory().Value()
-			nodeMetrics[mx.Name] = node
+	for i := range nmx.Items {
+		if node, ok := nodeMetrics[nmx.Items[i].Name]; ok {
+			node.CurrentCPU = nmx.Items[i].Usage.Cpu().MilliValue()
+			node.CurrentMEM = nmx.Items[i].Usage.Memory().Value()
+			nodeMetrics[nmx.Items[i].Name] = node
 		}
 	}
 
@@ -83,45 +86,47 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 	return nil
 }
 
-func (m *MetricsServer) checkAccess(ns, gvr, msg string) error {
+func (m *MetricsServer) checkAccess(ns string, gvr *GVR, msg string) error {
 	if !m.HasMetrics() {
-		return errors.New("No metrics-server detected on cluster")
+		return errors.New("no metrics-server detected on cluster")
 	}
 
-	auth, err := m.CanI(ns, gvr, ListAccess)
+	auth, err := m.CanI(ns, gvr, "", ListAccess)
 	if err != nil {
 		return err
 	}
 	if !auth {
-		return fmt.Errorf(msg)
+		return errors.New(msg)
 	}
 	return nil
 }
 
 // NodesMetrics retrieves metrics for a given set of nodes.
-func (m *MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
+func (*MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
 	if nodes == nil || metrics == nil {
 		return
 	}
 
-	for _, no := range nodes.Items {
-		mmx[no.Name] = NodeMetrics{
-			AllocatableCPU:       no.Status.Allocatable.Cpu().MilliValue(),
-			AllocatableMEM:       ToMB(no.Status.Allocatable.Memory().Value()),
-			AllocatableEphemeral: ToMB(no.Status.Allocatable.StorageEphemeral().Value()),
-			TotalCPU:             no.Status.Capacity.Cpu().MilliValue(),
-			TotalMEM:             ToMB(no.Status.Capacity.Memory().Value()),
-			TotalEphemeral:       ToMB(no.Status.Capacity.StorageEphemeral().Value()),
+	for i := range nodes.Items {
+		mmx[nodes.Items[i].Name] = NodeMetrics{
+			AllocatableCPU:       nodes.Items[i].Status.Allocatable.Cpu().MilliValue(),
+			AllocatableMEM:       ToMB(nodes.Items[i].Status.Allocatable.Memory().Value()),
+			AllocatableEphemeral: ToMB(nodes.Items[i].Status.Allocatable.StorageEphemeral().Value()),
+			TotalCPU:             nodes.Items[i].Status.Capacity.Cpu().MilliValue(),
+			TotalMEM:             ToMB(nodes.Items[i].Status.Capacity.Memory().Value()),
+			TotalEphemeral:       ToMB(nodes.Items[i].Status.Capacity.StorageEphemeral().Value()),
 		}
 	}
-	for _, c := range metrics.Items {
-		if mx, ok := mmx[c.Name]; ok {
-			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
-			mx.CurrentMEM = ToMB(c.Usage.Memory().Value())
-			mx.AvailableCPU = mx.AllocatableCPU - mx.CurrentCPU
-			mx.AvailableMEM = mx.AllocatableMEM - mx.CurrentMEM
-			mmx[c.Name] = mx
+	for i := range metrics.Items {
+		mx, ok := mmx[metrics.Items[i].Name]
+		if !ok {
+			continue
 		}
+		mx.CurrentCPU = metrics.Items[i].Usage.Cpu().MilliValue()
+		mx.CurrentMEM = ToMB(metrics.Items[i].Usage.Memory().Value())
+		mx.AvailableCPU = mx.AllocatableCPU - mx.CurrentCPU
+		mx.AvailableMEM = mx.AllocatableMEM - mx.CurrentMEM
+		mmx[metrics.Items[i].Name] = mx
 	}
 }
 
@@ -146,7 +151,7 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	const msg = "user is not authorized to list node metrics"
 
 	mx := new(mv1beta1.NodeMetricsList)
-	if err := m.checkAccess(ClusterScope, "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+	if err := m.checkAccess(ClusterScope, NmxGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -177,7 +182,7 @@ func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1bet
 	const msg = "user is not authorized to list node metrics"
 
 	mx := new(mv1beta1.NodeMetrics)
-	if err := m.checkAccess(ClusterScope, "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+	if err := m.checkAccess(ClusterScope, NmxGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -188,7 +193,7 @@ func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1bet
 
 	mx, ok := mmx[n]
 	if !ok {
-		return nil, fmt.Errorf("Unable to retrieve node metrics for %q", n)
+		return nil, fmt.Errorf("unable to retrieve node metrics for %q", n)
 	}
 	return mx, nil
 }
@@ -215,9 +220,9 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	const msg = "user is not authorized to list pods metrics"
 
 	if ns == NamespaceAll {
-		ns = AllNamespaces
+		ns = BlankNamespace
 	}
-	if err := m.checkAccess(ns, "metrics.k8s.io/v1beta1/pods", msg); err != nil {
+	if err := m.checkAccess(ns, PmxGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -225,7 +230,7 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	if entry, ok := m.cache.Get(key); ok {
 		mxList, ok := entry.(*mv1beta1.PodMetricsList)
 		if !ok {
-			return mx, fmt.Errorf("expected podmetricslist but got %T", entry)
+			return mx, fmt.Errorf("expected PodMetricsList but got %T", entry)
 		}
 		return mxList, nil
 	}
@@ -266,9 +271,9 @@ func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1be
 
 	ns, _ := Namespaced(fqn)
 	if ns == NamespaceAll {
-		ns = AllNamespaces
+		ns = BlankNamespace
 	}
-	if err := m.checkAccess(ns, "metrics.k8s.io/v1beta1/pods", msg); err != nil {
+	if err := m.checkAccess(ns, PmxGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -278,26 +283,26 @@ func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1be
 	}
 	pmx, ok := mmx[fqn]
 	if !ok {
-		return nil, fmt.Errorf("Unable to locate pod metrics for pod %q", fqn)
+		return nil, fmt.Errorf("unable to locate pod metrics for pod %q", fqn)
 	}
 
 	return pmx, nil
 }
 
 // PodsMetrics retrieves metrics for all pods in a given namespace.
-func (m *MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetrics) {
+func (*MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetrics) {
 	if pods == nil {
 		return
 	}
 
 	// Compute all pod's containers metrics.
-	for _, p := range pods.Items {
+	for i := range pods.Items {
 		var mx PodMetrics
-		for _, c := range p.Containers {
+		for _, c := range pods.Items[i].Containers {
 			mx.CurrentCPU += c.Usage.Cpu().MilliValue()
 			mx.CurrentMEM += ToMB(c.Usage.Memory().Value())
 		}
-		mmx[p.Namespace+"/"+p.Name] = mx
+		mmx[pods.Items[i].Namespace+"/"+pods.Items[i].Name] = mx
 	}
 }
 
@@ -313,17 +318,19 @@ func ToMB(v int64) int64 {
 }
 
 // ToPercentage computes percentage as string otherwise n/aa.
-func ToPercentage(v1, v2 int64) int {
-	if v2 == 0 {
+func ToPercentage(v, dv int64) int {
+	if dv == 0 {
 		return 0
 	}
-	return int(math.Floor((float64(v1) / float64(v2)) * 100))
+
+	return int(math.Floor((float64(v) / float64(dv)) * 100))
 }
 
 // ToPercentageStr computes percentage, but if v2 is 0, it will return NAValue instead of 0.
-func ToPercentageStr(v1, v2 int64) string {
-	if v2 == 0 {
+func ToPercentageStr(v, dv int64) string {
+	if dv == 0 {
 		return NA
 	}
-	return strconv.Itoa(ToPercentage(v1, v2))
+
+	return strconv.Itoa(ToPercentage(v, dv))
 }

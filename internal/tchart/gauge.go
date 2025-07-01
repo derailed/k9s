@@ -3,6 +3,7 @@ package tchart
 import (
 	"fmt"
 	"image"
+	"time"
 
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -17,9 +18,11 @@ const (
 
 	// DeltaLess represents a lower value.
 	DeltaLess
-
-	gaugeFmt = "0%dd"
 )
+
+type State struct {
+	OK, Fault int
+}
 
 type delta int
 
@@ -27,9 +30,9 @@ type delta int
 type Gauge struct {
 	*Component
 
-	data             Metric
-	resolution       int
-	deltaOk, deltaS2 delta
+	state               State
+	resolution          int
+	deltaOK, deltaFault delta
 }
 
 // NewGauge returns a new gauge.
@@ -44,23 +47,30 @@ func (g *Gauge) SetResolution(n int) {
 	g.resolution = n
 }
 
-// IsDial returns true if chart is a dial.
-func (g *Gauge) IsDial() bool {
+// IsDial returns true if chart is a dial
+func (*Gauge) IsDial() bool {
 	return true
 }
 
+func (*Gauge) SetColorIndex(int) {}
+func (*Gauge) SetMax(float64)    {}
+func (*Gauge) GetMax() float64   { return 0 }
+
+// Add adds a metric.
+func (*Gauge) AddMetric(time.Time, float64) {}
+
 // Add adds a new metric.
-func (g *Gauge) Add(m Metric) {
+func (g *Gauge) Add(ok, fault int) {
 	g.mx.Lock()
 	defer g.mx.Unlock()
 
-	g.deltaOk, g.deltaS2 = computeDelta(g.data.S1, m.S1), computeDelta(g.data.S2, m.S2)
-	g.data = m
+	g.deltaOK, g.deltaFault = computeDelta(g.state.OK, ok), computeDelta(g.state.Fault, fault)
+	g.state = State{OK: ok, Fault: fault}
 }
 
 type number struct {
 	ok    bool
-	val   int64
+	val   int
 	str   string
 	delta delta
 }
@@ -74,26 +84,24 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 
 	rect := g.asRect()
 	mid := image.Point{X: rect.Min.X + rect.Dx()/2, Y: rect.Min.Y + rect.Dy()/2 - 1}
-	style := tcell.StyleDefault.Background(g.bgColor)
-	style = style.Foreground(tcell.ColorYellow)
-	sc.SetContent(mid.X, mid.Y, '⠔', nil, style)
-
-	max := g.data.MaxDigits()
-	if max < g.resolution {
-		max = g.resolution
-	}
 	var (
-		fmat = "%" + fmt.Sprintf(gaugeFmt, max)
-		o    = image.Point{X: mid.X, Y: mid.Y - 1}
+		fmat = "%d"
 	)
+	d1, d2 := fmt.Sprintf(fmat, g.state.OK), fmt.Sprintf(fmat, g.state.Fault)
 
-	s1C, s2C := g.colorForSeries()
-	d1, d2 := fmt.Sprintf(fmat, g.data.S1), fmt.Sprintf(fmat, g.data.S2)
-	o.X -= len(d1) * 3
-	g.drawNum(sc, o, number{ok: true, val: g.data.S1, delta: g.deltaOk, str: d1}, style.Foreground(s1C).Dim(false))
+	style := tcell.StyleDefault.Background(g.bgColor)
 
-	o.X = mid.X + 1
-	g.drawNum(sc, o, number{ok: false, val: g.data.S2, delta: g.deltaS2, str: d2}, style.Foreground(s2C).Dim(false))
+	total := len(d1)*3 + len(d2)*3 + 1
+	colors := g.colorForSeries()
+	o := image.Point{X: mid.X, Y: mid.Y - 1}
+	o.X -= total / 2
+	g.drawNum(sc, o, number{ok: true, val: g.state.OK, delta: g.deltaOK, str: d1}, style.Foreground(colors[0]).Dim(false))
+
+	o.X, o.Y = o.X+len(d1)*3, mid.Y
+	sc.SetContent(o.X, o.Y, '⠔', nil, style)
+
+	o.X, o.Y = o.X+1, mid.Y-1
+	g.drawNum(sc, o, number{ok: false, val: g.state.Fault, delta: g.deltaFault, str: d2}, style.Foreground(colors[1]).Dim(false))
 
 	if rect.Dx() > 0 && rect.Dy() > 0 && g.legend != "" {
 		legend := g.legend
@@ -105,9 +113,9 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 }
 
 func (g *Gauge) drawNum(sc tcell.Screen, o image.Point, n number, style tcell.Style) {
-	c1, _ := g.colorForSeries()
+	colors := g.colorForSeries()
 	if n.ok {
-		style = style.Foreground(c1)
+		style = style.Foreground(colors[0])
 		printDelta(sc, n.delta, o, style)
 	}
 
@@ -115,7 +123,7 @@ func (g *Gauge) drawNum(sc tcell.Screen, o image.Point, n number, style tcell.St
 	if significant {
 		style = g.dimmed
 	}
-	for i := 0; i < len(n.str); i++ {
+	for i := range len(n.str) {
 		if n.str[i] == '0' && !significant {
 			g.drawDial(sc, dm.Print(int(n.str[i]-48)), o, g.dimmed)
 		} else {
@@ -130,15 +138,15 @@ func (g *Gauge) drawNum(sc tcell.Screen, o image.Point, n number, style tcell.St
 	}
 }
 
-func (g *Gauge) drawDial(sc tcell.Screen, m Matrix, o image.Point, style tcell.Style) {
-	for r := 0; r < len(m); r++ {
-		for c := 0; c < len(m[r]); c++ {
+func (*Gauge) drawDial(sc tcell.Screen, m Matrix, o image.Point, style tcell.Style) {
+	for r := range m {
+		var c int
+		for c < len(m[r]) {
 			dot := m[r][c]
-			if dot == dots[0] {
-				sc.SetContent(o.X+c, o.Y+r, dots[1], nil, g.dimmed)
-			} else {
+			if dot != dots[0] {
 				sc.SetContent(o.X+c, o.Y+r, dot, nil, style)
 			}
+			c++
 		}
 	}
 }
@@ -146,7 +154,7 @@ func (g *Gauge) drawDial(sc tcell.Screen, m Matrix, o image.Point, style tcell.S
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func computeDelta(d1, d2 int64) delta {
+func computeDelta(d1, d2 int) delta {
 	if d2 == 0 {
 		return DeltaSame
 	}
@@ -164,7 +172,6 @@ func computeDelta(d1, d2 int64) delta {
 
 func printDelta(sc tcell.Screen, d delta, o image.Point, s tcell.Style) {
 	s = s.Dim(false)
-	// nolint:exhaustive
 	switch d {
 	case DeltaLess:
 		sc.SetContent(o.X-1, o.Y+1, '↓', nil, s)
