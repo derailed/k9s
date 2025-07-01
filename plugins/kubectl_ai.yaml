@@ -1,0 +1,13 @@
+plugin:
+  kubectl-ai:
+    shortCut: Ctrl-V
+    description: Kubectl AI
+    scopes:
+      - all
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        export OPENAI_API_KEY=xxxx
+        kubectl-ai --kubeconfig="$KUBECONFIG" --llm-provider=openai --model=gpt-4.1
