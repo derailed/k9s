@@ -5,6 +5,9 @@ package ui
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
@@ -12,14 +15,7 @@ import (
 )
 
 // LogoSmall K9s small log.
-var LogoSmall = []string{
-	` ____  __ ________       `,
-	`|    |/  /   __   \______`,
-	`|       /\____    /  ___/`,
-	`|    \   \  /    /\___  \`,
-	`|____|\__ \/____//____  /`,
-	`         \/           \/ `,
-}
+var LogoSmall []string
 
 // LogoBig K9s big logo for splash page.
 var LogoBig = []string{
