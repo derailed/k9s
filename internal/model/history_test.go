@@ -14,10 +14,23 @@ import (
 func TestHistory(t *testing.T) {
 	h := model.NewHistory(3)
 	for i := 1; i < 5; i++ {
-		h.Push(fmt.Sprintf("cmd%d", i))
+		h.Push(fmt.Sprintf("cmd%d", i), fmt.Sprintf("filter%d", i))
 	}
 
-	assert.Equal(t, []string{"cmd1", "cmd2", "cmd3"}, h.List())
+	assert.Equal(t, []model.FilteredCommand{
+		{
+			Command: "cmd1",
+			Filter:  "filter1",
+		},
+		{
+			Command: "cmd2",
+			Filter:  "filter2",
+		},
+		{
+			Command: "cmd3",
+			Filter:  "filter3",
+		},
+	}, h.List())
 	h.Clear()
 	assert.True(t, h.Empty())
 }
@@ -25,10 +38,25 @@ func TestHistory(t *testing.T) {
 func TestHistoryDups(t *testing.T) {
 	h := model.NewHistory(3)
 	for i := 1; i < 4; i++ {
-		h.Push(fmt.Sprintf("cmd%d", i))
+		h.Push(fmt.Sprintf("cmd%d", i), fmt.Sprintf("filter%d", i))
 	}
-	h.Push("cmd1")
-	h.Push("")
+	h.Push("cmd1", "filter1")
+	h.Push("cmd1", "")
+	h.Push("cmd1", "")
+	h.Push("", "")
 
-	assert.Equal(t, []string{"cmd1", "cmd2", "cmd3"}, h.List())
+	assert.Equal(t, []model.FilteredCommand{
+		{
+			Command: "cmd1",
+			Filter:  "filter1",
+		},
+		{
+			Command: "cmd2",
+			Filter:  "filter2",
+		},
+		{
+			Command: "cmd3",
+			Filter:  "filter3",
+		},
+	}, h.List())
 }

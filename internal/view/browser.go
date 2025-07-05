@@ -126,15 +126,19 @@ func (b *Browser) InCmdMode() bool {
 
 func (b *Browser) suggestFilter() model.SuggestionFunc {
 	return func(s string) (entries sort.StringSlice) {
+		fh := []string{}
+		for _, fc := range b.App().cmdHistory.List() {
+			fh = append(fh, fc.Filter)
+		}
 		if s == "" {
-			if b.App().filterHistory.Empty() {
+			if len(fh) == 0 {
 				return
 			}
-			return b.App().filterHistory.List()
+			return fh
 		}
 
 		s = strings.ToLower(s)
-		for _, h := range b.App().filterHistory.List() {
+		for _, h := range fh {
 			if s == h {
 				continue
 			}
@@ -237,7 +241,7 @@ func (b *Browser) BufferActive(state bool, _ model.BufferKind) {
 		defer b.setUpdating(false)
 		b.UpdateUI(cdata, mdata)
 		if b.GetRowCount() > 1 {
-			b.App().filterHistory.Push(b.CmdBuff().GetText())
+			b.App().cmdHistory.Push(b.command.GetLine(), b.CmdBuff().GetText())
 		}
 	})
 }
@@ -382,6 +386,8 @@ func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if hasFilter {
 			b.GetModel().SetLabelSelector(labels.Everything())
 			b.Refresh()
+			b.App().cmdHistory.Push(b.command.Cmd(), "")
+			b.App().cmdHistory.Forward()
 		}
 		return b.App().PrevCmd(evt)
 	}
