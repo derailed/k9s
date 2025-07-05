@@ -189,14 +189,14 @@ func (x *Xray) refreshActions() {
 		x.Actions().Delete(tcell.KeyEnter)
 		aa.Bulk(ui.KeyMap{
 			ui.KeyS: ui.NewKeyAction("Shell", x.shellCmd, true),
-			ui.KeyL: ui.NewKeyAction("Logs", x.logsCmd(false), true),
+			ui.KeyShiftL: ui.NewKeyAction("Logs", x.logsCmd(false), true),
 			ui.KeyP: ui.NewKeyAction("Logs Previous", x.logsCmd(true), true),
 		})
 	case client.PodGVR:
 		aa.Bulk(ui.KeyMap{
 			ui.KeyS: ui.NewKeyAction("Shell", x.shellCmd, true),
 			ui.KeyA: ui.NewKeyAction("Attach", x.attachCmd, true),
-			ui.KeyL: ui.NewKeyAction("Logs", x.logsCmd(false), true),
+			ui.KeyShiftL: ui.NewKeyAction("Logs", x.logsCmd(false), true),
 			ui.KeyP: ui.NewKeyAction("Logs Previous", x.logsCmd(true), true),
 		})
 	}
