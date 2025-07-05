@@ -7,7 +7,9 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
+	cmd2 "github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -41,7 +43,14 @@ func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 
 func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	n.useNamespace(path)
-	app.gotoResource(client.PodGVR.String(), "", false, true)
+	cmd, ok := app.cmdHistory.Last(2)
+	if !ok || cmd == "" {
+		cmd = client.PodGVR.String()
+	} else {
+		i := cmd2.NewInterpreter(cmd)
+		cmd = i.TrimNS()
+	}
+	app.gotoResource(cmd, "", false, true)
 }
 
 func (n *Namespace) useNsCmd(*tcell.EventKey) *tcell.EventKey {
@@ -85,17 +94,16 @@ func (n *Namespace) decorate(td *model1.TableData) {
 		)
 	}
 
-	favs := make(map[string]struct{})
-	for _, ns := range n.App().Config.FavNamespaces() {
-		favs[ns] = struct{}{}
-	}
-	ans := n.App().Config.ActiveNamespace()
+	var (
+		favs     = sets.New(n.App().Config.FavNamespaces()...)
+		activeNS = n.App().Config.ActiveNamespace()
+	)
 	td.RowsRange(func(i int, re model1.RowEvent) bool {
 		_, n := client.Namespaced(re.Row.ID)
-		if _, ok := favs[n]; ok {
+		if favs.Has(n) {
 			re.Row.Fields[0] += favNSIndicator
 		}
-		if ans == re.Row.ID {
+		if n == activeNS {
 			re.Row.Fields[0] += defaultNSIndicator
 		}
 		re.Kind = model1.EventUnchanged
