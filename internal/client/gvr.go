@@ -213,7 +213,7 @@ func (g *GVR) G() string {
 
 // IsDecodable checks if the k8s resource has a decodable view
 func (g *GVR) IsDecodable() bool {
-	return g.GVK().Kind == "secrets"
+	return g == SecGVR
 }
 
 var _ = yaml.Marshaler((*GVR)(nil))
