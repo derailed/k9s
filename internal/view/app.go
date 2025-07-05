@@ -671,15 +671,18 @@ func (a *App) dirCmd(path string, pushCmd bool) error {
 }
 
 func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
+	noExit := a.Config.K9s.NoExitOnCtrlC
 	if a.InCmdMode() {
+		if isBailoutEvt(evt) && noExit {
+			return nil
+		}
 		return evt
 	}
 
-	if !a.Config.K9s.NoExitOnCtrlC {
+	if !noExit {
 		a.BailOut(0)
 	}
 
-	// overwrite the default ctrl-c behavior of tview
 	return nil
 }
 
