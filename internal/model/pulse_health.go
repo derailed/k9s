@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const pulseRate = 15 * time.Second
+const pulseRate = 10 * time.Second
 
 type HealthPoint struct {
 	GVR           *client.GVR

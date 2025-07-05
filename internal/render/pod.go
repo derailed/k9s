@@ -206,7 +206,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 }
 
 // Healthy checks component health.
-func (p Pod) Healthy(_ context.Context, o any) error {
+func (p *Pod) Healthy(_ context.Context, o any) error {
 	pwm, ok := o.(*PodWithMetrics)
 	if !ok {
 		slog.Error("Expected *PodWithMetrics", slogs.Type, fmt.Sprintf("%T", o))
@@ -224,7 +224,8 @@ func (p Pod) Healthy(_ context.Context, o any) error {
 	}
 	dt := pwm.Raw.GetDeletionTimestamp()
 	phase := p.Phase(dt, spec, &st)
-	cr, ct, _, _ := p.ContainerStats(st.ContainerStatuses)
+	cr, _, _, _ := p.ContainerStats(st.ContainerStatuses)
+	ct := len(st.ContainerStatuses)
 
 	icr, ict, _ := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cr += icr
