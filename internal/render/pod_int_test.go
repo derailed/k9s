@@ -293,7 +293,7 @@ func Test_restartableInitCO(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, restartableInitCO(u.p))
+			assert.Equal(t, u.e, IsSideCarContainer(u.p))
 		})
 	}
 }
@@ -427,7 +427,7 @@ func Test_lastRestart(t *testing.T) {
 	var p Pod
 	for name, u := range uu {
 		t.Run(name, func(t *testing.T) {
-			_, _, _, lr := p.Statuses(u.containerStatuses)
+			_, _, _, lr := p.ContainerStats(u.containerStatuses)
 			assert.Equal(t, u.expected, lr)
 		})
 	}

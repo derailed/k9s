@@ -106,9 +106,8 @@ func ToYAML(o runtime.Object, showManaged bool) (string, error) {
 			delete(meta, "managedFields")
 		}
 	}
-	err := p.PrintObj(o, &buff)
-	if err != nil {
-		slog.Error("Marshal failed", slogs.Error, err)
+	if err := p.PrintObj(o, &buff); err != nil {
+		slog.Error("PrintObj failed", slogs.Error, err)
 		return "", err
 	}
 

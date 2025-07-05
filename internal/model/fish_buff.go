@@ -3,9 +3,7 @@
 
 package model
 
-import (
-	"sort"
-)
+import "sort"
 
 // SuggestionListener listens for suggestions.
 type SuggestionListener interface {

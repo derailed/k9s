@@ -31,6 +31,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+func isBailoutEvt(evt *tcell.EventKey) bool {
+	return evt.Name() == "Ctrl+C"
+}
+
 func aliases(m *v1.APIResource, aa sets.Set[string]) sets.Set[string] {
 	ss := sets.New(aa.UnsortedList()...)
 	ss.Insert(m.Name)

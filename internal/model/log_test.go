@@ -6,6 +6,7 @@ package model_test
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"testing"
 	"time"
@@ -19,6 +20,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
 )
+
+func init() {
+	slog.SetDefault(slog.New(slog.DiscardHandler))
+}
 
 func TestLogFullBuffer(t *testing.T) {
 	size := 4
@@ -272,8 +277,7 @@ func (t *testView) LogCleared() {
 	t.data = nil
 }
 
-func (t *testView) LogFailed(err error) {
-	fmt.Println("LogErr", err)
+func (t *testView) LogFailed(error) {
 	t.errCalled++
 }
 

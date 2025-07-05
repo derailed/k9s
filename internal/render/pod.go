@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -157,12 +158,11 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	}
 
 	dt := pwm.Raw.GetDeletionTimestamp()
-	_, _, irc, _ := p.Statuses(st.InitContainerStatuses)
-	cr, _, rc, lr := p.Statuses(st.ContainerStatuses)
+	cReady, _, cRestarts, lastRestart := p.ContainerStats(st.ContainerStatuses)
 
-	rcr, rcc := p.initContainerCounts(spec.InitContainers, st.InitContainerStatuses)
-	cr += rcr
-	cc := len(spec.Containers) + rcc
+	iReady, iTerminated, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
+	cReady += iReady
+	allCounts := len(spec.Containers) + iTerminated
 
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
@@ -179,10 +179,10 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		n,
 		computeVulScore(ns, pwm.Raw.GetLabels(), spec),
 		"●",
-		strconv.Itoa(cr) + "/" + strconv.Itoa(cc),
+		strconv.Itoa(cReady) + "/" + strconv.Itoa(allCounts),
 		phase,
-		strconv.Itoa(rc + irc),
-		ToAge(lr),
+		strconv.Itoa(cRestarts + iRestarts),
+		ToAge(lastRestart),
 		toMc(c.cpu),
 		toMi(c.mem),
 		toMc(r.cpu) + ":" + toMc(r.lcpu),
@@ -198,7 +198,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		asReadinessGate(spec, &st),
 		p.mapQOS(st.QOSClass),
 		mapToStr(pwm.Raw.GetLabels()),
-		AsStatus(p.diagnose(phase, cr, cc)),
+		AsStatus(p.diagnose(phase, cReady, allCounts)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
@@ -224,13 +224,13 @@ func (p Pod) Healthy(_ context.Context, o any) error {
 	}
 	dt := pwm.Raw.GetDeletionTimestamp()
 	phase := p.Phase(dt, spec, &st)
-	cr, _, _, _ := p.Statuses(st.ContainerStatuses)
+	cr, ct, _, _ := p.ContainerStats(st.ContainerStatuses)
 
-	rcr, rcc := p.initContainerCounts(spec.InitContainers, st.InitContainerStatuses)
-	cr += rcr
-	cc := len(spec.Containers) + rcc
+	icr, ict, _ := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
+	cr += icr
+	ct += ict
 
-	return p.diagnose(phase, cr, cc)
+	return p.diagnose(phase, cr, ct)
 }
 
 func (*Pod) diagnose(phase string, cr, ct int) error {
@@ -371,16 +371,16 @@ func (*Pod) mapQOS(class v1.PodQOSClass) string {
 	}
 }
 
-// Statuses reports current pod container statuses.
-func (*Pod) Statuses(cc []v1.ContainerStatus) (cr, ct, rc int, latest metav1.Time) {
+// ContainerStats reports pod container stats.
+func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, restartCnt int, latest metav1.Time) {
 	for i := range cc {
 		if cc[i].State.Terminated != nil {
-			ct++
+			terminatedCnt++
 		}
 		if cc[i].Ready {
-			cr++
+			readyCnt++
 		}
-		rc += int(cc[i].RestartCount)
+		restartCnt += int(cc[i].RestartCount)
 
 		if t := cc[i].LastTerminationState.Terminated; t != nil {
 			ts := cc[i].LastTerminationState.Terminated.FinishedAt
@@ -393,15 +393,16 @@ func (*Pod) Statuses(cc []v1.ContainerStatus) (cr, ct, rc int, latest metav1.Tim
 	return
 }
 
-func (*Pod) initContainerCounts(cc []v1.Container, cos []v1.ContainerStatus) (ready, total int) {
+func (*Pod) initContainerStats(cc []v1.Container, cos []v1.ContainerStatus) (ready, total, restart int) {
 	for i := range cos {
-		if !restartableInitCO(cc[i].RestartPolicy) {
+		if !IsSideCarContainer(cc[i].RestartPolicy) {
 			continue
 		}
 		total++
 		if cos[i].Ready {
 			ready++
 		}
+		restart += int(cos[i].RestartCount)
 	}
 	return
 }
@@ -457,13 +458,15 @@ func (*Pod) containerPhase(st *v1.PodStatus, status string) (string, bool) {
 
 func (*Pod) initContainerPhase(spec *v1.PodSpec, pst *v1.PodStatus, status string) (string, bool) {
 	count := len(spec.InitContainers)
-	rs := make(map[string]bool, count)
+	sidecars := sets.New[string]()
 	for i := range spec.InitContainers {
 		co := spec.InitContainers[i]
-		rs[co.Name] = restartableInitCO(co.RestartPolicy)
+		if IsSideCarContainer(co.RestartPolicy) {
+			sidecars.Insert(co.Name)
+		}
 	}
 	for i := range pst.InitContainerStatuses {
-		if s := checkInitContainerStatus(&pst.InitContainerStatuses[i], i, count, rs[pst.InitContainerStatuses[i].Name]); s != "" {
+		if s := checkInitContainerStatus(&pst.InitContainerStatuses[i], i, count, sidecars.Has(pst.InitContainerStatuses[i].Name)); s != "" {
 			return s, true
 		}
 	}
@@ -585,7 +588,7 @@ func hasPodReadyCondition(conditions []v1.PodCondition) bool {
 	return false
 }
 
-func restartableInitCO(p *v1.ContainerRestartPolicy) bool {
+func IsSideCarContainer(p *v1.ContainerRestartPolicy) bool {
 	return p != nil && *p == v1.ContainerRestartPolicyAlways
 }
 

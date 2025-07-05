@@ -32,6 +32,7 @@ type YAML struct {
 	lines     []string
 	listeners []ResourceViewerListener
 	options   ViewerToggleOpts
+	decode    bool
 }
 
 // NewYAML return a new yaml resource model.
@@ -195,7 +196,7 @@ func (y *YAML) RemoveListener(l ResourceViewerListener) {
 }
 
 // ToYAML returns a resource yaml.
-func (*YAML) ToYAML(ctx context.Context, gvr *client.GVR, path string, showManaged bool) (string, error) {
+func (y *YAML) ToYAML(ctx context.Context, gvr *client.GVR, path string, showManaged bool) (string, error) {
 	meta, err := getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -205,6 +206,14 @@ func (*YAML) ToYAML(ctx context.Context, gvr *client.GVR, path string, showManag
 	if !ok {
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
 	}
+	if desc, ok := meta.DAO.(*dao.Secret); ok {
+		desc.SetDecodeData(y.decode)
+	}
 
 	return desc.ToYAML(path, showManaged)
+}
+
+// Toggle toggles the decode flag.
+func (y *YAML) Toggle() {
+	y.decode = !y.decode
 }

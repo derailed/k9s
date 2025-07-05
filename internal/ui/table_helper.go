@@ -60,7 +60,7 @@ func TrimCell(tv *SelectTable, row, col int) string {
 
 // TrimLabelSelector extracts label query.
 func TrimLabelSelector(s string) (labels.Selector, error) {
-	var selStr string
+	selStr := s
 	if strings.Index(s, "-l") == 0 {
 		selStr = strings.TrimSpace(s[2:])
 	}

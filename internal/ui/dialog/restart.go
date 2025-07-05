@@ -56,7 +56,7 @@ func ShowRestart(styles *config.Dialog, pages *ui.Pages, opts *RestartDialogOpts
 		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
 		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
 	}
-	f.SetFocus(0)
+	f.SetFocus(1)
 
 	message := opts.Message
 	modal.SetText(message)

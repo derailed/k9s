@@ -229,11 +229,11 @@ func (c *Command) defaultCmd(isRoot bool) error {
 	}
 
 	if err := c.run(p, "", true, true); err != nil {
-		p = p.Reset(defCmd)
 		slog.Error("Command exec failed. Using default command",
 			slogs.Command, p.GetLine(),
 			slogs.Error, err,
 		)
+		p = p.Reset(defCmd)
 		return c.run(p, "", true, true)
 	}
 
@@ -331,9 +331,8 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 			slog.Error("Dumping stack", slogs.Stack, string(debug.Stack()))
 
 			ci := cmd.NewInterpreter(podCmd)
-			cmds := c.app.cmdHistory.List()
-			currentCommand := cmds[c.app.cmdHistory.CurrentIndex()]
-			if currentCommand != podCmd {
+			currentCommand, ok := c.app.cmdHistory.Top()
+			if ok {
 				ci = ci.Reset(currentCommand)
 			}
 			err = c.run(ci, "", true, true)
