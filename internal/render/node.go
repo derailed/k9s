@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tview"
@@ -46,6 +47,7 @@ var defaultNOHeader = model1.Header{
 	model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "CPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "MEM/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "GPU"},
 	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
@@ -125,12 +127,28 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 		client.ToPercentageStr(c.mem, a.mem),
 		toMc(a.cpu),
 		toMi(a.mem),
+		n.gpuSpec(no.Status.Capacity, no.Status.Allocatable),
 		mapToStr(no.Labels),
 		AsStatus(n.diagnose(statuses)),
 		ToAge(no.GetCreationTimestamp()),
 	}
 
 	return nil
+}
+
+func (Node) gpuSpec(capacity, allocatable v1.ResourceList) string {
+	spec := NAValue
+	for k, v := range config.KnownGPUVendors {
+		key := v1.ResourceName(v)
+		if capacity, ok := capacity[key]; ok {
+			if allocs, ok := allocatable[key]; ok {
+				spec = fmt.Sprintf("%s/%s (%s)", capacity.String(), allocs.String(), k)
+				break
+			}
+		}
+	}
+
+	return spec
 }
 
 // Healthy checks component health.
