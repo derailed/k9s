@@ -17,5 +17,5 @@ func TestConfigMapNew(t *testing.T) {
 
 	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "ConfigMaps", s.Name())
-	assert.Len(t, s.Hints(), 7)
+	assert.Len(t, s.Hints(), 8)
 }
