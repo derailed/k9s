@@ -452,12 +452,15 @@ func Test_gatherPodMx(t *testing.T) {
 			c: metric{
 				cpu: 1,
 				mem: 22 * client.MegaByte,
+				gpu: 0,
 			},
 			r: metric{
 				cpu:  10,
 				mem:  1 * client.MegaByte,
+				gpu:  0,
 				lcpu: 20,
 				lmem: 2 * client.MegaByte,
+				lgpu: 0,
 			},
 			perc: "10",
 		},
@@ -472,8 +475,10 @@ func Test_gatherPodMx(t *testing.T) {
 			r: metric{
 				cpu:  11 + 93 + 11,
 				mem:  (22 + 1402 + 34) * client.MegaByte,
+				gpu:  0,
 				lcpu: 111 + 0 + 0,
 				lmem: (44 + 2804 + 69) * client.MegaByte,
+				lgpu: 0,
 			},
 			mx: []mv1beta1.ContainerMetrics{
 				makeCoMX("c1", "1m", "22Mi"),
@@ -483,6 +488,7 @@ func Test_gatherPodMx(t *testing.T) {
 			c: metric{
 				cpu: 1 + 51 + 1,
 				mem: (22 + 1275 + 27) * client.MegaByte,
+				gpu: 0,
 			},
 			perc: "46",
 		},
@@ -498,8 +504,10 @@ func Test_gatherPodMx(t *testing.T) {
 			r: metric{
 				cpu:  11 + 93,
 				mem:  (22 + 1402) * client.MegaByte,
+				gpu:  0,
 				lcpu: 111 + 0,
 				lmem: (44 + 2804) * client.MegaByte,
+				lgpu: 0,
 			},
 			mx: []mv1beta1.ContainerMetrics{
 				makeCoMX("c1", "1m", "22Mi"),
@@ -508,8 +516,45 @@ func Test_gatherPodMx(t *testing.T) {
 			c: metric{
 				cpu: 1 + 51,
 				mem: (22 + 1275) * client.MegaByte,
+				gpu: 0,
 			},
 			perc: "50",
+		},
+		"with-gpu": {
+			spec: &v1.PodSpec{
+				Containers: []v1.Container{
+					func() v1.Container {
+						c := makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi")
+						c.Resources.Requests["nvidia.com/gpu"] = *res.NewQuantity(1, res.DecimalSI)
+						c.Resources.Limits["nvidia.com/gpu"] = *res.NewQuantity(2, res.DecimalSI)
+						return c
+					}(),
+					func() v1.Container {
+						c := makeContainer("c2", false, "10m", "1Mi", "20m", "2Mi")
+						c.Resources.Requests["nvidia.com/gpu"] = *res.NewQuantity(2, res.DecimalSI)
+						c.Resources.Limits["nvidia.com/gpu"] = *res.NewQuantity(3, res.DecimalSI)
+						return c
+					}(),
+				},
+			},
+			mx: []mv1beta1.ContainerMetrics{
+				makeCoMX("c1", "1m", "22Mi"),
+				makeCoMX("c2", "1m", "22Mi"),
+			},
+			c: metric{
+				cpu: 2,
+				mem: 44 * client.MegaByte,
+				gpu: 3,
+			},
+			r: metric{
+				cpu:  20,
+				mem:  2 * client.MegaByte,
+				gpu:  3,
+				lcpu: 40,
+				lmem: 4 * client.MegaByte,
+				lgpu: 5,
+			},
+			perc: "10",
 		},
 	}
 
@@ -519,13 +564,17 @@ func Test_gatherPodMx(t *testing.T) {
 			c, r := gatherCoMX(u.spec, u.mx)
 			assert.Equal(t, u.c.cpu, c.cpu)
 			assert.Equal(t, u.c.mem, c.mem)
+			assert.Equal(t, u.c.gpu, c.gpu)
 			assert.Equal(t, u.c.lcpu, c.lcpu)
 			assert.Equal(t, u.c.lmem, c.lmem)
+			assert.Equal(t, u.c.lgpu, c.lgpu)
 
 			assert.Equal(t, u.r.cpu, r.cpu)
 			assert.Equal(t, u.r.mem, r.mem)
+			assert.Equal(t, u.r.gpu, r.gpu)
 			assert.Equal(t, u.r.lcpu, r.lcpu)
 			assert.Equal(t, u.r.lmem, r.lmem)
+			assert.Equal(t, u.r.lgpu, r.lgpu)
 
 			assert.Equal(t, u.perc, client.ToPercentageStr(c.cpu, r.cpu))
 		})
@@ -534,8 +583,9 @@ func Test_gatherPodMx(t *testing.T) {
 
 func Test_podLimits(t *testing.T) {
 	uu := map[string]struct {
-		cc []v1.Container
-		l  v1.ResourceList
+		cc     []v1.Container
+		l      v1.ResourceList
+		gpuLim int64
 	}{
 		"plain": {
 			cc: []v1.Container{
@@ -550,22 +600,36 @@ func Test_podLimits(t *testing.T) {
 			},
 			l: makeRes("60m", "6Mi"),
 		},
+		"with-gpu": {
+			cc: []v1.Container{
+				func() v1.Container {
+					c := makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi")
+					c.Resources.Requests["nvidia.com/gpu"] = *res.NewQuantity(1, res.DecimalSI)
+					c.Resources.Limits["nvidia.com/gpu"] = *res.NewQuantity(2, res.DecimalSI)
+					return c
+				}(),
+			},
+			l:      makeRes("20m", "2Mi"),
+			gpuLim: 2,
+		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m := cosLimits(u.cc)
+			c, m, g := cosLimits(u.cc)
 			assert.True(t, c.Equal(*u.l.Cpu()))
 			assert.True(t, m.Equal(*u.l.Memory()))
+			assert.Equal(t, u.gpuLim, g)
 		})
 	}
 }
 
 func Test_podRequests(t *testing.T) {
 	uu := map[string]struct {
-		cc []v1.Container
-		l  v1.ResourceList
+		cc     []v1.Container
+		l      v1.ResourceList
+		gpuReq int64
 	}{
 		"plain": {
 			cc: []v1.Container{
@@ -580,14 +644,27 @@ func Test_podRequests(t *testing.T) {
 			},
 			l: makeRes("20m", "2Mi"),
 		},
+		"with-gpu": {
+			cc: []v1.Container{
+				func() v1.Container {
+					c := makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi")
+					c.Resources.Requests["nvidia.com/gpu"] = *res.NewQuantity(1, res.DecimalSI)
+					c.Resources.Limits["nvidia.com/gpu"] = *res.NewQuantity(2, res.DecimalSI)
+					return c
+				}(),
+			},
+			l:      makeRes("10m", "1Mi"),
+			gpuReq: 1,
+		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m := cosRequests(u.cc)
+			c, m, g := cosRequests(u.cc)
 			assert.True(t, c.Equal(*u.l.Cpu()))
 			assert.True(t, m.Equal(*u.l.Memory()))
+			assert.Equal(t, u.gpuReq, g)
 		})
 	}
 }

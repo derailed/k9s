@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
@@ -67,6 +68,7 @@ var defaultPodHeader = model1.Header{
 	model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "GPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "IP"},
 	model1.HeaderColumn{Name: "NODE"},
 	model1.HeaderColumn{Name: "SERVICE-ACCOUNT", Attrs: model1.Attrs{Wide: true}},
@@ -191,6 +193,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		client.ToPercentageStr(c.cpu, r.lcpu),
 		client.ToPercentageStr(c.mem, r.mem),
 		client.ToPercentageStr(c.mem, r.lmem),
+		strconv.FormatInt(c.gpu, 10),
 		na(st.PodIP),
 		na(spec.NodeName),
 		na(spec.ServiceAccountName),
@@ -300,50 +303,72 @@ func gatherCoMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metric
 	cc = append(cc, filterSidecarCO(spec.InitContainers)...)
 	cc = append(cc, spec.Containers...)
 
-	rcpu, rmem := cosRequests(cc)
-	r.cpu, r.mem = rcpu.MilliValue(), rmem.Value()
+	rcpu, rmem, rgpu := cosRequests(cc)
+	r.cpu, r.mem, r.gpu = rcpu.MilliValue(), rmem.Value(), rgpu
 
-	lcpu, lmem := cosLimits(cc)
-	r.lcpu, r.lmem = lcpu.MilliValue(), lmem.Value()
+	lcpu, lmem, lgpu := cosLimits(cc)
+	r.lcpu, r.lmem, r.lgpu = lcpu.MilliValue(), lmem.Value(), lgpu
 
 	ccpu, cmem := currentRes(ccmx)
 	c.cpu, c.mem = ccpu.MilliValue(), cmem.Value()
 
+	if r.gpu > 0 {
+		c.gpu = r.gpu
+	}
+
 	return
 }
 
-func cosLimits(cc []v1.Container) (cpuQ, memQ resource.Quantity) {
+func cosRequests(cc []v1.Container) (cpuQ, memQ resource.Quantity, gpu int64) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
+
+	for i := range cc {
+		co := cc[i]
+		requests := containerRequests(&co)
+
+		if requests.Cpu() != nil {
+			cpu.Add(*requests.Cpu())
+		}
+
+		if requests.Memory() != nil {
+			mem.Add(*requests.Memory())
+		}
+
+		for _, gpuResource := range config.KnownGPUVendors {
+			if quantity, ok := requests[v1.ResourceName(gpuResource)]; ok {
+				gpu += quantity.Value()
+			}
+		}
+	}
+
+	return *cpu, *mem, gpu
+}
+
+func cosLimits(cc []v1.Container) (cpuQ, memQ resource.Quantity, gpu int64) {
+	cpu, mem := new(resource.Quantity), new(resource.Quantity)
+
 	for i := range cc {
 		limits := cc[i].Resources.Limits
 		if len(limits) == 0 {
 			continue
 		}
+
 		if limits.Cpu() != nil {
 			cpu.Add(*limits.Cpu())
 		}
+
 		if limits.Memory() != nil {
 			mem.Add(*limits.Memory())
 		}
-	}
 
-	return *cpu, *mem
-}
-
-func cosRequests(cc []v1.Container) (cpuQ, memQ resource.Quantity) {
-	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	for i := range cc {
-		co := cc[i]
-		rl := containerRequests(&co)
-		if rl.Cpu() != nil {
-			cpu.Add(*rl.Cpu())
-		}
-		if rl.Memory() != nil {
-			mem.Add(*rl.Memory())
+		for _, gpuResource := range config.KnownGPUVendors {
+			if quantity, ok := limits[v1.ResourceName(gpuResource)]; ok {
+				gpu += quantity.Value()
+			}
 		}
 	}
 
-	return *cpu, *mem
+	return *cpu, *mem, gpu
 }
 
 func currentRes(ccmx []mv1beta1.ContainerMetrics) (cpuQ, memQ resource.Quantity) {

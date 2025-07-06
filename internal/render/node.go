@@ -216,8 +216,8 @@ func (n *NodeWithMetrics) DeepCopyObject() runtime.Object {
 }
 
 type metric struct {
-	cpu, mem   int64
-	lcpu, lmem int64
+	cpu, mem, gpu    int64
+	lcpu, lmem, lgpu int64
 }
 
 func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c, a metric) {
