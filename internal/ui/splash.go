@@ -90,6 +90,11 @@ func GetLogo(logoUrl string) {
 		`|       /\____    /  ___/`,
 		`|    \   \  /    /\___  \`,
 		`|____|\__ \/____//____  /`,
+	    `         \/           \/ `,
+	}
+	if logoUrl == "" {
+		LogoSmall = defaultLogo
+		return
 	}
 
 	if strings.HasPrefix(logoUrl, "file:") {
