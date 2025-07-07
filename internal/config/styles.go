@@ -299,7 +299,7 @@ func newCharts() Charts {
 			MEM: {Color("yellow"), Color("goldenrod")},
 		},
 		FocusFgColor: "white",
-		FocusBgColor: "aqua",
+		FocusBgColor: "orange",
 	}
 }
 

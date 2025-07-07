@@ -1,0 +1,57 @@
+foreground: &foreground "#ffffff"
+background: &background "#000000"
+current_line: &current_line "#1a1a1a"
+selection: &selection "#e63946"
+comment: &comment "#555555"
+cyan: &cyan "#00bcd4"
+green: &green "#2ecc71"
+orange: &orange "#f4a261"
+magenta: &magenta "#9d0191"
+blue: &blue "#0070f3"
+red: &red "#e63946"
+
+k9s:
+  body:
+    fgColor: *foreground
+    bgColor: *background
+    logoColor: *red
+  prompt:
+    fgColor: *foreground
+    bgColor: *background
+    suggestColor: *red
+  info:
+    fgColor: *red
+    sectionColor: *foreground
+  help:
+    fgColor: *foreground
+    bgColor: *background
+    keyColor: *red
+    numKeyColor: *blue
+    sectionColor: *green
+  dialog:
+    fgColor: *foreground
+    bgColor: *background
+    buttonFgColor: *foreground
+    buttonBgColor: *red
+    buttonFocusFgColor: *background
+    buttonFocusBgColor: *red
+    labelFgColor: *orange
+    fieldFgColor: *foreground
+  frame:
+    border:
+      fgColor: *selection
+      focusColor: *current_line
+    menu:
+      fgColor: *foreground
+      keyColor: *red
+      numKeyColor: *red
+    crumbs:
+      fgColor: *foreground
+      bgColor: *comment
+      activeColor: *red
+    status:
+      newColor: *cyan
+      modifyColor: *blue
+      addColor: *green
+      errorColor: *red
+      highlightColor: *orange

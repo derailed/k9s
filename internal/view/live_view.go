@@ -162,14 +162,13 @@ func (v *LiveView) bindKeys() {
 	if v.title == yamlAction {
 		v.actions.Add(ui.KeyM, ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true))
 	}
-	if v.model != nil && v.model.GVR().IsDecodable() {
+	if _, ok := v.model.(model.EncDecResourceViewer); ok {
 		v.actions.Add(ui.KeyX, ui.NewKeyAction("Toggle Decode", v.toggleEncodedDecodedCmd, true))
 	}
 }
 
 func (v *LiveView) toggleEncodedDecodedCmd(evt *tcell.EventKey) *tcell.EventKey {
 	m, ok := v.model.(model.EncDecResourceViewer)
-
 	if !ok {
 		return evt
 	}

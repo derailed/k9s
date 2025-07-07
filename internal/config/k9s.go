@@ -19,6 +19,12 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 )
 
+var KnownGPUVendors = map[string]string{
+	"nvidia": "nvidia.com/gpu",
+	"amd":    "amd.com/gpu",
+	"intel":  "gpu.intel.com/i915",
+}
+
 // K9s tracks K9s configuration options.
 type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`

@@ -504,7 +504,7 @@ func buildShellArgs(cmd, path, co string, flags *genericclioptions.ConfigFlags) 
 }
 
 func fetchContainers(meta *metav1.ObjectMeta, spec *v1.PodSpec, allContainers bool) []string {
-	nn := make([]string, 0, len(spec.Containers)+len(spec.InitContainers))
+	nn := make([]string, 0, len(spec.Containers)+len(spec.EphemeralContainers)+len(spec.InitContainers))
 	// put the default container as the first entry
 	defaultContainer, ok := dao.GetDefaultContainer(meta, spec)
 	if ok {
