@@ -90,7 +90,7 @@ func GetLogo(logoUrl string) {
 		`|       /\____    /  ___/`,
 		`|    \   \  /    /\___  \`,
 		`|____|\__ \/____//____  /`,
-	    `         \/           \/ `,
+		`         \/           \/ `,
 	}
 	if logoUrl == "" {
 		LogoSmall = defaultLogo
@@ -109,7 +109,7 @@ func GetLogo(logoUrl string) {
 		}
 		ctx := context.WithValue(context.Background(), fileKey, filePath)
 		slog.DebugContext(ctx, "Successfully fetched logo from file")
-		
+
 		logo := strings.Split(string(body), "\n")
 		// last line is empty, remove it
 		if len(logo) > 0 && logo[len(logo)-1] == "" {
