@@ -44,10 +44,10 @@ func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	n.useNamespace(path)
 	cmd, ok := app.cmdHistory.Last(2)
-	if !ok || cmd == "" {
+	i := cmd2.NewInterpreter(cmd)
+	if !ok || cmd == "" || i.IsContextCmd() {
 		cmd = client.PodGVR.String()
 	} else {
-		i := cmd2.NewInterpreter(cmd)
 		cmd = i.TrimNS()
 	}
 	app.gotoResource(cmd, "", false, true)
