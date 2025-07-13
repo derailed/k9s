@@ -407,6 +407,10 @@ You can now override the context portForward default address configuration by se
   k9s:
     # Enable periodic refresh of resource browser windows. Default false
     liveViewAutoRefresh: false
+    # !!New!! v0.50.8...
+    # Extends the list of supported GPU vendors. The key is the vendor name, the value must correspond to k8s resource driver designation.
+    gpuVendors:
+      bozo: bozo/gpu
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp/dumps
     # Represents ui poll intervals in seconds. Default 2secs

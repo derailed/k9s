@@ -19,7 +19,12 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 )
 
-var KnownGPUVendors = map[string]string{
+type gpuVendors map[string]string
+
+// KnownGPUVendors tracks a set of known GPU vendors.
+var KnownGPUVendors = defaultGPUVendors
+
+var defaultGPUVendors = gpuVendors{
 	"nvidia": "nvidia.com/gpu",
 	"amd":    "amd.com/gpu",
 	"intel":  "gpu.intel.com/i915",
@@ -28,6 +33,7 @@ var KnownGPUVendors = map[string]string{
 // K9s tracks K9s configuration options.
 type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
+	GPUVendors          gpuVendors `json:"gpuVendors" yaml:"gpuVendors"`
 	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
 	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
 	APIServerTimeout    string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
@@ -60,6 +66,7 @@ type K9s struct {
 func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	return &K9s{
 		RefreshRate:        defaultRefreshRate,
+		GPUVendors:         make(gpuVendors),
 		MaxConnRetry:       defaultMaxConnRetry,
 		APIServerTimeout:   client.DefaultCallTimeoutDuration.String(),
 		ScreenDumpDir:      AppDumpsDir,
@@ -119,6 +126,10 @@ func (k *K9s) Save(contextName, clusterName string, force bool) error {
 func (k *K9s) Merge(k1 *K9s) {
 	if k1 == nil {
 		return
+	}
+
+	for k, v := range k1.GPUVendors {
+		KnownGPUVendors[k] = v
 	}
 
 	k.LiveViewAutoRefresh = k1.LiveViewAutoRefresh
