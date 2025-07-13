@@ -153,6 +153,10 @@ func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth
 	if IsClusterWide(ns) {
 		ns = BlankNamespace
 	}
+	if gvr == HmGVR {
+		// helm stores release data in secrets
+		gvr = SecGVR
+	}
 	key := makeCacheKey(ns, gvr, name, verbs)
 	if v, ok := a.cache.Get(key); ok {
 		if auth, ok = v.(bool); ok {
