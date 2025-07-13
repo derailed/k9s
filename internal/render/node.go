@@ -46,8 +46,8 @@ var defaultNOHeader = model1.Header{
 	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "MEM/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "GPU/C", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "GPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "GPU/C", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
@@ -128,8 +128,8 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 		toMi(c.mem),
 		toMi(a.mem),
 		client.ToPercentageStr(c.mem, a.mem),
-		toMu(c.gpu),
 		toMu(a.gpu),
+		toMu(c.gpu),
 		mapToStr(no.Labels),
 		AsStatus(n.diagnose(statuses)),
 		ToAge(no.GetCreationTimestamp()),
@@ -215,8 +215,8 @@ func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c, a metric) {
 		c.mem = mx.Usage.Memory().Value()
 	}
 
-	a.gpu = computeGPU(no.Status.Allocatable).Value()
-	c.gpu = computeGPU(no.Status.Capacity).Value()
+	a.gpu = extractGPU(no.Status.Allocatable).Value()
+	c.gpu = extractGPU(no.Status.Capacity).Value()
 
 	return
 }

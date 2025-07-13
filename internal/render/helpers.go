@@ -265,6 +265,14 @@ func mapToIfc(m any) (s string) {
 	return
 }
 
+func toMu(v int64) string {
+	if v == 0 {
+		return NAValue
+	}
+
+	return strconv.Itoa(int(v))
+}
+
 func toMc(v int64) string {
 	if v == 0 {
 		return ZeroValue
@@ -277,13 +285,6 @@ func toMi(v int64) string {
 		return ZeroValue
 	}
 	return strconv.Itoa(int(client.ToMB(v)))
-}
-
-func toMu(v int64) string {
-	if v <= 0 {
-		return NAValue
-	}
-	return strconv.Itoa(int(v))
 }
 
 func boolPtrToStr(b *bool) string {
