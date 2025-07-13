@@ -270,6 +270,7 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 
 	ok, err := a.CanI(ClusterScope, NsGVR, "", ListAccess)
 	if !ok || err != nil {
+		a.cache.Add(cacheNSKey, NamespaceNames{}, cacheExpiry)
 		return nil, fmt.Errorf("user not authorized to list all namespaces")
 	}
 
