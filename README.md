@@ -23,7 +23,6 @@ Your donations will go a long way in keeping our servers lights on and beers in 
 [![Go Report Card](https://goreportcard.com/badge/github.com/derailed/k9s?)](https://goreportcard.com/report/github.com/derailed/k9s)
 [![golangci badge](https://github.com/golangci/golangci-web/blob/master/src/assets/images/badge_a_plus_flat.svg)](https://golangci.com/r/github.com/derailed/k9s)
 [![codebeat badge](https://codebeat.co/badges/89e5a80e-dfe8-4426-acf6-6be781e0a12e)](https://codebeat.co/projects/github-com-derailed-k9s-master)
-[![Build Status](https://api.travis-ci.com/derailed/k9s.svg?branch=master)](https://travis-ci.com/derailed/k9s)
 [![Docker Repository on Quay](https://quay.io/repository/derailed/k9s/status "Docker Repository on Quay")](https://quay.io/repository/derailed/k9s)
 [![release](https://img.shields.io/github/release-pre/derailed/k9s.svg)](https://github.com/derailed/k9s/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mum4k/termdash/blob/master/LICENSE)
@@ -74,17 +73,6 @@ Wanna discuss K9s features with your fellow `K9sers` or simply show your support
 
 * Channel: [K9sersSlack](https://k9sers.slack.com/)
 * Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/zt-3360a389v-ElLHrb0Dp1kAXqYUItSAFA)
-
----
-
-## 🥳 A Word From Our Rhodium Sponsors...
-
-Below are organizations that have opted to show their support and sponsor K9s.
-
-<br/>
-<a href="https://panfactum.com"><img src="assets/sponsors/panfactum.png" alt="panfactum"></a>
-<br/>
-<br/>
 
 ---
 
