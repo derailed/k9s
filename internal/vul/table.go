@@ -102,7 +102,7 @@ func (t *table) addRow(r Row) {
 	t.Rows = append(t.Rows, r)
 }
 
-func (t *table) dump(w io.Writer) {
+func (t *table) dump(w io.Writer) error {
 	columns := []string{"Name", "Installed", "Fixed-In", "Type", "Vulnerability", "Severity"}
 
 	ascii := tw.NewSymbols(tw.StyleASCII)
@@ -133,9 +133,12 @@ func (t *table) dump(w io.Writer) {
 	table.Header(columns)
 
 	for _, row := range t.Rows {
-		table.Append(colorize(row))
+		err := table.Append(colorize(row))
+		if err != nil {
+			return err
+		}
 	}
-	table.Render()
+	return table.Render()
 }
 
 func (t *table) sort() {
