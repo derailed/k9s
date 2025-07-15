@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tview"
@@ -42,12 +41,13 @@ var defaultNOHeader = model1.Header{
 	model1.HeaderColumn{Name: "EXTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "PODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "%CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "CPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "MEM/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "GPU"},
+	model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "GPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "GPU/C", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
@@ -97,6 +97,7 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 	iIP, eIP = missing(iIP), missing(eIP)
 
 	c, a := gatherNodeMX(&no, nwm.MX)
+
 	statuses := make(sort.StringSlice, 10)
 	status(no.Status.Conditions, no.Spec.Unschedulable, statuses)
 	sort.Sort(statuses)
@@ -122,33 +123,19 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 		eIP,
 		podCount,
 		toMc(c.cpu),
-		toMi(c.mem),
-		client.ToPercentageStr(c.cpu, a.cpu),
-		client.ToPercentageStr(c.mem, a.mem),
 		toMc(a.cpu),
+		client.ToPercentageStr(c.cpu, a.cpu),
+		toMi(c.mem),
 		toMi(a.mem),
-		n.gpuSpec(no.Status.Capacity, no.Status.Allocatable),
+		client.ToPercentageStr(c.mem, a.mem),
+		toMu(a.gpu),
+		toMu(c.gpu),
 		mapToStr(no.Labels),
 		AsStatus(n.diagnose(statuses)),
 		ToAge(no.GetCreationTimestamp()),
 	}
 
 	return nil
-}
-
-func (Node) gpuSpec(capacity, allocatable v1.ResourceList) string {
-	spec := NAValue
-	for k, v := range config.KnownGPUVendors {
-		key := v1.ResourceName(v)
-		if capacity, ok := capacity[key]; ok {
-			if allocs, ok := allocatable[key]; ok {
-				spec = fmt.Sprintf("%s/%s (%s)", capacity.String(), allocs.String(), k)
-				break
-			}
-		}
-	}
-
-	return spec
 }
 
 // Healthy checks component health.
@@ -216,15 +203,20 @@ func (n *NodeWithMetrics) DeepCopyObject() runtime.Object {
 }
 
 type metric struct {
-	cpu, mem   int64
-	lcpu, lmem int64
+	cpu, gpu, mem    int64
+	lcpu, lgpu, lmem int64
 }
 
 func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c, a metric) {
-	a.cpu, a.mem = no.Status.Allocatable.Cpu().MilliValue(), no.Status.Allocatable.Memory().Value()
+	a.cpu = no.Status.Allocatable.Cpu().MilliValue()
+	a.mem = no.Status.Allocatable.Memory().Value()
 	if mx != nil {
-		c.cpu, c.mem = mx.Usage.Cpu().MilliValue(), mx.Usage.Memory().Value()
+		c.cpu = mx.Usage.Cpu().MilliValue()
+		c.mem = mx.Usage.Memory().Value()
 	}
+
+	a.gpu = extractGPU(no.Status.Allocatable).Value()
+	c.gpu = extractGPU(no.Status.Capacity).Value()
 
 	return
 }

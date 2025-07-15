@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"regexp"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -114,7 +115,7 @@ func (*Command) namespaceCmd(p *cmd.Interpreter) bool {
 	}
 
 	if ns != "" {
-		_ = p.Reset("pod " + ns)
+		_ = p.Reset(client.PodGVR.String())
 	}
 
 	return false
@@ -194,8 +195,13 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) 
 	if cns, ok := p.NSArg(); ok {
 		ns = cns
 	}
-	if err := c.app.switchNS(ns); err != nil {
-		return err
+	if ok, err := dao.MetaAccess.IsNamespaced(gvr); ok && err == nil {
+		if err := c.app.switchNS(ns); err != nil {
+			return err
+		}
+		p.SwitchNS(ns)
+	} else {
+		p.ClearNS()
 	}
 
 	co := c.componentFor(gvr, fqn, v)
@@ -354,7 +360,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	if pushCmd {
 		c.app.cmdHistory.Push(p.GetLine())
 	}
-	slog.Debug("History", slogs.Stack, c.app.cmdHistory.List())
+	slog.Debug("History", slogs.Stack, strings.Join(c.app.cmdHistory.List(), "|"))
 
 	return
 }

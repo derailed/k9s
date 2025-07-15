@@ -561,6 +561,9 @@ func TestConfigSaveFile(t *testing.T) {
 	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 
 	cfg.K9s.RefreshRate = 100
+	cfg.K9s.GPUVendors = map[string]string{
+		"bozo": "bozo/gpu.com",
+	}
 	cfg.K9s.APIServerTimeout = "30s"
 	cfg.K9s.ReadOnly = true
 	cfg.K9s.Logger.TailCount = 500
