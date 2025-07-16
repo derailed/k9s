@@ -196,7 +196,7 @@ func (c *Interpreter) RBACArgs() (subject, verb string, ok bool) {
 	return
 }
 
-// XRayArgs return the gvr and ns if any.
+// XrayArgs return the gvr and ns if any.
 func (c *Interpreter) XrayArgs() (cmd, namespace string, ok bool) {
 	if !c.IsXrayCmd() {
 		return

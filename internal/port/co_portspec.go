@@ -23,7 +23,7 @@ func (c ContainerPortSpecs) Dump() string {
 	return strings.Join(ss, "\n")
 }
 
-// InSpecs checks if given port matches a spec.
+// MatchSpec checks if given port matches a spec.
 func (c ContainerPortSpecs) MatchSpec(s string) bool {
 	// Skip validation if No port are exposed or no container port spec.
 	if len(c) == 0 || !strings.Contains(s, "::") {
