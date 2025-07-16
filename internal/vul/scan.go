@@ -20,17 +20,17 @@ const (
 // Scans tracks scans per image.
 type Scans map[string]*Scan
 
-// Dump dump reports to stdout.
+// Dump dumps reports to writer.
 func (s Scans) Dump(w io.Writer) error {
 	for k, v := range s {
 		_, _ = fmt.Fprintf(w, "Image: %s -- ", k)
 		v.Tally.Dump(w)
 		_, _ = fmt.Fprintln(w)
-		err := v.Dump(w)
-		if err != nil {
+		if err := v.Dump(w); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
