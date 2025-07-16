@@ -39,12 +39,7 @@ func (c *Interpreter) ClearNS() {
 
 // SwitchNS replaces the current namespace with the provided one.
 func (c *Interpreter) SwitchNS(ns string) {
-	if !c.HasNS() {
-		c.Reset(c.line + " " + ns)
-	}
-	if ons, ok := c.NSArg(); ok {
-		c.Reset(strings.TrimSpace(strings.Replace(c.line, ons, ns, 1)))
-	}
+	c.args[nsKey] = ns
 }
 
 func (c *Interpreter) grok() {
