@@ -116,6 +116,7 @@ func (*Command) namespaceCmd(p *cmd.Interpreter) bool {
 
 	if ns != "" {
 		_ = p.Reset(client.PodGVR.String())
+		p.SwitchNS(ns)
 	}
 
 	return false
