@@ -12,11 +12,15 @@ import (
 type SelectTable struct {
 	*tview.Table
 
-	model      Tabular
-	selectedFn func(string) string
-	marks      map[string]struct{}
-	selFgColor tcell.Color
-	selBgColor tcell.Color
+	model           Tabular
+	selectedFn      func(string) string
+	marks           map[string]struct{}
+	selFgColor      tcell.Color
+	selBgColor      tcell.Color
+	markColor       tcell.Color
+	fgColor         tcell.Color
+	bgColor         tcell.Color
+	lastSelectedRow int
 }
 
 // SetModel sets the table model.
@@ -124,11 +128,41 @@ func (s *SelectTable) selectionChanged(r, c int) {
 	if r < 0 {
 		return
 	}
-	if cell := s.GetCell(r, c); cell != nil {
-		s.SetSelectedStyle(
-			tcell.StyleDefault.Foreground(s.selFgColor).
-				Background(cell.Color).Attributes(tcell.AttrBold))
+	cell := s.GetCell(r, c)
+	if cell == nil {
+		return
 	}
+
+	// default to cursor colors
+	fgColor := s.selFgColor
+	bgColor := s.selBgColor
+
+	// if marked, use markColor as background
+	ref, _ := cell.Reference.(string)
+	if s.IsMarked(ref) {
+		bgColor = s.markColor
+	}
+
+	s.SetSelectedStyle(
+		tcell.StyleDefault.Foreground(fgColor).
+			Background(bgColor).Attributes(tcell.AttrBold))
+
+	if s.lastSelectedRow >= 0 && s.lastSelectedRow != r {
+		for col := range s.GetColumnCount() {
+			prevCell := s.GetCell(s.lastSelectedRow, col)
+			if prevCell != nil {
+				ref, _ := prevCell.GetReference().(string)
+				if s.IsMarked(ref) {
+					prevCell.SetTextColor(s.markColor)
+				} else {
+					prevCell.SetTextColor(s.fgColor)
+				}
+				prevCell.SetBackgroundColor(s.bgColor)
+			}
+		}
+	}
+
+	s.lastSelectedRow = r
 }
 
 // ClearMarks delete all marked items.
@@ -153,10 +187,6 @@ func (s *SelectTable) ToggleMark() {
 		delete(s.marks, s.GetSelectedItem())
 	} else {
 		s.marks[sel] = struct{}{}
-	}
-
-	if cell := s.GetCell(s.GetSelectedRowIndex(), 0); cell != nil {
-		s.SetSelectedStyle(tcell.StyleDefault.Foreground(cell.BackgroundColor).Background(cell.Color).Attributes(tcell.AttrBold))
 	}
 }
 
