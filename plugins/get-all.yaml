@@ -10,7 +10,7 @@ plugins:
     background: false
     args:
       - -c
-      - "kubectl get-all --context $CONTEXT -n $NAME | less -K"
+      - "kubectl get all --context $CONTEXT -n $NAME | less -K"
   get-all-other:
     shortCut: g
     confirm: false
@@ -21,4 +21,4 @@ plugins:
     background: false
     args:
       - -c
-      - "kubectl get-all --context $CONTEXT -n $NAMESPACE | less -K"
+      - "kubectl get all --context $CONTEXT -n $NAMESPACE | less -K"
