@@ -73,6 +73,23 @@ func (p Plugins) Load(path string, loadExtra bool) error {
 	// Load from XDG dirs
 	const k9sPluginsDir = "k9s/plugins"
 	for _, dir := range append(xdg.DataDirs, xdg.DataHome, xdg.ConfigHome) {
+		// Try to access the XDG directory. If it's not accessible, either because
+		// it does not exist or because the user doesn't have permissions, skip it
+		// rather than an apparent permission issue on the child k9s/plugins dir.
+		f, err := os.Open(dir)
+		f.Close()
+
+		switch {
+		case os.IsNotExist(err):
+			slog.Warn("XDG directory does not exist (skipping)", slogs.Path, dir)
+			continue
+		case os.IsPermission(err):
+			slog.Warn("user has no permission to XDG dir (skipping)", slogs.Path, dir)
+			continue
+		default:
+			slog.Debug("XDG dir OK", slogs.Path, dir, slogs.Error, err)
+		}
+
 		path := filepath.Join(dir, k9sPluginsDir)
 		if err := p.loadDir(path); err != nil {
 			errs = errors.Join(errs, err)
