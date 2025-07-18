@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
-	cmd2 "github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -43,14 +42,8 @@ func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 
 func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	n.useNamespace(path)
-	cmd, ok := app.cmdHistory.Last(2)
-	if !ok || cmd == "" {
-		cmd = client.PodGVR.String()
-	} else {
-		i := cmd2.NewInterpreter(cmd)
-		cmd = i.TrimNS()
-	}
-	app.gotoResource(cmd, "", false, true)
+	_, ns := client.Namespaced(path)
+	app.gotoResource(client.PodGVR.String()+" "+ns, "", false, true)
 }
 
 func (n *Namespace) useNsCmd(*tcell.EventKey) *tcell.EventKey {

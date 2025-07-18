@@ -23,7 +23,6 @@ Your donations will go a long way in keeping our servers lights on and beers in 
 [![Go Report Card](https://goreportcard.com/badge/github.com/derailed/k9s?)](https://goreportcard.com/report/github.com/derailed/k9s)
 [![golangci badge](https://github.com/golangci/golangci-web/blob/master/src/assets/images/badge_a_plus_flat.svg)](https://golangci.com/r/github.com/derailed/k9s)
 [![codebeat badge](https://codebeat.co/badges/89e5a80e-dfe8-4426-acf6-6be781e0a12e)](https://codebeat.co/projects/github-com-derailed-k9s-master)
-[![Build Status](https://api.travis-ci.com/derailed/k9s.svg?branch=master)](https://travis-ci.com/derailed/k9s)
 [![Docker Repository on Quay](https://quay.io/repository/derailed/k9s/status "Docker Repository on Quay")](https://quay.io/repository/derailed/k9s)
 [![release](https://img.shields.io/github/release-pre/derailed/k9s.svg)](https://github.com/derailed/k9s/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mum4k/termdash/blob/master/LICENSE)
@@ -74,17 +73,6 @@ Wanna discuss K9s features with your fellow `K9sers` or simply show your support
 
 * Channel: [K9sersSlack](https://k9sers.slack.com/)
 * Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/zt-3360a389v-ElLHrb0Dp1kAXqYUItSAFA)
-
----
-
-## 🥳 A Word From Our Rhodium Sponsors...
-
-Below are organizations that have opted to show their support and sponsor K9s.
-
-<br/>
-<a href="https://panfactum.com"><img src="assets/sponsors/panfactum.png" alt="panfactum"></a>
-<br/>
-<br/>
 
 ---
 
@@ -407,6 +395,10 @@ You can now override the context portForward default address configuration by se
   k9s:
     # Enable periodic refresh of resource browser windows. Default false
     liveViewAutoRefresh: false
+    # !!New!! v0.50.8...
+    # Extends the list of supported GPU vendors. The key is the vendor name, the value must correspond to k8s resource driver designation.
+    gpuVendors:
+      bozo: bozo/gpu
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp/dumps
     # Represents ui poll intervals in seconds. Default 2secs
@@ -438,7 +430,7 @@ You can now override the context portForward default address configuration by se
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
       # Show full resource GVR (Group/Version/Resource) vs just R. Default: false.
@@ -1039,7 +1031,7 @@ Example: Dracula Skin ;)
 You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. See this repo `skins` directory for examples.
 You can skin k9s by default by specifying a UI.skin attribute. You can also change K9s skins based on the context you are connecting too.
 In this case, you can specify a skin field on your cluster config aka `skin: dracula` (just the name of the skin file without the extension!) and copy this repo
-`skins/dracula.yaml` to `$XDG_CONFIG_HOME/k9s/skins/` directory.
+`skins/dracula.yaml` to `$XDG_CONFIG_HOME/k9s/skins/` directory. You can also change the skin by setting `K9S_SKIN` in the environment, e.g. `export K9S_SKIN="dracula"`.
 
 In the case where your cluster spans several contexts, you can add a skin context configuration to your context configuration.
 This is a collection of {context_name, skin} tuples (please see example below!)

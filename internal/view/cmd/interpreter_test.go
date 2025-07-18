@@ -77,6 +77,76 @@ func TestNsCmd(t *testing.T) {
 	}
 }
 
+func TestSwitchNS(t *testing.T) {
+	uu := map[string]struct {
+		cmd string
+		ns  string
+		e   string
+	}{
+		"empty": {},
+
+		"no-op": {
+			cmd: "pod fred",
+			ns:  "blee",
+			e:   "pod blee",
+		},
+
+		"no-ns": {
+			cmd: "pod",
+			ns:  "blee",
+			e:   "pod blee",
+		},
+
+		"happy": {
+			cmd: "pod app=blee @zorg fred",
+			ns:  "blee",
+			e:   "pod app=blee @zorg blee",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			p.SwitchNS(u.ns)
+			assert.Equal(t, u.e, p.GetLine())
+		})
+	}
+}
+
+func TestClearNS(t *testing.T) {
+	uu := map[string]struct {
+		cmd string
+		e   string
+	}{
+		"empty": {},
+
+		"no-op": {
+			cmd: "pod fred",
+			e:   "pod",
+		},
+
+		"no-ns": {
+			cmd: "pod",
+			e:   "pod",
+		},
+
+		"happy": {
+			cmd: "pod app=blee @zorg zorg",
+			e:   "pod app=blee @zorg",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			p.ClearNS()
+			assert.Equal(t, u.e, p.GetLine())
+		})
+	}
+}
+
 func TestFilterCmd(t *testing.T) {
 	uu := map[string]struct {
 		cmd    string

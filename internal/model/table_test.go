@@ -37,7 +37,7 @@ func TestTableRefresh(t *testing.T) {
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
 	require.NoError(t, ta.Refresh(ctx))
 	data := ta.Peek()
-	assert.Equal(t, 25, data.HeaderCount())
+	assert.Equal(t, 26, data.HeaderCount())
 	assert.Equal(t, 1, data.RowCount())
 	assert.Equal(t, client.NamespaceAll, data.GetNamespace())
 	assert.Equal(t, 1, l.count)

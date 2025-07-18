@@ -112,6 +112,16 @@ func (m *Meta) GVK2GVR(gv schema.GroupVersion, kind string) (*client.GVR, bool, 
 	return client.NoGVR, false, false
 }
 
+// IsNamespaced checks if a given resource is namespaced.
+func (m *Meta) IsNamespaced(gvr *client.GVR) (bool, error) {
+	res, err := m.MetaFor(gvr)
+	if err != nil {
+		return false, err
+	}
+
+	return res.Namespaced, nil
+}
+
 // MetaFor returns a resource metadata for a given gvr.
 func (m *Meta) MetaFor(gvr *client.GVR) (*metav1.APIResource, error) {
 	m.mx.RLock()

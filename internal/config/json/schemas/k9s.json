@@ -8,6 +8,17 @@
       "additionalProperties": false,
       "properties": {
         "liveViewAutoRefresh": { "type": "boolean" },
+        "gpuVendors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "vendor": { "type": "string" },
+              "model": { "type": "string" }
+            },
+            "required": ["vendor", "model"]
+          }
+        },
         "screenDumpDir": {"type": "string"},
         "refreshRate": { "type": "integer" },
         "apiServerTimeout": { "type": "string" },

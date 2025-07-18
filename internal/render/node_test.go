@@ -26,8 +26,8 @@ func TestNodeRender(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "minikube", r.ID)
-	e := model1.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "Buildroot 2018.05.3", "4.15.0", "192.168.64.107", "<none>", "0", "10", "20", "0", "0", "4000", "7874", "n/a"}
-	assert.Equal(t, e, r.Fields[:18])
+	e := model1.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "Buildroot 2018.05.3", "4.15.0", "192.168.64.107", "<none>", "0", "10", "4000", "0", "20", "7874", "0", "n/a", "n/a"}
+	assert.Equal(t, e, r.Fields[:19])
 }
 
 func BenchmarkNodeRender(b *testing.B) {

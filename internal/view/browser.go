@@ -174,7 +174,12 @@ func (b *Browser) Start() {
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
 	if err := b.GetModel().Watch(b.prepareContext()); err != nil {
-		b.App().Flash().Errf("Watcher failed for %s -- %s", b.GVR(), err)
+		go func() {
+			time.Sleep(500 * time.Millisecond)
+			b.app.QueueUpdateDraw(func() {
+				b.App().Flash().Errf("Watcher failed for %s -- %s", b.GVR(), err)
+			})
+		}()
 	}
 }
 
@@ -335,7 +340,11 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 		b.setUpdating(true)
 		defer b.setUpdating(false)
 		if b.GetColumnCount() == 0 {
-			b.app.Flash().Infof("Viewing %s in namespace %s", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+			if client.IsClusterScoped(b.GetNamespace()) {
+				b.app.Flash().Infof("Viewing %s...", b.GVR())
+			} else {
+				b.app.Flash().Infof("Viewing %s in namespace %s", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+			}
 		}
 		b.refreshActions()
 		b.UpdateUI(cdata, mdata)
@@ -518,7 +527,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), "", client.ListAccess)
 	if !auth {
 		if err == nil {
-			err = fmt.Errorf("current user can't access namespace %s", ns)
+			err = fmt.Errorf("access denied for user on: %s/%s", ns, b.GVR())
 		}
 		b.App().Flash().Err(err)
 		return nil
@@ -529,7 +538,11 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	b.setNamespace(ns)
-	b.app.Flash().Infof("Viewing %s in namespace `%s`...", b.GVR(), client.PrintNamespace(ns))
+	if client.IsClusterScoped(ns) {
+		b.app.Flash().Infof("Viewing %s...", b.GVR())
+	} else {
+		b.app.Flash().Infof("Viewing %s in namespace `%s`...", b.GVR(), client.PrintNamespace(ns))
+	}
 	b.refresh()
 	b.UpdateTitle()
 	b.SelectRow(1, 0, true)
@@ -628,9 +641,12 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 	aa.Add(ui.KeyN, ui.NewKeyAction("Copy Namespace", b.cpNsCmd, false))
 
 	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
-	aa.Add(ui.Key0, ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true))
-	b.namespaces[0] = client.NamespaceAll
-	index := 1
+	var index int
+	if ok, _ := b.app.Conn().CanI(client.NamespaceAll, client.NsGVR, "", client.ListAccess); ok {
+		aa.Add(ui.Key0, ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true))
+		b.namespaces[0] = client.NamespaceAll
+		index = 1
+	}
 	favNamespaces := b.app.Config.FavNamespaces()
 	for _, ns := range favNamespaces {
 		if ns == client.NamespaceAll {

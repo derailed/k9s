@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 const (
@@ -100,28 +102,43 @@ func (t *table) addRow(r Row) {
 	t.Rows = append(t.Rows, r)
 }
 
-func (t *table) dump(w io.Writer) {
+func (t *table) dump(w io.Writer) error {
 	columns := []string{"Name", "Installed", "Fixed-In", "Type", "Vulnerability", "Severity"}
 
-	table := tablewriter.NewWriter(w)
-	table.SetHeader(columns)
-	table.SetAutoWrapText(false)
-	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	ascii := tw.NewSymbols(tw.StyleASCII)
 
-	table.SetHeaderLine(false)
-	table.SetBorder(false)
-	table.SetAutoFormatHeaders(true)
-	table.SetCenterSeparator("")
-	table.SetColumnSeparator("")
-	table.SetRowSeparator("")
-	table.SetTablePadding("  ")
-	table.SetNoWhiteSpace(true)
+	cfg := tablewriter.Config{
+		Behavior: tw.Behavior{TrimSpace: tw.On},
+		Row: tw.CellConfig{
+			Padding: tw.CellPadding{
+				Global: tw.Padding{Left: "  ", Right: "  "}, // 2‑space pad
+			},
+			Alignment: tw.CellAlignment{Global: tw.AlignLeft},
+		},
+	}
+
+	table := tablewriter.NewTable(
+		w,
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Borders: tw.BorderNone,
+			Settings: tw.Settings{
+				Separators: tw.SeparatorsNone,
+				Lines:      tw.LinesNone,
+			},
+			Symbols: ascii,
+		})),
+		tablewriter.WithConfig(cfg),
+	)
+
+	table.Header(columns)
 
 	for _, row := range t.Rows {
-		table.Append(colorize(row))
+		err := table.Append(colorize(row))
+		if err != nil {
+			return err
+		}
 	}
-	table.Render()
+	return table.Render()
 }
 
 func (t *table) sort() {
