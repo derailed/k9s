@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,6 +19,7 @@ func init() {
 }
 
 func TestLogItemsFilter(t *testing.T) {
+	styles := config.NewStyles()
 	uu := map[string]struct {
 		q    string
 		opts dao.LogOptions
@@ -63,7 +65,7 @@ func TestLogItemsFilter(t *testing.T) {
 
 	for k := range uu {
 		u := uu[k]
-		ii := dao.NewLogItems()
+		ii := dao.NewLogItems(styles)
 		ii.Add(
 			dao.NewLogItem([]byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))),
 			dao.NewLogItemFromString("Bumble bee tuna"),
@@ -84,6 +86,7 @@ func TestLogItemsFilter(t *testing.T) {
 }
 
 func TestLogItemsRender(t *testing.T) {
+	styles := config.NewStyles()
 	uu := map[string]struct {
 		opts dao.LogOptions
 		e    string
@@ -117,7 +120,7 @@ func TestLogItemsRender(t *testing.T) {
 
 	s := []byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))
 	for k := range uu {
-		ii := dao.NewLogItems()
+		ii := dao.NewLogItems(styles)
 		ii.Add(dao.NewLogItem(s))
 		u := uu[k]
 		_, n := client.Namespaced(u.opts.Path)
