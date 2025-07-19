@@ -16,7 +16,7 @@ require (
 	github.com/fvbommel/sortorder v1.1.0
 	github.com/go-errors/errors v1.5.1
 	github.com/itchyny/gojq v0.12.17
-	github.com/lmittmann/tint v1.0.7
+	github.com/lmittmann/tint v1.1.2
 	github.com/mattn/go-colorable v0.1.14
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/olekukonko/tablewriter v1.0.8
