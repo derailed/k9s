@@ -29,17 +29,18 @@ func NewInterpreter(s string) *Interpreter {
 
 // ClearNS clears the current namespace if any.
 func (c *Interpreter) ClearNS() {
-	if !c.HasNS() {
-		return
-	}
-	if ons, ok := c.NSArg(); ok {
-		c.Reset(strings.TrimSpace(strings.Replace(c.line, " "+ons, "", 1)))
-	}
+	c.SwitchNS(client.BlankNamespace)
 }
 
 // SwitchNS replaces the current namespace with the provided one.
 func (c *Interpreter) SwitchNS(ns string) {
-	c.args[nsKey] = ns
+	if ons, ok := c.NSArg(); ok && ons != client.BlankNamespace {
+		c.Reset(strings.TrimSpace(strings.Replace(c.line, " "+ons, " "+ns, 1)))
+		return
+	}
+	if ns != client.BlankNamespace {
+		c.Reset(strings.TrimSpace(c.line) + " " + ns)
+	}
 }
 
 func (c *Interpreter) grok() {
