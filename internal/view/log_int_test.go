@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
@@ -20,9 +21,10 @@ func TestLogAutoScroll(t *testing.T) {
 		Container:       "blee",
 		SingleContainer: true,
 	}
-	v := NewLog(client.PodGVR, &opts)
+	styles := config.NewStyles()
+	v := NewLog(client.PodGVR, &opts, styles)
 	require.NoError(t, v.Init(makeContext(t)))
-	ii := dao.NewLogItems()
+	ii := dao.NewLogItems(styles)
 	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
 	v.GetModel().Set(ii)
 	v.GetModel().Notify()
@@ -38,10 +40,11 @@ func TestLogViewNav(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := NewLog(client.PodGVR, &opts)
+	styles := config.NewStyles()
+	v := NewLog(client.PodGVR, &opts, styles)
 	require.NoError(t, v.Init(makeContext(t)))
 
-	buff := dao.NewLogItems()
+	buff := dao.NewLogItems(styles)
 	for i := range 100 {
 		buff.Add(dao.NewLogItemFromString(fmt.Sprintf("line-%d\n", i)))
 	}
@@ -57,7 +60,8 @@ func TestLogViewClear(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := NewLog(client.PodGVR, &opts)
+	styles := config.NewStyles()
+	v := NewLog(client.PodGVR, &opts, styles)
 	require.NoError(t, v.Init(makeContext(t)))
 
 	v.toggleAutoScrollCmd(nil)
@@ -72,9 +76,10 @@ func TestLogTimestamp(t *testing.T) {
 		Path:      "fred/blee",
 		Container: "c1",
 	}
-	l := NewLog(client.NewGVR("test"), &opts)
+	styles := config.NewStyles()
+	l := NewLog(client.NewGVR("test"), &opts, styles)
 	require.NoError(t, l.Init(makeContext(t)))
-	ii := dao.NewLogItems()
+	ii := dao.NewLogItems(styles)
 	ii.Add(
 		&dao.LogItem{
 			Pod:       "fred/blee",
@@ -102,9 +107,10 @@ func TestLogFilter(t *testing.T) {
 		Path:      "fred/blee",
 		Container: "c1",
 	}
-	l := NewLog(client.NewGVR("test"), &opts)
+	styles := config.NewStyles()
+	l := NewLog(client.NewGVR("test"), &opts, styles)
 	require.NoError(t, l.Init(makeContext(t)))
-	buff := dao.NewLogItems()
+	buff := dao.NewLogItems(styles)
 	buff.Add(
 		dao.NewLogItemFromString("duh"),
 		dao.NewLogItemFromString("zorg"),
