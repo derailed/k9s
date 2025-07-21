@@ -10,13 +10,14 @@ import (
 )
 
 const (
-	cowCmd      = "cow"
-	canCmd      = "can"
-	nsFlag      = "-n"
-	filterFlag  = "/"
-	labelFlag   = "="
-	fuzzyFlag   = "-f"
-	contextFlag = "@"
+	cowCmd          = "cow"
+	canCmd          = "can"
+	nsFlag          = "-n"
+	filterFlag      = "/"
+	labelFlag       = "-l"
+	labelAssignment = "="
+	fuzzyFlag       = "-f"
+	contextFlag     = "@"
 )
 
 var (
