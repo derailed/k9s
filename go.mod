@@ -1,5 +1,4 @@
 module github.com/derailed/k9s
-
 go 1.24.4
 
 require (
@@ -40,6 +39,7 @@ require (
 	k8s.io/metrics v0.33.2
 	sigs.k8s.io/yaml v1.5.0
 )
+
 
 require (
 	cel.dev/expr v0.19.1 // indirect
