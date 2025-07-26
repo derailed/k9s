@@ -14,17 +14,17 @@ type FixedOracleDialect struct {
 }
 
 // SetTableNameMapper implements the required method for gorp.Dialect
-func (d FixedOracleDialect) SetTableNameMapper(mapper interface{}) {
+func (d FixedOracleDialect) SetTableNameMapper(mapper any) {
 	// No-op implementation to satisfy the interface
 }
 
 // FixedSnowflakeDialect is a dialect for Snowflake databases with SetTableNameMapper
 type FixedSnowflakeDialect struct {
-	gorp.SnowflakeDialect
+	gorp.SqliteDialect // Use SqliteDialect as base since SnowflakeDialect isn't in gorp v3
 }
 
 // SetTableNameMapper implements the required method for gorp.Dialect
-func (d FixedSnowflakeDialect) SetTableNameMapper(mapper interface{}) {
+func (d FixedSnowflakeDialect) SetTableNameMapper(mapper any) {
 	// No-op implementation to satisfy the interface
 }
 
