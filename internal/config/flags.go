@@ -16,35 +16,37 @@ const (
 
 // Flags represents K9s configuration flags.
 type Flags struct {
-	RefreshRate   *int
-	LogLevel      *string
-	LogFile       *string
-	Headless      *bool
-	Logoless      *bool
-	Command       *string
-	AllNamespaces *bool
-	ReadOnly      *bool
-	Write         *bool
-	Crumbsless    *bool
-	Splashless    *bool
-	ScreenDumpDir *string
+	RefreshRate                     *int
+	LogLevel                        *string
+	LogFile                         *string
+	Headless                        *bool
+	Logoless                        *bool
+	Command                         *string
+	AllNamespaces                   *bool
+	ReadOnly                        *bool
+	Write                           *bool
+	Crumbsless                      *bool
+	Splashless                      *bool
+	ScreenDumpDir                   *string
+	DisableSelfSubjectAccessReviews *bool
 }
 
 // NewFlags returns new configuration flags.
 func NewFlags() *Flags {
 	return &Flags{
-		RefreshRate:   intPtr(DefaultRefreshRate),
-		LogLevel:      strPtr(DefaultLogLevel),
-		LogFile:       strPtr(AppLogFile),
-		Headless:      boolPtr(false),
-		Logoless:      boolPtr(false),
-		Command:       strPtr(DefaultCommand),
-		AllNamespaces: boolPtr(false),
-		ReadOnly:      boolPtr(false),
-		Write:         boolPtr(false),
-		Crumbsless:    boolPtr(false),
-		Splashless:    boolPtr(false),
-		ScreenDumpDir: strPtr(AppDumpsDir),
+		RefreshRate:                     intPtr(DefaultRefreshRate),
+		LogLevel:                        strPtr(DefaultLogLevel),
+		LogFile:                         strPtr(AppLogFile),
+		Headless:                        boolPtr(false),
+		Logoless:                        boolPtr(false),
+		Command:                         strPtr(DefaultCommand),
+		AllNamespaces:                   boolPtr(false),
+		ReadOnly:                        boolPtr(false),
+		Write:                           boolPtr(false),
+		Crumbsless:                      boolPtr(false),
+		Splashless:                      boolPtr(false),
+		ScreenDumpDir:                   strPtr(AppDumpsDir),
+		DisableSelfSubjectAccessReviews: boolPtr(false),
 	}
 }
 

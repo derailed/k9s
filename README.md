@@ -1020,6 +1020,17 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ```
 
+### Disabling SelfSubjectAccessReview Checks
+
+K9s performs SelfSubjectAccessReview checks to determine user permissions for various operations. In some environments, users might not have permissions to perform these checks, which can lead to a unusable k9s.
+You can disable SelfSubjectAccessReview checks using the command line flag:
+
+```shell
+k9s --disable-self-subject-access-reviews
+```
+
+> Disabling SelfSubjectAccessReview checks means K9s won't be able to determine your permissions. Use this option only when necessary and be aware that some operations might fail due to insufficient permissions.
+
 ---
 
 ## Skins

@@ -140,6 +140,10 @@ func loadConfiguration() (*config.Config, error) {
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
+
+	if k9sFlags.DisableSelfSubjectAccessReviews != nil && *k9sFlags.DisableSelfSubjectAccessReviews {
+		conn.DisableSelfSubjectAccessReviews()
+	}
 	k9sCfg.SetConnection(conn)
 
 	if err := k9sCfg.Load(config.AppConfigFile, false); err != nil {
@@ -257,6 +261,13 @@ func initK9sFlags() {
 		"",
 		"Sets a path to a dir for a screen dumps",
 	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.DisableSelfSubjectAccessReviews,
+		"disable-self-subject-access-reviews",
+		false,
+		"Disable Kubernetes SelfSubjectAccessReviews checks (use at your own risk)",
+	)
+
 	rootCmd.Flags()
 }
 

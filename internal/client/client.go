@@ -42,16 +42,17 @@ type NamespaceNames map[string]struct{}
 
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
-	client, logClient kubernetes.Interface
-	dClient           dynamic.Interface
-	nsClient          dynamic.NamespaceableResourceInterface
-	mxsClient         *versioned.Clientset
-	cachedClient      *disk.CachedDiscoveryClient
-	config            *Config
-	mx                sync.RWMutex
-	cache             *cache.LRUExpireCache
-	connOK            bool
-	log               *slog.Logger
+	client, logClient               kubernetes.Interface
+	dClient                         dynamic.Interface
+	nsClient                        dynamic.NamespaceableResourceInterface
+	mxsClient                       *versioned.Clientset
+	cachedClient                    *disk.CachedDiscoveryClient
+	config                          *Config
+	mx                              sync.RWMutex
+	cache                           *cache.LRUExpireCache
+	connOK                          bool
+	log                             *slog.Logger
+	disableSelfSubjectAccessReviews bool
 }
 
 // NewTestAPIClient for testing ONLY!!
@@ -81,6 +82,15 @@ func InitConnection(config *Config, log *slog.Logger) (*APIClient, error) {
 	a.connOK = false
 
 	return &a, err
+}
+
+// DisableSelfSubjectAccessReviews disables the Kubernetes SelfSubjectAccessReview checks.
+// WARNING: Use this only when necessary as it bypasses the can-i checks.
+// Returns:
+//   - *APIClient for method chaining
+func (a *APIClient) DisableSelfSubjectAccessReviews() *APIClient {
+	a.disableSelfSubjectAccessReviews = true
+	return a
 }
 
 // ConnectionOK returns connection status.
@@ -150,6 +160,13 @@ func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth
 	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
+
+	// skip access checks if disabled by configuration
+	if a.disableSelfSubjectAccessReviews {
+		a.log.Debug("skipping access review checks - disabled by configuration")
+		return true, nil
+	}
+
 	if IsClusterWide(ns) {
 		ns = BlankNamespace
 	}
@@ -157,6 +174,7 @@ func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth
 		// helm stores release data in secrets
 		gvr = SecGVR
 	}
+
 	key := makeCacheKey(ns, gvr, name, verbs)
 	if v, ok := a.cache.Get(key); ok {
 		if auth, ok = v.(bool); ok {
