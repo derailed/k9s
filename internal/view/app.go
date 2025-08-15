@@ -310,13 +310,24 @@ func (a *App) rebuildLayout() {
 
 	// Rebuild the entire layout by clearing and re-adding components
 	mainPage.Clear()
-	mainPage.AddItem(a.statusIndicator(), 1, 1, false)
+
+	// Add header if it should be shown (contains cluster info, menu, logo)
+	if a.showHeader {
+		mainPage.AddItem(a.buildHeader(), 7, 1, false)
+	} else {
+		mainPage.AddItem(a.statusIndicator(), 1, 1, false)
+	}
+
+	// Add main content area (with optional chat split)
 	contentArea := a.buildContentArea()
 	mainPage.AddItem(contentArea, 0, 10, true)
+
+	// Add breadcrumb navigation if enabled
 	if !a.Config.K9s.IsCrumbsless() {
 		mainPage.AddItem(a.Crumbs(), 1, 1, false)
 	}
-	// Add the flash component back
+
+	// Add flash component for status messages
 	if a.flashComponent != nil {
 		mainPage.AddItem(a.flashComponent, 1, 1, false)
 	}
