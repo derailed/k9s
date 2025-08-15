@@ -17,13 +17,27 @@ builds:
   - id: linux
     goos:
       - linux
-      - freebsd
     goarch:
       - amd64
       - arm64
       - arm
       - ppc64le
       - s390x
+    goarm:
+      - 7
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/derailed/k9s/cmd.version=v{{.Version}}
+      - -s -w -X github.com/derailed/k9s/cmd.commit={{.Commit}}
+      - -s -w -X github.com/derailed/k9s/cmd.date={{.Date}}
+
+  - id: freebsd
+    goos:
+      - freebsd
+    goarch:
+      - amd64
+      - arm64
     goarm:
       - 7
     flags:
@@ -69,13 +83,13 @@ archives:
       {{- if .Arm }}v{{ .Arm }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats: ["zip"]
 
 checksum:
   name_template: "checksums.sha256"
 
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 
 changelog:
   sort: asc

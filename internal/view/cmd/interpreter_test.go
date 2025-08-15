@@ -85,10 +85,15 @@ func TestSwitchNS(t *testing.T) {
 	}{
 		"empty": {},
 
+		"blank": {
+			cmd: "pod fred",
+			e:   "pod",
+		},
+
 		"no-op": {
 			cmd: "pod fred",
-			ns:  "blee",
-			e:   "pod blee",
+			ns:  "fred",
+			e:   "pod fred",
 		},
 
 		"no-ns": {
@@ -97,8 +102,20 @@ func TestSwitchNS(t *testing.T) {
 			e:   "pod blee",
 		},
 
-		"happy": {
-			cmd: "pod app=blee @zorg fred",
+		"full-ns": {
+			cmd: "pod app=blee fred @zorg",
+			ns:  "blee",
+			e:   "pod app=blee blee @zorg",
+		},
+
+		"full--repeat-ns": {
+			cmd: "pod app=zorg zorg @zorg",
+			ns:  "blee",
+			e:   "pod app=zorg blee @zorg",
+		},
+
+		"full-no-ns": {
+			cmd: "pod app=blee @zorg",
 			ns:  "blee",
 			e:   "pod app=blee @zorg blee",
 		},
@@ -121,7 +138,7 @@ func TestClearNS(t *testing.T) {
 	}{
 		"empty": {},
 
-		"no-op": {
+		"has-ns": {
 			cmd: "pod fred",
 			e:   "pod",
 		},
@@ -131,8 +148,13 @@ func TestClearNS(t *testing.T) {
 			e:   "pod",
 		},
 
-		"happy": {
+		"full-repeat-ns": {
 			cmd: "pod app=blee @zorg zorg",
+			e:   "pod app=blee @zorg",
+		},
+
+		"full-no-ns": {
+			cmd: "pod app=blee @zorg",
 			e:   "pod app=blee @zorg",
 		},
 	}
