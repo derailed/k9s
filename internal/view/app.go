@@ -60,8 +60,6 @@ type App struct {
 	showLogo       bool
 	showCrumbs     bool
 	chatComponent  model.Component
-	chatVisible    bool
-	chatFocused    bool
 	flashComponent tview.Primitive
 }
 
@@ -197,108 +195,22 @@ func (a *App) buildMainLayout(flash tview.Primitive) tview.Primitive {
 }
 
 func (a *App) buildContentArea() tview.Primitive {
-	if a.chatVisible && a.chatComponent != nil {
-		// Split layout: main content on left, chat on right
-		splitPane := tview.NewFlex().SetDirection(tview.FlexColumn)
-		splitPane.AddItem(a.Content, 0, 7, !a.chatFocused)      // 70% for main content
-		splitPane.AddItem(a.chatComponent, 0, 3, a.chatFocused) // 30% for chat
-
-		// Set up Tab key handling for focus switching
-		splitPane.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Key() == tcell.KeyTab {
-				a.toggleChatFocus()
-				return nil
-			}
-
-			// If chat is focused, prevent k9s shortcuts from being processed
-			if a.chatFocused {
-				// Only allow Escape to close chat, Tab to switch focus
-				if event.Key() == tcell.KeyEscape {
-					a.chatCmd() // Close chat
-					return nil
-				}
-				// Forward all other events to chat component
-				if a.chatComponent != nil {
-					// Let the chat component handle the event
-					return event
-				}
-				return nil // Consume the event to prevent k9s processing
-			}
-
-			return event // Let k9s handle the event normally
-		})
-
-		return splitPane
-	}
-	// Normal layout: just the main content
+	// Native k9s approach: single main content area
+	// Chat uses stack-based full-screen overlay (like Help, Alias, etc.)
 	return a.Content
 }
 
 func (a *App) initChatComponent() {
 	a.chatComponent = chat.NewChatComponent(a.Application, a.factory)
-	a.chatVisible = false
-	a.chatFocused = false
 }
 
+// toggleChat is deprecated - use chatCmd for k9s native stack management
 func (a *App) toggleChat() error {
-	a.chatVisible = !a.chatVisible
-
-	// When opening chat, focus it by default
-	if a.chatVisible {
-		a.chatFocused = true
-	} else {
-		a.chatFocused = false
-	}
-
-	// Send welcome message when opening chat
-	if a.chatVisible && a.chatComponent != nil {
-		if chatComp, ok := a.chatComponent.(*chat.Component); ok {
-			chatComp.SendWelcomeMessage()
-		}
-
-		// Initialize chat component if not already done
-		if err := a.chatComponent.Init(context.Background()); err != nil {
-			slog.Error("Failed to initialize chat component", slogs.Error, err)
-			a.chatVisible = false
-			a.chatFocused = false
-			return err
-		}
-
-		if a.chatVisible {
-			a.chatComponent.Start()
-			// Set focus to chat when opening
-			a.QueueUpdateDraw(func() {
-				a.SetFocus(a.chatComponent)
-			})
-		}
-	} else if !a.chatVisible && a.chatComponent != nil {
-		a.chatComponent.Stop()
-	}
-
-	// Rebuild the layout
-	a.QueueUpdateDraw(func() {
-		a.rebuildLayout()
-	})
-
-	return nil
+	return a.chatCmd()
 }
 
-func (a *App) toggleChatFocus() {
-	if !a.chatVisible || a.chatComponent == nil {
-		return
-	}
-
-	a.chatFocused = !a.chatFocused
-
-	// Set focus directly instead of rebuilding layout
-	a.QueueUpdateDraw(func() {
-		if a.chatFocused {
-			a.SetFocus(a.chatComponent)
-		} else {
-			a.SetFocus(a.Content)
-		}
-	})
-}
+// toggleChatFocus is no longer needed with native stack approach
+// Chat focus is managed automatically by the Content stack
 
 func (a *App) rebuildLayout() {
 	// Get the current main page
@@ -864,9 +776,33 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// chatCmd toggles the chat panel.
+// chatCmd toggles the chat panel using k9s native stack management.
 func (a *App) chatCmd() error {
-	return a.toggleChat()
+	// Check if chat is already on top of stack
+	if top := a.Content.Top(); top != nil && top.Name() == "chat" {
+		a.Content.Pop() // Remove chat from stack - menu auto-restores
+		return nil
+	}
+
+	// Add chat to stack - menu auto-updates
+	if err := a.inject(a.chatComponent, false); err != nil {
+		return err
+	}
+
+	// Send welcome message
+	if chatComp, ok := a.chatComponent.(*chat.Component); ok {
+		chatComp.SendWelcomeMessage()
+	}
+
+	return nil
+}
+
+// IsChatFocused returns true if chat is currently on top of stack.
+func (a *App) IsChatFocused() bool {
+	if top := a.Content.Top(); top != nil {
+		return top.Name() == "chat"
+	}
+	return false
 }
 
 // previousCommand returns to the command prior to the current one in the history

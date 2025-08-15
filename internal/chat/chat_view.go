@@ -67,20 +67,21 @@ func (cv *ChatView) setupComponents() {
 	// Status bar
 	cv.statusBar = tview.NewTextView()
 	cv.statusBar.SetDynamicColors(true)
-	cv.statusBar.SetText("Ready • Tab: switch focus • Esc: close chat • Ctrl+L: clear")
+	cv.statusBar.SetText("Ready • Tab: switch focus • Ctrl+L: clear")
 	cv.statusBar.SetTextAlign(tview.AlignCenter)
 }
 
 func (cv *ChatView) setupLayout() {
 	cv.SetDirection(tview.FlexRow)
 
-	// Add message view (takes most space)
-	cv.AddItem(cv.messageView, 0, 8, false)
+	// Full-screen optimized layout with more space for messages
+	// Message view (takes most space) - optimized for full-screen
+	cv.AddItem(cv.messageView, 0, 10, false)
 
-	// Add input field
-	cv.AddItem(cv.inputField, 3, 1, true)
+	// Input field - slightly larger for better visibility
+	cv.AddItem(cv.inputField, 4, 1, true)
 
-	// Add status bar
+	// Status bar
 	cv.AddItem(cv.statusBar, 1, 1, false)
 }
 
@@ -118,10 +119,9 @@ func (cv *ChatView) StylesChanged(s *config.Styles) {
 
 func (cv *ChatView) bindKeys() {
 	cv.actions.Bulk(ui.KeyMap{
-		tcell.KeyEnter:  ui.NewKeyAction("Send Message", cv.sendMessage, true),
-		tcell.KeyTab:    ui.NewKeyAction("Switch Focus", cv.switchFocus, true),
-		tcell.KeyEscape: ui.NewKeyAction("Close Chat", cv.closeChat, true),
-		tcell.KeyCtrlL:  ui.NewKeyAction("Clear Chat", cv.clearChat, true),
+		tcell.KeyEnter: ui.NewKeyAction("Send Message", cv.sendMessage, true),
+		tcell.KeyTab:   ui.NewKeyAction("Switch Focus", cv.switchFocus, true),
+		tcell.KeyCtrlL: ui.NewKeyAction("Clear Chat", cv.clearChat, true),
 	})
 }
 
@@ -133,9 +133,6 @@ func (cv *ChatView) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyTab:
 		cv.switchFocus(event)
 		return nil
-	case tcell.KeyEscape:
-		cv.closeChat(event)
-		return nil
 	case tcell.KeyCtrlL:
 		cv.clearChat(event)
 		return nil
@@ -144,7 +141,7 @@ func (cv *ChatView) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		if cv.focused == "input" {
 			cv.focused = "messages"
 			cv.app.SetFocus(cv.messageView)
-			cv.statusBar.SetText("📖 Browsing messages • Enter: type • Esc: close")
+			cv.statusBar.SetText("📖 Browsing messages • ⇥: to input • ⏎: type • ↑↓: scroll")
 			// Let the message view handle the up/down
 			return event
 		}
@@ -158,13 +155,10 @@ func (cv *ChatView) messageCapture(event *tcell.EventKey) *tcell.EventKey {
 		// Enter while browsing = go back to input to type
 		cv.focused = "input"
 		cv.app.SetFocus(cv.inputField)
-		cv.statusBar.SetText("💬 Type your message • Esc: close • ↑↓: browse")
+		cv.statusBar.SetText("💬 Typing mode • ⇥: to messages • ↑↓: browse • ⏎: send")
 		return nil
 	case tcell.KeyTab:
 		cv.switchFocus(event)
-		return nil
-	case tcell.KeyEscape:
-		cv.closeChat(event)
 		return nil
 	case tcell.KeyCtrlL:
 		cv.clearChat(event)
@@ -258,7 +252,7 @@ func (cv *ChatView) sendMessage(evt *tcell.EventKey) *tcell.EventKey {
 			} else {
 				cv.AddBotMessage(response)
 			}
-			cv.statusBar.SetText("Ready • Tab: switch focus • Esc: close chat • Ctrl+L: clear")
+			cv.statusBar.SetText("Ready • Tab: switch focus • Ctrl+L: clear")
 		})
 	}()
 
@@ -269,18 +263,11 @@ func (cv *ChatView) switchFocus(evt *tcell.EventKey) *tcell.EventKey {
 	if cv.focused == "input" {
 		cv.focused = "messages"
 		cv.app.SetFocus(cv.messageView)
-		cv.statusBar.SetText("📖 Browsing messages • Tab: input • Esc: close")
+		cv.statusBar.SetText("📖 Browsing messages • ⇥: to input • ⏎: type • ↑↓: scroll")
 	} else {
 		cv.focused = "input"
 		cv.app.SetFocus(cv.inputField)
-		cv.statusBar.SetText("✏️ Ready to type • Tab: browse • Esc: close")
-	}
-	return nil
-}
-
-func (cv *ChatView) closeChat(evt *tcell.EventKey) *tcell.EventKey {
-	if cv.app != nil {
-		cv.app.ToggleChat()
+		cv.statusBar.SetText("💬 Typing mode • ⇥: to messages • ↑↓: browse • ⏎: send")
 	}
 	return nil
 }

@@ -131,16 +131,24 @@ func (c *Component) HasFocus() bool {
 
 func (c *Component) bindKeys() {
 	c.actions.Bulk(ui.KeyMap{
-		tcell.KeyEscape: ui.NewKeyAction("Close Chat", c.closeCmd, true),
-		tcell.KeyCtrlC:  ui.NewKeyAction("Close Chat", c.closeCmd, true),
-		tcell.KeyTab:    ui.NewKeyAction("Switch Focus", c.switchFocusCmd, true),
+		// Chat-specific actions that will appear in k9s header menu
+		tcell.KeyUp:    ui.NewKeyAction("Browse Messages", c.noopCmd, true),
+		tcell.KeyDown:  ui.NewKeyAction("Browse Messages", c.noopCmd, true),
+		tcell.KeyEnter: ui.NewKeyAction("Type Message", c.noopCmd, true),
+		tcell.KeyCtrlL: ui.NewKeyAction("Clear Chat", c.clearCmd, true),
+		tcell.KeyTab:   ui.NewKeyAction("Switch Focus", c.switchFocusCmd, true),
 	})
 }
 
-func (c *Component) closeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	// Toggle chat visibility
-	if c.app != nil {
-		c.app.ToggleChat()
+func (c *Component) noopCmd(evt *tcell.EventKey) *tcell.EventKey {
+	// These actions are handled by the chat view itself
+	return evt
+}
+
+func (c *Component) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
+	// Clear chat messages
+	if c.chatView != nil {
+		c.chatView.clearChat(evt)
 	}
 	return nil
 }
@@ -172,7 +180,7 @@ I'm here to help you with Kubernetes operations. I can:
 Type your question below and press **Enter** to send!
 
 *Use **Tab** to switch focus between chat and main view*  
-*Use **Esc** or **Ctrl+C** to close chat*`,
+*Use :chat command to close chat*`,
 		c.getClusterName(),
 		c.getCurrentNamespace(),
 		c.getCurrentView())
