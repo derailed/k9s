@@ -339,7 +339,7 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 		podOpts := opts.ToPodLogOptions()
 
 		// Retry loop that handles both initial connection failures and stream disconnects
-		for retryCount := 0; retryCount < logRetryCount; retryCount++ {
+		for range logRetryCount {
 			req, err := logger.Logs(opts.Path, podOpts)
 			if err != nil {
 				slog.Error("Log request failed",
@@ -367,9 +367,7 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 				case <-ctx.Done():
 					return
 				default:
-					if e != nil {
-						out <- opts.ToErrLogItem(e)
-					}
+					out <- opts.ToErrLogItem(e)
 					time.Sleep(logRetryWait)
 					continue
 				}
@@ -409,48 +407,6 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	return out
 }
 
-func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions) {
-	defer func() {
-		if err := stream.Close(); err != nil {
-			slog.Error("Fail to close stream",
-				slogs.Container, opts.Info(),
-				slogs.Error, err,
-			)
-		}
-		wg.Done()
-	}()
-
-	slog.Debug("Processing logs", slogs.Options, opts.Info())
-	r := bufio.NewReader(stream)
-	for {
-		var item *LogItem
-		if bytes, err := r.ReadBytes('\n'); err == nil {
-			item = opts.ToLogItem(tview.EscapeBytes(bytes))
-		} else {
-			if errors.Is(err, io.EOF) {
-				e := fmt.Errorf("stream closed %w for %s", err, opts.Info())
-				item = opts.ToErrLogItem(e)
-				slog.Warn("Log reader EOF",
-					slogs.Container, opts.Info(),
-					slogs.Error, e,
-				)
-			} else {
-				e := fmt.Errorf("stream canceled %w for %s", err, opts.Info())
-				item = opts.ToErrLogItem(e)
-				slog.Warn("Log stream canceled")
-			}
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case out <- item:
-			if item.IsError {
-				return
-			}
-		}
-	}
-}
-
 func readLogsWithRetrySignal(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions, streamDone chan<- bool) {
 	defer func() {
 		if err := stream.Close(); err != nil {
@@ -472,26 +428,24 @@ func readLogsWithRetrySignal(ctx context.Context, stream io.ReadCloser, out chan
 		var item *LogItem
 		if bytes, err := r.ReadBytes('\n'); err == nil {
 			item = opts.ToLogItem(tview.EscapeBytes(bytes))
+		} else if errors.Is(err, io.EOF) {
+			e := fmt.Errorf("stream closed %w for %s", err, opts.Info())
+			item = opts.ToErrLogItem(e)
+			slog.Warn("Log reader EOF",
+				slogs.Container, opts.Info(),
+				slogs.Error, e,
+			)
+			// For EOF, we want to retry the connection
+			return
 		} else {
-			if errors.Is(err, io.EOF) {
-				e := fmt.Errorf("stream closed %w for %s", err, opts.Info())
-				item = opts.ToErrLogItem(e)
-				slog.Warn("Log reader EOF",
-					slogs.Container, opts.Info(),
-					slogs.Error, e,
-				)
-				// For EOF, we want to retry the connection
-				return
-			} else {
-				e := fmt.Errorf("stream canceled %w for %s", err, opts.Info())
-				item = opts.ToErrLogItem(e)
-				slog.Debug("Log stream canceled, will retry connection",
-					slogs.Container, opts.Info(),
-					slogs.Error, e,
-				)
-				// For stream errors (like credential expiry), we want to retry
-				return
-			}
+			e := fmt.Errorf("stream canceled %w for %s", err, opts.Info())
+			item = opts.ToErrLogItem(e)
+			slog.Debug("Log stream canceled, will retry connection",
+				slogs.Container, opts.Info(),
+				slogs.Error, e,
+			)
+			// For stream errors (like credential expiry), we want to retry
+			return
 		}
 		select {
 		case <-ctx.Done():
