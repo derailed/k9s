@@ -1,0 +1,487 @@
+# K9s Chat Feature Development Rules
+
+## Project Context
+This project integrates a chat feature into k9s (Kubernetes CLI) using the Charmbracelet TUI ecosystem and OpenAI API. The chat provides context-aware assistance with safe command execution capabilities.
+
+## K9s Codebase Structure Overview
+
+### Root Directory Structure
+```
+k9s/
+├── cmd/                 # Cobra CLI commands and root application entry
+├── internal/            # Core application logic (main focus area)
+├── assets/              # Static assets (logos, screenshots, documentation images)
+├── change_logs/         # Release notes and version history
+├── plugins/             # K9s plugin examples and templates
+├── skins/               # UI theme and color scheme definitions
+├── testdata/            # Test fixtures and sample data
+├── go.mod/go.sum       # Go module dependencies
+├── main.go             # Application entry point
+└── Makefile            # Build and development commands
+```
+
+### Internal Package Architecture (internal/)
+
+#### Core Infrastructure
+```
+internal/
+├── client/             # Kubernetes API client abstraction and connection management
+│   ├── client.go       # Main K8s client implementation
+│   ├── config.go       # Kubeconfig handling and cluster connection
+│   ├── gvr.go          # GroupVersionResource definitions for K8s resources
+│   └── metrics.go      # Cluster metrics collection and processing
+├── config/             # Configuration management system
+│   ├── data/           # Configuration data structures and persistence
+│   ├── json/           # JSON schema validation for configs
+│   ├── k9s.go          # Main K9s configuration management
+│   ├── styles.go       # Theme and styling configuration
+│   └── views.go        # View-specific configuration
+├── model/              # Data models and business logic
+│   ├── types.go        # Core type definitions and interfaces
+│   ├── table.go        # Table data model for resource lists
+│   ├── stack.go        # Component stack management
+│   ├── cluster_info.go # Cluster metadata and health information
+│   └── history.go      # Command and filter history management
+```
+
+#### User Interface Layer
+```
+├── ui/                 # Low-level TUI components (tview-based)
+│   ├── app.go          # Main application UI container
+│   ├── pages.go        # Page stack management for navigation
+│   ├── table.go        # Table component for resource display
+│   ├── tree.go         # Tree view component for hierarchical data
+│   ├── prompt.go       # Command input and suggestion system
+│   ├── menu.go         # Menu and navigation components
+│   ├── logo.go         # K9s logo and branding display
+│   ├── crumbs.go       # Breadcrumb navigation component
+│   ├── flash.go        # Status messages and notifications
+│   └── action.go       # Key binding and action management
+├── view/               # High-level views and components (business logic)
+│   ├── app.go          # Main application view controller
+│   ├── command.go      # Command interpretation and execution
+│   ├── table.go        # Resource table view with filtering/sorting
+│   ├── live_view.go    # Real-time resource monitoring views
+│   ├── browser.go      # Generic resource browser implementation
+│   ├── help.go         # Help system and documentation display
+│   ├── alias.go        # Command alias management view
+│   ├── dir.go          # Directory/file browser for YAML manifests
+│   ├── exec.go         # Shell command execution infrastructure
+│   └── cmd/            # Command parsing and interpretation
+│       ├── types.go    # Command type definitions
+│       ├── interpreter.go # Command line parsing logic
+│       └── args.go     # Command argument processing
+```
+
+#### Data Access Layer
+```
+├── dao/                # Data Access Objects for K8s resources
+│   ├── accessor.go     # Base interface for resource access
+│   ├── generic.go      # Generic resource operations (CRUD)
+│   ├── table.go        # Tabular data access patterns
+│   ├── pod.go          # Pod-specific operations and logic
+│   ├── container.go    # Container operations within pods
+│   ├── context.go      # Kubernetes context management
+│   ├── ns.go           # Namespace operations
+│   └── [resource].go   # Specific DAOs for each K8s resource type
+├── render/             # Data rendering and formatting
+│   ├── base.go         # Base rendering interface and utilities
+│   ├── [resource].go   # Specific renderers for each resource type
+│   ├── helm/           # Helm-specific rendering (charts, releases)
+│   └── testdata/       # Test data for rendering validation
+```
+
+#### Supporting Infrastructure
+```
+├── watch/              # Kubernetes resource watching and updates
+│   ├── factory.go      # Watch factory for managing resource streams
+│   └── forwarders.go   # Port forwarding management
+├── port/               # Port forwarding infrastructure
+│   ├── pf.go           # Port forward implementation
+│   └── tunnel.go       # Tunnel management for forwards
+├── tchart/             # Terminal charts and visualizations
+│   ├── component.go    # Chart component implementation
+│   ├── sparkline.go    # Sparkline charts for metrics
+│   └── gauge.go        # Gauge charts for resource utilization
+├── xray/               # Resource relationship analysis and visualization
+│   ├── container.go    # Container dependency analysis
+│   └── [resource].go   # Resource relationship mapping
+├── vul/                # Vulnerability scanning integration
+│   ├── scanner.go      # Security vulnerability scanning
+│   └── scan.go         # Scan result processing
+└── health/             # Cluster health monitoring
+    ├── check.go        # Health check implementations
+    └── types.go        # Health status type definitions
+```
+
+#### Utility Packages
+```
+├── color/              # Color and theming utilities
+├── slogs/              # Structured logging helpers
+├── perf/               # Performance monitoring and benchmarking
+└── helpers.go          # Common utility functions
+```
+
+## Code Style & Organization
+
+### Go Conventions
+- Follow k9s existing code style and patterns
+- Use `internal/` package structure for new features
+- Maintain consistent error handling with k9s patterns
+- Always add proper license headers: `// SPDX-License-Identifier: Apache-2.0`
+- Use structured logging with `slog` package
+- Implement interfaces for extensibility (providers, components)
+
+### Package Structure
+```
+internal/chat/
+├── component.go      # Main chat component implementing model.Component
+├── model/           # Data models and state
+├── provider/        # LLM provider implementations
+├── ui/             # Bubble Tea UI components
+├── command/        # Command detection and execution
+└── config/         # Configuration management
+```
+
+### Naming Conventions
+- Use k9s naming patterns: `NewXxx()` constructors, interface implementations
+- Prefix chat-specific types with `Chat` (e.g., `ChatComponent`, `ChatModel`)
+- Use descriptive names for Bubble Tea models: `ChatModel`, `MessageListModel`
+- Environment variables: `K9S_CHAT_*` prefix for chat-specific configs
+
+## Dependencies & Libraries
+
+### Use K9s Native Components ONLY
+```go
+// DO NOT USE Charmbracelet - use k9s native patterns instead:
+github.com/derailed/tview                     // K9s TUI framework (already imported)
+github.com/derailed/tcell/v2                  // Terminal handling (already imported)
+// Use these k9s internal packages:
+github.com/derailed/k9s/internal/ui           // Native UI components (Table, Menu, etc.)
+github.com/derailed/k9s/internal/config       // Styling and theme system
+github.com/derailed/k9s/internal/model        // Component interfaces
+```
+
+### Import Organization
+1. Standard library imports
+2. Third-party imports (tview, tcell)
+3. K9s internal imports (ui, config, model)
+4. Chat feature imports (internal/chat/*)
+
+### Integration Patterns
+- Implement `model.Component` interface for k9s integration
+- Use k9s native styling system (`config.Styles`) with full theme support
+- Follow k9s command pattern for `:chat` command
+- Integrate with k9s state management system
+- Use tview primitives directly (Flex, TextView, InputField, etc.)
+
+## Chat Feature Integration Points
+
+### Key Integration Locations
+
+#### 1. Command System Integration
+**Primary Files:**
+- `internal/view/cmd/types.go` - Add `chatCmd` to command sets (around line 60)
+- `internal/view/cmd/interpreter.go` - Implement `IsChatCmd()` method (around line 145)
+- `internal/view/command.go` - Handle chat command in `specialCmd()` method (around line 250)
+
+**Pattern to Follow:** Study existing commands like help (`internal/view/help.go`), alias, or xray for toggle behavior
+
+#### 2. UI Integration Points
+**Primary Files:**
+- `internal/view/app.go` - Main application layout modification (around line 158)
+  - Add chat panel to App struct
+  - Modify layout() method for split panel
+  - Add chat toggle command handler
+- `internal/ui/` - TUI component integration
+  - Follow patterns from `internal/ui/table.go` for component structure
+  - Use `internal/ui/action.go` for key binding integration
+  - Extend `internal/ui/pages.go` for panel management
+
+#### 3. State Management Integration
+**Primary Files:**
+- `internal/model/` - Data model integration
+  - Follow patterns from `internal/model/cluster_info.go` for state tracking
+  - Use `internal/model/stack.go` patterns for component lifecycle
+- `internal/config/` - Configuration integration
+  - Extend `internal/config/k9s.go` for chat-specific settings
+  - Use `internal/config/styles.go` patterns for theme integration
+
+#### 4. Shell Execution Integration
+**Primary Files:**
+- `internal/view/exec.go` - Reuse existing shell execution infrastructure
+- `internal/dao/` - Leverage existing K8s resource access patterns
+- `internal/client/` - Use existing K8s client for context information
+
+### Chat Feature Specific Rules
+
+#### Command System Integration
+- Add `chatCmd` to `internal/view/cmd/types.go` command sets
+- Implement `IsChatCmd()` method in interpreter
+- Handle chat command in `specialCmd()` method in `internal/view/command.go`
+- Follow existing command toggle pattern (like help, alias commands)
+
+#### Component Architecture (Custom Markdown)
+```
+internal/chat/                  # Chat feature package with custom markdown
+├── component.go               # Main component implementing model.Component interface
+├── chat_view.go              # Main chat UI using tview.Flex + custom components
+├── markdown_view.go          # Custom MarkdownTextView with ANSI parsing
+├── types.go                  # Message types, interfaces, and state management
+├── mock_provider.go          # Mock LLM provider with k9s context awareness
+└── provider/                  # Future LLM provider implementations
+    ├── interface.go          # Provider interface definition
+    ├── openai.go             # OpenAI API implementation
+    └── mock.go               # Additional mock providers
+```
+
+### LLM Provider Interface
+```go
+// Always implement this interface for new providers
+type LLMProvider interface {
+    SendMessage(ctx context.Context, messages []Message, opts *Options) (*Response, error)
+    GetModels(ctx context.Context) ([]Model, error)
+    Configure(config *ProviderConfig) error
+}
+```
+
+### Security Requirements
+- NEVER log or expose API keys in any form
+- Always validate user input before LLM requests
+- Implement command approval system for ALL shell commands
+- Use context.WithTimeout for all API calls
+- Sanitize output before display
+
+### State Management
+- Track k9s context (namespace, resource, view) for LLM awareness
+- Implement proper cleanup on component destruction
+- Handle panel resize events gracefully
+- Maintain chat state across toggles (don't lose messages)
+
+### Error Handling
+```go
+// Use k9s error patterns
+if err != nil {
+    slog.Error("Chat operation failed", 
+        slogs.Error, err,
+        slogs.Component, "chat",
+        slogs.Operation, "send_message",
+    )
+    return err
+}
+```
+
+## UI/UX Guidelines
+
+### Split Panel Layout
+- Left panel: Preserve existing k9s functionality
+- Right panel: Chat interface (configurable width)
+- Responsive design: Handle terminal resize events
+- Toggle with `:chat` command (same command closes)
+
+### K9s Native Component Implementation
+```go
+// Follow k9s component patterns (like Help, LiveView)
+type ChatView struct {
+    *tview.Flex
+    messageList *tview.TextView
+    inputField  *tview.InputField
+    actions     *ui.KeyActions
+    styles      *config.Styles
+    app         *view.App
+}
+
+// Required methods for model.Component interface
+func (c *ChatView) Init(ctx context.Context) error
+func (c *ChatView) Name() string
+func (c *ChatView) Hints() model.MenuHints
+func (c *ChatView) StylesChanged(s *config.Styles)
+```
+
+### Styling Consistency (K9s Native)
+- Use k9s color scheme directly (`config.Styles`)
+- Full integration with k9s theming system
+- Ensure readability in all supported terminal types
+- Support both light and dark themes (automatic via k9s themes)
+- Maintain accessibility standards
+
+### Message Rendering (Pure Markdown with Custom Component)
+- Use custom MarkdownTextView component that renders Glamour output
+- Pure markdown formatting for all content (headers, messages, etc.)
+- No mixed tview color tags - everything goes through Glamour
+- ANSI escape sequence parsing in custom component
+- Intuitive navigation: Up/Down to browse, Enter to return to typing
+
+## Configuration Management
+
+### Environment Variables
+```bash
+# Required
+OPENAI_API_KEY          # Primary API key
+OPENAI_BASE_URL         # Optional: Custom endpoint (default: api.openai.com)
+
+# Optional chat configuration
+K9S_CHAT_MODEL          # Model selection (default: gpt-4)
+K9S_CHAT_TEMPERATURE    # Response creativity (default: 0.7)
+K9S_CHAT_MAX_TOKENS     # Response length (default: 2048)
+K9S_CHAT_TIMEOUT        # Request timeout (default: 30s)
+```
+
+### Configuration Priority
+1. Environment variables
+2. k9s configuration files (future)
+3. Default values
+
+## Testing Requirements
+
+### Unit Tests
+- Test all public methods and interfaces
+- Mock LLM providers for testing
+- Test UI components with Bubble Tea testing utilities
+- Validate configuration loading and defaults
+
+### Integration Tests
+- Test chat panel toggle functionality
+- Verify k9s context awareness
+- Test command approval workflow
+- Validate error handling paths
+
+### Test File Naming
+```
+component_test.go       # Tests for component.go
+model_test.go          # Tests for models
+provider_openai_test.go # Tests for OpenAI provider
+```
+
+## Command Execution Security
+
+### Approval System Requirements
+- ALL shell commands must require user approval
+- Display command, description, and risk level
+- Use huh forms for approval interface
+- Log all approved/denied commands
+- Support for command whitelist/blacklist
+
+### Risk Assessment
+```go
+type RiskLevel int
+const (
+    RiskLow RiskLevel = iota    // Read operations (get, describe)
+    RiskMedium                  // Modify operations (scale, patch)
+    RiskHigh                    // Dangerous operations (delete, exec)
+)
+```
+
+### Command Detection
+- Parse LLM responses for shell commands
+- Support for kubectl, docker, and general shell commands
+- Validate command syntax before approval
+- Provide command explanations to users
+
+## Performance Guidelines
+
+### Memory Management
+- Limit message history size (configurable)
+- Implement message virtualization for large histories
+- Clean up resources on component destruction
+- Avoid memory leaks in Bubble Tea models
+
+### Network Operations
+- Use context with timeout for all API calls
+- Implement exponential backoff for retries
+- Handle rate limiting gracefully
+- Provide user feedback for long operations
+
+### UI Performance
+- Efficient rendering updates
+- Minimize unnecessary re-renders
+- Use Bubble Tea batching for multiple updates
+- Optimize large message list handling
+
+## Future Extensibility
+
+### Provider System
+- Design for multiple LLM providers
+- Plugin-style architecture for providers
+- Configuration schema for provider selection
+- Consistent interface across providers
+
+### Feature Additions
+- Plan for chat history persistence
+- Design for collaborative features
+- Consider voice integration
+- Support for custom prompts and tools
+
+### API Design
+- Expose interfaces for external plugins
+- Version compatibility for provider APIs
+- Backward compatibility for configuration
+- Event system for feature extensions
+
+## Documentation Requirements
+
+### Code Documentation
+- Godoc comments for all public interfaces
+- Usage examples in package documentation
+- Error condition documentation
+- Performance characteristics notes
+
+### User Documentation
+- Feature usage guide
+- Configuration examples
+- Troubleshooting guide
+- Security best practices
+
+## Commit Guidelines
+
+### Commit Message Format
+```
+feat(chat): add OpenAI provider integration
+fix(chat): handle network timeouts gracefully
+docs(chat): update configuration examples
+test(chat): add approval system tests
+```
+
+### PR Requirements
+- Include tests for new functionality
+- Update documentation for user-facing changes
+- Verify performance impact
+- Security review for command execution features
+
+## Development Workflow
+
+### Branch Strategy
+- Feature branches: `feature/chat-*`
+- Bug fixes: `fix/chat-*`
+- Documentation: `docs/chat-*`
+
+### Review Checklist
+- [ ] Code follows k9s patterns
+- [ ] Tests added/updated
+- [ ] Documentation updated
+- [ ] Security considerations reviewed
+- [ ] Performance impact assessed
+- [ ] UI/UX standards met
+- [ ] Error handling implemented
+
+## Integration Points
+
+### K9s App Integration
+- Modify `internal/view/app.go` layout method
+- Add chat toggle to key bindings
+- Integrate with existing theme system
+- Preserve existing functionality
+
+### State Integration
+- Access current namespace via k9s state
+- Monitor resource selection changes
+- Track current view/component
+- Provide cluster information to LLM
+
+### Command Integration
+- Extend command interpreter
+- Add to special command handling
+- Integrate with suggestion system
+- Maintain command history integration
+
+This .cursorrules file ensures consistent development practices and high-quality implementation of the k9s chat feature while maintaining compatibility with existing k9s architecture and patterns.

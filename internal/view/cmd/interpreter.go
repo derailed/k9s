@@ -178,6 +178,11 @@ func (c *Interpreter) CowArg() (string, bool) {
 	return m, ok && m != ""
 }
 
+// IsChatCmd returns true if chat cmd is detected.
+func (c *Interpreter) IsChatCmd() bool {
+	return chatCmd.Has(c.cmd)
+}
+
 // RBACArgs returns the subject and topic is any.
 func (c *Interpreter) RBACArgs() (subject, verb string, ok bool) {
 	if !c.IsRBACCmd() {

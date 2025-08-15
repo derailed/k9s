@@ -20,6 +20,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/chat"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -47,17 +48,21 @@ const (
 type App struct {
 	version string
 	*ui.App
-	Content       *PageStack
-	command       *Command
-	factory       *watch.Factory
-	cancelFn      context.CancelFunc
-	clusterModel  *model.ClusterInfo
-	cmdHistory    *model.History
-	filterHistory *model.History
-	conRetry      int32
-	showHeader    bool
-	showLogo      bool
-	showCrumbs    bool
+	Content        *PageStack
+	command        *Command
+	factory        *watch.Factory
+	cancelFn       context.CancelFunc
+	clusterModel   *model.ClusterInfo
+	cmdHistory     *model.History
+	filterHistory  *model.History
+	conRetry       int32
+	showHeader     bool
+	showLogo       bool
+	showCrumbs     bool
+	chatComponent  model.Component
+	chatVisible    bool
+	chatFocused    bool
+	flashComponent tview.Primitive
 }
 
 // NewApp returns a K9s app instance.
@@ -159,18 +164,161 @@ func (a *App) layout(ctx context.Context) {
 	flash := ui.NewFlash(a.App)
 	go flash.Watch(ctx, a.Flash().Channel())
 
-	main := tview.NewFlex().SetDirection(tview.FlexRow)
-	main.AddItem(a.statusIndicator(), 1, 1, false)
-	main.AddItem(a.Content, 0, 10, true)
-	if !a.Config.K9s.IsCrumbsless() {
-		main.AddItem(a.Crumbs(), 1, 1, false)
-	}
-	main.AddItem(flash, 1, 1, false)
+	// Store flash component for rebuilds
+	a.flashComponent = flash
+
+	// Initialize chat component
+	a.initChatComponent()
+
+	// Create the main layout with optional chat panel
+	main := a.buildMainLayout(flash)
 
 	a.Main.AddPage("main", main, true, false)
 	a.toggleHeader(!a.Config.K9s.IsHeadless(), !a.Config.K9s.IsLogoless())
 	if !a.Config.K9s.IsSplashless() {
 		a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version), true, true)
+	}
+}
+
+func (a *App) buildMainLayout(flash tview.Primitive) tview.Primitive {
+	main := tview.NewFlex().SetDirection(tview.FlexRow)
+	main.AddItem(a.statusIndicator(), 1, 1, false)
+
+	// Content area with optional chat split
+	contentArea := a.buildContentArea()
+	main.AddItem(contentArea, 0, 10, true)
+
+	if !a.Config.K9s.IsCrumbsless() {
+		main.AddItem(a.Crumbs(), 1, 1, false)
+	}
+	main.AddItem(flash, 1, 1, false)
+
+	return main
+}
+
+func (a *App) buildContentArea() tview.Primitive {
+	if a.chatVisible && a.chatComponent != nil {
+		// Split layout: main content on left, chat on right
+		splitPane := tview.NewFlex().SetDirection(tview.FlexColumn)
+		splitPane.AddItem(a.Content, 0, 7, !a.chatFocused)      // 70% for main content
+		splitPane.AddItem(a.chatComponent, 0, 3, a.chatFocused) // 30% for chat
+
+		// Set up Tab key handling for focus switching
+		splitPane.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyTab {
+				a.toggleChatFocus()
+				return nil
+			}
+
+			// If chat is focused, prevent k9s shortcuts from being processed
+			if a.chatFocused {
+				// Only allow Escape to close chat, Tab to switch focus
+				if event.Key() == tcell.KeyEscape {
+					a.chatCmd() // Close chat
+					return nil
+				}
+				// Forward all other events to chat component
+				if a.chatComponent != nil {
+					// Let the chat component handle the event
+					return event
+				}
+				return nil // Consume the event to prevent k9s processing
+			}
+
+			return event // Let k9s handle the event normally
+		})
+
+		return splitPane
+	}
+	// Normal layout: just the main content
+	return a.Content
+}
+
+func (a *App) initChatComponent() {
+	a.chatComponent = chat.NewChatComponent(a.Application, a.factory)
+	a.chatVisible = false
+	a.chatFocused = false
+}
+
+func (a *App) toggleChat() error {
+	a.chatVisible = !a.chatVisible
+
+	// When opening chat, focus it by default
+	if a.chatVisible {
+		a.chatFocused = true
+	} else {
+		a.chatFocused = false
+	}
+
+	// Send welcome message when opening chat
+	if a.chatVisible && a.chatComponent != nil {
+		if chatComp, ok := a.chatComponent.(*chat.Component); ok {
+			chatComp.SendWelcomeMessage()
+		}
+
+		// Initialize chat component if not already done
+		if err := a.chatComponent.Init(context.Background()); err != nil {
+			slog.Error("Failed to initialize chat component", slogs.Error, err)
+			a.chatVisible = false
+			a.chatFocused = false
+			return err
+		}
+
+		if a.chatVisible {
+			a.chatComponent.Start()
+			// Set focus to chat when opening
+			a.QueueUpdateDraw(func() {
+				a.SetFocus(a.chatComponent)
+			})
+		}
+	} else if !a.chatVisible && a.chatComponent != nil {
+		a.chatComponent.Stop()
+	}
+
+	// Rebuild the layout
+	a.QueueUpdateDraw(func() {
+		a.rebuildLayout()
+	})
+
+	return nil
+}
+
+func (a *App) toggleChatFocus() {
+	if !a.chatVisible || a.chatComponent == nil {
+		return
+	}
+
+	a.chatFocused = !a.chatFocused
+
+	// Set focus directly instead of rebuilding layout
+	a.QueueUpdateDraw(func() {
+		if a.chatFocused {
+			a.SetFocus(a.chatComponent)
+		} else {
+			a.SetFocus(a.Content)
+		}
+	})
+}
+
+func (a *App) rebuildLayout() {
+	// Get the current main page
+	mainPage, ok := a.Main.GetPrimitive("main").(*tview.Flex)
+	if !ok {
+		slog.Error("Failed to get main page for chat layout rebuild")
+		return
+	}
+
+	// Rebuild the entire layout by clearing and re-adding components
+	mainPage.Clear()
+	mainPage.AddItem(a.statusIndicator(), 1, 1, false)
+	contentArea := a.buildContentArea()
+	mainPage.AddItem(contentArea, 0, 10, true)
+	if !a.Config.K9s.IsCrumbsless() {
+		mainPage.AddItem(a.Crumbs(), 1, 1, false)
+	}
+	// Add the flash component back
+	if a.flashComponent != nil {
+		mainPage.AddItem(a.flashComponent, 1, 1, false)
 	}
 }
 
@@ -703,6 +851,11 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	a.Prompt().Deactivate()
 	return nil
+}
+
+// chatCmd toggles the chat panel.
+func (a *App) chatCmd() error {
+	return a.toggleChat()
 }
 
 // previousCommand returns to the command prior to the current one in the history

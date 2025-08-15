@@ -267,6 +267,10 @@ func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 		if err := c.xrayCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
+	case p.IsChatCmd():
+		if err := c.app.chatCmd(); err != nil {
+			c.app.Flash().Err(err)
+		}
 	case p.IsRBACCmd():
 		if cat, sub, ok := p.RBACArgs(); !ok {
 			c.app.Flash().Errf("Invalid command. Use `can [u|g|s]:xxx`")

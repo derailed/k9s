@@ -61,4 +61,8 @@ var (
 		"xr",
 		"xray",
 	)
+	chatCmd = sets.New(
+		"chat",
+		"c",
+	)
 )
