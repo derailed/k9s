@@ -160,6 +160,12 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   pkgx k9s
   ```
 
+* Via [gah](https://github.com/marverix/gah) for Linux and macOS
+
+  ```shell
+  gah install k9s
+  ```
+
 * Via [Webi](https://webinstall.dev) for Windows
 
   ```shell
