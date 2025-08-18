@@ -1,15 +1,15 @@
 plugins:
 # Author: Pavan Gudiwada
-# Investigate incidents in your cluster to quickly find the root cause using HolmesGPT 
+# Investigate incidents in your cluster to quickly find the root cause using HolmesGPT
 # Requires HolmesGPT to be installed and configured (https://github.com/robusta-dev/holmesgpt) on your system
 # Open any K9s view, then:
 # Shift+H to run an investigation with default ask command
 # Shift+O to customize the question before running an investigation.
   holmesgpt:
-    shortCut: Shift-H 
-    description: Ask HolmesGPT 
+    shortCut: Shift-H
+    description: Ask HolmesGPT
     scopes:
-      - all 
+      - all
     command: bash
     background: false
     confirm: false
@@ -17,7 +17,7 @@ plugins:
       - -c
       - |
         holmes ask "why is $NAME of $RESOURCE_NAME in -n $NAMESPACE not working as expected"
-        
+
         echo "Press 'q' to exit"
         while : ; do
         read -n 1 k <&1
@@ -29,7 +29,7 @@ plugins:
     shortCut: Shift-Q
     description: Custom HolmesGPT Ask
     scopes:
-      - all 
+      - all
     command: bash
     background: false
     confirm: false
