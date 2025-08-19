@@ -47,6 +47,9 @@ func newArgs(p *Interpreter, aa []string) args {
 			}
 
 		case strings.Contains(a, labelFlag):
+			continue
+
+		case strings.Contains(a, labelAssignment):
 			if ll := ToLabels(a); len(ll) != 0 {
 				arguments[labelKey] = strings.ToLower(a)
 			}
