@@ -58,11 +58,11 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 		if !ok {
 			return nil
 		}
-		suggests = completeCtx(n, contexts)
+		suggests = completeCtx(command, n, contexts)
 
 	case p.HasNS():
 		if n, ok := p.HasContext(); ok {
-			suggests = completeCtx(n, contexts)
+			suggests = completeCtx(command, n, contexts)
 		}
 		if len(suggests) > 0 {
 			break
@@ -76,7 +76,7 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 
 	default:
 		if n, ok := p.HasContext(); ok {
-			suggests = completeCtx(n, contexts)
+			suggests = completeCtx(command, n, contexts)
 		}
 	}
 	slices.Sort(suggests)
@@ -99,11 +99,11 @@ func completeNS(s string, nn client.NamespaceNames) []string {
 	return suggests
 }
 
-func completeCtx(s string, contexts []string) []string {
+func completeCtx(command, s string, contexts []string) []string {
 	var suggests []string
 	for _, ctxName := range contexts {
 		if suggest, ok := ShouldAddSuggest(s, ctxName); ok {
-			if s == "" {
+			if s == "" && !strings.HasSuffix(command, " ") {
 				suggests = append(suggests, " "+suggest)
 				continue
 			}
