@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -19,7 +20,6 @@ import (
 
 const (
 	renamePage = "rename"
-	deletePage = "delete"
 	inputField = "New name:"
 )
 
@@ -41,8 +41,10 @@ func NewContext(gvr *client.GVR) ResourceViewer {
 
 func (c *Context) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
-	aa.Add(ui.KeyR, ui.NewKeyAction("Rename", c.renameCmd, true))
-	aa.Add(ui.KeyD, ui.NewKeyAction("Delete", c.deleteCmd, true))
+	if !c.App().Config.IsReadOnly() {
+		aa.Add(ui.KeyR, ui.NewKeyAction("Rename", c.renameCmd, true))
+		aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", c.deleteCmd, true))
+	}
 }
 
 func (c *Context) renameCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -62,7 +64,14 @@ func (c *Context) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	c.showDeleteConfirmation(contextName, c.deleteDialogCallback)
+	d := c.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, c.App().Content.Pages, "Delete", fmt.Sprintf("Delete context %q?", contextName), func() {
+		if err := c.App().factory.Client().Config().DelContext(contextName); err != nil {
+			c.App().Flash().Err(err)
+			return
+		}
+		c.Refresh()
+	}, func() {})
 
 	return nil
 }
@@ -116,51 +125,6 @@ func (c *Context) showRenameModal(name string, ok func(form *tview.Form, context
 	}
 }
 
-func (c *Context) deleteDialogCallback(contextName string) error {
-	if err := c.App().factory.Client().Config().DelContext(contextName); err != nil {
-		c.App().Flash().Err(err)
-		return err
-	}
-	c.Refresh()
-	return nil
-}
-
-func (c *Context) showDeleteConfirmation(name string, callback func(string) error) {
-	app := c.App()
-	styles := app.Styles.Dialog()
-
-	f := tview.NewForm().
-		SetItemPadding(0).
-		SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
-		SetButtonTextColor(styles.ButtonFgColor.Color()).
-		SetLabelColor(styles.LabelFgColor.Color()).
-		SetFieldTextColor(styles.FieldFgColor.Color())
-	f.AddButton("OK", func() {
-		if err := callback(name); err != nil {
-			app.Flash().Err(err)
-			return
-		}
-		app.Content.Pages.RemovePage(deletePage)
-	}).
-		AddButton("Cancel", func() {
-			app.Content.RemovePage(deletePage)
-		})
-
-	m := tview.NewModalForm("<Delete>", f)
-	m.SetText(fmt.Sprintf("Delete context %q?", name))
-	m.SetDoneFunc(func(int, string) {
-		app.Content.RemovePage(deletePage)
-	})
-	app.Content.AddPage(deletePage, m, false, false)
-	app.Content.ShowPage(deletePage)
-
-	for i := range f.GetButtonCount() {
-		f.GetButton(i).
-			SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color()).
-			SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
-	}
-}
 
 func (c *Context) useCtx(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
 	slog.Debug("Using context",
