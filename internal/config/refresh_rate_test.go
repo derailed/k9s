@@ -32,7 +32,7 @@ func TestRefreshRateBackwardCompatibility(t *testing.T) {
 			var k K9s
 			err := yaml.Unmarshal([]byte(test.yamlContent), &k)
 			require.NoError(t, err)
-			assert.Equal(t, test.expected, k.RefreshRate)
+			assert.InDelta(t, test.expected, k.RefreshRate, 0.001)
 		})
 	}
 }

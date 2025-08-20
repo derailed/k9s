@@ -110,7 +110,7 @@ func Test_k9sOverrides(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.rate, u.k.GetRefreshRate())
+			assert.InDelta(t, u.rate, u.k.GetRefreshRate(), 0.001)
 			assert.Equal(t, u.ro, u.k.IsReadOnly())
 			assert.Equal(t, u.cl, u.k.IsCrumbsless())
 			assert.Equal(t, u.sl, u.k.IsSplashless())
