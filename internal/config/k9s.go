@@ -35,7 +35,7 @@ type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
 	GPUVendors          gpuVendors `json:"gpuVendors" yaml:"gpuVendors"`
 	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
-	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
+	RefreshRate         float64    `json:"refreshRate" yaml:"refreshRate"`
 	APIServerTimeout    string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
 	MaxConnRetry        int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
@@ -49,7 +49,7 @@ type K9s struct {
 	Logger              Logger     `json:"logger" yaml:"logger"`
 	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
 	DefaultView         string     `json:"defaultView" yaml:"defaultView"`
-	manualRefreshRate   int
+	manualRefreshRate   float64
 	manualReadOnly      *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
@@ -314,7 +314,7 @@ func (k *K9s) Reload() error {
 // Override overrides k9s config from cli args.
 func (k *K9s) Override(k9sFlags *Flags) {
 	if k9sFlags.RefreshRate != nil && *k9sFlags.RefreshRate != DefaultRefreshRate {
-		k.manualRefreshRate = *k9sFlags.RefreshRate
+		k.manualRefreshRate = float64(*k9sFlags.RefreshRate)
 	}
 
 	k.UI.manualHeadless = k9sFlags.Headless
@@ -369,7 +369,7 @@ func (k *K9s) IsSplashless() bool {
 }
 
 // GetRefreshRate returns the current refresh rate.
-func (k *K9s) GetRefreshRate() int {
+func (k *K9s) GetRefreshRate() float64 {
 	if k.manualRefreshRate != 0 {
 		return k.manualRefreshRate
 	}

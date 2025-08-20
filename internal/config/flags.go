@@ -5,7 +5,7 @@ package config
 
 const (
 	// DefaultRefreshRate represents the refresh interval.
-	DefaultRefreshRate = 2 // secs
+	DefaultRefreshRate = 2.0 // secs
 
 	// DefaultLogLevel represents the default log level.
 	DefaultLogLevel = "info"
