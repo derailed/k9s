@@ -170,6 +170,7 @@ func (b *Browser) Start() {
 	}
 
 	b.Stop()
+	b.firstView.Store(0) // Reset first view counter on each start
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -301,7 +302,8 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 	if !b.app.ConOK() || cancel == nil || !b.app.IsRunning() {
 		return
 	}
-	if b.firstView.Load() == 0 {
+	// Skip warning on first view or if table data is empty (likely during initialization)
+	if b.firstView.Load() == 0 || mdata.Empty() {
 		b.firstView.Add(1)
 		return
 	}
