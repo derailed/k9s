@@ -77,6 +77,8 @@ func TestSuggestSubCommand(t *testing.T) {
 		{Command: "ctx p", Suggestions: []string{"re", "rod"}},
 		{Command: "ctx   p", Suggestions: []string{"re", "rod"}},
 		{Command: "ctx pr", Suggestions: []string{"e", "od"}},
+		{Command: "ctx", Suggestions: []string{" develop", " pre", " prod", " test"}},
+		{Command: "ctx ", Suggestions: []string{"develop", "pre", "prod", "test"}},
 		{Command: "context   d", Suggestions: []string{"evelop"}},
 		{Command: "contexts   t", Suggestions: []string{"est"}},
 		{Command: "po ", Suggestions: nil},
