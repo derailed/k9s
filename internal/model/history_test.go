@@ -83,7 +83,7 @@ func TestHistoryTop(t *testing.T) {
 			if ok && cmd != nil {
 				assert.Equal(t, u.cmd, cmd.Command)
 			} else {
-				assert.Equal(t, "", u.cmd)
+				assert.Empty(t, u.cmd)
 			}
 		})
 	}
@@ -137,7 +137,7 @@ func TestHistoryBack(t *testing.T) {
 			if ok && cmd != nil {
 				assert.Equal(t, u.cmd, cmd.Command)
 			} else {
-				assert.Equal(t, "", u.cmd)
+				assert.Empty(t, u.cmd)
 			}
 		})
 	}
@@ -194,7 +194,7 @@ func TestHistoryForward(t *testing.T) {
 			if ok && cmd != nil {
 				assert.Equal(t, u.cmd, cmd.Command)
 			} else {
-				assert.Equal(t, "", u.cmd)
+				assert.Empty(t, u.cmd)
 			}
 		})
 	}
