@@ -42,9 +42,13 @@ func NewContext(gvr *client.GVR) ResourceViewer {
 func (c *Context) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 	if !c.App().Config.IsReadOnly() {
-		aa.Add(ui.KeyR, ui.NewKeyAction("Rename", c.renameCmd, true))
-		aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", c.deleteCmd, true))
+		c.bindDangerousKeys(aa)
 	}
+}
+
+func (c *Context) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyR, ui.NewKeyAction("Rename", c.renameCmd, true))
+	aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", c.deleteCmd, true))
 }
 
 func (c *Context) renameCmd(evt *tcell.EventKey) *tcell.EventKey {
