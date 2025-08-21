@@ -378,7 +378,7 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				readLogsWithRetrySignal(ctx, stream, out, opts, streamDone)
+				readLogs(ctx, stream, out, opts, streamDone)
 			}()
 
 			// Wait for stream to finish or context cancellation
@@ -407,7 +407,7 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	return out
 }
 
-func readLogsWithRetrySignal(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions, streamDone chan<- bool) {
+func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions, streamDone chan<- bool) {
 	defer func() {
 		if err := stream.Close(); err != nil {
 			slog.Error("Fail to close stream",
