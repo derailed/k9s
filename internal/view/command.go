@@ -360,7 +360,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	if pushCmd {
 		// Extract filter and label information from the command
 		filter := ""
-		labels := ""
+		labelSelector := ""
 		if f, ok := p.FilterArg(); ok {
 			filter = f
 		}
@@ -371,12 +371,12 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 				labelPairs = append(labelPairs, k+"="+v)
 			}
 			if len(labelPairs) > 0 {
-				labels = "-l " + strings.Join(labelPairs, ",")
+				labelSelector = "-l " + strings.Join(labelPairs, ",")
 			}
 		}
 
 		// Create command state with preserved filters
-		state := model.NewCommandState(p.GetLine(), filter, labels)
+		state := model.NewCommandState(p.GetLine(), filter, labelSelector)
 		c.app.cmdHistory.Push(state)
 	}
 	slog.Debug("History", slogs.Stack, strings.Join(c.app.cmdHistory.List(), "|"))

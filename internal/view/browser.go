@@ -250,18 +250,17 @@ func (b *Browser) BufferActive(state bool, _ model.BufferKind) {
 
 			// Capture filter state for history after a filter is applied
 			if currentFilter != "" {
-
 				cmdText := b.GVR().R()
-				var filter, labels string
+				var filter, labelSelector string
 
 				if internal.IsLabelSelector(currentFilter) {
-					labels = currentFilter
+					labelSelector = currentFilter
 				} else {
 					filter = currentFilter
 				}
 
 				// Create state and push to history
-				state := model.NewCommandState(cmdText, filter, labels)
+				state := model.NewCommandState(cmdText, filter, labelSelector)
 				b.App().cmdHistory.Push(state)
 			}
 		}
