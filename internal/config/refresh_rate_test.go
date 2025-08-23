@@ -21,10 +21,6 @@ func TestRefreshRateBackwardCompatibility(t *testing.T) {
 			yamlContent: `refreshRate: 2.5`,
 			expected:    2.5,
 		},
-		"sub_second": {
-			yamlContent: `refreshRate: 0.5`,
-			expected:    0.5,
-		},
 	}
 
 	for name, test := range tests {
@@ -33,6 +29,47 @@ func TestRefreshRateBackwardCompatibility(t *testing.T) {
 			err := yaml.Unmarshal([]byte(test.yamlContent), &k)
 			require.NoError(t, err)
 			assert.InDelta(t, test.expected, k.RefreshRate, 0.001)
+		})
+	}
+}
+
+func TestGetRefreshRateMinimum(t *testing.T) {
+	tests := map[string]struct {
+		refreshRate       float64
+		manualRefreshRate float64
+		expected          float64
+	}{
+		"below_minimum": {
+			refreshRate: 0.5,
+			expected:    2.0,
+		},
+		"at_minimum": {
+			refreshRate: 2.0,
+			expected:    2.0,
+		},
+		"above_minimum": {
+			refreshRate: 3.5,
+			expected:    3.5,
+		},
+		"manual_below_minimum": {
+			refreshRate:       3.0,
+			manualRefreshRate: 0.5,
+			expected:          2.0,
+		},
+		"manual_above_minimum": {
+			refreshRate:       2.0,
+			manualRefreshRate: 4.0,
+			expected:          4.0,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			k := K9s{
+				RefreshRate:       test.refreshRate,
+				manualRefreshRate: test.manualRefreshRate,
+			}
+			assert.InDelta(t, test.expected, k.GetRefreshRate(), 0.001)
 		})
 	}
 }

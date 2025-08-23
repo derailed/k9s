@@ -370,11 +370,14 @@ func (k *K9s) IsSplashless() bool {
 
 // GetRefreshRate returns the current refresh rate.
 func (k *K9s) GetRefreshRate() float64 {
+	rate := k.RefreshRate
 	if k.manualRefreshRate != 0 {
-		return k.manualRefreshRate
+		rate = k.manualRefreshRate
 	}
-
-	return k.RefreshRate
+	if rate < DefaultRefreshRate {
+		return DefaultRefreshRate
+	}
+	return rate
 }
 
 // IsReadOnly returns the readonly setting.

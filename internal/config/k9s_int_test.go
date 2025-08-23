@@ -48,7 +48,7 @@ func Test_k9sOverrides(t *testing.T) {
 				SkipLatestRevCheck:  false,
 				DisablePodCounting:  false,
 			},
-			rate: 0.5,
+			rate: 2.0, // minimum enforced
 		},
 		"set": {
 			k: &K9s{
