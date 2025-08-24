@@ -372,12 +372,20 @@ func (k *K9s) IsSplashless() bool {
 
 // GetRefreshRate returns the current refresh rate.
 func (k *K9s) GetRefreshRate() float32 {
+	k.mx.Lock()
+	defer k.mx.Unlock()
+
 	rate := k.RefreshRate
 	if k.manualRefreshRate != 0 {
 		rate = k.manualRefreshRate
 	}
 	if rate < DefaultRefreshRate {
-		slog.Warn("Refresh rate is below minimum, capping to minimum value", "requested", rate, "minimum", DefaultRefreshRate)
+		if !k.refreshRateWarned {
+			slog.Warn("Refresh rate is below minimum, capping to minimum value",
+				slog.Float64("requested", float64(rate)),
+				slog.Float64("minimum", float64(DefaultRefreshRate)))
+			k.refreshRateWarned = true
+		}
 		return DefaultRefreshRate
 	}
 	return rate
