@@ -382,8 +382,8 @@ func (k *K9s) GetRefreshRate() float32 {
 	if rate < DefaultRefreshRate {
 		if !k.refreshRateWarned {
 			slog.Warn("Refresh rate is below minimum, capping to minimum value",
-				slog.Float64("requested", float64(rate)),
-				slog.Float64("minimum", float64(DefaultRefreshRate)))
+				slogs.Requested, float64(rate),
+				slogs.Minimum, float64(DefaultRefreshRate))
 			k.refreshRateWarned = true
 		}
 		return DefaultRefreshRate
