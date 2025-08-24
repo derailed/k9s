@@ -19,7 +19,7 @@ func Test_k9sOverrides(t *testing.T) {
 
 	uu := map[string]struct {
 		k                  *K9s
-		rate               float64
+		rate               float32
 		ro, hl, cl, sl, ll bool
 	}{
 		"plain": {

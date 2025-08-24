@@ -11,7 +11,7 @@ import (
 func TestRefreshRateBackwardCompatibility(t *testing.T) {
 	tests := map[string]struct {
 		yamlContent string
-		expected    float64
+		expected    float32
 	}{
 		"integer_value": {
 			yamlContent: `refreshRate: 2`,
@@ -35,9 +35,9 @@ func TestRefreshRateBackwardCompatibility(t *testing.T) {
 
 func TestGetRefreshRateMinimum(t *testing.T) {
 	tests := map[string]struct {
-		refreshRate       float64
-		manualRefreshRate float64
-		expected          float64
+		refreshRate       float32
+		manualRefreshRate float32
+		expected          float32
 	}{
 		"below_minimum": {
 			refreshRate: 0.5,
