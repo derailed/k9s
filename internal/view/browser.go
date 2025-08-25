@@ -112,7 +112,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	if row == 0 && b.GetRowCount() > 0 {
 		b.Select(1, 0)
 	}
-	b.GetModel().SetRefreshRate(time.Duration(b.App().Config.K9s.GetRefreshRate()) * time.Second)
+	b.GetModel().SetRefreshRate(b.App().Config.K9s.RefreshDuration())
 
 	b.CmdBuff().SetSuggestionFn(b.suggestFilter())
 
