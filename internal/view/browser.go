@@ -227,6 +227,10 @@ func (b *Browser) BufferActive(state bool, _ model.BufferKind) {
 	if state {
 		return
 	}
+
+	// Capture current filter state before processing
+	currentFilter := b.CmdBuff().GetText()
+
 	if err := b.GetModel().Refresh(b.GetContext()); err != nil {
 		slog.Error("Model refresh failed",
 			slogs.GVR, b.GVR(),
@@ -244,6 +248,22 @@ func (b *Browser) BufferActive(state bool, _ model.BufferKind) {
 		b.UpdateUI(cdata, mdata)
 		if b.GetRowCount() > 1 {
 			b.App().filterHistory.Push(b.CmdBuff().GetText())
+
+			// Capture filter state for history after a filter is applied
+			if currentFilter != "" {
+				cmdText := b.GVR().R()
+				var filter, labelSelector string
+
+				if internal.IsLabelSelector(currentFilter) {
+					labelSelector = currentFilter
+				} else {
+					filter = currentFilter
+				}
+
+				// Create state and push to history
+				state := model.NewCommandState(cmdText, filter, labelSelector)
+				b.App().cmdHistory.Push(state)
+			}
 		}
 	})
 }
