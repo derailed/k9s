@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -87,7 +86,7 @@ func (x *Xray) Init(ctx context.Context) error {
 	x.SetGraphicsColor(x.app.Styles.Xray().GraphicColor.Color())
 	x.SetTitle(fmt.Sprintf(" %s-%s ", xrayTitle, cases.Title(language.Und, cases.NoLower).String(x.gvr.R())))
 
-	x.model.SetRefreshRate(time.Duration(x.app.Config.K9s.GetRefreshRate()) * time.Second)
+	x.model.SetRefreshRate(x.app.Config.K9s.RefreshDuration())
 	x.model.SetNamespace(client.CleanseNamespace(x.app.Config.ActiveNamespace()))
 	x.model.AddListener(x)
 

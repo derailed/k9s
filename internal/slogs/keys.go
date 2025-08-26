@@ -221,4 +221,10 @@ const (
 
 	// Type tracks a type logger key.
 	Type = "type"
+
+	// Requested tracks a requested value logger key.
+	Requested = "requested"
+
+	// Minimum tracks a minimum value logger key.
+	Minimum = "minimum"
 )

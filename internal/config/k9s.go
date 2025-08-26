@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
@@ -35,7 +36,7 @@ type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
 	GPUVendors          gpuVendors `json:"gpuVendors" yaml:"gpuVendors"`
 	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
-	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
+	RefreshRate         float32    `json:"refreshRate" yaml:"refreshRate"`
 	APIServerTimeout    string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
 	MaxConnRetry        int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
@@ -49,10 +50,11 @@ type K9s struct {
 	Logger              Logger     `json:"logger" yaml:"logger"`
 	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
 	DefaultView         string     `json:"defaultView" yaml:"defaultView"`
-	manualRefreshRate   int
+	manualRefreshRate   float32
 	manualReadOnly      *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
+	refreshRateWarned   bool
 	dir                 *data.Dir
 	activeContextName   string
 	activeConfig        *data.Config
@@ -314,7 +316,7 @@ func (k *K9s) Reload() error {
 // Override overrides k9s config from cli args.
 func (k *K9s) Override(k9sFlags *Flags) {
 	if k9sFlags.RefreshRate != nil && *k9sFlags.RefreshRate != DefaultRefreshRate {
-		k.manualRefreshRate = *k9sFlags.RefreshRate
+		k.manualRefreshRate = float32(*k9sFlags.RefreshRate)
 	}
 
 	k.UI.manualHeadless = k9sFlags.Headless
@@ -369,12 +371,29 @@ func (k *K9s) IsSplashless() bool {
 }
 
 // GetRefreshRate returns the current refresh rate.
-func (k *K9s) GetRefreshRate() int {
-	if k.manualRefreshRate != 0 {
-		return k.manualRefreshRate
-	}
+func (k *K9s) GetRefreshRate() float32 {
+	k.mx.Lock()
+	defer k.mx.Unlock()
 
-	return k.RefreshRate
+	rate := k.RefreshRate
+	if k.manualRefreshRate != 0 {
+		rate = k.manualRefreshRate
+	}
+	if rate < DefaultRefreshRate {
+		if !k.refreshRateWarned {
+			slog.Warn("Refresh rate is below minimum, capping to minimum value",
+				slogs.Requested, float64(rate),
+				slogs.Minimum, float64(DefaultRefreshRate))
+			k.refreshRateWarned = true
+		}
+		return DefaultRefreshRate
+	}
+	return rate
+}
+
+// RefreshDuration returns the refresh rate as a time.Duration.
+func (k *K9s) RefreshDuration() time.Duration {
+	return time.Duration(k.GetRefreshRate() * float32(time.Second))
 }
 
 // IsReadOnly returns the readonly setting.
