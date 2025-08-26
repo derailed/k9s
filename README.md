@@ -407,7 +407,7 @@ You can now override the context portForward default address configuration by se
       bozo: bozo/gpu
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp/dumps
-    # Represents ui poll intervals in seconds. Default 2secs
+    # Represents ui poll intervals in seconds. Default 2.0 secs. Minimum value is 2.0 - values below will be capped to the minimum.
     refreshRate: 2
     # Overrides the default k8s api server requests timeout. Defaults 120s
     apiServerTimeout: 15s
