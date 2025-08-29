@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -294,4 +295,28 @@ func linesWithRegions(lines []string, matches fuzzy.Matches) []string {
 		}
 	}
 	return ll
+}
+
+func hostFlavor() string {
+	switch {
+	case os.Getenv("WT_SESSION") != "" || os.Getenv("WT_PROFILE_ID") != "":
+		return "windows-terminal"
+	default:
+		return ""
+	}
+}
+
+func pickMarkRangeKey() (tcell.Key, string) {
+	key, label := tcell.KeyCtrlSpace, "Ctrl-space"
+
+	if v := os.Getenv("K9S_USE_MARK_RANGE_ALT_KEY"); v != "false" {
+		return tcell.KeyCtrlJ, "Ctrl-j"
+	}
+
+	// Host-based fallback (WT on Windows is broken with respect to Ctrl-Space and other similar combos)
+	if runtime.GOOS == "windows" && hostFlavor() == "windows-terminal" {
+		key, label = tcell.KeyCtrlJ, "Ctrl-j"
+	}
+
+	return key, label
 }
