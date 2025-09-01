@@ -17,5 +17,5 @@ func TestContext(t *testing.T) {
 
 	require.NoError(t, ctx.Init(makeCtx(t)))
 	assert.Equal(t, "Contexts", ctx.Name())
-	assert.Len(t, ctx.Hints(), 5)
+	assert.Len(t, ctx.Hints(), 6)
 }
