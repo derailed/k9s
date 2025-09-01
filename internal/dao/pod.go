@@ -50,6 +50,11 @@ const (
 	streamCanceled                       // context canceled
 )
 
+// Pod represents a pod resource.
+type Pod struct {
+	Resource
+}
+
 // shouldStopRetrying checks if we should stop retrying log streaming based on pod status.
 func (p *Pod) shouldStopRetrying(path string) bool {
 	pod, err := p.GetInstance(path)
@@ -67,11 +72,6 @@ func (p *Pod) shouldStopRetrying(path string) bool {
 	}
 
 	return false
-}
-
-// Pod represents a pod resource.
-type Pod struct {
-	Resource
 }
 
 // Get returns a resource instance if found, else an error.
