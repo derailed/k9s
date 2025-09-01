@@ -461,6 +461,11 @@ You can now override the context portForward default address configuration by se
       disableAutoscroll: false
       # Toggles log line timestamp info. Default false
       showTime: false
+    # Define how suggestions are made.
+    # "PREFIX": typed text is considered a prefix, sorts suggestions alphabetically. Default mode.
+    # "LONGEST_PREFIX": typed text is considered a prefix, sorts suggestions by how much of the typed text they match; if equal, it falls back to alphabetical order.
+    # "LONGEST_PREFIX": typed text is considered a substring, sorts suggestions by how much of the typed text they match; if equal, it falls back to alphabetical order.
+    suggestionMode: PREFIX
     # Provide shell pod customization when nodeShell feature gate is enabled!
     shellPod:
       # The shell pod image to use.
