@@ -39,10 +39,35 @@ var (
 	_ ImageLister     = (*Pod)(nil)
 )
 
+type streamResult int
+
 const (
-	logRetryCount = 20
-	logRetryWait  = 1 * time.Second
+	logRetryCount                 = 20
+	logRetryWait                  = 1 * time.Second
+	logChannelBuffer              = 100  // Buffer size for log channel to reduce drops
+	streamEOF        streamResult = iota // legit container log close (no retry)
+	streamError                          // retryable error (network, auth, etc.)
+	streamCanceled                       // context canceled
 )
+
+// shouldStopRetrying checks if we should stop retrying log streaming based on pod status.
+func (p *Pod) shouldStopRetrying(path string) bool {
+	pod, err := p.GetInstance(path)
+	if err != nil {
+		return true
+	}
+
+	if pod.DeletionTimestamp != nil {
+		return true
+	}
+
+	switch pod.Status.Phase {
+	case v1.PodSucceeded, v1.PodFailed:
+		return true
+	}
+
+	return false
+}
 
 // Pod represents a pod resource.
 type Pod struct {
@@ -328,18 +353,23 @@ func (p *Pod) Scan(_ context.Context, gvr *client.GVR, fqn string, wait bool) (R
 // Helpers...
 
 func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
-	var (
-		out = make(LogChan, 2)
-		wg  sync.WaitGroup
-	)
+	out := make(LogChan, logChannelBuffer)
+	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		podOpts := opts.ToPodLogOptions()
 
-		// Retry loop that handles both initial connection failures and stream disconnects
 		for range logRetryCount {
+			// Check if we should stop retrying based on pod status
+			if pod, ok := logger.(*Pod); ok && pod.shouldStopRetrying(opts.Path) {
+				slog.Debug("Stopping log retry - pod is terminating or deleted",
+					slogs.Container, opts.Info(),
+				)
+				return
+			}
+
 			req, err := logger.Logs(opts.Path, podOpts)
 			if err != nil {
 				slog.Error("Log request failed",
@@ -350,13 +380,12 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 				case <-ctx.Done():
 					return
 				default:
-					out <- opts.ToErrLogItem(err)
-					time.Sleep(logRetryWait)
-					continue
+					// Don't send request errors to user - they will be retried
 				}
+				time.Sleep(logRetryWait)
+				continue
 			}
 
-			// This call will block if nothing is in the stream!!
 			stream, e := req.Stream(ctx)
 			if e != nil {
 				slog.Error("Stream logs failed",
@@ -367,38 +396,42 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 				case <-ctx.Done():
 					return
 				default:
-					out <- opts.ToErrLogItem(e)
-					time.Sleep(logRetryWait)
-					continue
+					// Don't send stream errors to user - they will be retried
 				}
+				time.Sleep(logRetryWait)
+				continue
 			}
 
-			// Read logs until stream ends or errors occur
-			streamDone := make(chan bool, 1)
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				readLogs(ctx, stream, out, opts, streamDone)
-			}()
-
-			// Wait for stream to finish or context cancellation
-			select {
-			case <-ctx.Done():
-				stream.Close()
+			// Process logs until completion
+			result := readLogs(ctx, stream, out, opts)
+			switch result {
+			case streamEOF:
+				slog.Debug("Log stream ended cleanly",
+					slogs.Container, opts.Info(),
+				)
 				return
-			case <-streamDone:
-				// Stream ended (possibly due to error), retry connection
-				slog.Debug("Log stream ended, retrying connection",
+			case streamError:
+				// Check if we should stop retrying based on pod status
+				if pod, ok := logger.(*Pod); ok && pod.shouldStopRetrying(opts.Path) {
+					slog.Debug("Stopping log retry after stream error - pod is terminating or deleted",
+						slogs.Container, opts.Info(),
+					)
+					return
+				}
+				slog.Debug("Log stream error, retrying",
 					slogs.Container, opts.Info(),
 				)
 				time.Sleep(logRetryWait)
 				continue
+			case streamCanceled:
+				return
 			}
 		}
 
-		// If we've exhausted all retries, send final error
+		// Out of retries
 		out <- opts.ToErrLogItem(fmt.Errorf("failed to maintain log stream after %d retries", logRetryCount))
 	}()
+
 	go func() {
 		wg.Wait()
 		close(out)
@@ -407,56 +440,60 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	return out
 }
 
-func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions, streamDone chan<- bool) {
+func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions) streamResult {
 	defer func() {
-		if err := stream.Close(); err != nil {
+		if err := stream.Close(); err != nil && !errors.Is(err, io.ErrClosedPipe) {
 			slog.Error("Fail to close stream",
 				slogs.Container, opts.Info(),
 				slogs.Error, err,
 			)
 		}
-		// Signal that the stream has ended
-		select {
-		case streamDone <- true:
-		default:
-		}
 	}()
 
-	slog.Debug("Processing logs", slogs.Options, opts.Info())
 	r := bufio.NewReader(stream)
+	readAny := false
+
 	for {
-		var item *LogItem
-		if bytes, err := r.ReadBytes('\n'); err == nil {
-			item = opts.ToLogItem(tview.EscapeBytes(bytes))
-		} else if errors.Is(err, io.EOF) {
-			e := fmt.Errorf("stream closed %w for %s", err, opts.Info())
-			item = opts.ToErrLogItem(e)
-			slog.Warn("Log reader EOF",
-				slogs.Container, opts.Info(),
-				slogs.Error, e,
-			)
-			// For EOF, we want to retry the connection
-			return
-		} else {
-			e := fmt.Errorf("stream canceled %w for %s", err, opts.Info())
-			item = opts.ToErrLogItem(e)
-			slog.Debug("Log stream canceled, will retry connection",
-				slogs.Container, opts.Info(),
-				slogs.Error, e,
-			)
-			// For stream errors (like credential expiry), we want to retry
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case out <- item:
-			if item.IsError {
-				// Only return without retry if it's a non-recoverable error
-				// For now, we'll treat all errors as potentially recoverable
-				return
+		bytes, err := r.ReadBytes('\n')
+		if err == nil {
+			readAny = true
+			item := opts.ToLogItem(tview.EscapeBytes(bytes))
+			select {
+			case <-ctx.Done():
+				return streamCanceled
+			case out <- item:
+			default:
+				// Avoid deadlock if consumer is too slow
+				slog.Warn("Dropping log line due to slow consumer",
+					slogs.Container, opts.Info(),
+				)
 			}
+			continue
 		}
+
+		if errors.Is(err, io.EOF) {
+			if len(bytes) > 0 {
+				// Emit trailing partial line before EOF
+				out <- opts.ToLogItem(tview.EscapeBytes(bytes))
+			}
+			if !readAny {
+				slog.Debug("Empty log stream", slogs.Container, opts.Info())
+			} else {
+				slog.Debug("Log reader reached EOF", slogs.Container, opts.Info())
+			}
+			out <- opts.ToErrLogItem(fmt.Errorf("stream closed: %w for %s", err, opts.Info()))
+			return streamEOF
+		}
+
+		// Non-EOF error
+		e := fmt.Errorf("stream error: %w for %s", err, opts.Info())
+		slog.Debug("Log stream error, will retry connection",
+			slogs.Container, opts.Info(),
+			slogs.Error, e,
+		)
+		// Don't send stream errors to user - they will be retried
+		// Only final retry exhaustion message is shown
+		return streamError
 	}
 }
 
