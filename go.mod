@@ -19,7 +19,7 @@ require (
 	github.com/lmittmann/tint v1.0.7
 	github.com/mattn/go-colorable v0.1.14
 	github.com/mattn/go-runewidth v0.0.16
-	github.com/olekukonko/tablewriter v1.0.8
+	github.com/olekukonko/tablewriter v1.0.9
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
 	github.com/sahilm/fuzzy v0.1.1
@@ -27,11 +27,11 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
-	golang.org/x/text v0.27.0
+	golang.org/x/text v0.28.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.18.4
+	helm.sh/helm/v3 v3.18.6
 	k8s.io/api v0.33.4
-	k8s.io/apiextensions-apiserver v0.33.2
+	k8s.io/apiextensions-apiserver v0.33.3
 	k8s.io/apimachinery v0.33.4
 	k8s.io/cli-runtime v0.33.4
 	k8s.io/client-go v0.33.4
@@ -133,7 +133,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v28.3.0+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v28.3.2+incompatible // indirect
+	github.com/docker/docker v28.3.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
@@ -251,8 +251,8 @@ require (
 	github.com/nix-community/go-nix v0.0.0-20250101154619-4bdde671e0a1 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/nwaples/rardecode/v2 v2.1.0 // indirect
-	github.com/olekukonko/errors v0.0.0-20250405072817-4e6d85265da6 // indirect
-	github.com/olekukonko/ll v0.0.8 // indirect
+	github.com/olekukonko/errors v1.1.0 // indirect
+	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.35.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -281,6 +281,7 @@ require (
 	github.com/rust-secure-code/go-rustaudit v0.0.0-20250226111315-e20ec32e963c // indirect
 	github.com/sagikazarmark/locafero v0.9.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/sassoftware/go-rpmutils v0.4.0 // indirect
 	github.com/scylladb/go-set v1.0.3-0.20200225121959-cc7b2070d91e // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
@@ -293,13 +294,13 @@ require (
 	github.com/spdx/tools-golang v0.5.5 // indirect
 	github.com/spf13/afero v1.14.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/pflag v1.0.7 // indirect
 	github.com/spf13/viper v1.20.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/sylabs/sif/v2 v2.21.1 // indirect
 	github.com/sylabs/squashfs v1.0.6 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
-	github.com/ulikunitz/xz v0.5.12 // indirect
+	github.com/ulikunitz/xz v0.5.14 // indirect
 	github.com/vbatts/go-mtree v0.5.4 // indirect
 	github.com/vbatts/tar-split v0.12.1 // indirect
 	github.com/vifraa/gopom v1.0.0 // indirect
@@ -350,7 +351,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gorm.io/gorm v1.30.0 // indirect
 	gotest.tools/v3 v3.4.0 // indirect
-	k8s.io/apiserver v0.33.2 // indirect
+	k8s.io/apiserver v0.33.3 // indirect
 	k8s.io/component-base v0.33.4 // indirect
 	k8s.io/component-helpers v0.33.4 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
