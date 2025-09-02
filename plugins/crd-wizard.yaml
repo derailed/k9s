@@ -1,0 +1,14 @@
+# See: https://github.com/pehlicd/crd-wizard
+plugins:
+  crd-wizard:
+    shortCut: Shift-W
+    description: CRD Wizard
+    dangerous: false
+    scopes:
+      - crds
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - "crd-wizard tui --context $CONTEXT --kind $COL-KIND"
