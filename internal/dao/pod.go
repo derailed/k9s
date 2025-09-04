@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
@@ -42,12 +43,13 @@ var (
 type streamResult int
 
 const (
-	logRetryCount                 = 20
-	logRetryWait                  = 1 * time.Second
-	logChannelBuffer              = 100  // Buffer size for log channel to reduce drops
-	streamEOF        streamResult = iota // legit container log close (no retry)
-	streamError                          // retryable error (network, auth, etc.)
-	streamCanceled                       // context canceled
+	logRetryCount                  = 20
+	logBackoffInitial              = 500 * time.Millisecond
+	logBackoffMax                  = 30 * time.Second
+	logChannelBuffer               = 100  // Buffer size for log channel to reduce drops
+	streamEOF         streamResult = iota // legit container log close (no retry)
+	streamError                           // retryable error (network, auth, etc.)
+	streamCanceled                        // context canceled
 )
 
 // Pod represents a pod resource.
@@ -361,6 +363,14 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 		defer wg.Done()
 		podOpts := opts.ToPodLogOptions()
 
+		// Setup exponential backoff following project pattern
+		bf := backoff.NewExponentialBackOff()
+		bf.InitialInterval = logBackoffInitial
+		bf.MaxElapsedTime = 0
+		bf.MaxInterval = logBackoffMax / 2
+		backoffCtx := backoff.WithContext(bf, ctx)
+		delay := logBackoffInitial
+
 		for range logRetryCount {
 			// Check if we should stop retrying based on pod status
 			if pod, ok := logger.(*Pod); ok && pod.shouldStopRetrying(opts.Path) {
@@ -379,10 +389,11 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 				select {
 				case <-ctx.Done():
 					return
-				default:
-					// Don't send request errors to user - they will be retried
+				case <-time.After(delay):
+					if delay = backoffCtx.NextBackOff(); delay == backoff.Stop {
+						return
+					}
 				}
-				time.Sleep(logRetryWait)
 				continue
 			}
 
@@ -395,10 +406,11 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 				select {
 				case <-ctx.Done():
 					return
-				default:
-					// Don't send stream errors to user - they will be retried
+				case <-time.After(delay):
+					if delay = backoffCtx.NextBackOff(); delay == backoff.Stop {
+						return
+					}
 				}
-				time.Sleep(logRetryWait)
 				continue
 			}
 
@@ -421,11 +433,22 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 				slog.Debug("Log stream error, retrying",
 					slogs.Container, opts.Info(),
 				)
-				time.Sleep(logRetryWait)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(delay):
+					if delay = backoffCtx.NextBackOff(); delay == backoff.Stop {
+						return
+					}
+				}
 				continue
 			case streamCanceled:
 				return
 			}
+
+			// Reset backoff and delay on successful connection
+			bf.Reset()
+			delay = logBackoffInitial
 		}
 
 		// Out of retries
@@ -451,12 +474,10 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 	}()
 
 	r := bufio.NewReader(stream)
-	readAny := false
 
 	for {
 		bytes, err := r.ReadBytes('\n')
 		if err == nil {
-			readAny = true
 			item := opts.ToLogItem(tview.EscapeBytes(bytes))
 			select {
 			case <-ctx.Done():
@@ -476,20 +497,15 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 				// Emit trailing partial line before EOF
 				out <- opts.ToLogItem(tview.EscapeBytes(bytes))
 			}
-			if !readAny {
-				slog.Debug("Empty log stream", slogs.Container, opts.Info())
-			} else {
-				slog.Debug("Log reader reached EOF", slogs.Container, opts.Info())
-			}
+			slog.Debug("Log reader reached EOF", slogs.Container, opts.Info())
 			out <- opts.ToErrLogItem(fmt.Errorf("stream closed: %w for %s", err, opts.Info()))
 			return streamEOF
 		}
 
 		// Non-EOF error
-		e := fmt.Errorf("stream error: %w for %s", err, opts.Info())
 		slog.Debug("Log stream error, will retry connection",
 			slogs.Container, opts.Info(),
-			slogs.Error, e,
+			slogs.Error, fmt.Errorf("stream error: %w for %s", err, opts.Info()),
 		)
 		// Don't send stream errors to user - they will be retried
 		// Only final retry exhaustion message is shown
