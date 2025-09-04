@@ -5,21 +5,19 @@ package ui
 
 import (
 	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 )
 
 // LogoSmall K9s small log.
-var LogoSmall = []string{
-	` ____  __ ________       `,
-	`|    |/  /   __   \______`,
-	`|       /\____    /  ___/`,
-	`|    \   \  /    /\___  \`,
-	`|____|\__ \/____//____  /`,
-	`         \/           \/ `,
-}
+var LogoSmall []string
 
 // LogoBig K9s big logo for splash page.
 var LogoBig = []string{
@@ -68,4 +66,79 @@ func (*Splash) layoutLogo(t *tview.TextView, styles *config.Styles) {
 
 func (*Splash) layoutRev(t *tview.TextView, rev string, styles *config.Styles) {
 	_, _ = fmt.Fprintf(t, "[%s::b]Revision [red::b]%s", styles.Body().FgColor, rev)
+}
+
+// GetLogo function to get the logo []string from the LogoUrl
+// by making a request to the LogoUrl
+func GetLogo(logoUrl string) {
+	slog.Debug("Fetching logo from URL", "url", logoUrl)
+	defaultLogo := []string{
+		` ____  __ ________       `,
+		`|    |/  /   __   \______`,
+		`|       /\____    /  ___/`,
+		`|    \   \  /    /\___  \`,
+		`|____|\__ \/____//____  /`,
+		`         \/           \/ `,
+	}
+	if logoUrl == "" {
+		LogoSmall = defaultLogo
+		return
+	}
+
+	if strings.HasPrefix(logoUrl, "file:") {
+		filePath := strings.TrimPrefix(logoUrl, "file:")
+		body, err := os.ReadFile(filePath)
+		if err != nil {
+			slog.Error("Error reading logo from file", "file", filePath, "error", err)
+			LogoSmall = defaultLogo
+			return
+		}
+		slog.Debug("Successfully fetched logo from file", "file", filePath)
+
+		logo := strings.Split(string(body), "\n")
+		// last line is empty, remove it
+		if len(logo) > 0 && logo[len(logo)-1] == "" {
+			logo = logo[:len(logo)-1]
+		}
+		LogoSmall = logo
+		return
+	}
+
+	// #nosec G107 - URL is validated and controlled by configuration
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	resp, err := client.Get(logoUrl)
+	if err != nil {
+		slog.Error("Error fetching logo from URL", "url", logoUrl, "error", err)
+		LogoSmall = defaultLogo
+		return
+	}
+	defer func() {
+		if resp != nil {
+			resp.Body.Close()
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		slog.Error("Non-OK HTTP status", "status", resp.Status)
+		LogoSmall = defaultLogo
+		return
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		slog.Error("Error reading response body", "error", err)
+		LogoSmall = defaultLogo
+		return
+	}
+
+	slog.Debug("Successfully fetched logo from URL", "url", logoUrl)
+
+	logo := strings.Split(string(body), "\n")
+	// last line is empty, remove it
+	if len(logo) > 0 && logo[len(logo)-1] == "" {
+		logo = logo[:len(logo)-1]
+	}
+	LogoSmall = logo
 }
