@@ -5,6 +5,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/config"
@@ -177,7 +178,14 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if s, ok := m.CurrentSuggestion(); ok {
-			p.model.SetText(p.model.GetText()+s, "")
+			// Substitute the last word of the text with the suggestion if text isn't empty.
+			// Otherwise, just write the suggestion.
+			if words := strings.Fields(strings.TrimSpace(p.model.GetText())); len(words) != 0 {
+				text := strings.Join(words[0:len(words)-1], " ") + " " + s
+				p.model.SetText(strings.TrimSpace(text), "")
+			} else {
+				p.model.SetText(s, "")
+			}
 			m.ClearSuggestions()
 		}
 	}
@@ -231,11 +239,43 @@ func (p *Prompt) write(text, suggest string) {
 	defer p.mx.Unlock()
 
 	p.SetCursorIndex(p.spacer + len(text))
+
+	written := text
+
 	if suggest != "" {
-		text += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
+		words := strings.Fields(strings.TrimSpace(text))
+
+		if len(words) != 0 {
+			// Append all words of text except the last one.
+			written = strings.Join(words[0:len(words)-1], " ") + " "
+			lastWord := words[len(words)-1]
+
+			// Get indices of where the last word of text lie within the suggestion.
+			// Could be anywhere if LONGEST_SUBSTRING mode suggestion is used.
+			// Otherwise at 0 for PREFIX/LONGEST_PREFIX suggestion modes.
+			startIdx := strings.Index(suggest, lastWord)
+			endIdx := startIdx + len(lastWord)
+
+			if startIdx != -1 {
+				written += fmt.Sprintf("[%s::-]%s[%s::-]%s[%s::-]%s",
+					p.styles.Prompt().SuggestColor, suggest[0:startIdx],
+					p.styles.Prompt().FgColor, suggest[startIdx:endIdx],
+					p.styles.Prompt().SuggestColor, suggest[endIdx:],
+				)
+			} else {
+				// `lastWord` isn't found within suggest. Just append `lastWord` again.
+				written += lastWord
+			}
+
+			written = strings.TrimSpace(written)
+		} else {
+			// No text, just write suggest in `SuggestColor`.
+			written = fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
+		}
 	}
+
 	p.StylesChanged(p.styles)
-	_, _ = fmt.Fprintf(p, defaultPrompt, p.icon, p.prefix, text)
+	_, _ = fmt.Fprintf(p, defaultPrompt, p.icon, p.prefix, written)
 }
 
 // ----------------------------------------------------------------------------

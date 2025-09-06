@@ -14,6 +14,14 @@ const (
 	MEM = "memory"
 )
 
+type SuggestionMode string
+
+const (
+	SuggestionModePrefix           SuggestionMode = "PREFIX"
+	SuggestionModeLongestPrefix    SuggestionMode = "LONGEST_PREFIX"
+	SuggestionModeLongestSubstring SuggestionMode = "LONGEST_SUBSTRING"
+)
+
 // UI tracks ui specific configs.
 type UI struct {
 	// EnableMouse toggles mouse support.

@@ -29,6 +29,7 @@
         "disablePodCounting": { "type": "boolean" },
         "defaultView": { "type": "string" },
         "portForwardAddress": { "type": "string" },
+        "suggestionMode": { "type": "string" },
         "ui": {
           "type": "object",
           "additionalProperties": false,

@@ -46,3 +46,4 @@ k9s:
       critical: 90
       warn: 70
   defaultView: ""
+  suggestionMode: PREFIX

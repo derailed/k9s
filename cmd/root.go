@@ -257,6 +257,12 @@ func initK9sFlags() {
 		"",
 		"Sets a path to a dir for a screen dumps",
 	)
+	rootCmd.Flags().StringVar(
+		k9sFlags.SuggestionMode,
+		"suggestion-mode",
+		string(config.DefaultSuggestionMode),
+		"Set autocompletion suggestion mode (PREFIX, LONGEST_PREFIX, LONGEST_SUBSTRING)",
+	)
 	rootCmd.Flags()
 }
 
