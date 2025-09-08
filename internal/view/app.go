@@ -221,8 +221,9 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			entries = append(entries, k)
 		}
 
-		// PREFIX suggestion mode:, all weights are set to 0, sort strings normally.
-		// LONGEST_PREFIX,LONGEST_SUBSTRING suggestion modes: sort based on weights and fallback to string sorting for equal weights.
+		// PREFIX suggestion mode: all weights are set to 0, sort strings normally.
+		// FUZZY,LONGEST_PREFIX,LONGEST_SUBSTRING suggestion modes: sort based on weights
+		// and fallback to string sorting for equal weights.
 		sort.SliceStable(entries, func(i, j int) bool {
 			if entriesMap[entries[i]] == entriesMap[entries[j]] {
 				return entries[i] < entries[j]

@@ -463,6 +463,7 @@ You can now override the context portForward default address configuration by se
       showTime: false
     # Define how suggestions are made.
     # "PREFIX": typed text is considered a prefix, sorts suggestions alphabetically. Default mode.
+    # "FUZZY": typed text is fuzzy-matched against suggestions, sorted by Levenshtein distance (but only character additions are considered as possible string edits).
     # "LONGEST_PREFIX": typed text is considered a prefix, sorts suggestions by how much of the typed text they match; if equal, it falls back to alphabetical order.
     # "LONGEST_SUBSTRING": typed text is considered a substring, sorts suggestions by how much of the typed text they match; if equal, it falls back to alphabetical order.
     suggestionMode: PREFIX

@@ -18,6 +18,7 @@ type SuggestionMode string
 
 const (
 	SuggestionModePrefix           SuggestionMode = "PREFIX"
+	SuggestionModeFuzzy            SuggestionMode = "FUZZY"
 	SuggestionModeLongestPrefix    SuggestionMode = "LONGEST_PREFIX"
 	SuggestionModeLongestSubstring SuggestionMode = "LONGEST_SUBSTRING"
 )

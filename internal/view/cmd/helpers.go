@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 func ToLabels(s string) map[string]string {
@@ -30,21 +31,25 @@ func ToLabels(s string) map[string]string {
 
 // ShouldAddSuggest checks if a suggestion match the given command.
 func ShouldAddSuggest(suggestionMode, command, suggest string) float64 {
-	var searchCondition bool
+	var condition bool
 	var weight float64 = 0
 
 	switch suggestionMode {
-	case "LONGEST_SUBSTRING":
-		searchCondition = strings.Contains(suggest, command)
-		weight = float64(len(command)) / float64(len(suggest))
+	case "FUZZY":
+		// Weight is the inverse of the Levenshtein distance.
+		weight = 1 / float64(fuzzy.RankMatch(command, suggest))
+		condition = (weight != -1)
 	case "LONGEST_PREFIX":
-		searchCondition = strings.HasPrefix(suggest, command)
+		condition = strings.HasPrefix(suggest, command)
+		weight = float64(len(command)) / float64(len(suggest))
+	case "LONGEST_SUBSTRING":
+		condition = strings.Contains(suggest, command)
 		weight = float64(len(command)) / float64(len(suggest))
 	default:
-		searchCondition = strings.HasPrefix(suggest, command)
+		condition = strings.HasPrefix(suggest, command)
 	}
 
-	if command != suggest && searchCondition {
+	if condition {
 		return weight
 	}
 

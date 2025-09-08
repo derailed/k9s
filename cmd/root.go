@@ -261,7 +261,7 @@ func initK9sFlags() {
 		k9sFlags.SuggestionMode,
 		"suggestion-mode",
 		string(config.DefaultSuggestionMode),
-		"Set autocompletion suggestion mode (PREFIX, LONGEST_PREFIX, LONGEST_SUBSTRING)",
+		"Set autocompletion suggestion mode (PREFIX, FUZZY, LONGEST_PREFIX, LONGEST_SUBSTRING)",
 	)
 	rootCmd.Flags()
 }
