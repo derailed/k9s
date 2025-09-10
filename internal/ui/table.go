@@ -37,7 +37,7 @@ type (
 // Table represents tabular data.
 type Table struct {
 	*SelectTable
-	gvr         client.GVR
+	gvr         *client.GVR
 	sortCol     model1.SortColumn
 	manualSort  bool
 	Path        string
@@ -55,10 +55,11 @@ type Table struct {
 	mx          sync.RWMutex
 	readOnly    bool
 	noIcon      bool
+	fullGVR     bool
 }
 
 // NewTable returns a new table view.
-func NewTable(gvr client.GVR) *Table {
+func NewTable(gvr *client.GVR) *Table {
 	return &Table{
 		SelectTable: &SelectTable{
 			Table: tview.NewTable(),
@@ -71,6 +72,14 @@ func NewTable(gvr client.GVR) *Table {
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: model1.SortColumn{ASC: true},
 	}
+}
+
+// SetFullGVR toggles full GVR title display.
+func (t *Table) SetFullGVR(b bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.fullGVR = b
 }
 
 // SetNoIcon toggles no icon mode.
@@ -131,6 +140,7 @@ func (t *Table) SetViewSetting(vs *config.ViewSetting) bool {
 
 	if !t.viewSetting.Equals(vs) {
 		t.viewSetting = vs
+		slog.Debug("Updating custom view setting", slogs.GVR, t.gvr, slogs.ViewSetting, vs)
 		t.model.SetViewSetting(t.ctx, vs)
 		return true
 	}
@@ -169,7 +179,7 @@ func (t *Table) Init(ctx context.Context) {
 }
 
 // GVR returns a resource descriptor.
-func (t *Table) GVR() client.GVR { return t.gvr }
+func (t *Table) GVR() *client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
 func (t *Table) ViewSettingsChanged(vs *config.ViewSetting) {
@@ -241,7 +251,7 @@ func (t *Table) FilterInput(r rune) bool {
 }
 
 // Filter filters out table data.
-func (t *Table) Filter(q string) {
+func (t *Table) Filter(string) {
 	t.ClearSelection()
 	t.doUpdate(t.filtered(t.GetModel().Peek()))
 	t.UpdateTitle()
@@ -254,7 +264,7 @@ func (t *Table) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (t *Table) ExtraHints() map[string]string {
+func (*Table) ExtraHints() map[string]string {
 	return nil
 }
 
@@ -305,10 +315,16 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
-
 	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
 
 	return data
+}
+
+func (t *Table) shouldExcludeColumn(h model1.HeaderColumn) bool {
+	return (h.Hide || (!t.wide && h.Wide)) ||
+		(h.Name == "NAMESPACE" && !t.GetModel().ClusterWide()) ||
+		(h.MX && !t.hasMetrics) ||
+		(h.VS && vul.ImgScanner == nil)
 }
 
 func (t *Table) UpdateUI(cdata, data *model1.TableData) {
@@ -318,19 +334,9 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 
 	var col int
 	for _, h := range cdata.Header() {
-		if h.Hide || (!t.wide && h.Wide) {
+		if t.shouldExcludeColumn(h) {
 			continue
 		}
-		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
-			continue
-		}
-		if h.MX && !t.hasMetrics {
-			continue
-		}
-		if h.VS && vul.ImgScanner == nil {
-			continue
-		}
-
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
@@ -374,17 +380,7 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 			)
 			continue
 		}
-		if h[c].Hide || (!t.wide && h[c].Wide) {
-			continue
-		}
-
-		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
-			continue
-		}
-		if h[c].MX && !t.hasMetrics {
-			continue
-		}
-		if h[c].VS && vul.ImgScanner == nil {
+		if t.shouldExcludeColumn(h[c]) {
 			continue
 		}
 
@@ -424,7 +420,7 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 
 // SortColCmd designates a sorted column.
 func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(*tcell.EventKey) *tcell.EventKey {
 		sc := t.getSortCol()
 		sc.ASC = !sc.ASC
 		if sc.Name != name {
@@ -439,7 +435,7 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 }
 
 // SortInvertCmd reverses sorting order.
-func (t *Table) SortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) SortInvertCmd(*tcell.EventKey) *tcell.EventKey {
 	t.toggleSortCol()
 	t.Refresh()
 
@@ -458,7 +454,6 @@ func (t *Table) Refresh() {
 	if data.HeaderCount() == 0 {
 		return
 	}
-	// BOZO!! Really want to tell model reload now. Refactor!
 	cdata := t.Update(data, t.hasMetrics)
 	t.UpdateUI(cdata, data)
 }
@@ -491,7 +486,8 @@ func (t *Table) NameColIndex() int {
 func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 	sc := t.getSortCol()
 	sortCol := h.Name == sc.Name
-	c := tview.NewTableCell(sortIndicator(sortCol, sc.ASC, t.styles.Table(), h.Name))
+	styles := t.styles.Table()
+	c := tview.NewTableCell(sortIndicator(sortCol, sc.ASC, &styles, h.Name))
 	c.SetExpansion(1)
 	c.SetSelectable(false)
 	c.SetAlign(h.Align)
@@ -514,7 +510,7 @@ func (t *Table) CmdBuff() *model.FishBuff {
 func (t *Table) ShowDeleted() {
 	r, _ := t.GetSelection()
 	cols := t.GetColumnCount()
-	for x := 0; x < cols; x++ {
+	for x := range cols {
 		t.GetCell(r, x).SetAttributes(tcell.AttrDim)
 	}
 }
@@ -547,39 +543,46 @@ func (t *Table) styleTitle() string {
 		ns = t.Extras
 	}
 
-	var title string
-	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, t.gvr, render.AsThousands(rc)), t.styles.Frame())
-	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, t.gvr, ns, render.AsThousands(rc)), t.styles.Frame())
+	resource := t.gvr.R()
+	if t.fullGVR {
+		resource = t.gvr.String()
 	}
-	if ic := ROIndicator(t.readOnly, t.noIcon); ic != "" {
-		title = " " + ic + title
+
+	var (
+		title  string
+		styles = t.styles.Frame()
+	)
+	if ns == client.ClusterScope {
+		title = SkinTitle(fmt.Sprintf(TitleFmt, resource, render.AsThousands(rc)), &styles)
+	} else {
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, resource, ns, render.AsThousands(rc)), &styles)
 	}
 
 	buff := t.cmdBuff.GetText()
 	if internal.IsLabelSelector(buff) {
-		buff = render.Truncate(TrimLabelSelector(buff), maxTruncate)
-	} else if l := t.GetModel().GetLabelFilter(); l != "" {
-		buff = render.Truncate(l, maxTruncate)
+		if sel, err := TrimLabelSelector(buff); err == nil {
+			buff = render.Truncate(sel.String(), maxTruncate)
+		}
+	} else if l := t.GetModel().GetLabelSelector(); l != nil && !l.Empty() {
+		buff = render.Truncate(l.String(), maxTruncate)
+	} else if buff != "" {
+		buff = render.Truncate(buff, maxTruncate)
 	}
-
 	if buff == "" {
 		return title
 	}
 
-	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())
+	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), &styles)
 }
 
 // ROIndicator returns an icon showing whether the session is in readonly mode or not.
 func ROIndicator(ro, noIC bool) string {
-	if noIC {
+	switch {
+	case noIC:
 		return ""
-	}
-
-	if ro {
+	case ro:
 		return lockedIC
+	default:
+		return unlockedIC
 	}
-
-	return unlockedIC
 }

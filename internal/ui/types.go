@@ -12,15 +12,16 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
-	unlockedIC = "🔓"
-	lockedIC   = "🔒"
+	unlockedIC = "[RW]"
+	lockedIC   = "[R]"
 )
 
-// Namespaceable represents a namespaceable model.
+// Namespaceable tracks namespaces.
 type Namespaceable interface {
 	// ClusterWide returns true if the model represents resource in all namespaces.
 	ClusterWide() bool
@@ -35,7 +36,7 @@ type Namespaceable interface {
 	InNamespace(string) bool
 }
 
-// Lister represents a viewable resource.
+// Lister tracks resource getter.
 type Lister interface {
 	// Get returns a resource instance.
 	Get(ctx context.Context, path string) (runtime.Object, error)
@@ -49,11 +50,11 @@ type Tabular interface {
 	// SetInstance sets parent resource path.
 	SetInstance(string)
 
-	// SetLabelFilter sets the label filter.
-	SetLabelFilter(string)
+	// SetLabelSelector sets the label selector.
+	SetLabelSelector(labels.Selector)
 
-	// GetLabelFilter fetch the label filter.
-	GetLabelFilter() string
+	// GetLabelSelector fetch the label filter.
+	GetLabelSelector() labels.Selector
 
 	// Empty returns true if model has no data.
 	Empty() bool

@@ -5,7 +5,6 @@ package model
 
 import (
 	"strconv"
-	"strings"
 )
 
 // MenuHint represents keyboard mnemonic.
@@ -51,5 +50,5 @@ func (h MenuHints) Less(i, j int) bool {
 	if err1 != nil && err2 == nil {
 		return false
 	}
-	return strings.Compare(h[i].Description, h[j].Description) < 0
+	return h[i].Description < h[j].Description
 }

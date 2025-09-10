@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 const (
@@ -48,7 +49,7 @@ type Pod struct {
 }
 
 // NewPod returns a new viewer.
-func NewPod(gvr client.GVR) ResourceViewer {
+func NewPod(gvr *client.GVR) ResourceViewer {
 	var p Pod
 	p.ResourceViewer = NewPortForwardExtender(
 		NewOwnerExtender(
@@ -150,11 +151,11 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	return podLogOptions(p.App(), path, prev, pod.ObjectMeta, pod.Spec), nil
+	return podLogOptions(p.App(), path, prev, &pod.ObjectMeta, &pod.Spec), nil
 }
 
-func (p *Pod) showContainers(app *App, _ ui.Tabular, _ client.GVR, _ string) {
-	co := NewContainer(client.NewGVR("containers"))
+func (p *Pod) showContainers(app *App, _ ui.Tabular, _ *client.GVR, _ string) {
+	co := NewContainer(client.CoGVR)
 	co.SetContextFn(p.coContext)
 	if err := app.inject(co, false); err != nil {
 		app.Flash().Err(err)
@@ -181,9 +182,8 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Err(errors.New("no node assigned"))
 		return nil
 	}
-	no := NewNode(client.NewGVR("v1/nodes"))
+	no := NewNode(client.NodeGVR)
 	no.SetInstance(pod.Spec.NodeName)
-	//no.SetContextFn(nodeContext(pod.Spec.NodeName))
 	if err := p.App().inject(no, false); err != nil {
 		p.App().Flash().Err(err)
 	}
@@ -262,7 +262,7 @@ func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (p *Pod) sanitizeCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (p *Pod) sanitizeCmd(*tcell.EventKey) *tcell.EventKey {
 	res, err := dao.AccessorFor(p.App().factory, p.GVR())
 	if err != nil {
 		p.App().Flash().Err(err)
@@ -290,7 +290,7 @@ func (p *Pod) sanitizeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (p *Pod) transferCmd(*tcell.EventKey) *tcell.EventKey {
 	path := p.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil
@@ -308,11 +308,13 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 
 		opts := make([]string, 0, 10)
-		opts = append(opts, "cp")
-		opts = append(opts, strings.TrimSpace(args.From))
-		opts = append(opts, strings.TrimSpace(args.To))
-		opts = append(opts, fmt.Sprintf("--no-preserve=%t", args.NoPreserve))
-		opts = append(opts, fmt.Sprintf("--retries=%d", args.Retries))
+		opts = append(opts,
+			"cp",
+			strings.TrimSpace(args.From),
+			strings.TrimSpace(args.To),
+			fmt.Sprintf("--no-preserve=%t", args.NoPreserve),
+			fmt.Sprintf("--retries=%d", args.Retries),
+		)
 		if args.CO != "" {
 			opts = append(opts, "-c="+args.CO)
 		}
@@ -328,7 +330,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 
 		fqn := path + ":" + args.CO
-		if err := runK(p.App(), cliOpts); err != nil {
+		if err := runK(p.App(), &cliOpts); err != nil {
 			p.App().cowCmd(err.Error())
 		} else {
 			p.App().Flash().Infof("%s successful on %s!", op, fqn)
@@ -344,14 +346,15 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	opts := dialog.TransferDialogOpts{
 		Title:      "Transfer",
-		Containers: fetchContainers(pod.ObjectMeta, pod.Spec, false),
+		Containers: fetchContainers(&pod.ObjectMeta, &pod.Spec, false),
 		Message:    "Download Files",
 		Pod:        fmt.Sprintf("%s/%s:", ns, n),
 		Ack:        ack,
 		Retries:    defaultTxRetries,
 		Cancel:     func() {},
 	}
-	dialog.ShowUploads(p.App().Styles.Dialog(), p.App().Content.Pages, opts)
+	d := p.App().Styles.Dialog()
+	dialog.ShowUploads(&d, p.App().Content.Pages, &opts)
 
 	return nil
 }
@@ -369,11 +372,17 @@ func containerShellIn(a *App, comp model.Component, path, co string) error {
 	if err != nil {
 		return err
 	}
-	cc := fetchContainers(pod.ObjectMeta, pod.Spec, false)
+	if dco, ok := dao.GetDefaultContainer(&pod.ObjectMeta, &pod.Spec); ok {
+		resumeShellIn(a, comp, path, dco)
+		return nil
+	}
+
+	cc := fetchContainers(&pod.ObjectMeta, &pod.Spec, false)
 	if len(cc) == 1 {
 		resumeShellIn(a, comp, path, cc[0])
 		return nil
 	}
+
 	picker := NewPicker()
 	picker.populate(cc)
 	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
@@ -391,14 +400,18 @@ func resumeShellIn(a *App, c model.Component, path, co string) {
 }
 
 func shellIn(a *App, fqn, co string) {
-	os, err := getPodOS(a.factory, fqn)
+	platform, err := getPodOS(a.factory, fqn)
 	if err != nil {
 		slog.Warn("OS detect failed", slogs.Error, err)
 	}
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+	args := computeShellArgs(fqn, co, a.Conn().Config().Flags(), platform)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	err = runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args})
+	err = runK(a, &shellOpts{
+		clear:  true,
+		banner: c.Sprintf(bannerFmt, fqn, co),
+		args:   args},
+	)
 	if err != nil {
 		a.Flash().Errf("Shell exec failed: %s", err)
 	}
@@ -414,7 +427,7 @@ func containerAttachIn(a *App, comp model.Component, path, co string) error {
 	if err != nil {
 		return err
 	}
-	cc := fetchContainers(pod.ObjectMeta, pod.Spec, false)
+	cc := fetchContainers(&pod.ObjectMeta, &pod.Spec, false)
 	if len(cc) == 1 {
 		resumeAttachIn(a, comp, path, cc[0])
 		return nil
@@ -439,31 +452,49 @@ func resumeAttachIn(a *App, c model.Component, path, co string) {
 }
 
 func attachIn(a *App, path, co string) {
-	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags().KubeConfig)
+	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags())
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	if err := runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}); err != nil {
+	if err := runK(a, &shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}); err != nil {
 		a.Flash().Errf("Attach exec failed: %s", err)
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string, os string) []string {
-	args := buildShellArgs("exec", path, co, kcfg)
-	if os == windowsOS {
+func computeShellArgs(path, co string, flags *genericclioptions.ConfigFlags, platform string) []string {
+	args := buildShellArgs("exec", path, co, flags)
+	if platform == windowsOS {
 		return append(args, "--", powerShell)
 	}
+
 	return append(args, "--", "sh", "-c", shellCheck)
 }
 
-func buildShellArgs(cmd, path, co string, kcfg *string) []string {
+func isFlagSet(flag *string) (string, bool) {
+	if flag == nil || *flag == "" {
+		return "", false
+	}
+
+	return *flag, true
+}
+
+func buildShellArgs(cmd, path, co string, flags *genericclioptions.ConfigFlags) []string {
 	args := make([]string, 0, 15)
+
 	args = append(args, cmd, "-it")
 	ns, po := client.Namespaced(path)
 	if ns != client.BlankNamespace {
 		args = append(args, "-n", ns)
 	}
 	args = append(args, po)
-	if kcfg != nil && *kcfg != "" {
-		args = append(args, "--kubeconfig", *kcfg)
+	if flags != nil {
+		if v, ok := isFlagSet(flags.KubeConfig); ok {
+			args = append(args, "--kubeconfig", v)
+		}
+		if v, ok := isFlagSet(flags.Context); ok {
+			args = append(args, "--context", v)
+		}
+		if v, ok := isFlagSet(flags.BearerToken); ok {
+			args = append(args, "--token", v)
+		}
 	}
 	if co != "" {
 		args = append(args, "-c", co)
@@ -472,35 +503,35 @@ func buildShellArgs(cmd, path, co string, kcfg *string) []string {
 	return args
 }
 
-func fetchContainers(meta metav1.ObjectMeta, spec v1.PodSpec, allContainers bool) []string {
-	nn := make([]string, 0, len(spec.Containers)+len(spec.InitContainers))
-
+func fetchContainers(meta *metav1.ObjectMeta, spec *v1.PodSpec, allContainers bool) []string {
+	nn := make([]string, 0, len(spec.Containers)+len(spec.EphemeralContainers)+len(spec.InitContainers))
 	// put the default container as the first entry
-	defaultContainer, hasDefaultContainer := dao.GetDefaultContainer(meta, spec)
-	if hasDefaultContainer {
+	defaultContainer, ok := dao.GetDefaultContainer(meta, spec)
+	if ok {
 		nn = append(nn, defaultContainer)
 	}
 
-	for _, c := range spec.Containers {
-		if !hasDefaultContainer || c.Name != defaultContainer {
-			nn = append(nn, c.Name)
+	for i := range spec.Containers {
+		if spec.Containers[i].Name != defaultContainer {
+			nn = append(nn, spec.Containers[i].Name)
 		}
 	}
-	if !allContainers {
-		return nn
+
+	for i := range spec.InitContainers {
+		isSidecar := spec.InitContainers[i].RestartPolicy != nil && *spec.InitContainers[i].RestartPolicy == v1.ContainerRestartPolicyAlways
+		if allContainers || isSidecar {
+			nn = append(nn, spec.InitContainers[i].Name)
+		}
 	}
-	for _, c := range spec.InitContainers {
-		nn = append(nn, c.Name)
-	}
-	for _, c := range spec.EphemeralContainers {
-		nn = append(nn, c.Name)
+	for i := range spec.EphemeralContainers {
+		nn = append(nn, spec.EphemeralContainers[i].Name)
 	}
 
 	return nn
 }
 
 func fetchPod(f dao.Factory, path string) (*v1.Pod, error) {
-	o, err := f.Get("v1/pods", path, true, labels.Everything())
+	o, err := f.Get(client.PodGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -525,7 +556,7 @@ func podIsRunning(f dao.Factory, fqn string) bool {
 	}
 
 	var re render.Pod
-	return re.Phase(po) == render.Running
+	return re.Phase(po.DeletionTimestamp, &po.Spec, &po.Status) == render.Running
 }
 
 func getPodOS(f dao.Factory, fqn string) (string, error) {
@@ -548,12 +579,12 @@ func getPodOS(f dao.Factory, fqn string) (string, error) {
 }
 
 func osFromSelector(s map[string]string) (string, bool) {
-	if os, ok := s[osBetaSelector]; ok {
-		return os, ok
+	if platform, ok := s[osBetaSelector]; ok {
+		return platform, ok
 	}
+	platform, ok := s[osSelector]
 
-	os, ok := s[osSelector]
-	return os, ok
+	return platform, ok
 }
 
 func resourceSorters(t *Table) *ui.KeyActions {

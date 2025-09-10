@@ -299,7 +299,6 @@ func (r RowEventSorter) Len() int {
 }
 
 func (r RowEventSorter) Swap(i, j int) {
-
 	r.Events.events[i], r.Events.events[j] = r.Events.events[j], r.Events.events[i]
 }
 

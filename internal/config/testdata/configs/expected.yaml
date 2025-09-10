@@ -1,7 +1,10 @@
 k9s:
   liveViewAutoRefresh: true
+  gpuVendors:
+    bozo: bozo/gpu.com
   screenDumpDir: /tmp/k9s-test/screen-dumps
   refreshRate: 100
+  apiServerTimeout: 30s
   maxConnRetry: 5
   readOnly: true
   noExitOnCtrlC: false
@@ -11,9 +14,11 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    splashless: false
     reactive: false
     noIcons: false
     defaultsToFullScreen: false
+    useFullGVRTitle: true
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
@@ -41,3 +46,4 @@ k9s:
     memory:
       critical: 90
       warn: 70
+  defaultView: ""

@@ -20,6 +20,8 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+const falseStr = "false"
+
 // ContainerWithMetrics represents a container and it's metrics.
 type ContainerWithMetrics interface {
 	// Container returns the container
@@ -44,7 +46,7 @@ type Container struct {
 }
 
 // ColorerFunc colors a resource row.
-func (c Container) ColorerFunc() model1.ColorerFunc {
+func (Container) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
@@ -70,37 +72,36 @@ func (c Container) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (c Container) Header(_ string) model1.Header {
-	return c.defaultHeader()
+func (Container) Header(_ string) model1.Header {
+	return defaultCOHeader
 }
 
 // Header returns a header row.
-func (Container) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "IDX"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "PF"},
-		model1.HeaderColumn{Name: "IMAGE"},
-		model1.HeaderColumn{Name: "READY"},
-		model1.HeaderColumn{Name: "STATE"},
-		model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "PROBES(L:R:S)"},
-		model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
-		model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-		model1.HeaderColumn{Name: "PORTS"},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+var defaultCOHeader = model1.Header{
+	model1.HeaderColumn{Name: "IDX"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "PF"},
+	model1.HeaderColumn{Name: "IMAGE"},
+	model1.HeaderColumn{Name: "READY"},
+	model1.HeaderColumn{Name: "STATE"},
+	model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "PROBES(L:R:S)"},
+	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "GPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "PORTS"},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
-func (c Container) Render(o interface{}, ns string, row *model1.Row) error {
+func (c Container) Render(o any, _ string, row *model1.Row) error {
 	cr, ok := o.(ContainerRes)
 	if !ok {
 		return fmt.Errorf("expected ContainerRes, but got %T", o)
@@ -110,8 +111,8 @@ func (c Container) Render(o interface{}, ns string, row *model1.Row) error {
 }
 
 func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
-	cur, res := gatherMetrics(cr.Container, cr.MX)
-	ready, state, restarts := "false", MissingValue, "0"
+	cur, res := gatherContainerMX(cr.Container, cr.MX)
+	ready, state, restarts := falseStr, MissingValue, "0"
 	if cr.Status != nil {
 		ready, state, restarts = boolToStr(cr.Status.Ready), ToContainerState(cr.Status.State), strconv.Itoa(int(cr.Status.RestartCount))
 	}
@@ -127,13 +128,14 @@ func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
 		restarts,
 		probe(cr.Container.LivenessProbe) + ":" + probe(cr.Container.ReadinessProbe) + ":" + probe(cr.Container.StartupProbe),
 		toMc(cur.cpu),
-		toMi(cur.mem),
 		toMc(res.cpu) + ":" + toMc(res.lcpu),
-		toMi(res.mem) + ":" + toMi(res.lmem),
 		client.ToPercentageStr(cur.cpu, res.cpu),
 		client.ToPercentageStr(cur.cpu, res.lcpu),
+		toMi(cur.mem),
+		toMi(res.mem) + ":" + toMi(res.lmem),
 		client.ToPercentageStr(cur.mem, res.mem),
 		client.ToPercentageStr(cur.mem, res.lmem),
+		toMc(res.gpu) + ":" + toMc(res.lgpu),
 		ToContainerPorts(cr.Container.Ports),
 		AsStatus(c.diagnose(state, ready)),
 		ToAge(cr.Age),
@@ -148,7 +150,7 @@ func (Container) diagnose(state, ready string) error {
 		return nil
 	}
 
-	if ready == "false" {
+	if ready == falseStr {
 		return errors.New("container is not ready")
 	}
 	return nil
@@ -170,26 +172,36 @@ func containerRequests(co *v1.Container) v1.ResourceList {
 	return nil
 }
 
-func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric) {
+func gatherContainerMX(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric) {
 	rList, lList := containerRequests(co), co.Resources.Limits
-	if rList.Cpu() != nil {
-		r.cpu = rList.Cpu().MilliValue()
+
+	if q := rList.Cpu(); q != nil {
+		r.cpu = q.MilliValue()
 	}
-	if rList.Memory() != nil {
-		r.mem = rList.Memory().Value()
+	if q := lList.Cpu(); q != nil {
+		r.lcpu = q.MilliValue()
 	}
-	if lList.Cpu() != nil {
-		r.lcpu = lList.Cpu().MilliValue()
+
+	if q := rList.Memory(); q != nil {
+		r.mem = q.Value()
 	}
-	if lList.Memory() != nil {
-		r.lmem = lList.Memory().Value()
+	if q := lList.Memory(); q != nil {
+		r.lmem = q.Value()
 	}
+
+	if q := extractGPU(rList); q != nil {
+		r.gpu = q.Value()
+	}
+	if q := extractGPU(lList); q != nil {
+		r.lgpu = q.Value()
+	}
+
 	if mx != nil {
-		if mx.Usage.Cpu() != nil {
-			c.cpu = mx.Usage.Cpu().MilliValue()
+		if q := mx.Usage.Cpu(); q != nil {
+			c.cpu = q.MilliValue()
 		}
-		if mx.Usage.Memory() != nil {
-			c.mem = mx.Usage.Memory().Value()
+		if q := mx.Usage.Memory(); q != nil {
+			c.mem = q.Value()
 		}
 	}
 
@@ -200,7 +212,7 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric
 func ToContainerPorts(pp []v1.ContainerPort) string {
 	ports := make([]string, len(pp))
 	for i, p := range pp {
-		if len(p.Name) > 0 {
+		if p.Name != "" {
 			ports[i] = p.Name + ":"
 		}
 		ports[i] += strconv.Itoa(int(p.ContainerPort))
@@ -255,7 +267,7 @@ type ContainerRes struct {
 }
 
 // GetObjectKind returns a schema object.
-func (c ContainerRes) GetObjectKind() schema.ObjectKind {
+func (ContainerRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 

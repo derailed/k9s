@@ -5,7 +5,7 @@ package config
 
 const (
 	// DefaultRefreshRate represents the refresh interval.
-	DefaultRefreshRate = 2 // secs
+	DefaultRefreshRate float32 = 2.0 // secs
 
 	// DefaultLogLevel represents the default log level.
 	DefaultLogLevel = "info"
@@ -16,7 +16,7 @@ const (
 
 // Flags represents K9s configuration flags.
 type Flags struct {
-	RefreshRate   *int
+	RefreshRate   *float32
 	LogLevel      *string
 	LogFile       *string
 	Headless      *bool
@@ -26,13 +26,14 @@ type Flags struct {
 	ReadOnly      *bool
 	Write         *bool
 	Crumbsless    *bool
+	Splashless    *bool
 	ScreenDumpDir *string
 }
 
 // NewFlags returns new configuration flags.
 func NewFlags() *Flags {
 	return &Flags{
-		RefreshRate:   intPtr(DefaultRefreshRate),
+		RefreshRate:   float32Ptr(DefaultRefreshRate),
 		LogLevel:      strPtr(DefaultLogLevel),
 		LogFile:       strPtr(AppLogFile),
 		Headless:      boolPtr(false),
@@ -42,6 +43,7 @@ func NewFlags() *Flags {
 		ReadOnly:      boolPtr(false),
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
+		Splashless:    boolPtr(false),
 		ScreenDumpDir: strPtr(AppDumpsDir),
 	}
 }
@@ -50,8 +52,8 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
-func intPtr(i int) *int {
-	return &i
+func float32Ptr(f float32) *float32 {
+	return &f
 }
 
 func strPtr(s string) *string {

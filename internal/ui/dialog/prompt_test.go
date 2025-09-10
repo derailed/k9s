@@ -21,7 +21,7 @@ func TestShowPrompt(t *testing.T) {
 		p := ui.NewPages()
 		a.SetRoot(p, false)
 
-		ShowPrompt(config.Dialog{}, p, "Running", "Pod", func(context.Context) {
+		ShowPrompt(new(config.Dialog), p, "Running", "Pod", func(context.Context) {
 			time.Sleep(time.Millisecond)
 		}, func() {
 			t.Errorf("unexpected cancellations")
@@ -33,7 +33,7 @@ func TestShowPrompt(t *testing.T) {
 		p := ui.NewPages()
 		a.SetRoot(p, false)
 
-		go ShowPrompt(config.Dialog{}, p, "Running", "Pod", func(ctx context.Context) {
+		go ShowPrompt(new(config.Dialog), p, "Running", "Pod", func(ctx context.Context) {
 			select {
 			case <-time.After(time.Second):
 				t.Errorf("expected cancellations")

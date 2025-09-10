@@ -38,7 +38,6 @@ func NewContextFromConfig(cfg *api.Context) *Context {
 	ct.Namespace, ct.ClusterName = NewActiveNamespace(cfg.Namespace), cfg.Cluster
 
 	return ct
-
 }
 
 // NewContextFromKubeConfig returns a new instance based on kubesettings or an error.
@@ -69,7 +68,7 @@ func (c *Context) GetClusterName() string {
 }
 
 // Validate ensures a context config is tip top.
-func (c *Context) Validate(conn client.Connection, contextName, clusterName string) {
+func (c *Context) Validate(conn client.Connection, _, clusterName string) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 

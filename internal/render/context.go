@@ -34,7 +34,7 @@ func (Context) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Context) Header(ns string) model1.Header {
+func (Context) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "CLUSTER"},
@@ -44,7 +44,7 @@ func (Context) Header(ns string) model1.Header {
 }
 
 // Render renders a K8s resource to screen.
-func (c Context) Render(o interface{}, _ string, r *model1.Row) error {
+func (Context) Render(o any, _ string, r *model1.Row) error {
 	ctx, ok := o.(*NamedContext)
 	if !ok {
 		return fmt.Errorf("expected *NamedContext, but got %T", o)
@@ -96,7 +96,7 @@ func (c *NamedContext) IsCurrentContext(n string) bool {
 }
 
 // GetObjectKind returns a schema object.
-func (c *NamedContext) GetObjectKind() schema.ObjectKind {
+func (*NamedContext) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 

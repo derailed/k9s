@@ -14,12 +14,13 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
-	clientcmd "k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
-	defaultCallTimeoutDuration time.Duration = 10 * time.Second
+	// DefaultCallTimeoutDuration is the default api server call timeout duration.
+	DefaultCallTimeoutDuration time.Duration = 15 * time.Second
 
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true
@@ -42,11 +43,11 @@ func NewConfig(f *genericclioptions.ConfigFlags) *Config {
 // CallTimeout returns the call timeout if set or the default if not set.
 func (c *Config) CallTimeout() time.Duration {
 	if !isSet(c.flags.Timeout) {
-		return defaultCallTimeoutDuration
+		return DefaultCallTimeoutDuration
 	}
 	dur, err := time.ParseDuration(*c.flags.Timeout)
 	if err != nil {
-		return defaultCallTimeoutDuration
+		return DefaultCallTimeoutDuration
 	}
 
 	return dur
@@ -77,7 +78,7 @@ func (c *Config) clientConfig() clientcmd.ClientConfig {
 	return c.flags.ToRawKubeConfigLoader()
 }
 
-func (c *Config) reset() {}
+func (*Config) reset() {}
 
 // SwitchContext changes the kubeconfig context to a new cluster.
 func (c *Config) SwitchContext(name string) error {
@@ -94,6 +95,9 @@ func (c *Config) SwitchContext(name string) error {
 	flags.Impersonate = c.flags.Impersonate
 	flags.ImpersonateGroup = c.flags.ImpersonateGroup
 	flags.ImpersonateUID = c.flags.ImpersonateUID
+	flags.Insecure = c.flags.Insecure
+	flags.BearerToken = c.flags.BearerToken
+
 	c.flags = flags
 
 	return nil
@@ -139,7 +143,6 @@ func (c *Config) CurrentClusterName() (string, error) {
 	}
 
 	return ct.Cluster, nil
-
 }
 
 // CurrentContextName returns the currently active config context.
@@ -222,17 +225,17 @@ func (c *Config) DelContext(n string) error {
 }
 
 // RenameContext renames a context.
-func (c *Config) RenameContext(old string, new string) error {
+func (c *Config) RenameContext(oldCtx, newCtx string) error {
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return err
 	}
 
-	if _, ok := cfg.Contexts[new]; ok {
-		return fmt.Errorf("context with name %s already exists", new)
+	if _, ok := cfg.Contexts[newCtx]; ok {
+		return fmt.Errorf("context with name %s already exists", newCtx)
 	}
-	cfg.Contexts[new] = cfg.Contexts[old]
-	delete(cfg.Contexts, old)
+	cfg.Contexts[newCtx] = cfg.Contexts[oldCtx]
+	delete(cfg.Contexts, oldCtx)
 	acc, err := c.ConfigAccess()
 	if err != nil {
 		return err
@@ -244,8 +247,8 @@ func (c *Config) RenameContext(old string, new string) error {
 	if err != nil {
 		return err
 	}
-	if current == old {
-		return c.SwitchContext(new)
+	if current == oldCtx {
+		return c.SwitchContext(newCtx)
 	}
 
 	return nil
@@ -345,9 +348,9 @@ func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 // Helpers...
 
 func isSet(s *string) bool {
-	return s != nil && len(*s) != 0
+	return s != nil && *s != ""
 }
 
-func areSet(s *[]string) bool {
-	return s != nil && len(*s) != 0
+func areSet(ss *[]string) bool {
+	return ss != nil && len(*ss) != 0
 }

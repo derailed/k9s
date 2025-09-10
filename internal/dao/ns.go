@@ -3,9 +3,7 @@
 
 package dao
 
-var (
-	_ Accessor = (*Namespace)(nil)
-)
+var _ Accessor = (*Namespace)(nil)
 
 // Namespace represents a namespace resource.
 type Namespace struct {

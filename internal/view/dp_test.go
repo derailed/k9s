@@ -6,16 +6,16 @@ package view_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/view"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDeploy(t *testing.T) {
-	v := view.NewDeploy(client.NewGVR("apps/v1/deployments"))
+	v := view.NewDeploy(client.DpGVR)
 
-	assert.Nil(t, v.Init(makeCtx()))
+	require.NoError(t, v.Init(makeCtx(t)))
 	assert.Equal(t, "Deployments", v.Name())
-	assert.Equal(t, 16, len(v.Hints()))
+	assert.Len(t, v.Hints(), 17)
 }

@@ -1,0 +1,20 @@
+# requires 'kube-metrics' cli binary installed to be installed (https://github.com/bakito/kube-metrics)
+plugins:
+  # allows visualizing pod and node metrics 
+  kube-metrics-pod:
+    shortCut: m
+    confirm: false
+    description: "Metrics"
+    scopes:
+      - pods
+      - nodes
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        if [ -n "$NAMESPACE" ]; then
+          kube-metrics pod --namespace=$NAMESPACE $NAME
+        else
+          kube-metrics node $NAME
+        fi

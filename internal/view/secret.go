@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -19,7 +18,7 @@ type Secret struct {
 }
 
 // NewSecret returns a new viewer.
-func NewSecret(gvr client.GVR) ResourceViewer {
+func NewSecret(gvr *client.GVR) ResourceViewer {
 	s := Secret{
 		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
@@ -36,7 +35,7 @@ func (s *Secret) bindKeys(aa *ui.KeyActions) {
 }
 
 func (s *Secret) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanRefs(evt, s.App(), s.GetTable(), dao.SecGVR)
+	return scanRefs(evt, s.App(), s.GetTable(), client.SecGVR)
 }
 
 func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -45,19 +44,19 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	o, err := s.App().factory.Get(s.GVR().String(), path, true, labels.Everything())
+	o, err := s.App().factory.Get(s.GVR(), path, true, labels.Everything())
 	if err != nil {
 		s.App().Flash().Err(err)
 		return nil
 	}
 
-	d, err := dao.ExtractSecrets(o.(*unstructured.Unstructured))
+	mm, err := dao.ExtractSecrets(o)
 	if err != nil {
 		s.App().Flash().Err(err)
 		return nil
 	}
 
-	raw, err := data.WriteYAML(d)
+	raw, err := data.WriteYAML(mm)
 	if err != nil {
 		s.App().Flash().Errf("Error decoding secret %s", err)
 		return nil

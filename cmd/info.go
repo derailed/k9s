@@ -24,7 +24,7 @@ func infoCmd() *cobra.Command {
 	}
 }
 
-func printInfo(cmd *cobra.Command, args []string) error {
+func printInfo(*cobra.Command, []string) error {
 	if err := config.InitLocs(); err != nil {
 		return err
 	}
@@ -48,9 +48,9 @@ func printInfo(cmd *cobra.Command, args []string) error {
 
 func printLogo(c color.Paint) {
 	for _, l := range ui.LogoSmall {
-		fmt.Fprintln(out, color.Colorize(l, c))
+		_, _ = fmt.Fprintln(out, color.Colorize(l, c))
 	}
-	fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out)
 }
 
 // getScreenDumpDirForInfo get default screen dump config dir or from config.K9sConfigFile configuration.

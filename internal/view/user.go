@@ -6,11 +6,10 @@ package view
 import (
 	"context"
 
-	"github.com/derailed/tcell/v2"
-
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 )
 
 // User presents a user viewer.
@@ -19,7 +18,7 @@ type User struct {
 }
 
 // NewUser returns a new subject viewer.
-func NewUser(gvr client.GVR) ResourceViewer {
+func NewUser(gvr *client.GVR) ResourceViewer {
 	u := User{ResourceViewer: NewBrowser(gvr)}
 	u.AddBindKeysFn(u.bindKeys)
 	u.SetContextFn(u.subjectCtx)
@@ -35,7 +34,7 @@ func (u *User) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (u *User) subjectCtx(ctx context.Context) context.Context {
+func (*User) subjectCtx(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeySubjectKind, "User")
 }
 

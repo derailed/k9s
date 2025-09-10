@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/slogs"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -58,31 +59,32 @@ func TrimCell(tv *SelectTable, row, col int) string {
 }
 
 // TrimLabelSelector extracts label query.
-func TrimLabelSelector(s string) string {
+func TrimLabelSelector(s string) (labels.Selector, error) {
+	selStr := s
 	if strings.Index(s, "-l") == 0 {
-		return strings.TrimSpace(s[2:])
+		selStr = strings.TrimSpace(s[2:])
 	}
 
-	return s
+	return labels.Parse(selStr)
 }
 
 // SkinTitle decorates a title.
-func SkinTitle(fmat string, style config.Frame) string {
+func SkinTitle(fmat string, style *config.Frame) string {
 	bgColor := style.Title.BgColor
 	if bgColor == config.DefaultColor {
 		bgColor = config.TransparentColor
 	}
-	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String(), -1)
+	fmat = strings.ReplaceAll(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String())
 	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor.String(), 1)
 	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor.String(), 1)
 	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor.String(), 1)
 	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor.String(), 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+bgColor.String()+":", -1)
+	fmat = strings.ReplaceAll(fmat, ":bg:", ":"+bgColor.String()+":")
 
 	return fmat
 }
 
-func sortIndicator(sort, asc bool, style config.Table, name string) string {
+func sortIndicator(sort, asc bool, style *config.Table, name string) string {
 	if !sort {
 		return name
 	}

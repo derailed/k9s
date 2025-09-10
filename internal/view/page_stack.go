@@ -29,7 +29,7 @@ func (p *PageStack) Init(ctx context.Context) (err error) {
 	if p.app, err = extractApp(ctx); err != nil {
 		return err
 	}
-	p.Stack.AddListener(p)
+	p.AddListener(p)
 
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAliasColorer(t *testing.T) {
@@ -68,12 +69,12 @@ func TestAliasRender(t *testing.T) {
 	var a render.Alias
 
 	o := render.AliasRes{
-		GVR:     "fred/v1/blee",
+		GVR:     client.NewGVR("fred/v1/blee"),
 		Aliases: []string{"a", "b", "c"},
 	}
 
 	var r model1.Row
-	assert.Nil(t, a.Render(o, "fred/v1/blee", &r))
+	require.NoError(t, a.Render(o, "fred/v1/blee", &r))
 	assert.Equal(t, model1.Row{
 		ID:     "fred/v1/blee",
 		Fields: model1.Fields{"blee", "fred", "v1", "a b c"},
@@ -82,15 +83,15 @@ func TestAliasRender(t *testing.T) {
 
 func BenchmarkAlias(b *testing.B) {
 	o := render.AliasRes{
-		GVR:     "fred/v1/blee",
+		GVR:     client.NewGVR("fred/v1/blee"),
 		Aliases: []string{"a", "b", "c"},
 	}
 	var a render.Alias
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		var r model1.Row
-		_ = a.Render(o, "aliases", &r)
+		_ = a.Render(o, "ns-1", &r)
 	}
 }

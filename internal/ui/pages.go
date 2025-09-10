@@ -24,7 +24,7 @@ func NewPages() *Pages {
 		Pages: tview.NewPages(),
 		Stack: model.NewStack(),
 	}
-	p.Stack.AddListener(&p)
+	p.AddListener(&p)
 
 	return &p
 }
@@ -74,7 +74,7 @@ func (p *Pages) delete(c model.Component) {
 // Dump for debug.
 func (p *Pages) Dump() {
 	slog.Debug("Dumping Pages", slogs.Page, p)
-	for i, c := range p.Stack.Peek() {
+	for i, c := range p.Peek() {
 		slog.Debug(fmt.Sprintf("%d -- %s -- %#v", i, componentID(c), p.GetPrimitive(componentID(c))))
 	}
 }
@@ -87,7 +87,7 @@ func (p *Pages) StackPushed(c model.Component) {
 }
 
 // StackPopped notifies a component was removed.
-func (p *Pages) StackPopped(o, top model.Component) {
+func (p *Pages) StackPopped(o, _ model.Component) {
 	p.delete(o)
 }
 

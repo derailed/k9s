@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // Picker represents a container picker.
@@ -28,9 +29,9 @@ func NewPicker() *Picker {
 	}
 }
 
-func (p *Picker) SetCommand(*cmd.Interpreter)      {}
-func (p *Picker) SetFilter(string)                 {}
-func (p *Picker) SetLabelFilter(map[string]string) {}
+func (*Picker) SetCommand(*cmd.Interpreter)      {}
+func (*Picker) SetFilter(string)                 {}
+func (*Picker) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the view.
 func (p *Picker) Init(ctx context.Context) error {
@@ -66,13 +67,13 @@ func (*Picker) InCmdMode() bool {
 }
 
 // Start starts the view.
-func (p *Picker) Start() {}
+func (*Picker) Start() {}
 
 // Stop stops the view.
-func (p *Picker) Stop() {}
+func (*Picker) Stop() {}
 
 // Name returns the component name.
-func (p *Picker) Name() string { return "picker" }
+func (*Picker) Name() string { return "picker" }
 
 // Hints returns the view hints.
 func (p *Picker) Hints() model.MenuHints {
@@ -80,7 +81,7 @@ func (p *Picker) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (p *Picker) ExtraHints() map[string]string {
+func (*Picker) ExtraHints() map[string]string {
 	return nil
 }
 

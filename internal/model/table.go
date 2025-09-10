@@ -19,6 +19,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -26,6 +27,9 @@ const initRefreshRate = 300 * time.Millisecond
 
 // TableListener represents a table model listener.
 type TableListener interface {
+	// TableNoData notifies listener no data was found.
+	TableNoData(*model1.TableData)
+
 	// TableDataChanged notifies the model data changed.
 	TableDataChanged(*model1.TableData)
 
@@ -35,19 +39,19 @@ type TableListener interface {
 
 // Table represents a table model.
 type Table struct {
-	gvr         client.GVR
-	data        *model1.TableData
-	listeners   []TableListener
-	inUpdate    int32
-	refreshRate time.Duration
-	instance    string
-	labelFilter string
-	mx          sync.RWMutex
-	vs          *config.ViewSetting
+	gvr           *client.GVR
+	data          *model1.TableData
+	listeners     []TableListener
+	inUpdate      int32
+	refreshRate   time.Duration
+	instance      string
+	labelSelector labels.Selector
+	mx            sync.RWMutex
+	vs            *config.ViewSetting
 }
 
 // NewTable returns a new table model.
-func NewTable(gvr client.GVR) *Table {
+func NewTable(gvr *client.GVR) *Table {
 	return &Table{
 		gvr:         gvr,
 		data:        model1.NewTableData(gvr),
@@ -57,9 +61,7 @@ func NewTable(gvr client.GVR) *Table {
 
 func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
 	t.mx.Lock()
-	{
-		t.vs = vs
-	}
+	t.vs = vs
 	t.mx.Unlock()
 
 	if ctx != context.Background() {
@@ -69,20 +71,20 @@ func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
 	}
 }
 
-// SetLabelFilter sets the labels filter.
-func (t *Table) SetLabelFilter(f string) {
+// SetLabelSelector sets the labels selector.
+func (t *Table) SetLabelSelector(sel labels.Selector) {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	t.labelFilter = f
+	t.labelSelector = sel
 }
 
-// GetLabelFilter sets the labels filter.
-func (t *Table) GetLabelFilter() string {
+// GetLabelSelector sets the labels selector.
+func (t *Table) GetLabelSelector() labels.Selector {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	return t.labelFilter
+	return t.labelSelector
 }
 
 // SetInstance sets a single entry table.
@@ -234,7 +236,12 @@ func (t *Table) refresh(ctx context.Context) error {
 	if err := t.reconcile(ctx); err != nil {
 		return err
 	}
-	t.fireTableChanged(t.Peek())
+	data := t.Peek()
+	if data.RowCount() == 0 {
+		t.fireNoData(data)
+	} else {
+		t.fireTableChanged(data)
+	}
 
 	return nil
 }
@@ -247,7 +254,7 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	a.Init(factory, t.gvr)
 
 	t.mx.RLock()
-	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelSelector)
 	t.mx.RUnlock()
 
 	ns := client.CleanseNamespace(t.data.GetNamespace())
@@ -264,8 +271,10 @@ func (t *Table) reconcile(ctx context.Context) error {
 		err error
 	)
 	meta := resourceMeta(t.gvr)
-	meta.DAO.SetIncludeObject(true)
-	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
+	if t.vs != nil {
+		meta.DAO.SetIncludeObject(true)
+	}
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelSelector)
 	if t.instance == "" {
 		oo, err = t.list(ctx, meta.DAO)
 	} else {
@@ -278,7 +287,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	r := meta.Renderer
 	r.SetViewSetting(t.vs)
 
-	return t.data.Reconcile(ctx, meta.Renderer, oo)
+	return t.data.Render(ctx, meta.Renderer, oo)
 }
 
 func (t *Table) fireTableChanged(data *model1.TableData) {
@@ -289,6 +298,17 @@ func (t *Table) fireTableChanged(data *model1.TableData) {
 
 	for _, l := range ll {
 		l.TableDataChanged(data)
+	}
+}
+
+func (t *Table) fireNoData(data *model1.TableData) {
+	var ll []TableListener
+	t.mx.RLock()
+	ll = t.listeners
+	t.mx.RUnlock()
+
+	for _, l := range ll {
+		l.TableNoData(data)
 	}
 }
 

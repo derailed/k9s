@@ -15,8 +15,10 @@ import (
 	"k8s.io/client-go/scale"
 )
 
-var _ Scalable = (*Scaler)(nil)
-var _ ReplicasGetter = (*Scaler)(nil)
+var (
+	_ Scalable       = (*Scaler)(nil)
+	_ ReplicasGetter = (*Scaler)(nil)
+)
 
 // Scaler represents a generic resource with scaling.
 type Scaler struct {

@@ -23,7 +23,6 @@ Your donations will go a long way in keeping our servers lights on and beers in 
 [![Go Report Card](https://goreportcard.com/badge/github.com/derailed/k9s?)](https://goreportcard.com/report/github.com/derailed/k9s)
 [![golangci badge](https://github.com/golangci/golangci-web/blob/master/src/assets/images/badge_a_plus_flat.svg)](https://golangci.com/r/github.com/derailed/k9s)
 [![codebeat badge](https://codebeat.co/badges/89e5a80e-dfe8-4426-acf6-6be781e0a12e)](https://codebeat.co/projects/github-com-derailed-k9s-master)
-[![Build Status](https://api.travis-ci.com/derailed/k9s.svg?branch=master)](https://travis-ci.com/derailed/k9s)
 [![Docker Repository on Quay](https://quay.io/repository/derailed/k9s/status "Docker Repository on Quay")](https://quay.io/repository/derailed/k9s)
 [![release](https://img.shields.io/github/release-pre/derailed/k9s.svg)](https://github.com/derailed/k9s/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mum4k/termdash/blob/master/LICENSE)
@@ -73,20 +72,7 @@ Please refer to our [K9s documentation](https://k9scli.io) site for installation
 Wanna discuss K9s features with your fellow `K9sers` or simply show your support for this tool?
 
 * Channel: [K9sersSlack](https://k9sers.slack.com/)
-* Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
-
----
-
-## 🥳 A Word From Our Rhodium Sponsors...
-
-Below are organizations that have opted to show their support and sponsor K9s.
-
-<br/>
-<a href="https://panfactum.com"><img src="assets/sponsors/panfactum.png" alt="panfactum"></a>
-<br/>
-<br/>
-
-> NOTE! K9s neither vouches for nor endorses these companies or products.
+* Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/zt-3360a389v-ElLHrb0Dp1kAXqYUItSAFA)
 
 ---
 
@@ -172,6 +158,12 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 
   ```shell
   pkgx k9s
+  ```
+
+* Via [gah](https://github.com/marverix/gah) for Linux and macOS
+
+  ```shell
+  gah install k9s
   ```
 
 * Via [Webi](https://webinstall.dev) for Windows
@@ -409,14 +401,22 @@ You can now override the context portForward default address configuration by se
   k9s:
     # Enable periodic refresh of resource browser windows. Default false
     liveViewAutoRefresh: false
+    # !!New!! v0.50.8...
+    # Extends the list of supported GPU vendors. The key is the vendor name, the value must correspond to k8s resource driver designation.
+    gpuVendors:
+      bozo: bozo/gpu
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp/dumps
-    # Represents ui poll intervals. Default 2secs
+    # Represents ui poll intervals in seconds. Default 2.0 secs. Minimum value is 2.0 - values below will be capped to the minimum.
     refreshRate: 2
+    # Overrides the default k8s api server requests timeout. Defaults 120s
+    apiServerTimeout: 15s
     # Number of retries once the connection to the api-server is lost. Default 15.
     maxConnRetry: 5
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
+    # This setting allows users to specify the default view, but it is not set by default.
+    defaultView: ""
     # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exit k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
     #UI settings
@@ -429,13 +429,18 @@ You can now override the context portForward default address configuration by se
       logoless: false
       # Set to true to hide K9s crumbs. Default false
       crumbsless: false
+      # Set to true to suppress the K9s splash screen on start. Default false. Note that for larger clusters or higher latency connections, there may be no resources visible initially until local caches have finished populating.
+      splashless: false
+      # Toggles icons display as not all terminal support these chars. Default: true
       noIcons: false
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
+      # Show full resource GVR (Group/Version/Resource) vs just R. Default: false.
+      useFullGVRTitle: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
@@ -468,6 +473,13 @@ You can now override the context portForward default address configuration by se
         memory: 100Mi
       # Enable TTY
       tty: true
+      hostPathVolume:
+      - name: docker-socket
+        # Mount the Docker socket into the shell pod
+        mountPath: /var/run/docker.sock
+        # The path on the host to mount
+        hostPath: /var/run/docker.sock
+        readOnly: true
   ```
 
 ---
@@ -515,6 +527,21 @@ k9s:
     nodeShell: true # => Enable this feature gate to make nodeShell available on this cluster
   portForwardAddress: localhost
 ```
+
+### Customizing the Shell Pod
+You can also customize the shell pod by adding a `hostPathVolume` to your shell pod. This allows you to mount a local directory or file into the shell pod. For example, if you want to mount the Docker socket into the shell pod, you can do so as follows:
+```yaml
+k9s:
+  shellPod:
+    hostPathVolume:
+    - name: docker-socket
+      # Mount the Docker socket into the shell pod
+      mountPath: /var/run/docker.sock
+      # The path on the host to mount
+      hostPath: /var/run/docker.sock
+      readOnly: true
+```
+This will mount the Docker socket into the shell pod at `/var/run/docker.sock` and make it read-only. You can also mount any other directory or file in a similar way.
 
 ---
 
@@ -726,7 +753,15 @@ views:
 
 ## Plugins
 
-K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s will look at `$XDG_CONFIG_HOME/k9s/plugins.yaml` to locate all available plugins.
+K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins.
+Minimally we look at `$XDG_CONFIG_HOME/k9s/plugins.yaml` to locate all available plugins.
+Additionally, K9s will scan the following directories for additional plugins:
+
+* `$XDG_CONFIG_HOME/k9s/plugins`
+* `$XDG_DATA_HOME/k9s/plugins`
+* `$XDG_DATA_DIRS/k9s/plugins`
+
+The plugin file content can be either a single plugin snippet, a collections of snippets or a complete plugins definition (see examples below...).
 
 A plugin is defined as follows:
 
@@ -760,12 +795,15 @@ K9s does provide additional environment variables for you to customize your plug
 
 Curly braces can be used to embed an environment variable inside another string, or if the column name contains special characters. (e.g. `${NAME}-example` or `${COL-%CPU/L}`)
 
-### Plugin Example
+### Plugin Examples
 
-This defines a plugin for viewing logs on a selected pod using `ctrl-l` as shortcut.
+Define several plugins and host them in a single file. These can leave in the K9s root config so that they are available on any clusters. Additionally, you can define cluster/context specific plugins for your clusters of choice by adding clusterA/contextB/plugins.yaml file.
+
+The following defines a plugin for viewing logs on a selected pod using `ctrl-l` as shortcut.
 
 ```yaml
-#  $XDG_DATA_HOME/k9s/plugins.yaml
+# Define several plugins in a single file in the K9s root configuration
+# $XDG_DATA_HOME/k9s/plugins.yaml
 plugins:
   # Defines a plugin to provide a `ctrl-l` shortcut to tail the logs while in pod view.
   fred:
@@ -787,6 +825,41 @@ plugins:
     - $NAMESPACE
     - --context
     - $CONTEXT
+```
+
+Similarly you can define the plugin above in a directory using either a file per plugin or several plugins per files as follow...
+
+The following defines two plugins namely fred and zorg.
+
+```yaml
+# Multiple plugins in a single file...
+# Note: as of v0.40.9 you can have ad-hoc plugin dirs
+# Loads plugins fred and zorg
+# $XDG_DATA_HOME/k9s/plugins/misc-plugins/blee.yaml
+fred:
+  shortCut: Shift-B
+  description: Bozo
+  scopes:
+  - deploy
+  command: bozo
+
+zorg:
+  shortCut: Shift-Z
+  description: Pod logs
+  scopes:
+  - svc
+  command: zorg
+```
+
+Lastly you can define plugin snippets in their own file. The snippet will be named from the file name. In this case, we define a `bozo` plugin using a plugin snippet.
+
+```yaml
+# $XDG_DATA_HOME/k9s/plugins/schtuff/bozo.yaml
+shortCut: Shift-B
+description: Bozo
+scopes:
+- deploy
+command: bozo
 ```
 
 > NOTE: This is an experimental feature! Options and layout may change in future K9s releases as this feature solidifies.
@@ -964,7 +1037,7 @@ Example: Dracula Skin ;)
 You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. See this repo `skins` directory for examples.
 You can skin k9s by default by specifying a UI.skin attribute. You can also change K9s skins based on the context you are connecting too.
 In this case, you can specify a skin field on your cluster config aka `skin: dracula` (just the name of the skin file without the extension!) and copy this repo
-`skins/dracula.yaml` to `$XDG_CONFIG_HOME/k9s/skins/` directory.
+`skins/dracula.yaml` to `$XDG_CONFIG_HOME/k9s/skins/` directory. You can also change the skin by setting `K9S_SKIN` in the environment, e.g. `export K9S_SKIN="dracula"`.
 
 In the case where your cluster spans several contexts, you can add a skin context configuration to your context configuration.
 This is a collection of {context_name, skin} tuples (please see example below!)
@@ -974,13 +1047,13 @@ Colors can be defined by name or using a hex representation. Of recent, we've ad
 > NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 > NOTE: Please see [K9s Skins](https://k9scli.io/topics/skins/) for a list of available colors.
 
-To skin a specific context and provided the file `in_the_navy.yaml` is present in your skins directory.
+To skin a specific context and provided the file `in-the-navy.yaml` is present in your skins directory.
 
 ```yaml
 #  $XDG_DATA_HOME/k9s/clusters/clusterX/contextY/config.yaml
 k9s:
   cluster: clusterX
-  skin: in_the_navy
+  skin: in-the-navy
   readOnly: false
   namespace:
     active: default
@@ -1011,6 +1084,7 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    splashless: false
     noIcons: false
     # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live  Defaults to false.
     reactive: false
@@ -1047,7 +1121,7 @@ k9s:
 ```
 
 ```yaml
-# $XDG_DATA_HOME/k9s/skins/in_the_navy.yaml
+# $XDG_DATA_HOME/k9s/skins/in-the-navy.yaml
 # Skin InTheNavy!
 k9s:
   # General K9s styles
@@ -1177,4 +1251,4 @@ We always enjoy hearing from folks who benefit from our work!
 
 ---
 
-<img src="assets/imhotep_logo.png" width="32" height="auto" alt="Imhotep"/> &nbsp;© 2023 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
+<img src="assets/imhotep_logo.png" width="32" height="auto" alt="Imhotep"/> &nbsp;© 2025 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)

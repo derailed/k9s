@@ -52,8 +52,8 @@ const (
 	// GOR tracks a gor logger key.
 	GOR = "gor"
 
-	// Action tracks an action logger key.
-	Action = "action"
+	// Shortcut tracks a shortcut logger key.
+	Shortcut = "shortcut"
 
 	// Page tracks a page logger key.
 	Page = "page"
@@ -117,6 +117,9 @@ const (
 	// Key tracks a key logger key.
 	Key = "key"
 
+	// Plugin tracks a plugin logger key.
+	Plugin = "plugin"
+
 	// Component tracks a component logger key.
 	Component = "component"
 
@@ -143,9 +146,6 @@ const (
 
 	// Log tracks a log logger key.
 	Log = "log"
-
-	// CO tracks a container logger key.
-	CO = "container"
 
 	// Annotation tracks an annotation logger key.
 	Annotation = "annotation"
@@ -209,4 +209,22 @@ const (
 
 	// ID tracks an id logger key.
 	ID = "id"
+
+	// ViewSetting tracks a view setting logger key.
+	ViewSetting = "view-setting"
+
+	// JQExp tracks a jq expression logger key.
+	JQExp = "jq-exp"
+
+	// Duration tracks a duration logger key.
+	Duration = "duration"
+
+	// Type tracks a type logger key.
+	Type = "type"
+
+	// Requested tracks a requested value logger key.
+	Requested = "requested"
+
+	// Minimum tracks a minimum value logger key.
+	Minimum = "minimum"
 )

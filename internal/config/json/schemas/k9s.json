@@ -8,13 +8,26 @@
       "additionalProperties": false,
       "properties": {
         "liveViewAutoRefresh": { "type": "boolean" },
+        "gpuVendors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "vendor": { "type": "string" },
+              "model": { "type": "string" }
+            },
+            "required": ["vendor", "model"]
+          }
+        },
         "screenDumpDir": {"type": "string"},
-        "refreshRate": { "type": "integer" },
+        "refreshRate": { "type": "number" },
+        "apiServerTimeout": { "type": "string" },
         "maxConnRetry": { "type": "integer" },
         "readOnly": { "type": "boolean" },
         "noExitOnCtrlC": { "type": "boolean" },
         "skipLatestRevCheck": { "type": "boolean" },
         "disablePodCounting": { "type": "boolean" },
+        "defaultView": { "type": "string" },
         "portForwardAddress": { "type": "string" },
         "ui": {
           "type": "object",
@@ -24,10 +37,12 @@
             "headless": {"type": "boolean"},
             "logoless": {"type": "boolean"},
             "crumbsless": {"type": "boolean"},
+            "splashless": {"type": "boolean"},
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
             "skin": {"type": "string"},
-            "defaultsToFullScreen": {"type": "boolean"}
+            "defaultsToFullScreen": {"type": "boolean"},
+            "useFullGVRTitle": {"type": "boolean"}
           }
         },
         "shellPod": {

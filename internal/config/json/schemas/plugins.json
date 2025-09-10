@@ -7,8 +7,6 @@
     "plugins": {
       "type": "object",
       "additionalProperties": {
-        "type": "object",
-        "additionalProperties": false,
         "properties": {
           "shortCut": { "type": "string" },
           "override": { "type": "boolean" },

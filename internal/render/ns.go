@@ -4,17 +4,28 @@
 package render
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
+	"golang.org/x/exp/slog"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var defaultNSHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
 
 // Namespace renders a K8s Namespace to screen.
 type Namespace struct {
@@ -22,7 +33,7 @@ type Namespace struct {
 }
 
 // ColorerFunc colors a resource row.
-func (n Namespace) ColorerFunc() model1.ColorerFunc {
+func (Namespace) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 		if c == model1.ErrColor {
@@ -41,24 +52,14 @@ func (n Namespace) ColorerFunc() model1.ColorerFunc {
 
 // Header returns a header row.
 func (n Namespace) Header(_ string) model1.Header {
-	return n.doHeader(n.defaultHeader())
-}
-
-func (Namespace) defaultHeader() model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "STATUS"},
-		model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	return n.doHeader(defaultNSHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (n Namespace) Render(o interface{}, ns string, row *model1.Row) error {
+func (n Namespace) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected NetworkPolicy, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 	if err := n.defaultRow(raw, row); err != nil {
 		return err
@@ -67,7 +68,7 @@ func (n Namespace) Render(o interface{}, ns string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := n.specs.realize(raw, n.defaultHeader(), row)
+	cols, err := n.specs.realize(raw, defaultNSHeader, row)
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 		return err
 	}
 
-	r.ID = client.MetaFQN(ns.ObjectMeta)
+	r.ID = client.MetaFQN(&ns.ObjectMeta)
 	r.Fields = model1.Fields{
 		ns.Name,
 		string(ns.Status.Phase),
@@ -93,6 +94,23 @@ func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 	}
 
 	return nil
+}
+
+// Healthy checks component health.
+func (n Namespace) Healthy(_ context.Context, o any) error {
+	res, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		slog.Error("Expected *Unstructured, but got", slogs.Type, fmt.Sprintf("%T", o))
+		return nil
+	}
+	var ns v1.Namespace
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &ns)
+	if err != nil {
+		slog.Error("Failed to convert Unstructured to Namespace", slogs.Type, fmt.Sprintf("%T", o), slog.String("error", err.Error()))
+		return nil
+	}
+
+	return n.diagnose(ns.Status.Phase)
 }
 
 func (Namespace) diagnose(phase v1.NamespacePhase) error {

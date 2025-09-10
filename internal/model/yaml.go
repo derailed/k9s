@@ -25,17 +25,18 @@ const ManagedFieldsOpts = "ManagedFields"
 
 // YAML tracks yaml resource representations.
 type YAML struct {
-	gvr       client.GVR
+	gvr       *client.GVR
 	inUpdate  int32
 	path      string
 	query     string
 	lines     []string
 	listeners []ResourceViewerListener
 	options   ViewerToggleOpts
+	decode    bool
 }
 
 // NewYAML return a new yaml resource model.
-func NewYAML(gvr client.GVR, path string) *YAML {
+func NewYAML(gvr *client.GVR, path string) *YAML {
 	return &YAML{
 		gvr:  gvr,
 		path: path,
@@ -43,7 +44,7 @@ func NewYAML(gvr client.GVR, path string) *YAML {
 }
 
 // GVR returns the resource gvr.
-func (y *YAML) GVR() client.GVR {
+func (y *YAML) GVR() *client.GVR {
 	return y.gvr
 }
 
@@ -195,7 +196,7 @@ func (y *YAML) RemoveListener(l ResourceViewerListener) {
 }
 
 // ToYAML returns a resource yaml.
-func (y *YAML) ToYAML(ctx context.Context, gvr client.GVR, path string, showManaged bool) (string, error) {
+func (y *YAML) ToYAML(ctx context.Context, gvr *client.GVR, path string, showManaged bool) (string, error) {
 	meta, err := getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -205,6 +206,14 @@ func (y *YAML) ToYAML(ctx context.Context, gvr client.GVR, path string, showMana
 	if !ok {
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
 	}
+	if desc, ok := meta.DAO.(*dao.Secret); ok {
+		desc.SetDecodeData(y.decode)
+	}
 
 	return desc.ToYAML(path, showManaged)
+}
+
+// Toggle toggles the decode flag.
+func (y *YAML) Toggle() {
+	y.decode = !y.decode
 }

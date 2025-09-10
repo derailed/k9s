@@ -8,22 +8,15 @@ import (
 	"io"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/watch"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
 	restclient "k8s.io/client-go/rest"
-
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/watch"
 )
-
-// ResourceMetas represents a collection of resource metadata.
-type ResourceMetas map[client.GVR]metav1.APIResource
-
-// Accessors represents a collection of dao accessors.
-type Accessors map[client.GVR]Accessor
 
 // Factory represents a resource factory.
 type Factory interface {
@@ -31,16 +24,16 @@ type Factory interface {
 	Client() client.Connection
 
 	// Get fetch a given resource.
-	Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error)
+	Get(gvr *client.GVR, path string, wait bool, sel labels.Selector) (runtime.Object, error)
 
 	// List fetch a collection of resources.
-	List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error)
+	List(gvr *client.GVR, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error)
 
 	// ForResource fetch an informer for a given resource.
-	ForResource(ns, gvr string) (informers.GenericInformer, error)
+	ForResource(ns string, gvr *client.GVR) (informers.GenericInformer, error)
 
 	// CanForResource fetch an informer for a given resource if authorized
-	CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error)
+	CanForResource(ns string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error)
 
 	// WaitForCacheSync synchronize the cache.
 	WaitForCacheSync()
@@ -76,7 +69,7 @@ type Accessor interface {
 	Getter
 
 	// Init the resource with a factory object.
-	Init(Factory, client.GVR)
+	Init(Factory, *client.GVR)
 
 	// GVR returns a gvr a string.
 	GVR() string
@@ -152,7 +145,7 @@ type Switchable interface {
 // Restartable represents a restartable resource.
 type Restartable interface {
 	// Restart performs a rollout restart.
-	Restart(ctx context.Context, path string) error
+	Restart(context.Context, string, *metav1.PatchOptions) error
 }
 
 // Runnable represents a runnable resource.

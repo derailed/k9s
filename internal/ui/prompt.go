@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultPrompt = "%c> [::b]%s"
+	defaultPrompt = "%c%c [::b]%s"
 	defaultSpacer = 4
 )
 
@@ -81,6 +81,7 @@ type Prompt struct {
 	app     *App
 	noIcons bool
 	icon    rune
+	prefix  rune
 	styles  *config.Styles
 	model   PromptModel
 	spacer  int
@@ -145,7 +146,7 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch evt.Key() {
 	case tcell.KeyBackspace2, tcell.KeyBackspace, tcell.KeyDelete:
 		p.model.Delete()
@@ -230,12 +231,11 @@ func (p *Prompt) write(text, suggest string) {
 	defer p.mx.Unlock()
 
 	p.SetCursorIndex(p.spacer + len(text))
-	txt := text
 	if suggest != "" {
-		txt += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
+		text += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
 	}
 	p.StylesChanged(p.styles)
-	fmt.Fprintf(p, defaultPrompt, p.icon, txt)
+	_, _ = fmt.Fprintf(p, defaultPrompt, p.icon, p.prefix, text)
 }
 
 // ----------------------------------------------------------------------------
@@ -263,7 +263,7 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 		p.SetBorder(true)
 		p.SetTextColor(p.styles.FgColor())
 		p.SetBorderColor(p.colorFor(kind))
-		p.icon = p.iconFor(kind)
+		p.icon, p.prefix = p.prefixesFor(kind)
 		p.activate()
 		return
 	}
@@ -274,17 +274,19 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	p.Clear()
 }
 
-func (p *Prompt) iconFor(k model.BufferKind) rune {
-	if p.noIcons {
-		return ' '
-	}
+func (p *Prompt) prefixesFor(k model.BufferKind) (ic, prefix rune) {
+	defer func() {
+		if p.noIcons {
+			ic = ' '
+		}
+	}()
 
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
-		return '🐶'
+		return '🐶', '>'
 	default:
-		return '🐩'
+		return '🐩', '/'
 	}
 }
 
@@ -292,7 +294,7 @@ func (p *Prompt) iconFor(k model.BufferKind) rune {
 // Helpers...
 
 func (p *Prompt) colorFor(k model.BufferKind) tcell.Color {
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
 		return p.styles.Prompt().Border.CommandColor.Color()

@@ -112,7 +112,7 @@ func BenchmarkLogItemRenderTS(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
 		i.Render("yellow", true, bb)
 	}
@@ -125,7 +125,7 @@ func BenchmarkLogItemRenderNoTS(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
 		i.Render("yellow", false, bb)
 	}

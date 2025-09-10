@@ -25,6 +25,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -54,7 +55,7 @@ type Log struct {
 var _ model.Component = (*Log)(nil)
 
 // NewLog returns a new viewer.
-func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
+func NewLog(gvr *client.GVR, opts *dao.LogOptions) *Log {
 	l := Log{
 		Flex:   tview.NewFlex(),
 		model:  model.NewLog(gvr, opts, defaultFlushTimeout),
@@ -66,7 +67,7 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 
 func (*Log) SetCommand(*cmd.Interpreter)      {}
 func (*Log) SetFilter(string)                 {}
-func (*Log) SetLabelFilter(map[string]string) {}
+func (*Log) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
@@ -86,8 +87,8 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.indicator.Refresh()
 
 	l.logs = NewLogger(l.app)
-	if err = l.logs.Init(ctx); err != nil {
-		return err
+	if e := l.logs.Init(ctx); e != nil {
+		return e
 	}
 	l.logs.SetBorderPadding(0, 0, 1, 1)
 	l.logs.SetText("[orange::d]" + logMessage)
@@ -174,7 +175,7 @@ func (l *Log) BufferCompleted(text, _ string) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (l *Log) BufferChanged(_, _ string) {}
+func (*Log) BufferChanged(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
 func (l *Log) BufferActive(state bool, k model.BufferKind) {
@@ -199,7 +200,7 @@ func (l *Log) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (l *Log) ExtraHints() map[string]string {
+func (*Log) ExtraHints() map[string]string {
 	return nil
 }
 
@@ -241,7 +242,7 @@ func (l *Log) Stop() {
 }
 
 // Name returns the component name.
-func (l *Log) Name() string { return logTitle }
+func (*Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
 	l.logs.Actions().Bulk(ui.KeyMap{
@@ -316,16 +317,19 @@ func (l *Log) updateTitle() {
 	if l.model.LogOptions().Previous {
 		title = " Previous Logs"
 	}
-	path, co := l.model.GetPath(), l.model.GetContainer()
+	var (
+		path, co = l.model.GetPath(), l.model.GetContainer()
+		styles   = l.app.Styles.Frame()
+	)
 	if co == "" {
-		title += ui.SkinTitle(fmt.Sprintf(logFmt, path, since), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(logFmt, path, since), &styles)
 	} else {
-		title += ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), &styles)
 	}
 
 	buff := l.logs.cmdBuff.GetText()
 	if buff != "" {
-		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), &styles)
 	}
 	l.SetTitle(title)
 }
@@ -352,7 +356,7 @@ func (l *Log) Flush(lines [][]byte) {
 	if l.requestOneRefresh {
 		l.requestOneRefresh = false
 	}
-	for i := 0; i < len(lines); i++ {
+	for i := range lines {
 		if l.cancelUpdates {
 			break
 		}
@@ -367,7 +371,7 @@ func (l *Log) Flush(lines [][]byte) {
 // Actions...
 
 func (l *Log) sinceCmd(n int) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(*tcell.EventKey) *tcell.EventKey {
 		l.logs.Clear()
 		ctx := l.getContext()
 		if n == 0 {
@@ -395,7 +399,7 @@ func (l *Log) toggleAllContainers(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !l.logs.cmdBuff.IsActive() {
-		fmt.Fprintln(l.ansiWriter)
+		_, _ = fmt.Fprintln(l.ansiWriter)
 		return evt
 	}
 
@@ -460,7 +464,7 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
 	_, _, w, _ := l.GetRect()
-	fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
+	_, _ = fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
 	l.follow = true
 
 	return nil
@@ -516,7 +520,7 @@ func (l *Log) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) toggleFullScreen() {
 	l.SetFullScreen(l.indicator.FullScreen())
-	l.Box.SetBorder(!l.indicator.FullScreen())
+	l.SetBorder(!l.indicator.FullScreen())
 	if l.indicator.FullScreen() {
 		l.logs.SetBorderPadding(0, 0, 0, 0)
 	} else {

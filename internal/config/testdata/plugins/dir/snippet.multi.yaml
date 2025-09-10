@@ -1,0 +1,15 @@
+crapola:
+  shortCut: Shift-1
+  description: crapola
+  scopes:
+    - pods
+  command: crapola
+  background: false
+
+bozo:
+  shortCut: Shift-2
+  description: bozo
+  scopes:
+    - pods
+    - svc
+  command: bozo

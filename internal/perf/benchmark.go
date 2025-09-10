@@ -16,11 +16,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/derailed/k9s/internal/config/data"
-	"github.com/derailed/k9s/internal/slogs"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/rakyll/hey/requester"
 )
 
@@ -34,14 +33,14 @@ const (
 // Benchmark puts a workload under load.
 type Benchmark struct {
 	canceled bool
-	config   config.BenchConfig
+	config   *config.BenchConfig
 	worker   *requester.Work
 	cancelFn context.CancelFunc
 	mx       sync.RWMutex
 }
 
 // NewBenchmark returns a new benchmark.
-func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, error) {
+func NewBenchmark(base, version string, cfg *config.BenchConfig) (*Benchmark, error) {
 	b := Benchmark{config: cfg}
 	if err := b.init(base, version); err != nil {
 		return nil, err
@@ -52,7 +51,7 @@ func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, err
 func (b *Benchmark) init(base, version string) error {
 	var ctx context.Context
 	ctx, b.cancelFn = context.WithTimeout(context.Background(), benchTimeout)
-	req, err := http.NewRequestWithContext(ctx, b.config.HTTP.Method, base, nil)
+	req, err := http.NewRequestWithContext(ctx, b.config.HTTP.Method, base, http.NoBody)
 	if err != nil {
 		return err
 	}
@@ -107,10 +106,10 @@ func (b *Benchmark) Canceled() bool {
 }
 
 // Run starts a benchmark.
-func (b *Benchmark) Run(cluster, context string, done func()) {
+func (b *Benchmark) Run(cluster, ct string, done func()) {
 	slog.Debug("Running benchmark",
 		slogs.Cluster, cluster,
-		slogs.Context, context,
+		slogs.Context, ct,
 	)
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
@@ -118,24 +117,24 @@ func (b *Benchmark) Run(cluster, context string, done func()) {
 	b.worker.Run()
 	b.worker.Stop()
 	if buff.Len() > 0 {
-		if err := b.save(cluster, context, buff); err != nil {
+		if err := b.save(cluster, ct, buff); err != nil {
 			slog.Error("Saving Benchmark", slogs.Error, err)
 		}
 	}
 	done()
 }
 
-func (b *Benchmark) save(cluster, context string, r io.Reader) error {
+func (b *Benchmark) save(cluster, ct string, r io.Reader) error {
 	ns, n := client.Namespaced(b.config.Name)
-	n = strings.Replace(n, "|", "_", -1)
-	n = strings.Replace(n, ":", "_", -1)
-	dir, err := config.EnsureBenchmarksDir(cluster, context)
+	n = strings.ReplaceAll(n, "|", "_")
+	n = strings.ReplaceAll(n, ":", "_")
+	dir, err := config.EnsureBenchmarksDir(cluster, ct)
 	if err != nil {
 		return err
 	}
 	bf := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
-	if err := data.EnsureDirPath(bf, data.DefaultDirMod); err != nil {
-		return err
+	if e := data.EnsureDirPath(bf, data.DefaultDirMod); e != nil {
+		return e
 	}
 
 	f, err := os.Create(bf)

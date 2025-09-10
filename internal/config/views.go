@@ -45,7 +45,7 @@ func (v *ViewSetting) IsBlank() bool {
 	return v == nil || (len(v.Columns) == 0 && v.SortColumn == "")
 }
 
-func (v *ViewSetting) SortCol() (string, bool, error) {
+func (v *ViewSetting) SortCol() (name string, asc bool, err error) {
 	if v == nil || v.SortColumn == "" {
 		return "", false, fmt.Errorf("no sort column specified")
 	}
@@ -180,12 +180,10 @@ func (v *CustomView) getVS(gvr, ns string) *ViewSetting {
 	}
 	k := gvr
 	kk := slices.Collect(maps.Keys(v.Views))
-	slices.SortFunc(kk, func(s1, s2 string) int {
-		return strings.Compare(s1, s2)
-	})
+	slices.SortFunc(kk, strings.Compare)
 	slices.Reverse(kk)
 	for _, key := range kk {
-		if !strings.HasPrefix(key, gvr) {
+		if !strings.HasPrefix(key, gvr) && !strings.HasPrefix(gvr, key) {
 			continue
 		}
 
@@ -203,6 +201,18 @@ func (v *CustomView) getVS(gvr, ns string) *ViewSetting {
 				vs := v.Views[key]
 				return &vs
 			}
+		case strings.HasPrefix(k, key):
+			kk := strings.Fields(k)
+			if len(kk) == 2 {
+				if v, ok := v.Views[kk[0]+"@"+kk[1]]; ok {
+					return &v
+				}
+				if key == kk[0] {
+					vs := v.Views[key]
+					return &vs
+				}
+			}
+			fallthrough
 		case key == k:
 			vs := v.Views[key]
 			return &vs

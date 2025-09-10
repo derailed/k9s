@@ -77,6 +77,98 @@ func TestNsCmd(t *testing.T) {
 	}
 }
 
+func TestSwitchNS(t *testing.T) {
+	uu := map[string]struct {
+		cmd string
+		ns  string
+		e   string
+	}{
+		"empty": {},
+
+		"blank": {
+			cmd: "pod fred",
+			e:   "pod",
+		},
+
+		"no-op": {
+			cmd: "pod fred",
+			ns:  "fred",
+			e:   "pod fred",
+		},
+
+		"no-ns": {
+			cmd: "pod",
+			ns:  "blee",
+			e:   "pod blee",
+		},
+
+		"full-ns": {
+			cmd: "pod app=blee fred @zorg",
+			ns:  "blee",
+			e:   "pod app=blee blee @zorg",
+		},
+
+		"full--repeat-ns": {
+			cmd: "pod app=zorg zorg @zorg",
+			ns:  "blee",
+			e:   "pod app=zorg blee @zorg",
+		},
+
+		"full-no-ns": {
+			cmd: "pod app=blee @zorg",
+			ns:  "blee",
+			e:   "pod app=blee @zorg blee",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			p.SwitchNS(u.ns)
+			assert.Equal(t, u.e, p.GetLine())
+		})
+	}
+}
+
+func TestClearNS(t *testing.T) {
+	uu := map[string]struct {
+		cmd string
+		e   string
+	}{
+		"empty": {},
+
+		"has-ns": {
+			cmd: "pod fred",
+			e:   "pod",
+		},
+
+		"no-ns": {
+			cmd: "pod",
+			e:   "pod",
+		},
+
+		"full-repeat-ns": {
+			cmd: "pod app=blee @zorg zorg",
+			e:   "pod app=blee @zorg",
+		},
+
+		"full-no-ns": {
+			cmd: "pod app=blee @zorg",
+			e:   "pod app=blee @zorg",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			p.ClearNS()
+			assert.Equal(t, u.e, p.GetLine())
+		})
+	}
+}
+
 func TestFilterCmd(t *testing.T) {
 	uu := map[string]struct {
 		cmd    string
@@ -472,6 +564,34 @@ func TestCowCmd(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			p := cmd.NewInterpreter(u.cmd)
 			assert.Equal(t, u.ok, p.IsCowCmd())
+		})
+	}
+}
+
+func TestArgs(t *testing.T) {
+	uu := map[string]struct {
+		cmd string
+		ok  bool
+		ctx string
+	}{
+		"empty": {},
+
+		"with-plain-context": {
+			cmd: "po @fred",
+			ok:  true,
+			ctx: "fred",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			ctx, ok := p.ContextArg()
+			assert.Equal(t, u.ok, ok)
+			if u.ok {
+				assert.Equal(t, u.ctx, ctx)
+			}
 		})
 	}
 }

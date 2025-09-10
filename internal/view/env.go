@@ -63,7 +63,7 @@ func (e Env) Substitute(arg string) (string, error) {
 			}
 			v = fmt.Sprintf("%t", b)
 		}
-		arg = strings.Replace(arg, m[0], v, -1)
+		arg = strings.ReplaceAll(arg, m[0], v)
 	}
 
 	return arg, nil

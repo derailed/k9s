@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -21,7 +22,7 @@ type Namespace struct {
 }
 
 // NewNamespace returns a new viewer.
-func NewNamespace(gvr client.GVR) ResourceViewer {
+func NewNamespace(gvr *client.GVR) ResourceViewer {
 	n := Namespace{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -39,12 +40,13 @@ func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ client.GVR, path string) {
+func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	n.useNamespace(path)
-	app.gotoResource("pods", "", false, true)
+	_, ns := client.Namespaced(path)
+	app.gotoResource(client.PodGVR.String()+" "+ns, "", false, true)
 }
 
-func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (n *Namespace) useNsCmd(*tcell.EventKey) *tcell.EventKey {
 	path := n.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil
@@ -85,17 +87,16 @@ func (n *Namespace) decorate(td *model1.TableData) {
 		)
 	}
 
-	favs := make(map[string]struct{})
-	for _, ns := range n.App().Config.FavNamespaces() {
-		favs[ns] = struct{}{}
-	}
-	ans := n.App().Config.ActiveNamespace()
+	var (
+		favs     = sets.New(n.App().Config.FavNamespaces()...)
+		activeNS = n.App().Config.ActiveNamespace()
+	)
 	td.RowsRange(func(i int, re model1.RowEvent) bool {
 		_, n := client.Namespaced(re.Row.ID)
-		if _, ok := favs[n]; ok {
+		if favs.Has(n) {
 			re.Row.Fields[0] += favNSIndicator
 		}
-		if ans == re.Row.ID {
+		if n == activeNS {
 			re.Row.Fields[0] += defaultNSIndicator
 		}
 		re.Kind = model1.EventUnchanged

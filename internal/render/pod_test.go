@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	res "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -160,11 +161,11 @@ func TestPodRender(t *testing.T) {
 	po := render.NewPod()
 	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "<unknown>", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "default", "<none>"}
-	assert.Equal(t, e, r.Fields[:20])
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "<unknown>", "100", "100:0", "100", "n/a", "50", "70:170", "71", "29", "0:0", "172.17.0.6", "minikube", "default", "<none>"}
+	assert.Equal(t, e, r.Fields[:21])
 }
 
 func BenchmarkPodRender(b *testing.B) {
@@ -177,7 +178,7 @@ func BenchmarkPodRender(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = po.Render(&pom, "", &r)
 	}
 }
@@ -191,11 +192,11 @@ func TestPodInitRender(t *testing.T) {
 	po := render.NewPod()
 	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "<unknown>", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "default", "<none>"}
-	assert.Equal(t, e, r.Fields[:20])
+	e := model1.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "<unknown>", "10", "100:0", "10", "n/a", "10", "70:170", "14", "5", "0:0", "172.17.0.6", "minikube", "default", "<none>"}
+	assert.Equal(t, e, r.Fields[:21])
 }
 
 func TestPodSidecarRender(t *testing.T) {
@@ -207,11 +208,11 @@ func TestPodSidecarRender(t *testing.T) {
 	po := render.NewPod()
 	r := model1.NewRow(14)
 	err := po.Render(&pom, "", &r)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "default/sleep", r.ID)
-	e := model1.Fields{"default", "sleep", "0", "●", "1/1", "Running", "0", "<unknown>", "100", "40", "50:250", "50:80", "200", "40", "80", "50", "10.244.0.8", "kind-control-plane", "default", "<none>"}
-	assert.Equal(t, e, r.Fields[:20])
+	e := model1.Fields{"default", "sleep", "0", "●", "2/2", "Running", "0", "<unknown>", "100", "50:250", "200", "40", "40", "50:80", "80", "50", "0:0", "10.244.0.8", "kind-control-plane", "default", "<none>"}
+	assert.Equal(t, e, r.Fields[:21])
 }
 
 func TestCheckPodStatus(t *testing.T) {
@@ -655,7 +656,7 @@ func TestCheckPhase(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, p.Phase(&u.pod))
+			assert.Equal(t, u.e, p.Phase(u.pod.DeletionTimestamp, &u.pod.Spec, &u.pod.Status))
 		})
 	}
 }

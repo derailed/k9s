@@ -6,6 +6,7 @@ package model_test
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"testing"
 	"time"
@@ -20,6 +21,10 @@ import (
 	"k8s.io/client-go/informers"
 )
 
+func init() {
+	slog.SetDefault(slog.New(slog.DiscardHandler))
+}
+
 func TestLogFullBuffer(t *testing.T) {
 	size := 4
 	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(size), 10*time.Millisecond)
@@ -29,7 +34,7 @@ func TestLogFullBuffer(t *testing.T) {
 	m.AddListener(v)
 
 	data := dao.NewLogItems()
-	for i := 0; i < 2*size; i++ {
+	for i := range 2 * size {
 		data.Add(dao.NewLogItemFromString("line" + strconv.Itoa(i)))
 		m.Append(data.Items()[i])
 	}
@@ -75,7 +80,7 @@ func TestLogFilter(t *testing.T) {
 
 			m.Filter(u.q)
 			data := dao.NewLogItems()
-			for i := 0; i < size; i++ {
+			for i := range size {
 				data.Add(dao.NewLogItemFromString(fmt.Sprintf("pod-line-%d", i+1)))
 				m.Append(data.Items()[i])
 			}
@@ -84,13 +89,13 @@ func TestLogFilter(t *testing.T) {
 			assert.Equal(t, 1, v.dataCalled)
 			assert.Equal(t, 1, v.clearCalled)
 			assert.Equal(t, 0, v.errCalled)
-			assert.Equal(t, u.e, len(v.data))
+			assert.Len(t, v.data, u.e)
 
 			m.ClearFilter()
 			assert.Equal(t, 2, v.dataCalled)
 			assert.Equal(t, 2, v.clearCalled)
 			assert.Equal(t, 0, v.errCalled)
-			assert.Equal(t, size, len(v.data))
+			assert.Len(t, v.data, size)
 		})
 	}
 }
@@ -116,7 +121,7 @@ func TestLogStartStop(t *testing.T) {
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 0, v.clearCalled)
 	assert.Equal(t, 1, v.errCalled)
-	assert.Equal(t, 2, len(v.data))
+	assert.Len(t, v.data, 2)
 }
 
 func TestLogClear(t *testing.T) {
@@ -139,7 +144,7 @@ func TestLogClear(t *testing.T) {
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
-	assert.Equal(t, 0, len(v.data))
+	assert.Empty(t, v.data)
 }
 
 func TestLogBasic(t *testing.T) {
@@ -191,7 +196,6 @@ func TestLogAppend(t *testing.T) {
 	assert.Equal(t, 2, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
-	// assert.Equal(t, append(items, data...).Lines(false), v.data)
 }
 
 func TestLogTimedout(t *testing.T) {
@@ -230,7 +234,7 @@ func TestToggleAllContainers(t *testing.T) {
 	defer cancel()
 
 	m.ToggleAllContainers(ctx)
-	assert.Equal(t, "", m.GetContainer())
+	assert.Empty(t, m.GetContainer())
 	m.ToggleAllContainers(ctx)
 	assert.Equal(t, "blee", m.GetContainer())
 }
@@ -259,19 +263,21 @@ func newTestView() *testView {
 	return &testView{}
 }
 
-func (t *testView) LogCanceled() {}
-func (t *testView) LogStop()     {}
-func (t *testView) LogResume()   {}
+func (*testView) LogCanceled() {}
+func (*testView) LogStop()     {}
+func (*testView) LogResume()   {}
+
 func (t *testView) LogChanged(ll [][]byte) {
 	t.data = ll
 	t.dataCalled++
 }
+
 func (t *testView) LogCleared() {
 	t.clearCalled++
 	t.data = nil
 }
-func (t *testView) LogFailed(err error) {
-	fmt.Println("LogErr", err)
+
+func (t *testView) LogFailed(error) {
 	t.errCalled++
 }
 
@@ -281,30 +287,26 @@ type testFactory struct{}
 
 var _ dao.Factory = testFactory{}
 
-func (f testFactory) Client() client.Connection {
+func (testFactory) Client() client.Connection {
 	return nil
 }
-
-func (f testFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
+func (testFactory) Get(*client.GVR, string, bool, labels.Selector) (runtime.Object, error) {
 	return nil, nil
 }
-
-func (f testFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
+func (testFactory) List(*client.GVR, string, bool, labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }
-
-func (f testFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
+func (testFactory) ForResource(string, *client.GVR) (informers.GenericInformer, error) {
 	return nil, nil
 }
-
-func (f testFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
+func (testFactory) CanForResource(string, *client.GVR, []string) (informers.GenericInformer, error) {
 	return nil, nil
 }
-func (f testFactory) WaitForCacheSync() {}
-func (f testFactory) Forwarders() watch.Forwarders {
+func (testFactory) WaitForCacheSync() {}
+func (testFactory) Forwarders() watch.Forwarders {
 	return nil
 }
-func (f testFactory) DeleteForwarder(string) {}
+func (testFactory) DeleteForwarder(string) {}
 
 func makeFactory() dao.Factory {
 	return testFactory{}

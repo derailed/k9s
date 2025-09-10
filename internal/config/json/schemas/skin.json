@@ -28,7 +28,10 @@
           "type": "object",
           "properties": {
             "fgColor": {"type": "string"},
-            "sectionColor": {"type": "string"}
+            "sectionColor": {"type": "string"},
+            "k9sRevColor": {"type": "string"},
+            "cpuColor": {"type": "string"},
+            "memColor": {"type": "string"}
           }
         },
         "help": {

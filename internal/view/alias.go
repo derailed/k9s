@@ -20,7 +20,7 @@ type Alias struct {
 }
 
 // NewAlias returns a new alias view.
-func NewAlias(gvr client.GVR) ResourceViewer {
+func NewAlias(gvr *client.GVR) ResourceViewer {
 	a := Alias{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -66,8 +66,7 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	gvr := client.NewGVR(path)
-	a.App().gotoResource(gvr.String(), "", true, true)
+	a.App().gotoResource(client.NewGVR(path).String(), "", true, true)
 
 	return nil
 }

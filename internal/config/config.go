@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
@@ -79,10 +80,23 @@ func (c *Config) ContextPluginsPath() (string, error) {
 	return AppContextPluginsFile(ct.GetClusterName(), c.K9s.activeContextName), nil
 }
 
+func setK8sTimeout(flags *genericclioptions.ConfigFlags, d time.Duration) {
+	v := d.String()
+	flags.Timeout = &v
+}
+
 // Refine the configuration based on cli args.
 func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, cfg *client.Config) error {
 	if flags == nil {
 		return nil
+	}
+
+	if !isStringSet(flags.Timeout) {
+		if d, err := time.ParseDuration(c.K9s.APIServerTimeout); err == nil {
+			setK8sTimeout(flags, d)
+		} else {
+			setK8sTimeout(flags, client.DefaultCallTimeoutDuration)
+		}
 	}
 	if isStringSet(flags.Context) {
 		if _, err := c.K9s.ActivateContext(*flags.Context); err != nil {
@@ -107,6 +121,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		c.ResetActiveView()
 	case isStringSet(flags.Namespace):
 		ns = *flags.Namespace
+		c.ResetActiveView()
 	default:
 		nss, err := c.K9s.ActiveContextNamespace()
 		if err != nil {
@@ -186,16 +201,16 @@ func (c *Config) ActiveView() string {
 	if err != nil {
 		return data.DefaultView
 	}
-	cmd := ct.View.Active
+	v := ct.View.Active
 	if c.K9s.manualCommand != nil && *c.K9s.manualCommand != "" {
-		cmd = *c.K9s.manualCommand
+		v = *c.K9s.manualCommand
 		// We reset the manualCommand property because
 		// the command-line switch should only be considered once,
 		// on startup.
 		*c.K9s.manualCommand = ""
 	}
 
-	return cmd
+	return v
 }
 
 func (c *Config) ResetActiveView() {

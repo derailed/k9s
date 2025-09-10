@@ -35,7 +35,7 @@ type CronJob struct {
 }
 
 // NewCronJob returns a new viewer.
-func NewCronJob(gvr client.GVR) ResourceViewer {
+func NewCronJob(gvr *client.GVR) ResourceViewer {
 	c := CronJob{ResourceViewer: NewVulnerabilityExtender(
 		NewOwnerExtender(NewBrowser(gvr)),
 	)}
@@ -45,9 +45,9 @@ func NewCronJob(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *CronJob) showJobs(app *App, _ ui.Tabular, gvr client.GVR, fqn string) {
+func (*CronJob) showJobs(app *App, _ ui.Tabular, gvr *client.GVR, fqn string) {
 	slog.Debug("Showing Jobs", slogs.GVR, gvr, slogs.FQN, fqn)
-	o, err := app.factory.Get(gvr.String(), fqn, true, labels.Everything())
+	o, err := app.factory.Get(gvr, fqn, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -64,7 +64,7 @@ func (c *CronJob) showJobs(app *App, _ ui.Tabular, gvr client.GVR, fqn string) {
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
 		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
 	}
-	v := NewJob(client.NewGVR("batch/v1/jobs"))
+	v := NewJob(client.JobGVR)
 	v.SetContextFn(jobCtx(fqn, string(cj.UID)))
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
@@ -95,7 +95,8 @@ func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(fqns) > 1 {
 		msg = fmt.Sprintf("Trigger %d CronJobs?", len(fqns))
 	}
-	dialog.ShowConfirm(c.App().Styles.Dialog(), c.App().Content.Pages, "Confirm Job Trigger", msg, func() {
+	d := c.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, c.App().Content.Pages, "Confirm Job Trigger", msg, func() {
 		res, err := dao.AccessorFor(c.App().factory, c.GVR())
 		if err != nil {
 			c.App().Flash().Err(fmt.Errorf("no accessor for %q", c.GVR()))
@@ -149,7 +150,8 @@ func (c *CronJob) showSuspendDialog(cell *tview.TableCell, sel string) {
 		title = "Resume"
 	}
 
-	dialog.ShowConfirm(c.App().Styles.Dialog(), c.App().Content.Pages, title, sel, func() {
+	d := c.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, c.App().Content.Pages, title, sel, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
 		defer cancel()
 

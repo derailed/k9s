@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -32,7 +31,7 @@ type Table struct {
 }
 
 // NewTable returns a new viewer.
-func NewTable(gvr client.GVR) *Table {
+func NewTable(gvr *client.GVR) *Table {
 	t := Table{
 		Table: ui.NewTable(gvr),
 	}
@@ -60,20 +59,20 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	}
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
-	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
+	t.GetModel().SetRefreshRate(t.app.Config.K9s.RefreshDuration())
 	t.CmdBuff().AddListener(t)
 
 	return nil
 }
 
 // SetCommand sets the current command.
-func (t *Table) SetCommand(cmd *cmd.Interpreter) {
-	t.command = cmd
+func (t *Table) SetCommand(i *cmd.Interpreter) {
+	t.command = i
 }
 
 // HeaderIndex returns index of a given column or false if not found.
 func (t *Table) HeaderIndex(colName string) (int, bool) {
-	for i := 0; i < t.GetColumnCount(); i++ {
+	for i := range t.GetColumnCount() {
 		h := t.GetCell(0, i)
 		if h == nil {
 			continue
@@ -168,7 +167,7 @@ func (t *Table) SetEnterFn(f EnterFunc) {
 }
 
 // SetExtraActionsFn specifies custom keyboard behavior.
-func (t *Table) SetExtraActionsFn(BoostActionsFunc) {}
+func (*Table) SetExtraActionsFn(BoostActionsFunc) {}
 
 // BufferCompleted indicates input was accepted.
 func (t *Table) BufferCompleted(text, _ string) {
@@ -178,7 +177,7 @@ func (t *Table) BufferCompleted(text, _ string) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (t *Table) BufferChanged(_, _ string) {}
+func (*Table) BufferChanged(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
 func (t *Table) BufferActive(state bool, k model.BufferKind) {
@@ -188,7 +187,7 @@ func (t *Table) BufferActive(state bool, k model.BufferKind) {
 	}
 }
 
-func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) saveCmd(*tcell.EventKey) *tcell.EventKey {
 	if path, err := saveTable(t.app.Config.K9s.ContextScreenDumpDir(), t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
 		t.app.Flash().Err(err)
 	} else {
@@ -213,12 +212,12 @@ func (t *Table) bindKeys() {
 	})
 }
 
-func (t *Table) toggleFaultCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) toggleFaultCmd(*tcell.EventKey) *tcell.EventKey {
 	t.ToggleToast()
 	return nil
 }
 
-func (t *Table) toggleWideCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) toggleWideCmd(*tcell.EventKey) *tcell.EventKey {
 	t.ToggleWide()
 	return nil
 }
@@ -253,21 +252,21 @@ func (t *Table) cpNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (t *Table) markCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) markCmd(*tcell.EventKey) *tcell.EventKey {
 	t.ToggleMark()
 	t.Refresh()
 
 	return nil
 }
 
-func (t *Table) markSpanCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) markSpanCmd(*tcell.EventKey) *tcell.EventKey {
 	t.SpanMark()
 	t.Refresh()
 
 	return nil
 }
 
-func (t *Table) clearMarksCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) clearMarksCmd(*tcell.EventKey) *tcell.EventKey {
 	t.ClearMarks()
 	t.Refresh()
 

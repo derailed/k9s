@@ -1,7 +1,9 @@
 k9s:
   liveViewAutoRefresh: false
+  gpuVendors: {}
   screenDumpDir: /tmp/k9s-test/screen-dumps
   refreshRate: 2
+  apiServerTimeout: 15s
   maxConnRetry: 5
   readOnly: false
   noExitOnCtrlC: false
@@ -11,9 +13,11 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    splashless: false
     reactive: false
     noIcons: false
     defaultsToFullScreen: false
+    useFullGVRTitle: false
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
@@ -41,3 +45,4 @@ k9s:
     memory:
       critical: 90
       warn: 70
+  defaultView: ""

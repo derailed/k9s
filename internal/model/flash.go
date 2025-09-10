@@ -81,7 +81,7 @@ func (f *Flash) Info(msg string) {
 }
 
 // Infof displays a formatted info flash message.
-func (f *Flash) Infof(fmat string, args ...interface{}) {
+func (f *Flash) Infof(fmat string, args ...any) {
 	f.Info(fmt.Sprintf(fmat, args...))
 }
 
@@ -92,26 +92,25 @@ func (f *Flash) Warn(msg string) {
 }
 
 // Warnf displays a formatted warning flash message.
-func (f *Flash) Warnf(fmat string, args ...interface{}) {
+func (f *Flash) Warnf(fmat string, args ...any) {
 	f.Warn(fmt.Sprintf(fmat, args...))
 }
 
 // Err displays an error flash message.
 func (f *Flash) Err(err error) {
-	slog.Error("Flash failed", slogs.Error, err)
+	slog.Error("Flash error", slogs.Error, err)
 	f.SetMessage(FlashErr, err.Error())
 }
 
 // Errf displays a formatted error flash message.
-func (f *Flash) Errf(fmat string, args ...interface{}) {
+func (f *Flash) Errf(fmat string, args ...any) {
 	var err error
 	for _, a := range args {
-		switch e := a.(type) {
-		case error:
+		if e, ok := a.(error); ok {
 			err = e
 		}
 	}
-	slog.Error("Flashing error",
+	slog.Error("Flash error",
 		slogs.Error, err,
 		slogs.Message, fmt.Sprintf(fmat, args...),
 	)
