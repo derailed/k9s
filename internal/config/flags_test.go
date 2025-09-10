@@ -15,7 +15,7 @@ func TestNewFlags(t *testing.T) {
 	config.AppLogFile = "/tmp/k9s-test/k9s.log"
 
 	f := config.NewFlags()
-	assert.Equal(t, 2, *f.RefreshRate)
+	assert.InDelta(t, 2.0, *f.RefreshRate, 0.001)
 	assert.Equal(t, "info", *f.LogLevel)
 	assert.Equal(t, "/tmp/k9s-test/k9s.log", *f.LogFile)
 	assert.Equal(t, config.AppDumpsDir, *f.ScreenDumpDir)
@@ -26,4 +26,5 @@ func TestNewFlags(t *testing.T) {
 	assert.False(t, *f.ReadOnly)
 	assert.False(t, *f.Write)
 	assert.False(t, *f.Crumbsless)
+	assert.False(t, *f.Splashless)
 }

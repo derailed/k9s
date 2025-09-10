@@ -7,13 +7,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,9 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
-	"k8s.io/kubectl/pkg/polymorphichelpers"
-	"k8s.io/kubectl/pkg/scheme"
 )
 
 var (
@@ -42,7 +40,7 @@ type DaemonSet struct {
 }
 
 // ListImages lists container images.
-func (d *DaemonSet) ListImages(ctx context.Context, fqn string) ([]string, error) {
+func (d *DaemonSet) ListImages(_ context.Context, fqn string) ([]string, error) {
 	ds, err := d.GetInstance(fqn)
 	if err != nil {
 		return nil, err
@@ -52,52 +50,8 @@ func (d *DaemonSet) ListImages(ctx context.Context, fqn string) ([]string, error
 }
 
 // Restart a DaemonSet rollout.
-func (d *DaemonSet) Restart(ctx context.Context, path string) error {
-	o, err := d.getFactory().Get("apps/v1/daemonsets", path, true, labels.Everything())
-	if err != nil {
-		return err
-	}
-	var ds appsv1.DaemonSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
-	if err != nil {
-		return err
-	}
-
-	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", ds.Name, client.PatchAccess)
-	if err != nil {
-		return err
-	}
-	if !auth {
-		return fmt.Errorf("user is not authorized to restart a daemonset")
-	}
-
-	dial, err := d.Client().Dial()
-	if err != nil {
-		return err
-	}
-
-	before, err := runtime.Encode(scheme.Codecs.LegacyCodec(appsv1.SchemeGroupVersion), &ds)
-	if err != nil {
-		return err
-	}
-
-	after, err := polymorphichelpers.ObjectRestarterFn(&ds)
-	if err != nil {
-		return err
-	}
-	diff, err := strategicpatch.CreateTwoWayMergePatch(before, after, ds)
-	if err != nil {
-		return err
-	}
-	_, err = dial.AppsV1().DaemonSets(ds.Namespace).Patch(
-		ctx,
-		ds.Name,
-		types.StrategicMergePatchType,
-		diff,
-		metav1.PatchOptions{},
-	)
-
-	return err
+func (d *DaemonSet) Restart(ctx context.Context, path string, opts *metav1.PatchOptions) error {
+	return restartRes[*appsv1.DaemonSet](ctx, d.getFactory(), client.DsGVR, path, opts)
 }
 
 // TailLogs tail logs for all pods represented by this DaemonSet.
@@ -129,14 +83,14 @@ func podLogs(ctx context.Context, sel map[string]string, opts *LogOptions) ([]Lo
 	}
 
 	ns, _ := client.Namespaced(opts.Path)
-	oo, err := f.List("v1/pods", ns, true, lsel)
+	oo, err := f.List(client.PodGVR, ns, true, lsel)
 	if err != nil {
 		return nil, err
 	}
 	opts.MultiPods = true
 
 	var po Pod
-	po.Init(f, client.NewGVR("v1/pods"))
+	po.Init(f, client.PodGVR)
 
 	outs := make([]LogChan, 0, len(oo))
 	for _, o := range oo {
@@ -168,7 +122,7 @@ func (d *DaemonSet) Pod(fqn string) (string, error) {
 
 // GetInstance returns a daemonset instance.
 func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
-	o, err := d.getFactory().Get(d.gvrStr(), fqn, true, labels.Everything())
+	o, err := d.getFactory().Get(d.gvr, fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -183,9 +137,9 @@ func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
 }
 
 // ScanSA scans for serviceaccount refs.
-func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+func (d *DaemonSet) ScanSA(_ context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.getFactory().List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.getFactory().List(d.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -209,9 +163,9 @@ func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, er
 }
 
 // Scan scans for cluster refs.
-func (d *DaemonSet) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
+func (d *DaemonSet) Scan(_ context.Context, gvr *client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.getFactory().List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.getFactory().List(d.gvr, ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +178,7 @@ func (d *DaemonSet) Scan(ctx context.Context, gvr client.GVR, fqn string, wait b
 			return nil, errors.New("expecting StatefulSet resource")
 		}
 		switch gvr {
-		case CmGVR:
+		case client.CmGVR:
 			if !hasConfigMap(&ds.Spec.Template.Spec, n) {
 				continue
 			}
@@ -232,10 +186,13 @@ func (d *DaemonSet) Scan(ctx context.Context, gvr client.GVR, fqn string, wait b
 				GVR: d.GVR(),
 				FQN: client.FQN(ds.Namespace, ds.Name),
 			})
-		case SecGVR:
+		case client.SecGVR:
 			found, err := hasSecret(d.Factory, &ds.Spec.Template.Spec, ds.Namespace, n, wait)
 			if err != nil {
-				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				slog.Warn("Unable to locate secret",
+					slogs.FQN, fqn,
+					slogs.Error, err,
+				)
 				continue
 			}
 			if !found {
@@ -245,7 +202,7 @@ func (d *DaemonSet) Scan(ctx context.Context, gvr client.GVR, fqn string, wait b
 				GVR: d.GVR(),
 				FQN: client.FQN(ds.Namespace, ds.Name),
 			})
-		case PvcGVR:
+		case client.PvcGVR:
 			if !hasPVC(&ds.Spec.Template.Spec, n) {
 				continue
 			}
@@ -253,7 +210,7 @@ func (d *DaemonSet) Scan(ctx context.Context, gvr client.GVR, fqn string, wait b
 				GVR: d.GVR(),
 				FQN: client.FQN(ds.Namespace, ds.Name),
 			})
-		case PcGVR:
+		case client.PcGVR:
 			if !hasPC(&ds.Spec.Template.Spec, n) {
 				continue
 			}
@@ -280,7 +237,7 @@ func (d *DaemonSet) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (d *DaemonSet) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/daemonset", n, client.PatchAccess)
+	auth, err := d.Client().CanI(ns, d.gvr, n, client.PatchAccess)
 	if err != nil {
 		return err
 	}

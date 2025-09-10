@@ -12,16 +12,17 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/port"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 )
 
 const defaultTimeout = 30 * time.Second
@@ -72,6 +73,11 @@ func (p *PortForwarder) Port() string {
 	return p.tunnel.PortMap()
 }
 
+// Address returns the port Address.
+func (p *PortForwarder) Address() string {
+	return p.tunnel.Address
+}
+
 // ContainerPort returns the container port.
 func (p *PortForwarder) ContainerPort() string {
 	return p.tunnel.ContainerPort
@@ -94,7 +100,6 @@ func (p *PortForwarder) Container() string {
 
 // Stop terminates a port forward.
 func (p *PortForwarder) Stop() {
-	log.Debug().Msgf("<<< Stopping PortForward %s", p.ID())
 	p.active = false
 	if p.stopChan != nil {
 		close(p.stopChan)
@@ -117,7 +122,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 	p.path, p.tunnel, p.age = path, tt, time.Now()
 
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods", n, client.GetAccess)
+	auth, err := p.Client().CanI(ns, client.PodGVR, n, client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +132,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 
 	podName := strings.Split(n, "|")[0]
 	var res Pod
-	res.Init(p, client.NewGVR("v1/pods"))
+	res.Init(p, client.PodGVR)
 	pod, err := res.GetInstance(client.FQN(ns, podName))
 	if err != nil {
 		return nil, err
@@ -136,7 +141,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 		return nil, fmt.Errorf("unable to forward port because pod is not running. Current status=%v", pod.Status.Phase)
 	}
 
-	auth, err = p.Client().CanI(ns, "v1/pods:portforward", "", []string{client.CreateVerb})
+	auth, err = p.Client().CanI(ns, client.PodGVR.WithSubResource("portforward"), "", []string{client.CreateVerb})
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +170,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 	return p.forwardPorts("POST", req.URL(), tt.Address, tt.PortMap())
 }
 
-func (p *PortForwarder) forwardPorts(method string, url *url.URL, addr, portMap string) (*portforward.PortForwarder, error) {
+func (p *PortForwarder) forwardPorts(method string, u *url.URL, addr, portMap string) (*portforward.PortForwarder, error) {
 	cfg, err := p.Client().Config().RESTConfig()
 	if err != nil {
 		return nil, err
@@ -174,7 +179,19 @@ func (p *PortForwarder) forwardPorts(method string, url *url.URL, addr, portMap 
 	if err != nil {
 		return nil, err
 	}
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport, Timeout: defaultTimeout}, method, url)
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport, Timeout: defaultTimeout}, method, u)
+
+	if !cmdutil.PortForwardWebsockets.IsDisabled() {
+		tunnelingDialer, err := portforward.NewSPDYOverWebsocketDialer(u, cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		// First attempt tunneling (websocket) dialer, then fallback to spdy dialer.
+		dialer = portforward.NewFallbackDialer(tunnelingDialer, dialer, func(err error) bool {
+			return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
+		})
+	}
 
 	return portforward.NewOnAddresses(dialer, []string{addr}, []string{portMap}, p.stopChan, p.readyChan, p.Out, p.ErrOut)
 }

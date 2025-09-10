@@ -36,6 +36,33 @@ func Test_rxFilter(t *testing.T) {
 				},
 			},
 		},
+		"start-rx-match": {
+			q:     "(?i)^foo",
+			lines: []string{"foo", "fob", "barfoo"},
+			e: fuzzy.Matches{
+				{
+					Str:            "(?i)^foo",
+					Index:          0,
+					MatchedIndexes: []int{0, 1, 2},
+				},
+			},
+		},
+		"end-rx-match": {
+			q:     "foo$",
+			lines: []string{"foo", "fob", "barfoo"},
+			e: fuzzy.Matches{
+				{
+					Str:            "foo$",
+					Index:          0,
+					MatchedIndexes: []int{0, 1, 2},
+				},
+				{
+					Str:            "foo$",
+					Index:          2,
+					MatchedIndexes: []int{3, 4, 5},
+				},
+			},
+		},
 		"multiple-matches": {
 			q:     "foo",
 			lines: []string{"foo", "bar", "foo bar foo", "baz"},
@@ -58,6 +85,7 @@ func Test_rxFilter(t *testing.T) {
 			},
 		},
 	}
+
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {

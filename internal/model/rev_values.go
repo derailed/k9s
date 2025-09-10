@@ -5,6 +5,8 @@ package model
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -13,13 +15,13 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 )
 
 // RevValues tracks Helm values representations.
 type RevValues struct {
-	gvr       client.GVR
+	gvr       *client.GVR
 	inUpdate  int32
 	path      string
 	rev       string
@@ -31,7 +33,7 @@ type RevValues struct {
 }
 
 // NewRevValues return a new Helm values resource model.
-func NewRevValues(gvr client.GVR, path, rev string) *RevValues {
+func NewRevValues(gvr *client.GVR, path, rev string) *RevValues {
 	return &RevValues{
 		gvr:       gvr,
 		path:      path,
@@ -42,19 +44,19 @@ func NewRevValues(gvr client.GVR, path, rev string) *RevValues {
 }
 
 func getHelmHistDao() *dao.HelmHistory {
-	return Registry["helm-history"].DAO.(*dao.HelmHistory)
+	return Registry[client.HmhGVR].DAO.(*dao.HelmHistory)
 }
 
-func getRevValues(path, rev string) []string {
+func getRevValues(path, _ string) []string {
 	vals, err := getHelmHistDao().GetValues(path, true)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to get Helm values")
+		slog.Error("Failed to get Helm values", slogs.Error, err)
 	}
 	return strings.Split(string(vals), "\n")
 }
 
 // GVR returns the resource gvr.
-func (v *RevValues) GVR() client.GVR {
+func (v *RevValues) GVR() *client.GVR {
 	return v.gvr
 }
 
@@ -133,7 +135,7 @@ func (v *RevValues) Watch(ctx context.Context) error {
 }
 
 func (v *RevValues) updater(ctx context.Context) {
-	defer log.Debug().Msgf("YAML canceled -- %q", v.gvr)
+	defer slog.Debug("YAML canceled", slogs.GVR, v.gvr)
 
 	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
 	delay := defaultReaderRefreshRate
@@ -145,7 +147,7 @@ func (v *RevValues) updater(ctx context.Context) {
 			if err := v.refresh(ctx); err != nil {
 				v.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("giving up retrieving chart values")
+					slog.Error("Giving up retrieving chart values", slogs.Error, err)
 					return
 				}
 			} else {
@@ -156,24 +158,20 @@ func (v *RevValues) updater(ctx context.Context) {
 	}
 }
 
-func (v *RevValues) refresh(ctx context.Context) error {
+func (v *RevValues) refresh(context.Context) error {
 	if !atomic.CompareAndSwapInt32(&v.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
-		return nil
+		slog.Debug("Dropping update...")
+		return errors.New("refresh in progress, dropping")
 	}
 	defer atomic.StoreInt32(&v.inUpdate, 0)
 
-	if err := v.reconcile(ctx); err != nil {
-		return err
-	}
+	v.reconcile()
 
 	return nil
 }
 
-func (v *RevValues) reconcile(_ context.Context) error {
+func (v *RevValues) reconcile() {
 	v.fireResourceChanged(v.lines, v.filter(v.query, v.lines))
-
-	return nil
 }
 
 // AddListener adds a new model listener.

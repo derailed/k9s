@@ -23,11 +23,19 @@ type ShellPod struct {
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets,omitempty"`
 	ImagePullPolicy  v1.PullPolicy             `json:"imagePullPolicy,omitempty" yaml:"imagePullPolicy,omitempty"`
 	TTY              bool                      `json:"tty,omitempty" yaml:"tty,omitempty"`
+	HostPathVolume   []hostPathVolume          `json:"hostPathVolume,omitempty" yaml:"hostPathVolume,omitempty"`
+}
+
+type hostPathVolume struct {
+	Name      string `json:"name" yaml:"name"`
+	MountPath string `json:"mountPath" yaml:"mountPath"`
+	HostPath  string `json:"hostPath" yaml:"hostPath"`
+	ReadOnly  bool   `json:"readOnly,omitempty" yaml:"readOnly,omitempty"`
 }
 
 // NewShellPod returns a new instance.
-func NewShellPod() ShellPod {
-	return ShellPod{
+func NewShellPod() *ShellPod {
+	return &ShellPod{
 		Image:     defaultDockerShellImage,
 		Namespace: "default",
 		Limits:    defaultLimits(),
@@ -35,15 +43,13 @@ func NewShellPod() ShellPod {
 }
 
 // Validate validates the configuration.
-func (s ShellPod) Validate() ShellPod {
+func (s *ShellPod) Validate() {
 	if s.Image == "" {
 		s.Image = defaultDockerShellImage
 	}
 	if len(s.Limits) == 0 {
 		s.Limits = defaultLimits()
 	}
-
-	return s
 }
 
 func defaultLimits() Limits {

@@ -10,8 +10,10 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -33,7 +35,7 @@ type ViewerToggleOpts map[string]bool
 type ResourceViewer interface {
 	GetPath() string
 	Filter(string)
-	GVR() client.GVR
+	GVR() *client.GVR
 	ClearFilter()
 	Peek() []string
 	SetOptions(context.Context, ViewerToggleOpts)
@@ -93,11 +95,18 @@ type Component interface {
 	Hinter
 	Commander
 	Filterer
+	Viewer
+}
+
+// Viewer represents a resource viewer.
+type Viewer interface {
+	// SetCommand sets the current command.
+	SetCommand(*cmd.Interpreter)
 }
 
 type Filterer interface {
 	SetFilter(string)
-	SetLabelFilter(map[string]string)
+	SetLabelSelector(labels.Selector)
 }
 
 // Cruder performs crud operations.
@@ -128,7 +137,7 @@ type Describer interface {
 
 // TreeRenderer represents an xray node.
 type TreeRenderer interface {
-	Render(ctx context.Context, ns string, o interface{}) error
+	Render(ctx context.Context, ns string, o any) error
 }
 
 // ResourceMeta represents model info about a resource.

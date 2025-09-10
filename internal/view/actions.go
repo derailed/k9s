@@ -6,13 +6,15 @@ package view
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // AllScopes represents actions available for all views.
@@ -20,9 +22,16 @@ const AllScopes = "all"
 
 // Runner represents a runnable action handler.
 type Runner interface {
+	// App returns the current app.
 	App() *App
+
+	// GetSelectedItem returns the current selected item.
 	GetSelectedItem() string
-	Aliases() map[string]struct{}
+
+	// Aliases returns all aliases assoxciated with the view GVR.
+	Aliases() sets.Set[string]
+
+	// EnvFn returns the current environment function.
 	EnvFn() EnvFunc
 }
 
@@ -44,7 +53,7 @@ func includes(aliases []string, s string) bool {
 	return false
 }
 
-func inScope(scopes []string, aliases map[string]struct{}) bool {
+func inScope(scopes []string, aliases sets.Set[string]) bool {
 	if hasAll(scopes) {
 		return true
 	}
@@ -80,12 +89,15 @@ func hotKeyActions(r Runner, aa *ui.KeyActions) error {
 				errs = errors.Join(errs, fmt.Errorf("duplicate hotkey found for %q in %q", hk.ShortCut, k))
 				continue
 			}
-			log.Debug().Msgf("Action %q has been overridden by hotkey in %q", hk.ShortCut, k)
+			slog.Debug("HotKey overrode action shortcut",
+				slogs.Shortcut, hk.ShortCut,
+				slogs.Key, k,
+			)
 		}
 
 		command, err := r.EnvFn()().Substitute(hk.Command)
 		if err != nil {
-			log.Warn().Err(err).Msg("Invalid shortcut command")
+			slog.Warn("Invalid shortcut command", slogs.Error, err)
 			continue
 		}
 
@@ -103,8 +115,8 @@ func hotKeyActions(r Runner, aa *ui.KeyActions) error {
 }
 
 func gotoCmd(r Runner, cmd, path string, clearStack bool) ui.ActionHandler {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		r.App().gotoResource(cmd, path, clearStack)
+	return func(*tcell.EventKey) *tcell.EventKey {
+		r.App().gotoResource(cmd, path, clearStack, true)
 		return nil
 	}
 }
@@ -121,38 +133,39 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 		return err
 	}
 	pp := config.NewPlugins()
-	if err := pp.Load(path); err != nil {
+	if err := pp.Load(path, true); err != nil {
 		return err
 	}
 
 	var (
 		errs    error
 		aliases = r.Aliases()
-		ro      = r.App().Config.K9s.IsReadOnly()
+		ro      = r.App().Config.IsReadOnly()
 	)
-	for k, plugin := range pp.Plugins {
-		if !inScope(plugin.Scopes, aliases) {
+	for k := range pp.Plugins {
+		if !inScope(pp.Plugins[k].Scopes, aliases) || (ro && pp.Plugins[k].Dangerous) {
 			continue
 		}
-		key, err := asKey(plugin.ShortCut)
+		key, err := asKey(pp.Plugins[k].ShortCut)
 		if err != nil {
 			errs = errors.Join(errs, err)
 			continue
 		}
 		if _, ok := aa.Get(key); ok {
-			if !plugin.Override {
-				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", plugin.ShortCut, k))
+			if !pp.Plugins[k].Override {
+				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", pp.Plugins[k].ShortCut, k))
 				continue
 			}
-			log.Debug().Msgf("Action %q has been overridden by plugin in %q", plugin.ShortCut, k)
+			slog.Debug("Plugin overrode action shortcut",
+				slogs.Plugin, k,
+				slogs.Key, pp.Plugins[k].ShortCut,
+			)
 		}
 
-		if plugin.Dangerous && ro {
-			continue
-		}
+		plugin := pp.Plugins[k]
 		aa.Add(key, ui.NewKeyActionWithOpts(
-			plugin.Description,
-			pluginAction(r, plugin),
+			pp.Plugins[k].Description,
+			pluginAction(r, &plugin),
 			ui.ActionOpts{
 				Visible:   true,
 				Plugin:    true,
@@ -164,7 +177,7 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 	return errs
 }
 
-func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
+func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		path := r.GetSelectedItem()
 		if path == "" {
@@ -178,7 +191,7 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 		for i, a := range p.Args {
 			arg, err := r.EnvFn()().Substitute(a)
 			if err != nil {
-				log.Error().Err(err).Msg("Plugin Args match failed")
+				slog.Error("Plugin Args match failed", slogs.Error, err)
 				return nil
 			}
 			args[i] = arg
@@ -191,7 +204,7 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 				pipes:      p.Pipes,
 				args:       args,
 			}
-			suspend, errChan, statusChan := run(r.App(), opts)
+			suspend, errChan, statusChan := run(r.App(), &opts)
 			if !suspend {
 				r.App().Flash().Infof("Plugin command failed: %q", p.Description)
 				return
@@ -201,8 +214,11 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 				errs = errors.Join(errs, e)
 			}
 			if errs != nil {
-				r.App().cowCmd(errs.Error())
-				return
+				if !strings.Contains(errs.Error(), "signal: interrupt") {
+					slog.Error("Plugin command failed", slogs.Error, errs)
+					r.App().cowCmd(errs.Error())
+					return
+				}
 			}
 			go func() {
 				for st := range statusChan {
@@ -215,11 +231,11 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 					}
 				}
 			}()
-
 		}
 		if p.Confirm {
 			msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
-			dialog.ShowConfirm(r.App().Styles.Dialog(), r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
+			d := r.App().Styles.Dialog()
+			dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
 			return nil
 		}
 		cb()

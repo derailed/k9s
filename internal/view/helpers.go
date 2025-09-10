@@ -7,6 +7,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -18,39 +21,43 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func aliasesFor(m v1.APIResource, aa []string) map[string]struct{} {
-	rr := make(map[string]struct{})
-	rr[m.Name] = struct{}{}
-	for _, a := range aa {
-		rr[a] = struct{}{}
-	}
-	if m.ShortNames != nil {
-		for _, a := range m.ShortNames {
-			rr[a] = struct{}{}
-		}
-	}
+func isBailoutEvt(evt *tcell.EventKey) bool {
+	return evt.Name() == "Ctrl+C"
+}
+
+func aliases(m *v1.APIResource, aa sets.Set[string]) sets.Set[string] {
+	ss := sets.New(aa.UnsortedList()...)
+	ss.Insert(m.Name)
+	ss.Insert(m.ShortNames...)
 	if m.SingularName != "" {
-		rr[m.SingularName] = struct{}{}
+		ss.Insert(m.SingularName)
 	}
 
-	return rr
+	return ss
 }
 
 func clipboardWrite(text string) error {
-	return clipboard.WriteAll(text)
+	if text != "" {
+		return clipboard.WriteAll(text)
+	}
+
+	return nil
 }
 
+var bracketRX = regexp.MustCompile(`\[(.+)\[\]`)
+
 func sanitizeEsc(s string) string {
-	return strings.ReplaceAll(s, "[]", "]")
+	return bracketRX.ReplaceAllString(s, `[$1]`)
 }
 
 func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {
@@ -65,10 +72,10 @@ func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.E
 	}
 }
 
-func parsePFAnn(s string) (string, string, bool) {
+func parsePFAnn(s string) (port, lport string, ok bool) {
 	tokens := strings.Split(s, ":")
 	if len(tokens) != 2 {
-		return "", "", false
+		return
 	}
 
 	return tokens[0], tokens[1], true
@@ -96,6 +103,8 @@ func k8sEnv(c *client.Config) Env {
 	kcfg := c.Flags().KubeConfig
 	if kcfg != nil && *kcfg != "" {
 		cfg = *kcfg
+	} else {
+		cfg = os.Getenv("KUBECONFIG")
 	}
 
 	return Env{
@@ -123,37 +132,45 @@ func defaultEnv(c *client.Config, path string, header model1.Header, row *model1
 	return env
 }
 
-func describeResource(app *App, m ui.Tabular, gvr client.GVR, path string) {
+func describeResource(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
 	v := NewLiveView(app, "Describe", model.NewDescribe(gvr, path))
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func toLabelsStr(labels map[string]string) string {
-	ll := make([]string, 0, len(labels))
-	for k, v := range labels {
-		ll = append(ll, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return strings.Join(ll, ",")
-}
-
-func showPods(app *App, path, labelSel, fieldSel string) {
-	v := NewPod(client.NewGVR("v1/pods"))
-	v.SetContextFn(podCtx(app, path, fieldSel))
-	v.SetLabelFilter(cmd.ToLabels(labelSel))
+func showReplicasets(app *App, path string, labelSel labels.Selector, fieldSel string) {
+	v := NewReplicaSet(client.RsGVR)
+	v.SetContextFn(func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		return context.WithValue(ctx, internal.KeyFields, fieldSel)
+	})
+	v.SetLabelSelector(labelSel)
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
-		log.Error().Err(err).Msg("Config NS set failed!")
+		slog.Error("Unable to set active namespace during show replicasets", slogs.Error, err)
 	}
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func podCtx(app *App, path, fieldSel string) ContextFunc {
+func showPods(app *App, path string, labelSel labels.Selector, fieldSel string) {
+	v := NewPod(client.PodGVR)
+	v.SetContextFn(podCtx(app, path, fieldSel))
+	v.SetLabelSelector(labelSel)
+
+	ns, _ := client.Namespaced(path)
+	if err := app.Config.SetActiveNamespace(ns); err != nil {
+		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
+	}
+	if err := app.inject(v, false); err != nil {
+		app.Flash().Err(err)
+	}
+}
+
+func podCtx(_ *App, path, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)
@@ -198,7 +215,7 @@ func containerID(path, co string) string {
 }
 
 // UrlFor computes fq url for a given benchmark configuration.
-func urlFor(cfg config.BenchConfig, port string) string {
+func urlFor(cfg *config.BenchConfig, port string) string {
 	host := "localhost"
 	if cfg.HTTP.Host != "" {
 		host = cfg.HTTP.Host
@@ -223,12 +240,12 @@ func decorateCpuMemHeaderRows(app *App, data *model1.TableData) {
 	for colIndex, header := range data.Header() {
 		var check string
 		if header.Name == "%CPU/L" {
-			check = "cpu"
+			check = config.CPU
 		}
 		if header.Name == "%MEM/L" {
-			check = "memory"
+			check = config.MEM
 		}
-		if len(check) == 0 {
+		if check == "" {
 			continue
 		}
 		data.RowsRange(func(_ int, re model1.RowEvent) bool {
@@ -247,7 +264,7 @@ func decorateCpuMemHeaderRows(app *App, data *model1.TableData) {
 				return true
 			}
 			color := app.Config.K9s.Thresholds.SeverityColor(check, n)
-			if len(color) > 0 {
+			if color != "" {
 				re.Row.Fields[colIndex] = "[" + color + "::b]" + re.Row.Fields[colIndex]
 			}
 

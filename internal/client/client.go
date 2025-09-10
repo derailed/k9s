@@ -7,13 +7,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/cache"
@@ -50,6 +51,7 @@ type APIClient struct {
 	mx                sync.RWMutex
 	cache             *cache.LRUExpireCache
 	connOK            bool
+	log               *slog.Logger
 }
 
 // NewTestAPIClient for testing ONLY!!
@@ -62,15 +64,16 @@ func NewTestAPIClient() *APIClient {
 
 // InitConnection initialize connection from command line args.
 // Checks for connectivity with the api server.
-func InitConnection(config *Config) (*APIClient, error) {
+func InitConnection(config *Config, log *slog.Logger) (*APIClient, error) {
 	a := APIClient{
 		config: config,
 		cache:  cache.NewLRUExpireCache(cacheSize),
 		connOK: true,
+		log:    log.With(slogs.Subsys, "client"),
 	}
 	err := a.supportsMetricsResources()
 	if err != nil {
-		log.Error().Err(err).Msgf("Fail to locate metrics-server")
+		slog.Warn("Fail to locate metrics-server", slogs.Error, err)
 	}
 	if err == nil || errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
 		return &a, nil
@@ -85,12 +88,11 @@ func (a *APIClient) ConnectionOK() bool {
 	return a.connOK
 }
 
-func makeSAR(ns, gvr, name string) *authorizationv1.SelfSubjectAccessReview {
+func makeSAR(ns string, gvr *GVR, name string) *authorizationv1.SelfSubjectAccessReview {
 	if ns == ClusterScope {
 		ns = BlankNamespace
 	}
-	spec := NewGVR(gvr)
-	res := spec.GVR()
+	res := gvr.GVR()
 	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
@@ -98,22 +100,22 @@ func makeSAR(ns, gvr, name string) *authorizationv1.SelfSubjectAccessReview {
 				Group:       res.Group,
 				Version:     res.Version,
 				Resource:    res.Resource,
-				Subresource: spec.SubResource(),
+				Subresource: gvr.SubResource(),
 				Name:        name,
 			},
 		},
 	}
 }
 
-func makeCacheKey(ns, gvr, n string, vv []string) string {
-	return ns + ":" + gvr + ":" + n + "::" + strings.Join(vv, ",")
+func makeCacheKey(ns string, gvr *GVR, n string, vv []string) string {
+	return ns + ":" + gvr.String() + ":" + n + "::" + strings.Join(vv, ",")
 }
 
 // ActiveContext returns the current context name.
 func (a *APIClient) ActiveContext() string {
 	c, err := a.config.CurrentContextName()
 	if err != nil {
-		log.Error().Msgf("Unable to located active cluster")
+		slog.Error("unable to located active cluster", slogs.Error, err)
 		return ""
 	}
 	return c
@@ -144,12 +146,16 @@ func (a *APIClient) clearCache() {
 }
 
 // CanI checks if user has access to a certain resource.
-func (a *APIClient) CanI(ns, gvr, name string, verbs []string) (auth bool, err error) {
+func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth bool, err error) {
 	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
 	if IsClusterWide(ns) {
 		ns = BlankNamespace
+	}
+	if gvr == HmGVR {
+		// helm stores release data in secrets
+		gvr = SecGVR
 	}
 	key := makeCacheKey(ns, gvr, name, verbs)
 	if v, ok := a.cache.Get(key); ok {
@@ -157,6 +163,8 @@ func (a *APIClient) CanI(ns, gvr, name string, verbs []string) (auth bool, err e
 			return auth, nil
 		}
 	}
+
+	clog := a.log.With(slogs.Subsys, "can")
 
 	dial, err := a.Dial()
 	if err != nil {
@@ -169,14 +177,20 @@ func (a *APIClient) CanI(ns, gvr, name string, verbs []string) (auth bool, err e
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := client.Create(ctx, sar, metav1.CreateOptions{})
-		log.Trace().Msgf("[CAN] %s(%q/%q) <%v>", gvr, ns, name, verbs)
+		clog.Debug("[CAN] access",
+			slogs.GVR, gvr,
+			slogs.Namespace, ns,
+			slogs.ResName, name,
+			slogs.Verb, verbs,
+		)
 		if resp != nil {
-			log.Trace().Msgf("  Spec: %#v", resp.Spec)
-			log.Trace().Msgf("  Auth: %t [%q]", resp.Status.Allowed, resp.Status.Reason)
+			clog.Debug("[CAN] reps",
+				slogs.AuthStatus, resp.Status.Allowed,
+				slogs.AuthReason, resp.Status.Reason,
+			)
 		}
-		log.Trace().Msgf("  <<%v>>", err)
 		if err != nil {
-			log.Warn().Err(err).Msgf("  Dial Failed!")
+			clog.Warn("Auth request failed", slogs.Error, err)
 			a.cache.Add(key, false, cacheExpiry)
 			return auth, err
 		}
@@ -220,7 +234,10 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 func (a *APIClient) IsValidNamespace(ns string) bool {
 	ok, err := a.isValidNamespace(ns)
 	if err != nil {
-		log.Warn().Err(err).Msgf("namespace validation failed for: %q", ns)
+		slog.Warn("Namespace validation failed",
+			slogs.Namespace, ns,
+			slogs.Error, err,
+		)
 	}
 
 	return ok
@@ -251,8 +268,9 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 		}
 	}
 
-	ok, err := a.CanI(ClusterScope, "v1/namespaces", "", ListAccess)
+	ok, err := a.CanI(ClusterScope, NsGVR, "", ListAccess)
 	if !ok || err != nil {
+		a.cache.Add(cacheNSKey, NamespaceNames{}, cacheExpiry)
 		return nil, fmt.Errorf("user not authorized to list all namespaces")
 	}
 
@@ -267,8 +285,8 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 		return nil, err
 	}
 	nns := make(NamespaceNames, len(nn.Items))
-	for _, n := range nn.Items {
-		nns[n.Name] = struct{}{}
+	for i := range nn.Items {
+		nns[nn.Items[i].Name] = struct{}{}
 	}
 	a.cache.Add(cacheNSKey, nns, cacheExpiry)
 
@@ -286,17 +304,16 @@ func (a *APIClient) CheckConnectivity() bool {
 		}
 	}()
 
-	// Need reload to pick up any kubeconfig changes.
-	cfg, err := NewConfig(a.config.flags).RESTConfig()
+	cfg, err := a.config.RESTConfig()
 	if err != nil {
-		log.Error().Err(err).Msgf("restConfig load failed")
+		slog.Error("RestConfig load failed", slogs.Error, err)
 		a.connOK = false
 		return a.connOK
 	}
 	cfg.Timeout = a.config.CallTimeout()
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to connect to api server")
+		slog.Error("Unable to connect to api server", slogs.Error, err)
 		a.setConnOK(false)
 		return a.getConnOK()
 	}
@@ -307,7 +324,7 @@ func (a *APIClient) CheckConnectivity() bool {
 			a.reset()
 		}
 	} else {
-		log.Error().Err(err).Msgf("can't connect to cluster")
+		slog.Error("Unable to fetch server version", slogs.Error, err)
 		a.setConnOK(false)
 	}
 
@@ -444,11 +461,11 @@ func (a *APIClient) Dial() (kubernetes.Interface, error) {
 	if err != nil {
 		return nil, err
 	}
-	if c, err := kubernetes.NewForConfig(cfg); err != nil {
+	c, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
 		return nil, err
-	} else {
-		a.setClient(c)
 	}
+	a.setClient(c)
 
 	return a.getClient(), nil
 }
@@ -541,21 +558,23 @@ func (a *APIClient) invalidateCache() error {
 
 // SwitchContext handles kubeconfig context switches.
 func (a *APIClient) SwitchContext(name string) error {
-	log.Debug().Msgf("Switching context %q", name)
+	slog.Debug("Switching context", slogs.Context, name)
 	if err := a.config.SwitchContext(name); err != nil {
 		return err
 	}
-	if err := a.invalidateCache(); err != nil {
+
+	if !a.CheckConnectivity() {
+		slog.Debug("No connectivity, skipping cache invalidation")
+	} else if err := a.invalidateCache(); err != nil {
 		return err
 	}
 	a.reset()
 	ResetMetrics()
 
-	if !a.CheckConnectivity() {
-		return fmt.Errorf("unable to connect to context %q", name)
-	}
+	// Need reload to pick up any kubeconfig changes.
+	a.config = NewConfig(a.config.flags)
 
-	return nil
+	return a.invalidateCache()
 }
 
 func (a *APIClient) reset() {
@@ -571,7 +590,7 @@ func (a *APIClient) reset() {
 	a.setConnOK(true)
 }
 
-func (a *APIClient) checkCacheBool(key string) (state bool, ok bool) {
+func (a *APIClient) checkCacheBool(key string) (state, ok bool) {
 	v, found := a.cache.Get(key)
 	if !found {
 		return
@@ -595,18 +614,18 @@ func (a *APIClient) supportsMetricsResources() error {
 
 	dial, err := a.Dial()
 	if err != nil {
-		log.Warn().Err(err).Msgf("Unable to dial discovery API")
+		slog.Warn("Unable to dial API client for metrics", slogs.Error, err)
 		return err
 	}
 	apiGroups, err := dial.Discovery().ServerGroups()
 	if err != nil {
 		return err
 	}
-	for _, grp := range apiGroups.Groups {
-		if grp.Name != metricsapi.GroupName {
+	for i := range apiGroups.Groups {
+		if apiGroups.Groups[i].Name != metricsapi.GroupName {
 			continue
 		}
-		if checkMetricsVersion(grp) {
+		if checkMetricsVersion(&(apiGroups.Groups[i])) {
 			supported = true
 			return nil
 		}
@@ -615,7 +634,7 @@ func (a *APIClient) supportsMetricsResources() error {
 	return metricsUnsupportedErr
 }
 
-func checkMetricsVersion(grp metav1.APIGroup) bool {
+func checkMetricsVersion(grp *metav1.APIGroup) bool {
 	for _, v := range grp.Versions {
 		for _, supportedVersion := range supportedMetricsAPIVersions {
 			if v.Version == supportedVersion {

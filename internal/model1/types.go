@@ -4,6 +4,9 @@
 package model1
 
 import (
+	"context"
+
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -39,13 +42,19 @@ type Renderer interface {
 	IsGeneric() bool
 
 	// Render converts raw resources to tabular data.
-	Render(o interface{}, ns string, row *Row) error
+	Render(o any, ns string, row *Row) error
 
 	// Header returns the resource header.
 	Header(ns string) Header
 
 	// ColorerFunc returns a row colorer function.
 	ColorerFunc() ColorerFunc
+
+	// SetViewSetting sets custom view settings if any.
+	SetViewSetting(vs *config.ViewSetting)
+
+	// Healthy checks if the resource is healthy.
+	Healthy(ctx context.Context, o any) error
 }
 
 // Generic represents a generic resource.
@@ -57,5 +66,5 @@ type Generic interface {
 	Header(ns string) Header
 
 	// Render renders the resource.
-	Render(o interface{}, ns string, row *Row) error
+	Render(o any, ns string, row *Row) error
 }

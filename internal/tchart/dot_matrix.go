@@ -45,7 +45,7 @@ func NewDotMatrix() DotMatrix {
 }
 
 // Print prints the matrix.
-func (d DotMatrix) Print(n int) Matrix {
+func (DotMatrix) Print(n int) Matrix {
 	return To3x3Char(n)
 }
 

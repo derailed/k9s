@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
@@ -20,7 +21,7 @@ import (
 )
 
 func TestTableGenericHydrate(t *testing.T) {
-	raw := raw(t, "p1")
+	raw := load(t, "p1")
 	tt := metav1beta1.Table{
 		ColumnDefinitions: []metav1beta1.TableColumnDefinition{
 			{Name: "c1"},
@@ -28,22 +29,22 @@ func TestTableGenericHydrate(t *testing.T) {
 		},
 		Rows: []metav1beta1.TableRow{
 			{
-				Cells:  []interface{}{"fred", 10},
-				Object: runtime.RawExtension{Raw: raw},
+				Cells:  []any{"fred", 10},
+				Object: runtime.RawExtension{Object: raw},
 			},
 			{
-				Cells:  []interface{}{"blee", 20},
-				Object: runtime.RawExtension{Raw: raw},
+				Cells:  []any{"blee", 20},
+				Object: runtime.RawExtension{Object: raw},
 			},
 		},
 	}
 	rr := make([]model1.Row, 2)
-	var re Generic
+	var re Table
 	re.SetTable("blee", &tt)
 
-	assert.Nil(t, model1.GenericHydrate("blee", &tt, rr, &re))
-	assert.Equal(t, 2, len(rr))
-	assert.Equal(t, 3, len(rr[0].Fields))
+	require.NoError(t, model1.GenericHydrate("blee", &tt, rr, &re))
+	assert.Len(t, rr, 2)
+	assert.Len(t, rr[0].Fields, 2)
 }
 
 func TestTableHydrate(t *testing.T) {
@@ -52,9 +53,10 @@ func TestTableHydrate(t *testing.T) {
 	}
 	rr := make([]model1.Row, 1)
 
-	assert.Nil(t, model1.Hydrate("blee", oo, rr, Pod{}))
-	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, 23, len(rr[0].Fields))
+	re := NewPod()
+	require.NoError(t, model1.Hydrate("blee", oo, rr, re))
+	assert.Len(t, rr, 1)
+	assert.Len(t, rr[0].Fields, 26)
 }
 
 func TestToAge(t *testing.T) {
@@ -286,7 +288,7 @@ func TestMetaFQN(t *testing.T) {
 	for k := range uu {
 		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, uc.e, client.MetaFQN(uc.m))
+			assert.Equal(t, uc.e, client.MetaFQN(&uc.m))
 		})
 	}
 }
@@ -313,7 +315,7 @@ func TestMapToStr(t *testing.T) {
 		i map[string]string
 		e string
 	}{
-		{map[string]string{"blee": "duh", "aa": "bb"}, "aa=bb blee=duh"},
+		{map[string]string{"blee": "duh", "aa": "bb"}, "aa=bb,blee=duh"},
 		{map[string]string{}, ""},
 	}
 	for _, u := range uu {
@@ -329,7 +331,7 @@ func BenchmarkMapToStr(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		mapToStr(ll)
 	}
 }
@@ -370,7 +372,7 @@ func BenchmarkRunesToNum(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		runesToNum(rr)
 	}
 }
@@ -423,7 +425,7 @@ func BenchmarkIntToStr(b *testing.B) {
 	v := 10
 	b.ResetTimer()
 	b.ReportAllocs()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		IntToStr(v)
 	}
 }
@@ -432,15 +434,9 @@ func BenchmarkIntToStr(b *testing.B) {
 
 func load(t *testing.T, n string) *unstructured.Unstructured {
 	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	var o unstructured.Unstructured
 	err = json.Unmarshal(raw, &o)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	return &o
-}
-
-func raw(t *testing.T, n string) []byte {
-	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
-	assert.Nil(t, err)
-	return raw
 }

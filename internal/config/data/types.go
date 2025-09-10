@@ -4,6 +4,8 @@
 package data
 
 import (
+	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/derailed/k9s/internal/config/json"
@@ -20,7 +22,7 @@ const (
 	// DefaultFileMod default unix perms for k9s files.
 	DefaultFileMod os.FileMode = 0600
 
-	// MainConfigFile track main configuration file..
+	// MainConfigFile track main configuration file.
 	MainConfigFile = "config.yaml"
 )
 
@@ -43,4 +45,7 @@ type KubeSettings interface {
 
 	// GetContext returns a given context configuration or err if not found.
 	GetContext(string) (*api.Context, error)
+
+	// SetProxy sets the proxy for the active context, if present
+	SetProxy(proxy func(*http.Request) (*url.URL, error))
 }

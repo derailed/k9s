@@ -15,40 +15,58 @@ import (
 	"k8s.io/kubectl/pkg/util/storage"
 )
 
+var defaultSCHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "PROVISIONER"},
+	model1.HeaderColumn{Name: "RECLAIMPOLICY"},
+	model1.HeaderColumn{Name: "VOLUMEBINDINGMODE"},
+	model1.HeaderColumn{Name: "ALLOWVOLUMEEXPANSION"},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // StorageClass renders a K8s StorageClass to screen.
 type StorageClass struct {
 	Base
 }
 
 // Header returns a header row.
-func (StorageClass) Header(ns string) model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "PROVISIONER"},
-		model1.HeaderColumn{Name: "RECLAIMPOLICY"},
-		model1.HeaderColumn{Name: "VOLUMEBINDINGMODE"},
-		model1.HeaderColumn{Name: "ALLOWVOLUMEEXPANSION"},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
-	}
+func (s StorageClass) Header(_ string) model1.Header {
+	return s.doHeader(defaultSCHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (s StorageClass) Render(o interface{}, ns string, r *model1.Row) error {
+func (s StorageClass) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected StorageClass, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := s.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if s.specs.isEmpty() {
+		return nil
+	}
+	cols, err := s.specs.realize(raw, defaultSCHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (s StorageClass) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var sc storagev1.StorageClass
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sc)
 	if err != nil {
 		return err
 	}
 
-	r.ID = client.FQN(client.ClusterScope, sc.ObjectMeta.Name)
+	r.ID = client.FQN(client.ClusterScope, sc.Name)
 	r.Fields = model1.Fields{
-		s.nameWithDefault(sc.ObjectMeta),
+		s.nameWithDefault(&sc.ObjectMeta),
 		sc.Provisioner,
 		strPtrToStr((*string)(sc.ReclaimPolicy)),
 		strPtrToStr((*string)(sc.VolumeBindingMode)),
@@ -61,8 +79,8 @@ func (s StorageClass) Render(o interface{}, ns string, r *model1.Row) error {
 	return nil
 }
 
-func (StorageClass) nameWithDefault(meta metav1.ObjectMeta) string {
-	if storage.IsDefaultAnnotationText(meta) == "Yes" {
+func (StorageClass) nameWithDefault(meta *metav1.ObjectMeta) string {
+	if storage.IsDefaultAnnotationText(*meta) == "Yes" {
 		return meta.Name + " (default)"
 	}
 	return meta.Name

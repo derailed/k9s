@@ -6,6 +6,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -20,6 +21,12 @@ import (
 var (
 	_ Accessor = (*Container)(nil)
 	_ Loggable = (*Container)(nil)
+)
+
+const (
+	initIDX = "I"
+	mainIDX = "M"
+	ephIDX  = "E"
 )
 
 // Container represents a pod's container dao.
@@ -46,12 +53,34 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 	if err != nil {
 		return nil, err
 	}
-	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
-	for _, co := range po.Spec.InitContainers {
-		res = append(res, makeContainerRes(co, po, cmx[co.Name], true))
+	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers)+len(po.Spec.EphemeralContainers))
+	for i := range po.Spec.InitContainers {
+		res = append(res, makeContainerRes(
+			initIDX,
+			i,
+			&(po.Spec.InitContainers[i]),
+			po,
+			cmx[po.Spec.InitContainers[i].Name]),
+		)
 	}
-	for _, co := range po.Spec.Containers {
-		res = append(res, makeContainerRes(co, po, cmx[co.Name], false))
+	for i := range po.Spec.Containers {
+		res = append(res, makeContainerRes(
+			mainIDX,
+			i,
+			&(po.Spec.Containers[i]),
+			po,
+			cmx[po.Spec.Containers[i].Name]),
+		)
+	}
+	for i := range po.Spec.EphemeralContainers {
+		co := v1.Container(po.Spec.EphemeralContainers[i].EphemeralContainerCommon)
+		res = append(res, makeContainerRes(
+			ephIDX,
+			i,
+			&co,
+			po,
+			cmx[co.Name]),
+		)
 	}
 
 	return res, nil
@@ -60,7 +89,7 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 // TailLogs tails a given container logs.
 func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	po := Pod{}
-	po.Init(c.Factory, client.NewGVR("v1/pods"))
+	po.Init(c.Factory, client.PodGVR)
 
 	return po.TailLogs(ctx, opts)
 }
@@ -68,25 +97,35 @@ func (c *Container) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeContainerRes(co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics, isInit bool) render.ContainerRes {
+func makeContainerRes(kind string, idx int, co *v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetrics) render.ContainerRes {
 	return render.ContainerRes{
-		Container: &co,
-		Status:    getContainerStatus(co.Name, po.Status),
+		Idx:       kind + strconv.Itoa(idx+1),
+		Container: co,
+		Status:    getContainerStatus(kind, co.Name, &po.Status),
 		MX:        cmx,
-		IsInit:    isInit,
 		Age:       po.GetCreationTimestamp(),
 	}
 }
 
-func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
-	for _, c := range status.ContainerStatuses {
-		if c.Name == co {
-			return &c
+func getContainerStatus(kind, name string, status *v1.PodStatus) *v1.ContainerStatus {
+	switch kind {
+	case mainIDX:
+		for i := range status.ContainerStatuses {
+			if status.ContainerStatuses[i].Name == name {
+				return &status.ContainerStatuses[i]
+			}
 		}
-	}
-	for _, c := range status.InitContainerStatuses {
-		if c.Name == co {
-			return &c
+	case initIDX:
+		for i := range status.InitContainerStatuses {
+			if status.InitContainerStatuses[i].Name == name {
+				return &status.InitContainerStatuses[i]
+			}
+		}
+	case ephIDX:
+		for i := range status.EphemeralContainerStatuses {
+			if status.EphemeralContainerStatuses[i].Name == name {
+				return &status.EphemeralContainerStatuses[i]
+			}
 		}
 	}
 
@@ -94,9 +133,9 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 }
 
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
-	o, err := c.getFactory().Get("v1/pods", fqn, true, labels.Everything())
+	o, err := c.getFactory().Get(client.PodGVR, fqn, true, labels.Everything())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to locate pod %q: %w", fqn, err)
 	}
 	var po v1.Pod
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po)

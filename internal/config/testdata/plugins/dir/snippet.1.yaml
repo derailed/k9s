@@ -1,0 +1,13 @@
+shortCut: shift-s
+description: blee
+scopes:
+  - po
+  - dp
+command: duh
+args:
+  - -n
+  - $NAMESPACE
+  - -boolean
+background: false
+confirm: true
+overwriteOutput: true

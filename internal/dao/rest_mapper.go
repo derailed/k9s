@@ -65,11 +65,12 @@ func (r *RestMapper) resourceFor(resourceArg string) (schema.GroupVersionResourc
 
 	gvr, err = mapper.ResourceFor(gr.WithVersion(""))
 	if err != nil {
-		if len(gr.Group) == 0 {
+		if gr.Group == "" {
 			return gvr, fmt.Errorf("the server doesn't have a resource type '%s'", gr.Resource)
 		}
 		return gvr, fmt.Errorf("the server doesn't have a resource type '%s' in group '%s'", gr.Resource, gr.Group)
 	}
+
 	return gvr, nil
 }
 

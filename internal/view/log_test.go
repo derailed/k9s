@@ -19,6 +19,7 @@ import (
 	"github.com/derailed/k9s/internal/view"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLog(t *testing.T) {
@@ -26,8 +27,8 @@ func TestLog(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
-	assert.NoError(t, v.Init(makeContext()))
+	v := view.NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
 
 	ii := dao.NewLogItems()
 	ii.Add(dao.NewLogItemFromString("blee\n"), dao.NewLogItemFromString("bozo\n"))
@@ -43,8 +44,8 @@ func TestLogFlush(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
-	assert.NoError(t, v.Init(makeContext()))
+	v := view.NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
 
 	items := dao.NewLogItems()
 	items.Add(
@@ -63,8 +64,8 @@ func BenchmarkLogFlush(b *testing.B) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
-	_ = v.Init(makeContext())
+	v := view.NewLog(client.PodGVR, &opts)
+	_ = v.Init(makeContext(b))
 
 	items := dao.NewLogItems()
 	items.Add(
@@ -77,7 +78,7 @@ func BenchmarkLogFlush(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		v.Flush(ll)
 	}
 }
@@ -85,14 +86,14 @@ func BenchmarkLogFlush(b *testing.B) {
 func TestLogAnsi(t *testing.T) {
 	buff := bytes.NewBufferString("")
 	w := tview.ANSIWriter(buff, "white", "black")
-	fmt.Fprintf(w, "[YELLOW] ok")
+	_, _ = fmt.Fprintf(w, "[YELLOW] ok")
 	assert.Equal(t, "[YELLOW] ok", buff.String())
 
 	v := tview.NewTextView()
 	v.SetDynamicColors(true)
 	aw := tview.ANSIWriter(v, "white", "black")
 	s := "[2019-03-27T15:05:15,246][INFO ][o.e.c.r.a.AllocationService] [es-0] Cluster health status changed from [YELLOW] to [GREEN] (reason: [shards started [[.monitoring-es-6-2019.03.27][0]]"
-	fmt.Fprintf(aw, "%s", s)
+	_, _ = fmt.Fprintf(aw, "%s", s)
 	assert.Equal(t, s+"\n", v.GetText(false))
 }
 
@@ -101,10 +102,10 @@ func TestLogViewSave(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
-	assert.NoError(t, v.Init(makeContext()))
+	v := view.NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
 
-	app := makeApp()
+	app := makeApp(t)
 	ii := dao.NewLogItems()
 	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
 	ll := make([][]byte, ii.Len())
@@ -112,15 +113,15 @@ func TestLogViewSave(t *testing.T) {
 	v.Flush(ll)
 
 	dd := "/tmp/test-dumps/na"
-	assert.NoError(t, ensureDumpDir(dd))
+	require.NoError(t, ensureDumpDir(dd))
 	app.Config.K9s.ScreenDumpDir = "/tmp/test-dumps"
 	dir := app.Config.K9s.ContextScreenDumpDir()
 	c1, err := os.ReadDir(dir)
-	assert.NoError(t, err, fmt.Sprintf("Dir: %q", dir))
+	require.NoError(t, err, "Dir: %q", dir)
 	v.SaveCmd(nil)
 	c2, err := os.ReadDir(dir)
-	assert.NoError(t, err, fmt.Sprintf("Dir: %q", dir))
-	assert.Equal(t, len(c2), len(c1)+1)
+	require.NoError(t, err, "Dir: %q", dir)
+	assert.Len(t, c2, len(c1)+1)
 }
 
 func TestAllContainerKeyBinding(t *testing.T) {
@@ -139,8 +140,8 @@ func TestAllContainerKeyBinding(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			v := view.NewLog(client.NewGVR("v1/pods"), u.opts)
-			assert.NoError(t, v.Init(makeContext()))
+			v := view.NewLog(client.PodGVR, u.opts)
+			require.NoError(t, v.Init(makeContext(t)))
 			_, got := v.Logs().Actions().Get(ui.KeyA)
 			assert.Equal(t, u.e, got)
 		})
@@ -150,8 +151,8 @@ func TestAllContainerKeyBinding(t *testing.T) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeApp() *view.App {
-	return view.NewApp(mock.NewMockConfig())
+func makeApp(t *testing.T) *view.App {
+	return view.NewApp(mock.NewMockConfig(t))
 }
 
 func ensureDumpDir(n string) error {

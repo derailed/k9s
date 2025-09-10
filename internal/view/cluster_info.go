@@ -5,15 +5,16 @@ package view
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 var _ model.ClusterInfoListener = (*ClusterInfo)(nil)
@@ -53,9 +54,9 @@ func (c *ClusterInfo) StylesChanged(s *config.Styles) {
 func (c *ClusterInfo) hasMetrics() bool {
 	mx := c.app.Conn().HasMetrics()
 	if mx {
-		auth, err := c.app.Conn().CanI("", "metrics.k8s.io/v1beta1/nodes", "", client.ListAccess)
+		auth, err := c.app.Conn().CanI("", client.NmxGVR, "", client.ListAccess)
 		if err != nil {
-			log.Warn().Err(err).Msgf("No nodes metrics access")
+			slog.Warn("No nodes metrics access", slogs.Error, err)
 		}
 		mx = auth
 	}
@@ -96,11 +97,11 @@ func (c *ClusterInfo) setCell(row int, s string) int {
 }
 
 // ClusterInfoUpdated notifies the cluster meta was updated.
-func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
+func (c *ClusterInfo) ClusterInfoUpdated(data *model.ClusterMeta) {
 	c.ClusterInfoChanged(data, data)
 }
 
-func (c *ClusterInfo) warnCell(s string, w bool) string {
+func (*ClusterInfo) warnCell(s string, w bool) string {
 	if w {
 		return fmt.Sprintf("[orangered::b]%s", s)
 	}
@@ -109,11 +110,16 @@ func (c *ClusterInfo) warnCell(s string, w bool) string {
 }
 
 // ClusterInfoChanged notifies the cluster meta was changed.
-func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
+func (c *ClusterInfo) ClusterInfoChanged(prev, curr *model.ClusterMeta) {
 	c.app.QueueUpdateDraw(func() {
 		c.Clear()
 		c.layout()
-		row := c.setCell(0, curr.Context)
+
+		context := curr.Context
+		if ic := ui.ROIndicator(c.app.Config.IsReadOnly(), c.app.Config.K9s.UI.NoIcons); ic != "" {
+			context += " " + ic
+		}
+		row := c.setCell(0, context)
 		row = c.setCell(row, curr.Cluster)
 		row = c.setCell(row, curr.User)
 		if curr.K9sLatest != "" {
@@ -138,12 +144,12 @@ const defconFmt = "%s %s level!"
 
 func (c *ClusterInfo) setDefCon(cpu, mem int) {
 	var set bool
-	l := c.app.Config.K9s.Thresholds.LevelFor("cpu", cpu)
+	l := c.app.Config.K9s.Thresholds.LevelFor(config.CPU, cpu)
 	if l > config.SeverityLow {
 		c.app.Status(flashLevel(l), fmt.Sprintf(defconFmt, flashMessage(l), "CPU"))
 		set = true
 	}
-	l = c.app.Config.K9s.Thresholds.LevelFor("memory", mem)
+	l = c.app.Config.K9s.Thresholds.LevelFor(config.MEM, mem)
 	if l > config.SeverityLow {
 		c.app.Status(flashLevel(l), fmt.Sprintf(defconFmt, flashMessage(l), "Memory"))
 		set = true
@@ -154,7 +160,7 @@ func (c *ClusterInfo) setDefCon(cpu, mem int) {
 }
 
 func (c *ClusterInfo) updateStyle() {
-	for row := 0; row < c.GetRowCount(); row++ {
+	for row := range c.GetRowCount() {
 		c.GetCell(row, 0).SetTextColor(c.styles.K9s.Info.FgColor.Color())
 		c.GetCell(row, 0).SetBackgroundColor(c.styles.BgColor())
 		var s tcell.Style
@@ -169,7 +175,7 @@ func (c *ClusterInfo) updateStyle() {
 // Helpers...
 
 func flashLevel(l config.SeverityLevel) model.FlashLevel {
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch l {
 	case config.SeverityHigh:
 		return model.FlashErr
@@ -181,7 +187,7 @@ func flashLevel(l config.SeverityLevel) model.FlashLevel {
 }
 
 func flashMessage(l config.SeverityLevel) string {
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch l {
 	case config.SeverityHigh:
 		return "Critical"

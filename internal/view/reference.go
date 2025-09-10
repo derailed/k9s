@@ -17,7 +17,7 @@ type Reference struct {
 }
 
 // NewReference returns a new alias view.
-func NewReference(gvr client.GVR) ResourceViewer {
+func NewReference(gvr *client.GVR) ResourceViewer {
 	r := Reference{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -54,8 +54,9 @@ func (r *Reference) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	path := r.GetTable().GetSelectedItem()
+	ns, _ := client.Namespaced(path)
 	gvr := ui.TrimCell(r.GetTable().SelectTable, row, 2)
-	r.App().gotoResource(client.NewGVR(gvr).R(), path, false)
+	r.App().gotoResource(client.NewGVR(gvr).String()+" "+ns, path, false, true)
 
 	return evt
 }

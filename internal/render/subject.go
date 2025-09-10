@@ -19,23 +19,23 @@ type Subject struct {
 
 // ColorerFunc colors a resource row.
 func (Subject) ColorerFunc() model1.ColorerFunc {
-	return func(ns string, _ model1.Header, re *model1.RowEvent) tcell.Color {
+	return func(string, model1.Header, *model1.RowEvent) tcell.Color {
 		return tcell.ColorMediumSpringGreen
 	}
 }
 
 // Header returns a header row.
-func (Subject) Header(ns string) model1.Header {
+func (Subject) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "KIND"},
 		model1.HeaderColumn{Name: "FIRST LOCATION"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (s Subject) Render(o interface{}, ns string, r *model1.Row) error {
+func (s Subject) Render(o any, _ string, r *model1.Row) error {
 	res, ok := o.(SubjectRes)
 	if !ok {
 		return fmt.Errorf("expected SubjectRes, but got %T", s)

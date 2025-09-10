@@ -6,11 +6,14 @@ package ui
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -21,10 +24,10 @@ const (
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
 	// NSTitleFmt represents a namespaced view title.
-	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
+	NSTitleFmt = " [fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	// TitleFmt represents a standard view title.
-	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
+	TitleFmt = " [fg:bg:b]%s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	descIndicator = "↓"
 	ascIndicator  = "↑"
@@ -39,7 +42,8 @@ const (
 func mustExtractStyles(ctx context.Context) *config.Styles {
 	styles, ok := ctx.Value(internal.KeyStyles).(*config.Styles)
 	if !ok {
-		log.Fatal().Msg("Expecting valid styles")
+		slog.Error("Expecting valid styles. Exiting!")
+		os.Exit(1)
 	}
 	return styles
 }
@@ -48,38 +52,39 @@ func mustExtractStyles(ctx context.Context) *config.Styles {
 func TrimCell(tv *SelectTable, row, col int) string {
 	c := tv.GetCell(row, col)
 	if c == nil {
-		log.Error().Err(fmt.Errorf("No cell at location [%d:%d]", row, col)).Msg("Trim cell failed!")
+		slog.Error("Trim cell failed", slogs.Error, fmt.Errorf("no cell at [%d:%d]", row, col))
 		return ""
 	}
 	return strings.TrimSpace(c.Text)
 }
 
 // TrimLabelSelector extracts label query.
-func TrimLabelSelector(s string) string {
+func TrimLabelSelector(s string) (labels.Selector, error) {
+	selStr := s
 	if strings.Index(s, "-l") == 0 {
-		return strings.TrimSpace(s[2:])
+		selStr = strings.TrimSpace(s[2:])
 	}
 
-	return s
+	return labels.Parse(selStr)
 }
 
 // SkinTitle decorates a title.
-func SkinTitle(fmat string, style config.Frame) string {
+func SkinTitle(fmat string, style *config.Frame) string {
 	bgColor := style.Title.BgColor
 	if bgColor == config.DefaultColor {
 		bgColor = config.TransparentColor
 	}
-	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String(), -1)
+	fmat = strings.ReplaceAll(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String())
 	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor.String(), 1)
 	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor.String(), 1)
 	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor.String(), 1)
 	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor.String(), 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+bgColor.String()+":", -1)
+	fmat = strings.ReplaceAll(fmat, ":bg:", ":"+bgColor.String()+":")
 
 	return fmat
 }
 
-func sortIndicator(sort, asc bool, style config.Table, name string) string {
+func sortIndicator(sort, asc bool, style *config.Table, name string) string {
 	if !sort {
 		return name
 	}

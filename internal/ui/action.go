@@ -4,12 +4,13 @@
 package ui
 
 import (
-	"sort"
+	"log/slog"
+	"slices"
 	"sync"
 
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -109,9 +110,7 @@ func (a *KeyActions) Reset(aa *KeyActions) {
 func (a *KeyActions) Range(f RangeFn) {
 	var km KeyMap
 	a.mx.RLock()
-	{
-		km = a.actions
-	}
+	km = a.actions
 	a.mx.RUnlock()
 
 	for k, v := range km {
@@ -194,26 +193,26 @@ func (a *KeyActions) Hints() model.MenuHints {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
 
-	kk := make([]int, 0, len(a.actions))
+	kk := make([]tcell.Key, 0, len(a.actions))
 	for k := range a.actions {
 		if !a.actions[k].Opts.Shared {
-			kk = append(kk, int(k))
+			kk = append(kk, k)
 		}
 	}
-	sort.Ints(kk)
+	slices.Sort(kk)
 
 	hh := make(model.MenuHints, 0, len(kk))
 	for _, k := range kk {
-		if name, ok := tcell.KeyNames[tcell.Key(int16(k))]; ok {
+		if name, ok := tcell.KeyNames[k]; ok {
 			hh = append(hh,
 				model.MenuHint{
 					Mnemonic:    name,
-					Description: a.actions[tcell.Key(k)].Description,
-					Visible:     a.actions[tcell.Key(k)].Opts.Visible,
+					Description: a.actions[k].Description,
+					Visible:     a.actions[k].Opts.Visible,
 				},
 			)
 		} else {
-			log.Error().Msgf("Unable to locate KeyName for %#v", k)
+			slog.Error("Unable to locate key name", slogs.Key, k)
 		}
 	}
 

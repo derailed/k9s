@@ -105,9 +105,9 @@ func (l *Logo) refreshLogo(c config.Color) {
 	defer l.mx.Unlock()
 	l.logo.Clear()
 	for i, s := range LogoSmall {
-		fmt.Fprintf(l.logo, "[%s::b]%s", c, s)
+		_, _ = fmt.Fprintf(l.logo, "[%s::b]%s", c, s)
 		if i+1 < len(LogoSmall) {
-			fmt.Fprintf(l.logo, "\n")
+			_, _ = fmt.Fprintf(l.logo, "\n")
 		}
 	}
 }

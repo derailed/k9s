@@ -53,6 +53,53 @@ func TestLabelize(t *testing.T) {
 	}
 }
 
+func TestIsValid(t *testing.T) {
+	uu := map[string]struct {
+		ns string
+		h  Header
+		r  Row
+		e  bool
+	}{
+		"empty": {
+			ns: "blee",
+			h:  Header{},
+			r:  Row{},
+			e:  true,
+		},
+		"valid": {
+			ns: "blee",
+			h:  Header{HeaderColumn{Name: "VALID"}},
+			r:  Row{Fields: Fields{"true"}},
+			e:  true,
+		},
+		"invalid": {
+			ns: "blee",
+			h:  Header{HeaderColumn{Name: "VALID"}},
+			r:  Row{Fields: Fields{"false"}},
+			e:  false,
+		},
+		"valid_capital_case": {
+			ns: "blee",
+			h:  Header{HeaderColumn{Name: "VALID"}},
+			r:  Row{Fields: Fields{"True"}},
+			e:  true,
+		},
+		"valid_all_caps": {
+			ns: "blee",
+			h:  Header{HeaderColumn{Name: "VALID"}},
+			r:  Row{Fields: Fields{"TRUE"}},
+			e:  true,
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			valid := IsValid(u.ns, u.h, u.r)
+			assert.Equal(t, u.e, valid)
+		})
+	}
+}
+
 func TestDurationToSecond(t *testing.T) {
 	uu := map[string]struct {
 		s string
@@ -83,7 +130,7 @@ func BenchmarkDurationToSecond(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		durationToSeconds(t)
 	}
 }

@@ -49,20 +49,20 @@ func validateRange(v int) bool {
 	return true
 }
 
-// Threshold tracks threshold to alert user when excided.
+// Threshold tracks threshold to alert user when exceeded.
 type Threshold map[string]*Severity
 
 // NewThreshold returns a new threshold.
 func NewThreshold() Threshold {
 	return Threshold{
-		"cpu":    NewSeverity(),
-		"memory": NewSeverity(),
+		CPU: NewSeverity(),
+		MEM: NewSeverity(),
 	}
 }
 
 // Validate a namespace is setup correctly.
 func (t Threshold) Validate() Threshold {
-	for _, k := range []string{"cpu", "memory"} {
+	for _, k := range []string{CPU, MEM} {
 		v, ok := t[k]
 		if !ok {
 			t[k] = NewSeverity()
@@ -90,9 +90,9 @@ func (t Threshold) LevelFor(k string, v int) SeverityLevel {
 	return SeverityLow
 }
 
-// SeverityColor returns an defcon level associated level.
+// SeverityColor returns a defcon level associated level.
 func (t *Threshold) SeverityColor(k string, v int) string {
-	// nolint:exhaustive
+	//nolint:exhaustive
 	switch t.LevelFor(k, v) {
 	case SeverityHigh:
 		return "red"

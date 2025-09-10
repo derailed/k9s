@@ -16,7 +16,7 @@ func TestFishAdd(t *testing.T) {
 
 	f := model.NewFishBuff(' ', model.FilterBuffer)
 	f.AddListener(&m)
-	f.SetSuggestionFn(func(text string) sort.StringSlice {
+	f.SetSuggestionFn(func(string) sort.StringSlice {
 		return sort.StringSlice{"blee", "brew"}
 	})
 	f.Add('b')
@@ -45,7 +45,7 @@ func TestFishDelete(t *testing.T) {
 
 	f := model.NewFishBuff(' ', model.FilterBuffer)
 	f.AddListener(&m)
-	f.SetSuggestionFn(func(text string) sort.StringSlice {
+	f.SetSuggestionFn(func(string) sort.StringSlice {
 		return sort.StringSlice{"blee", "duh"}
 	})
 	f.Add('a')
@@ -89,11 +89,11 @@ func (m *mockSuggestionListener) BufferCompleted(text, suggest string) {
 	m.text, m.suggestion = text, suggest
 }
 
-func (m *mockSuggestionListener) BufferActive(state bool, kind model.BufferKind) {
+func (m *mockSuggestionListener) BufferActive(state bool, _ model.BufferKind) {
 	m.active = state
 }
 
-func (m *mockSuggestionListener) SuggestionChanged(text, sugg string) {
+func (m *mockSuggestionListener) SuggestionChanged(_, sugg string) {
 	m.suggestion = sugg
 	m.suggCount++
 }

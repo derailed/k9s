@@ -14,12 +14,12 @@ import (
 func TestMakeSAR(t *testing.T) {
 	uu := map[string]struct {
 		ns  string
-		gvr GVR
+		gvr *GVR
 		sar *authorizationv1.SelfSubjectAccessReview
 	}{
 		"all-pods": {
 			ns:  NamespaceAll,
-			gvr: NewGVR("v1/pods"),
+			gvr: PodGVR,
 			sar: &authorizationv1.SelfSubjectAccessReview{
 				Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 					ResourceAttributes: &authorizationv1.ResourceAttributes{
@@ -30,9 +30,10 @@ func TestMakeSAR(t *testing.T) {
 				},
 			},
 		},
+
 		"ns-pods": {
 			ns:  "fred",
-			gvr: NewGVR("v1/pods"),
+			gvr: PodGVR,
 			sar: &authorizationv1.SelfSubjectAccessReview{
 				Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 					ResourceAttributes: &authorizationv1.ResourceAttributes{
@@ -43,9 +44,10 @@ func TestMakeSAR(t *testing.T) {
 				},
 			},
 		},
+
 		"clusterscope-ns": {
 			ns:  ClusterScope,
-			gvr: NewGVR("v1/namespaces"),
+			gvr: NsGVR,
 			sar: &authorizationv1.SelfSubjectAccessReview{
 				Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 					ResourceAttributes: &authorizationv1.ResourceAttributes{
@@ -55,6 +57,7 @@ func TestMakeSAR(t *testing.T) {
 				},
 			},
 		},
+
 		"subres-pods": {
 			ns:  "fred",
 			gvr: NewGVR("v1/pods:logs"),
@@ -74,7 +77,7 @@ func TestMakeSAR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.sar, makeSAR(u.ns, u.gvr.String(), ""))
+			assert.Equal(t, u.sar, makeSAR(u.ns, u.gvr, ""))
 		})
 	}
 }
@@ -153,7 +156,7 @@ func TestCheckCacheBool(t *testing.T) {
 	const key = "fred"
 	uu := map[string]struct {
 		key                  string
-		val                  interface{}
+		val                  any
 		found, actual, sleep bool
 	}{
 		"setTrue": {

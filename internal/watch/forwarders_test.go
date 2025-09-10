@@ -4,18 +4,18 @@
 package watch_test
 
 import (
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/portforward"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestIsPodForwarded(t *testing.T) {
@@ -173,15 +173,16 @@ func newNoOpForwarder() noOpForwarder {
 	return noOpForwarder{}
 }
 
-func (m noOpForwarder) Start(path string, tunnel port.PortTunnel) (*portforward.PortForwarder, error) {
+func (noOpForwarder) Start(string, port.PortTunnel) (*portforward.PortForwarder, error) {
 	return nil, nil
 }
-func (m noOpForwarder) Stop()                      {}
-func (m noOpForwarder) ID() string                 { return "" }
-func (m noOpForwarder) Container() string          { return "" }
-func (m noOpForwarder) Port() string               { return "" }
-func (m noOpForwarder) FQN() string                { return "" }
-func (m noOpForwarder) Active() bool               { return false }
-func (m noOpForwarder) SetActive(bool)             {}
-func (m noOpForwarder) Age() time.Time             { return time.Now() }
-func (m noOpForwarder) HasPortMapping(string) bool { return false }
+func (noOpForwarder) Stop()                      {}
+func (noOpForwarder) ID() string                 { return "" }
+func (noOpForwarder) Container() string          { return "" }
+func (noOpForwarder) Port() string               { return "" }
+func (noOpForwarder) FQN() string                { return "" }
+func (noOpForwarder) Active() bool               { return false }
+func (noOpForwarder) SetActive(bool)             {}
+func (noOpForwarder) Age() time.Time             { return time.Now() }
+func (noOpForwarder) HasPortMapping(string) bool { return false }
+func (noOpForwarder) Address() string            { return "" }

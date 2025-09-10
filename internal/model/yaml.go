@@ -6,6 +6,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -15,8 +16,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -25,17 +25,18 @@ const ManagedFieldsOpts = "ManagedFields"
 
 // YAML tracks yaml resource representations.
 type YAML struct {
-	gvr       client.GVR
+	gvr       *client.GVR
 	inUpdate  int32
 	path      string
 	query     string
 	lines     []string
 	listeners []ResourceViewerListener
 	options   ViewerToggleOpts
+	decode    bool
 }
 
 // NewYAML return a new yaml resource model.
-func NewYAML(gvr client.GVR, path string) *YAML {
+func NewYAML(gvr *client.GVR, path string) *YAML {
 	return &YAML{
 		gvr:  gvr,
 		path: path,
@@ -43,7 +44,7 @@ func NewYAML(gvr client.GVR, path string) *YAML {
 }
 
 // GVR returns the resource gvr.
-func (y *YAML) GVR() client.GVR {
+func (y *YAML) GVR() *client.GVR {
 	return y.gvr
 }
 
@@ -122,7 +123,7 @@ func (y *YAML) Watch(ctx context.Context) error {
 }
 
 func (y *YAML) updater(ctx context.Context) {
-	defer log.Debug().Msgf("YAML canceled -- %q", y.gvr)
+	defer slog.Debug("YAML canceled", slogs.GVR, y.gvr)
 
 	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
 	delay := defaultReaderRefreshRate
@@ -134,7 +135,7 @@ func (y *YAML) updater(ctx context.Context) {
 			if err := y.refresh(ctx); err != nil {
 				y.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("YAML gave up!")
+					slog.Error("YAML gave up!", slogs.Error, err)
 					return
 				}
 			} else {
@@ -147,7 +148,7 @@ func (y *YAML) updater(ctx context.Context) {
 
 func (y *YAML) refresh(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&y.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...", slogs.GVR, y.gvr)
 		return nil
 	}
 	defer atomic.StoreInt32(&y.inUpdate, 0)
@@ -195,7 +196,7 @@ func (y *YAML) RemoveListener(l ResourceViewerListener) {
 }
 
 // ToYAML returns a resource yaml.
-func (y *YAML) ToYAML(ctx context.Context, gvr client.GVR, path string, showManaged bool) (string, error) {
+func (y *YAML) ToYAML(ctx context.Context, gvr *client.GVR, path string, showManaged bool) (string, error) {
 	meta, err := getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -205,32 +206,14 @@ func (y *YAML) ToYAML(ctx context.Context, gvr client.GVR, path string, showMana
 	if !ok {
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
 	}
+	if desc, ok := meta.DAO.(*dao.Secret); ok {
+		desc.SetDecodeData(y.decode)
+	}
 
 	return desc.ToYAML(path, showManaged)
 }
 
-func getMeta(ctx context.Context, gvr client.GVR) (ResourceMeta, error) {
-	meta := resourceMeta(gvr)
-	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
-	if !ok {
-		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
-	}
-	meta.DAO.Init(factory, gvr)
-
-	return meta, nil
-}
-
-func resourceMeta(gvr client.GVR) ResourceMeta {
-	meta, ok := Registry[gvr.String()]
-	if !ok {
-		meta = ResourceMeta{
-			DAO:      &dao.Table{},
-			Renderer: &render.Generic{},
-		}
-	}
-	if meta.DAO == nil {
-		meta.DAO = &dao.Resource{}
-	}
-
-	return meta
+// Toggle toggles the decode flag.
+func (y *YAML) Toggle() {
+	y.decode = !y.decode
 }

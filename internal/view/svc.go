@@ -6,6 +6,7 @@ package view
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -15,9 +16,9 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -32,7 +33,7 @@ type Service struct {
 }
 
 // NewService returns a new viewer.
-func NewService(gvr client.GVR) ResourceViewer {
+func NewService(gvr *client.GVR) ResourceViewer {
 	s := Service{
 		ResourceViewer: NewPortForwardExtender(
 			NewOwnerExtender(
@@ -55,7 +56,7 @@ func (s *Service) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (s *Service) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
+func (s *Service) showPods(a *App, _ ui.Tabular, _ *client.GVR, path string) {
 	var res dao.Service
 	res.Init(a.factory, s.GVR())
 
@@ -73,17 +74,17 @@ func (s *Service) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
 		return
 	}
 
-	showPods(a, path, toLabelsStr(svc.Spec.Selector), "")
+	showPods(a, path, labels.SelectorFromSet(svc.Spec.Selector), "")
 }
 
-func (s *Service) checkSvc(svc *v1.Service) error {
+func (*Service) checkSvc(svc *v1.Service) error {
 	if svc.Spec.Type != "NodePort" && svc.Spec.Type != "LoadBalancer" {
 		return errors.New("you must select a reachable service")
 	}
 	return nil
 }
 
-func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
+func (*Service) getExternalPort(svc *v1.Service) (string, error) {
 	if svc.Spec.Type == "LoadBalancer" {
 		return "", nil
 	}
@@ -100,7 +101,7 @@ func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
 
 func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.bench != nil {
-		log.Debug().Msg(">>> Benchmark canceled!!")
+		slog.Debug(">>> Benchmark canceled!!")
 		s.App().Status(model.FlashErr, "Benchmark Canceled!")
 		s.bench.Cancel()
 		s.App().ClearStatus(true)
@@ -114,7 +115,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	cust, err := config.NewBench(s.App().BenchFile)
 	if err != nil {
-		log.Debug().Msgf("No bench config file found %s", s.App().BenchFile)
+		slog.Debug("No bench config file found", slogs.FileName, s.App().BenchFile)
 	}
 
 	cfg, ok := cust.Benchmarks.Services[path]
@@ -123,7 +124,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	cfg.Name = path
-	log.Debug().Msgf("Benchmark config %#v", cfg)
+	slog.Debug("Benchmark config", slogs.Config, cfg)
 
 	svc, err := fetchService(s.App().factory, path)
 	if err != nil {
@@ -139,7 +140,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		s.App().Flash().Err(err)
 		return nil
 	}
-	if err := s.runBenchmark(port, cfg); err != nil {
+	if err := s.runBenchmark(port, &cfg); err != nil {
 		s.App().Flash().Errf("Benchmark failed %v", err)
 		s.App().ClearStatus(false)
 		s.bench = nil
@@ -149,7 +150,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 // BOZO!! Refactor used by forwards.
-func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
+func (s *Service) runBenchmark(port string, cfg *config.BenchConfig) error {
 	if cfg.HTTP.Host == "" {
 		return fmt.Errorf("invalid benchmark host %q", cfg.HTTP.Host)
 	}
@@ -170,7 +171,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	}
 
 	s.App().Status(model.FlashWarn, "Benchmark in progress...")
-	log.Debug().Msg("Benchmark starting...")
+	slog.Debug("Benchmark starting...")
 
 	ct, err := s.App().Config.K9s.ActiveContext()
 	if err != nil {
@@ -184,7 +185,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 }
 
 func (s *Service) benchDone() {
-	log.Debug().Msg("Bench Completed!")
+	slog.Debug("Bench Completed!")
 	s.App().QueueUpdate(func() {
 		if s.bench.Canceled() {
 			s.App().Status(model.FlashInfo, "Benchmark canceled")
@@ -208,7 +209,7 @@ func clearStatus(app *App) {
 }
 
 func fetchService(f dao.Factory, path string) (*v1.Service, error) {
-	o, err := f.Get("v1/services", path, true, labels.Everything())
+	o, err := f.Get(client.SvcGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

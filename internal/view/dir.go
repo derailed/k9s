@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
@@ -34,10 +34,10 @@ type Dir struct {
 }
 
 // NewDir returns a new instance.
-func NewDir(path string) ResourceViewer {
+func NewDir(s string) ResourceViewer {
 	d := Dir{
-		ResourceViewer: NewBrowser(client.NewGVR("dir")),
-		path:           path,
+		ResourceViewer: NewBrowser(client.DirGVR),
+		path:           s,
 	}
 	d.GetTable().SetBorderFocusColor(tcell.ColorAliceBlue)
 	d.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorAliceBlue).Attributes(tcell.AttrNone))
@@ -81,7 +81,7 @@ func (d *Dir) bindKeys(aa *ui.KeyActions) {
 	// !!BOZO!! Lame!
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD, tcell.KeyCtrlT)
-	if !d.App().Config.K9s.IsReadOnly() {
+	if !d.App().Config.IsReadOnly() {
 		d.bindDangerousKeys(aa)
 	}
 	aa.Bulk(ui.KeyMap{
@@ -132,7 +132,7 @@ func (d *Dir) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	d.Stop()
 	defer d.Start()
-	if !edit(d.App(), shellOpts{clear: true, args: []string{sel}}) {
+	if !edit(d.App(), &shellOpts{clear: true, args: []string{sel}}) {
 		d.App().Flash().Errf("Failed to launch editor")
 	}
 
@@ -173,7 +173,7 @@ func isKustomized(sel string) bool {
 	}
 	kk := []string{kustomizeNoExt, kustomizeYAML, kustomizeYML}
 	for _, f := range ff {
-		if data.InList(kk, f.Name()) {
+		if slices.Contains(kk, f.Name()) {
 			return true
 		}
 	}
@@ -219,7 +219,7 @@ func (d *Dir) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, "apply")
 		args = append(args, opts...)
 		args = append(args, sel)
-		res, err := runKu(d.App(), shellOpts{clear: false, args: args})
+		res, err := runKu(d.App(), &shellOpts{clear: false, args: args})
 		if err != nil {
 			res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
 		} else {
@@ -254,12 +254,13 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 	d.Stop()
 	defer d.Start()
 	msg := fmt.Sprintf("Delete resource(s) in %s %s", msgResource, sel)
-	dialog.ShowConfirm(d.App().Styles.Dialog(), d.App().Content.Pages, "Confirm Delete", msg, func() {
+	dlg := d.App().Styles.Dialog()
+	dialog.ShowConfirm(&dlg, d.App().Content.Pages, "Confirm Delete", msg, func() {
 		args := make([]string, 0, 10)
 		args = append(args, "delete")
 		args = append(args, opts...)
 		args = append(args, sel)
-		res, err := runKu(d.App(), shellOpts{clear: false, args: args})
+		res, err := runKu(d.App(), &shellOpts{clear: false, args: args})
 		if err != nil {
 			res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
 		} else {

@@ -6,6 +6,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -14,14 +15,14 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 )
 
 // Values tracks Helm values representations.
 type Values struct {
 	factory   dao.Factory
-	gvr       client.GVR
+	gvr       *client.GVR
 	inUpdate  int32
 	path      string
 	query     string
@@ -32,7 +33,7 @@ type Values struct {
 }
 
 // NewValues return a new Helm values resource model.
-func NewValues(gvr client.GVR, path string) *Values {
+func NewValues(gvr *client.GVR, path string) *Values {
 	return &Values{
 		gvr:       gvr,
 		path:      path,
@@ -58,7 +59,7 @@ func (v *Values) getValues() ([]string, error) {
 
 	valuer, ok := accessor.(dao.Valuer)
 	if !ok {
-		return nil, fmt.Errorf("Resource %s is not Valuer", v.gvr)
+		return nil, fmt.Errorf("resource %s is not Valuer", v.gvr)
 	}
 
 	values, err := valuer.GetValues(v.path, v.allValues)
@@ -70,7 +71,7 @@ func (v *Values) getValues() ([]string, error) {
 }
 
 // GVR returns the resource gvr.
-func (v *Values) GVR() client.GVR {
+func (v *Values) GVR() *client.GVR {
 	return v.gvr
 }
 
@@ -162,7 +163,7 @@ func (v *Values) Watch(ctx context.Context) error {
 }
 
 func (v *Values) updater(ctx context.Context) {
-	defer log.Debug().Msgf("YAML canceled -- %q", v.gvr)
+	defer slog.Debug("YAML canceled", slogs.GVR, v.gvr)
 
 	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
 	delay := defaultReaderRefreshRate
@@ -174,7 +175,7 @@ func (v *Values) updater(ctx context.Context) {
 			if err := v.refresh(ctx); err != nil {
 				v.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("giving up retrieving chart values")
+					slog.Error("Giving up retrieving chart values", slogs.Error, err)
 					return
 				}
 			} else {
@@ -185,24 +186,20 @@ func (v *Values) updater(ctx context.Context) {
 	}
 }
 
-func (v *Values) refresh(ctx context.Context) error {
+func (v *Values) refresh(context.Context) error {
 	if !atomic.CompareAndSwapInt32(&v.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
-		return nil
+		slog.Debug("Dropping update...")
+		return fmt.Errorf("reconcile in progress. Dropping update")
 	}
 	defer atomic.StoreInt32(&v.inUpdate, 0)
 
-	if err := v.reconcile(ctx); err != nil {
-		return err
-	}
+	v.reconcile()
 
 	return nil
 }
 
-func (v *Values) reconcile(_ context.Context) error {
+func (v *Values) reconcile() {
 	v.fireResourceChanged(v.lines, v.filter(v.query, v.lines))
-
-	return nil
 }
 
 // AddListener adds a new model listener.

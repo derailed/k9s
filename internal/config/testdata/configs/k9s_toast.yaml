@@ -11,6 +11,7 @@ k9s:
     headless: false
     logoless: false
     crumbsless: false
+    splashless: false
     noIcons: false
   skipLatestRevCheck: yes
   disablePodCounts: false
@@ -30,6 +31,7 @@ k9s:
     buffer: 2000
     sinceSeconds: -1
     textWrap: false
+    disableAutoscroll: false
     showTime: false
   thresholds:
     cpu:
@@ -38,3 +40,4 @@ k9s:
     memory:
       critical: 90
       warn: 70
+  defaultView: ""

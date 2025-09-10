@@ -13,29 +13,48 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultCRBHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "CLUSTERROLE"},
+	model1.HeaderColumn{Name: "SUBJECT-KIND"},
+	model1.HeaderColumn{Name: "SUBJECTS"},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // ClusterRoleBinding renders a K8s ClusterRoleBinding to screen.
 type ClusterRoleBinding struct {
 	Base
 }
 
-// Header returns a header rbw.
-func (ClusterRoleBinding) Header(string) model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "CLUSTERROLE"},
-		model1.HeaderColumn{Name: "SUBJECT-KIND"},
-		model1.HeaderColumn{Name: "SUBJECTS"},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
-	}
+// Header returns a header row.
+func (c ClusterRoleBinding) Header(_ string) model1.Header {
+	return c.doHeader(defaultCRBHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (ClusterRoleBinding) Render(o interface{}, ns string, r *model1.Row) error {
+func (c ClusterRoleBinding) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected ClusterRoleBinding, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := c.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if c.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := c.specs.realize(raw, defaultCRBHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (ClusterRoleBinding) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var crb rbacv1.ClusterRoleBinding
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &crb)
 	if err != nil {
@@ -44,7 +63,7 @@ func (ClusterRoleBinding) Render(o interface{}, ns string, r *model1.Row) error 
 
 	kind, ss := renderSubjects(crb.Subjects)
 
-	r.ID = client.FQN("-", crb.ObjectMeta.Name)
+	r.ID = client.FQN("-", crb.Name)
 	r.Fields = model1.Fields{
 		crb.Name,
 		crb.RoleRef.Name,

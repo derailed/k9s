@@ -24,7 +24,7 @@ var (
 	totalRx = regexp.MustCompile(`Total:\s+([0-9.]+)\ssecs`)
 	reqRx   = regexp.MustCompile(`Requests/sec:\s+([0-9.]+)`)
 	okRx    = regexp.MustCompile(`\[2\d{2}\]\s+(\d+)\s+responses`)
-	errRx   = regexp.MustCompile(`\[[4-5]\d{2}\]\s+(\d+)\s+responses`)
+	errRx   = regexp.MustCompile(`\[[45]\d{2}\]\s+(\d+)\s+responses`)
 	toastRx = regexp.MustCompile(`Error distribution`)
 )
 
@@ -34,7 +34,7 @@ type Benchmark struct {
 }
 
 // ColorerFunc colors a resource row.
-func (b Benchmark) ColorerFunc() model1.ColorerFunc {
+func (Benchmark) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		if !model1.IsValid(ns, h, re.Row) {
 			return model1.ErrColor
@@ -45,23 +45,23 @@ func (b Benchmark) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Benchmark) Header(ns string) model1.Header {
+func (Benchmark) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "STATUS"},
 		model1.HeaderColumn{Name: "TIME"},
-		model1.HeaderColumn{Name: "REQ/S", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "2XX", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "4XX/5XX", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "REQ/S", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "2XX", Attrs: model1.Attrs{Align: tview.AlignRight}},
+		model1.HeaderColumn{Name: "4XX/5XX", Attrs: model1.Attrs{Align: tview.AlignRight}},
 		model1.HeaderColumn{Name: "REPORT"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (b Benchmark) Render(o interface{}, ns string, r *model1.Row) error {
+func (b Benchmark) Render(o any, ns string, r *model1.Row) error {
 	bench, ok := o.(BenchInfo)
 	if !ok {
 		return fmt.Errorf("no benchmarks available %T", o)
@@ -111,7 +111,7 @@ func (Benchmark) readFile(file string) (string, error) {
 	return string(data), nil
 }
 
-func (b Benchmark) initRow(row model1.Fields, f os.FileInfo) error {
+func (Benchmark) initRow(row model1.Fields, f os.FileInfo) error {
 	tokens := strings.Split(f.Name(), "_")
 	if len(tokens) < 2 {
 		return fmt.Errorf("invalid file name %s", f.Name())
@@ -125,7 +125,7 @@ func (b Benchmark) initRow(row model1.Fields, f os.FileInfo) error {
 }
 
 func (b Benchmark) augmentRow(fields model1.Fields, data string) {
-	if len(data) == 0 {
+	if data == "" {
 		return
 	}
 
@@ -164,7 +164,7 @@ func (Benchmark) countReq(rr [][]string) string {
 
 	var sum int
 	for _, m := range rr {
-		if m, err := strconv.Atoi(string(m[1])); err == nil {
+		if m, err := strconv.Atoi(m[1]); err == nil {
 			sum += m
 		}
 	}

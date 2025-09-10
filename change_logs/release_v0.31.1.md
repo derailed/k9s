@@ -137,7 +137,7 @@ Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgj
 
 ## Resolved Issues
 
-* [#2434](https://github.com/derailed/k9s/issues/2434) readOnly: true in config.yaml doesnt get overriden by readOnly: false in cluster config
+* [#2434](https://github.com/derailed/k9s/issues/2434) readOnly: true in config.yaml doesn't get overridden by readOnly: false in cluster config
 * [#2430](https://github.com/derailed/k9s/issues/2430) Referencing a namespace with the name of an alias inside an alias causes infinite loop
 * [#2428](https://github.com/derailed/k9s/issues/2428) Boom!! runtime error: invalid memory address or nil pointer dereference - v0.30.8
 * [#2421](https://github.com/derailed/k9s/issues/2421) k9s/config.yaml configuration file is overwritten on launch

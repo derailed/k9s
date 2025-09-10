@@ -5,14 +5,15 @@ package view
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/port"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const portForwardKey = "portforward"
@@ -33,15 +34,12 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 		SetFieldTextColor(styles.FieldFgColor.Color()).
 		SetFieldBackgroundColor(styles.BgColor.Color())
 
-	ct, err := v.App().Config.K9s.ActiveContext()
-	if err != nil {
-		log.Error().Err(err).Msgf("No active context detected")
-		return
-	}
-
 	pf, err := aa.PreferredPorts(ports)
 	if err != nil {
-		log.Warn().Err(err).Msgf("unable to resolve ports on %s", path)
+		slog.Warn("Unable to resolve preferred ports",
+			slogs.FQN, path,
+			slogs.Error, err,
+		)
 	}
 
 	p1, p2 := pf.ToPortSpec(ports)
@@ -54,18 +52,18 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 		coField.SetPlaceholder("Enter a container name::port")
 	}
 	coField.SetChangedFunc(func(s string) {
-		port := extractPort(s)
-		loField.SetText(port)
-		p2 = port
+		p := extractPort(s)
+		loField.SetText(p)
+		p2 = p
 	})
 	if loField.GetText() == "" {
 		loField.SetPlaceholder("Enter a local port")
 	}
-	address := ct.PortForwardAddress
+	address := v.App().Config.K9s.PortForwardAddress
 	f.AddInputField("Address:", address, fieldLen, nil, func(h string) {
 		address = h
 	})
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if field, ok := f.GetFormItem(i).(*tview.InputField); ok {
 			field.SetLabelColor(styles.LabelFgColor.Color())
 			field.SetFieldTextColor(styles.FieldFgColor.Color())
@@ -90,7 +88,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	f.AddButton("Cancel", func() {
 		DismissPortForwards(v, pages)
 	})
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if b := f.GetButton(i); b != nil {
 			b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
 			b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
@@ -105,7 +103,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	modal.SetText(msg)
 	modal.SetTextColor(styles.FgColor.Color())
 	modal.SetBackgroundColor(styles.BgColor.Color())
-	modal.SetDoneFunc(func(_ int, b string) {
+	modal.SetDoneFunc(func(int, string) {
 		DismissPortForwards(v, pages)
 	})
 
@@ -123,16 +121,16 @@ func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func extractPort(port string) string {
-	tokens := strings.Split(port, "::")
+func extractPort(p string) string {
+	tokens := strings.Split(p, "::")
 	if len(tokens) < 2 {
-		ports := strings.Split(port, ",")
+		ports := strings.Split(p, ",")
 		for _, t := range ports {
 			if _, err := strconv.Atoi(strings.TrimSpace(t)); err != nil {
 				return ""
 			}
 		}
-		return port
+		return p
 	}
 
 	return tokens[1]

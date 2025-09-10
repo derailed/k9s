@@ -18,7 +18,7 @@ func BenchmarkRowCustomize(b *testing.B) {
 	cols := []int{0, 1, 2}
 	b.ReportAllocs()
 	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		_ = row.Customize(cols)
 	}
 }
@@ -69,7 +69,7 @@ func TestFieldClone(t *testing.T) {
 	assert.NotEqual(t, fmt.Sprintf("%p", f), fmt.Sprintf("%p", f1))
 }
 
-func TestRowlabelize(t *testing.T) {
+func TestRowLabelize(t *testing.T) {
 	uu := map[string]struct {
 		row  model1.Row
 		cols []int

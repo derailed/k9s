@@ -4,20 +4,20 @@
 package model_test
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/derailed/k9s/internal/model"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestClusterMetaDelta(t *testing.T) {
 	uu := map[string]struct {
-		o, n model.ClusterMeta
+		o, n *model.ClusterMeta
 		e    bool
 	}{
 		"empty": {
@@ -45,7 +45,7 @@ func TestClusterMetaDelta(t *testing.T) {
 
 // Helpers...
 
-func makeClusterMeta(cluster string) model.ClusterMeta {
+func makeClusterMeta(cluster string) *model.ClusterMeta {
 	m := model.NewClusterMeta()
 	m.Cluster = cluster
 	m.Cpu, m.Mem = 10, 20

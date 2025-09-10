@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 )
@@ -16,10 +17,7 @@ import (
 // History renders a History chart to screen.
 type History struct{}
 
-// Healthy checks component health.
-func (History) Healthy(ctx context.Context, o interface{}) error {
-	return nil
-}
+func (History) SetViewSetting(*config.ViewSetting) {}
 
 // IsGeneric identifies a generic handler.
 func (History) IsGeneric() bool {
@@ -39,12 +37,12 @@ func (History) Header(_ string) model1.Header {
 		model1.HeaderColumn{Name: "CHART"},
 		model1.HeaderColumn{Name: "APP VERSION"},
 		model1.HeaderColumn{Name: "DESCRIPTION"},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 	}
 }
 
 // Render renders a chart to screen.
-func (c History) Render(o interface{}, ns string, r *model1.Row) error {
+func (c History) Render(o any, _ string, r *model1.Row) error {
 	h, ok := o.(ReleaseRes)
 	if !ok {
 		return fmt.Errorf("expected HistoryRes, but got %T", o)
@@ -64,6 +62,11 @@ func (c History) Render(o interface{}, ns string, r *model1.Row) error {
 	return nil
 }
 
-func (c History) diagnose(s string) error {
+// Healthy checks component health.
+func (History) Healthy(context.Context, any) error {
+	return nil
+}
+
+func (History) diagnose(string) error {
 	return nil
 }

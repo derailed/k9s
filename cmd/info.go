@@ -5,14 +5,15 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func infoCmd() *cobra.Command {
@@ -23,7 +24,7 @@ func infoCmd() *cobra.Command {
 	}
 }
 
-func printInfo(cmd *cobra.Command, args []string) error {
+func printInfo(*cobra.Command, []string) error {
 	if err := config.InitLocs(); err != nil {
 		return err
 	}
@@ -47,9 +48,9 @@ func printInfo(cmd *cobra.Command, args []string) error {
 
 func printLogo(c color.Paint) {
 	for _, l := range ui.LogoSmall {
-		fmt.Fprintln(out, color.Colorize(l, c))
+		_, _ = fmt.Fprintln(out, color.Colorize(l, c))
 	}
-	fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out)
 }
 
 // getScreenDumpDirForInfo get default screen dump config dir or from config.K9sConfigFile configuration.
@@ -60,13 +61,13 @@ func getScreenDumpDirForInfo() string {
 
 	f, err := os.ReadFile(config.AppConfigFile)
 	if err != nil {
-		log.Error().Err(err).Msgf("Reads k9s config file %v", err)
+		slog.Error("Unable to reads k9s config file", slogs.Error, err)
 		return config.AppDumpsDir
 	}
 
 	var cfg config.Config
 	if err := yaml.Unmarshal(f, &cfg); err != nil {
-		log.Error().Err(err).Msgf("Unmarshal k9s config %v", err)
+		slog.Error("Unable to unmarshal k9s config file", slogs.Error, err)
 		return config.AppDumpsDir
 	}
 	if cfg.K9s == nil {

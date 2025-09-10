@@ -5,7 +5,6 @@ package view
 
 import (
 	"context"
-	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -21,7 +20,7 @@ type Alias struct {
 }
 
 // NewAlias returns a new alias view.
-func NewAlias(gvr client.GVR) ResourceViewer {
+func NewAlias(gvr *client.GVR) ResourceViewer {
 	a := Alias{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -63,13 +62,11 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return a.GetTable().activateCmd(evt)
 	}
 
-	r, _ := a.GetTable().GetSelection()
-	if r != 0 {
-		s := ui.TrimCell(a.GetTable().SelectTable, r, 1)
-		tokens := strings.Split(s, ",")
-		a.App().gotoResource(tokens[0], "", true)
-		return nil
+	path := a.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
 	}
+	a.App().gotoResource(client.NewGVR(path).String(), "", true, true)
 
-	return evt
+	return nil
 }

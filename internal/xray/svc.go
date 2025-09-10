@@ -22,7 +22,7 @@ import (
 type Service struct{}
 
 // Render renders an xray node.
-func (s *Service) Render(ctx context.Context, ns string, o interface{}) error {
+func (s *Service) Render(ctx context.Context, ns string, o any) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Unstructured, but got %T", o)
@@ -36,10 +36,10 @@ func (s *Service) Render(ctx context.Context, ns string, o interface{}) error {
 
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	root := NewTreeNode("v1/services", client.FQN(svc.Namespace, svc.Name))
+	root := NewTreeNode(client.SvcGVR, client.FQN(svc.Namespace, svc.Name))
 	oo, err := s.locatePods(ctx, svc.Namespace, svc.Spec.Selector)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func (s *Service) Render(ctx context.Context, ns string, o interface{}) error {
 	if root.IsLeaf() {
 		return nil
 	}
-	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, svc.Namespace)
+	gvr, nsID := client.NsGVR, client.FQN(client.ClusterScope, svc.Namespace)
 	nsn := parent.Find(gvr, nsID)
 	if nsn == nil {
 		nsn = NewTreeNode(gvr, nsID)
@@ -74,7 +74,7 @@ func (s *Service) Render(ctx context.Context, ns string, o interface{}) error {
 func (s *Service) locatePods(ctx context.Context, ns string, sel map[string]string) ([]runtime.Object, error) {
 	f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
-		return nil, fmt.Errorf("Expecting a factory but got %T", ctx.Value(internal.KeyFactory))
+		return nil, fmt.Errorf("expecting a factory but got %T", ctx.Value(internal.KeyFactory))
 	}
 
 	ll := make([]string, 0, len(sel))
@@ -87,5 +87,5 @@ func (s *Service) locatePods(ctx context.Context, ns string, sel map[string]stri
 		return nil, err
 	}
 
-	return f.List("v1/pods", ns, false, fsel.AsSelector())
+	return f.List(client.PodGVR, ns, false, fsel.AsSelector())
 }

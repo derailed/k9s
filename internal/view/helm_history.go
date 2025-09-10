@@ -25,7 +25,7 @@ type History struct {
 }
 
 // NewHistory returns a new helm-history view.
-func NewHistory(gvr client.GVR) ResourceViewer {
+func NewHistory(gvr *client.GVR) ResourceViewer {
 	h := History{
 		ResourceViewer: NewValueExtender(NewBrowser(gvr)),
 	}
@@ -49,12 +49,12 @@ func (h *History) Init(ctx context.Context) error {
 	return nil
 }
 
-func (h *History) HistoryContext(ctx context.Context) context.Context {
+func (*History) HistoryContext(ctx context.Context) context.Context {
 	return ctx
 }
 
 func (h *History) bindKeys(aa *ui.KeyActions) {
-	if !h.App().Config.K9s.IsReadOnly() {
+	if !h.App().Config.IsReadOnly() {
 		h.bindDangerousKeys(aa)
 	}
 
@@ -66,7 +66,7 @@ func (h *History) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (h *History) getValsCmd(app *App, _ ui.Tabular, _ client.GVR, path string) {
+func (h *History) getValsCmd(app *App, _ ui.Tabular, _ *client.GVR, path string) {
 	ns, n := client.Namespaced(path)
 	tt := strings.Split(n, ":")
 	if len(tt) < 2 {

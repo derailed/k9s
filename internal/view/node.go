@@ -6,15 +6,16 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,7 +25,7 @@ type Node struct {
 }
 
 // NewNode returns a new node view.
-func NewNode(gvr client.GVR) ResourceViewer {
+func NewNode(gvr *client.GVR) ResourceViewer {
 	n := Node{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -68,16 +69,16 @@ func (n *Node) bindDangerousKeys(aa *ui.KeyActions) {
 	})
 	ct, err := n.App().Config.K9s.ActiveContext()
 	if err != nil {
-		log.Error().Err(err).Msgf("No active context located")
+		slog.Error("No active context located", slogs.Error, err)
 		return
 	}
-	if ct.FeatureGates.NodeShell {
+	if ct.FeatureGates.NodeShell && n.App().Config.K9s.ShellPod != nil {
 		aa.Add(ui.KeyS, ui.NewKeyAction("Shell", n.sshCmd, true))
 	}
 }
 
 func (n *Node) bindKeys(aa *ui.KeyActions) {
-	if !n.App().Config.K9s.IsReadOnly() {
+	if !n.App().Config.IsReadOnly() {
 		n.bindDangerousKeys(aa)
 	}
 
@@ -90,8 +91,8 @@ func (n *Node) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (n *Node) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
-	showPods(a, n.GetTable().GetSelectedItem(), client.BlankNamespace, "spec.nodeName="+path)
+func (n *Node) showPods(a *App, _ ui.Tabular, _ *client.GVR, path string) {
+	showPods(a, n.GetTable().GetSelectedItem(), nil, "spec.nodeName="+path)
 }
 
 func (n *Node) drainCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -155,7 +156,8 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 		} else {
 			msg += fmt.Sprintf("(%d) marked %s?", len(sels), n.GVR().R())
 		}
-		dialog.ShowConfirm(n.App().Styles.Dialog(), n.App().Content.Pages, title, msg, func() {
+		d := n.App().Styles.Dialog()
+		dialog.ShowConfirm(&d, n.App().Content.Pages, title, msg, func() {
 			res, err := dao.AccessorFor(n.App().factory, n.GVR())
 			if err != nil {
 				n.App().Flash().Err(err)

@@ -5,16 +5,17 @@ package render
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	"github.com/mattn/go-runewidth"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	v1 "k8s.io/api/core/v1"
@@ -26,15 +27,15 @@ import (
 // !!BOZO!! If this has any legs?? enable scans on other container types.
 func ExtractImages(spec *v1.PodSpec) []string {
 	ii := make([]string, 0, len(spec.Containers))
-	for _, c := range spec.Containers {
-		ii = append(ii, c.Image)
+	for i := range spec.Containers {
+		ii = append(ii, spec.Containers[i].Image)
 	}
 
 	return ii
 }
 
-func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
-	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(m) {
+func computeVulScore(ns string, lbls map[string]string, spec *v1.PodSpec) string {
+	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(ns, lbls) {
 		return "0"
 	}
 	ii := ExtractImages(spec)
@@ -72,7 +73,7 @@ func AsStatus(err error) string {
 func asSelector(s *metav1.LabelSelector) string {
 	sel, err := metav1.LabelSelectorAsSelector(s)
 	if err != nil {
-		log.Error().Err(err).Msg("Selector conversion failed")
+		slog.Error("Selector conversion failed", slogs.Error, err)
 		return NAValue
 	}
 
@@ -90,26 +91,27 @@ func toSelector(m map[string]string) string {
 }
 
 // Blank checks if a collection is empty or all values are blank.
-func blank(s []string) bool {
-	for _, v := range s {
-		if len(v) != 0 {
+func blank(ss []string) bool {
+	for _, s := range ss {
+		if s != "" {
 			return false
 		}
 	}
+
 	return true
 }
 
 // Join a slice of strings, skipping blanks.
-func join(a []string, sep string) string {
-	switch len(a) {
+func join(ss []string, sep string) string {
+	switch len(ss) {
 	case 0:
 		return ""
 	case 1:
-		return a[0]
+		return ss[0]
 	}
 
-	b := make([]string, 0, len(a))
-	for _, s := range a {
+	b := make([]string, 0, len(ss))
+	for _, s := range ss {
 		if s != "" {
 			b = append(b, s)
 		}
@@ -119,8 +121,8 @@ func join(a []string, sep string) string {
 	}
 
 	n := len(sep) * (len(b) - 1)
-	for i := 0; i < len(b); i++ {
-		n += len(a[i])
+	for i := range b {
+		n += len(ss[i])
 	}
 
 	var buff strings.Builder
@@ -146,7 +148,7 @@ func PrintPerc(p int) string {
 
 // IntToStr converts an int to a string.
 func IntToStr(p int) string {
-	return strconv.Itoa(int(p))
+	return strconv.Itoa(p)
 }
 
 func missing(s string) string {
@@ -165,7 +167,7 @@ func na(s string) string {
 }
 
 func check(s, sub string) string {
-	if len(s) == 0 {
+	if s == "" {
 		return sub
 	}
 
@@ -191,7 +193,7 @@ func ToAge(t metav1.Time) string {
 }
 
 func toAgeHuman(s string) string {
-	if len(s) == 0 {
+	if s == "" {
 		return UnknownValue
 	}
 
@@ -223,19 +225,19 @@ func mapToStr(m map[string]string) string {
 	for i, k := range kk {
 		bb = append(bb, k+"="+m[k]...)
 		if i < len(kk)-1 {
-			bb = append(bb, ' ')
+			bb = append(bb, ',')
 		}
 	}
 
 	return string(bb)
 }
 
-func mapToIfc(m interface{}) (s string) {
+func mapToIfc(m any) (s string) {
 	if m == nil {
 		return ""
 	}
 
-	mm, ok := m.(map[string]interface{})
+	mm, ok := m.(map[string]any)
 	if !ok {
 		return ""
 	}
@@ -261,6 +263,14 @@ func mapToIfc(m interface{}) (s string) {
 	}
 
 	return
+}
+
+func toMu(v int64) string {
+	if v == 0 {
+		return NAValue
+	}
+
+	return strconv.Itoa(int(v))
 }
 
 func toMc(v int64) string {
@@ -292,16 +302,6 @@ func strPtrToStr(s *string) string {
 	return *s
 }
 
-// // Check if string is in a string list.
-// func in(ll []string, s string) bool {
-// 	for _, l := range ll {
-// 		if l == s {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
 // Pad a string up to the given length or truncates if greater than length.
 func Pad(s string, width int) string {
 	if len(s) == width {
@@ -314,30 +314,3 @@ func Pad(s string, width int) string {
 
 	return s + strings.Repeat(" ", width-len(s))
 }
-
-// // Converts labels string to map.
-// func labelize(labels string) map[string]string {
-// 	ll := strings.Split(labels, ",")
-// 	data := make(map[string]string, len(ll))
-
-// 	for _, l := range ll {
-// 		tokens := strings.Split(l, "=")
-// 		if len(tokens) == 2 {
-// 			data[tokens[0]] = tokens[1]
-// 		}
-// 	}
-
-// 	return data
-// }
-
-// func sortLabels(m map[string]string) (keys, vals []string) {
-// 	for k := range m {
-// 		keys = append(keys, k)
-// 	}
-// 	sort.Strings(keys)
-// 	for _, k := range keys {
-// 		vals = append(vals, m[k])
-// 	}
-
-// 	return
-// }

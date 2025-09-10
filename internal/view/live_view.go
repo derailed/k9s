@@ -6,17 +6,20 @@ package view
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
@@ -60,8 +63,9 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 	return &v
 }
 
-func (v *LiveView) SetFilter(string)                 {}
-func (v *LiveView) SetLabelFilter(map[string]string) {}
+func (*LiveView) SetCommand(*cmd.Interpreter)      {}
+func (*LiveView) SetFilter(string)                 {}
+func (*LiveView) SetLabelSelector(labels.Selector) {}
 
 // Init initializes the viewer.
 func (v *LiveView) Init(_ context.Context) error {
@@ -97,7 +101,7 @@ func (v *LiveView) InCmdMode() bool {
 	return v.cmdBuff.InCmdMode()
 }
 
-// ResourceFailed notifies when their is an issue.
+// ResourceFailed notifies when there is an issue.
 func (v *LiveView) ResourceFailed(err error) {
 	v.text.SetTextAlign(tview.AlignCenter)
 	x, _, w, _ := v.GetRect()
@@ -126,7 +130,7 @@ func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (v *LiveView) BufferChanged(_, _ string) {}
+func (*LiveView) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
 func (v *LiveView) BufferCompleted(text, _ string) {
@@ -152,20 +156,19 @@ func (v *LiveView) bindKeys() {
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", v.eraseCmd, false),
 	})
 
-	if !v.app.Config.K9s.IsReadOnly() {
+	if !v.app.Config.IsReadOnly() {
 		v.actions.Add(ui.KeyE, ui.NewKeyAction("Edit", v.editCmd, true))
 	}
 	if v.title == yamlAction {
 		v.actions.Add(ui.KeyM, ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true))
 	}
-	if v.model != nil && v.model.GVR().IsDecodable() {
+	if _, ok := v.model.(model.EncDecResourceViewer); ok {
 		v.actions.Add(ui.KeyX, ui.NewKeyAction("Toggle Decode", v.toggleEncodedDecodedCmd, true))
 	}
 }
 
 func (v *LiveView) toggleEncodedDecodedCmd(evt *tcell.EventKey) *tcell.EventKey {
 	m, ok := v.model.(model.EncDecResourceViewer)
-
 	if !ok {
 		return evt
 	}
@@ -190,7 +193,7 @@ func (v *LiveView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 // ToggleRefreshCmd is used for pausing the refreshing of data on config map and secrets.
-func (v *LiveView) toggleRefreshCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (v *LiveView) toggleRefreshCmd(*tcell.EventKey) *tcell.EventKey {
 	v.autoRefresh = !v.autoRefresh
 	if v.autoRefresh {
 		v.Start()
@@ -213,9 +216,9 @@ func (v *LiveView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 // StylesChanged notifies the skin changed.
 func (v *LiveView) StylesChanged(s *config.Styles) {
-	v.SetBackgroundColor(v.app.Styles.BgColor())
-	v.text.SetTextColor(v.app.Styles.FgColor())
-	v.SetBorderFocusColor(v.app.Styles.Frame().Border.FocusColor.Color())
+	v.SetBackgroundColor(s.BgColor())
+	v.text.SetTextColor(s.FgColor())
+	v.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
 }
 
 // Actions returns menu actions.
@@ -233,12 +236,12 @@ func (v *LiveView) Start() {
 		ctx, v.cancel = context.WithCancel(v.defaultCtx())
 
 		if err := v.model.Watch(ctx); err != nil {
-			log.Error().Err(err).Msgf("LiveView watcher failed")
+			slog.Error("LiveView watcher failed", slogs.Error, err)
 		}
 		return
 	}
 	if err := v.model.Refresh(v.defaultCtx()); err != nil {
-		log.Error().Err(err).Msgf("refresh failed")
+		slog.Error("LiveView refresh failed", slogs.Error, err)
 	}
 }
 
@@ -261,7 +264,7 @@ func (v *LiveView) Hints() model.MenuHints {
 }
 
 // ExtraHints returns additional hints.
-func (v *LiveView) ExtraHints() map[string]string {
+func (*LiveView) ExtraHints() map[string]string {
 	return nil
 }
 
@@ -289,11 +292,11 @@ func (v *LiveView) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *LiveView) setFullScreen(isFullScreen bool) {
 	v.fullScreen = isFullScreen
 	v.SetFullScreen(isFullScreen)
-	v.Box.SetBorder(!isFullScreen)
+	v.SetBorder(!isFullScreen)
 	if isFullScreen {
-		v.Box.SetBorderPadding(0, 0, 0, 0)
+		v.SetBorderPadding(0, 0, 0, 0)
 	} else {
-		v.Box.SetBorderPadding(0, 0, 1, 1)
+		v.SetBorderPadding(0, 0, 1, 1)
 	}
 }
 
@@ -329,7 +332,7 @@ func (v *LiveView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *LiveView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (v *LiveView) filterCmd(*tcell.EventKey) *tcell.EventKey {
 	v.model.Filter(v.cmdBuff.GetText())
 	v.cmdBuff.SetActive(false)
 	v.updateTitle()
@@ -346,7 +349,7 @@ func (v *LiveView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *LiveView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (v *LiveView) eraseCmd(*tcell.EventKey) *tcell.EventKey {
 	if !v.cmdBuff.IsActive() {
 		return nil
 	}
@@ -371,7 +374,7 @@ func (v *LiveView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (v *LiveView) saveCmd(*tcell.EventKey) *tcell.EventKey {
 	name := fmt.Sprintf("%s--%s", strings.Replace(v.model.GetPath(), "/", "-", 1), strings.ToLower(v.title))
 	if _, err := saveYAML(v.app.Config.K9s.ContextScreenDumpDir(), name, sanitizeEsc(v.text.GetText(true))); err != nil {
 		v.app.Flash().Err(err)
@@ -391,9 +394,12 @@ func (v *LiveView) updateTitle() {
 		fmat = fmt.Sprintf(liveViewTitleFmt, v.title, v.model.GetPath())
 	}
 
-	buff := v.cmdBuff.GetText()
+	var (
+		buff   = v.cmdBuff.GetText()
+		styles = v.app.Styles.Frame()
+	)
 	if buff == "" {
-		v.SetTitle(ui.SkinTitle(fmat, v.app.Styles.Frame()))
+		v.SetTitle(ui.SkinTitle(fmat, &styles))
 		return
 	}
 
@@ -401,5 +407,5 @@ func (v *LiveView) updateTitle() {
 		buff += fmt.Sprintf("[%d:%d]", v.currentRegion+1, v.maxRegions)
 	}
 	fmat += fmt.Sprintf(ui.SearchFmt, buff)
-	v.SetTitle(ui.SkinTitle(fmat, v.app.Styles.Frame()))
+	v.SetTitle(ui.SkinTitle(fmat, &styles))
 }

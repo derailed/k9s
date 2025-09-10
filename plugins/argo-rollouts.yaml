@@ -26,7 +26,7 @@ plugins:
     background: false
     args:
       - -c
-      - kubectl argo rollouts get rollout $NAME --context $CONTEXT -n $NAMESPACE -w |& less
+      - kubectl argo rollouts get rollout $NAME --context $CONTEXT -n $NAMESPACE -w
   argo-rollouts-promote:
     shortCut: p
     confirm: true

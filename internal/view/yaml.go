@@ -5,6 +5,7 @@ package view
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,13 +14,14 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 var (
-	keyValRX = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s(.+)\z`)
-	keyRX    = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s*\z`)
+	keyValRX = regexp.MustCompile(`\A(\s*)([\w\-./\s]+):\s(.+)\z`)
+	keyRX    = regexp.MustCompile(`\A(\s*)([\w\-./\s]+):\s*\z`)
+	searchRX = regexp.MustCompile(`<<<("search_\d+")>>>(.+)<<<"">>>`)
 )
 
 const (
@@ -59,8 +61,12 @@ func colorizeYAML(style config.Yaml, raw string) string {
 	return strings.Join(buff, "\n")
 }
 
-func enableRegion(str string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(str, "<<<", "["), ">>>", "]")
+func enableRegion(s string) string {
+	if searchRX.MatchString(s) {
+		return strings.ReplaceAll(strings.ReplaceAll(s, "<<<", "["), ">>>", "]")
+	}
+
+	return s
 }
 
 func saveYAML(dir, name, raw string) (string, error) {
@@ -73,15 +79,21 @@ func saveYAML(dir, name, raw string) (string, error) {
 	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(fpath, mod, 0600)
 	if err != nil {
-		log.Error().Err(err).Msgf("YAML create %s", fpath)
+		slog.Error("Unable to open YAML file",
+			slogs.Path, fpath,
+			slogs.Error, err,
+		)
 		return "", nil
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Error().Err(err).Msg("Closing yaml file")
+			slog.Error("Closing yaml file failed",
+				slogs.Path, fpath,
+				slogs.Error, err,
+			)
 		}
 	}()
-	if _, err := file.Write([]byte(raw)); err != nil {
+	if _, err := file.WriteString(raw); err != nil {
 		return "", err
 	}
 

@@ -6,6 +6,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -15,13 +16,13 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 )
 
 // Describe tracks describable resources.
 type Describe struct {
-	gvr         client.GVR
+	gvr         *client.GVR
 	inUpdate    int32
 	path        string
 	query       string
@@ -32,7 +33,7 @@ type Describe struct {
 }
 
 // NewDescribe returns a new describe resource model.
-func NewDescribe(gvr client.GVR, path string) *Describe {
+func NewDescribe(gvr *client.GVR, path string) *Describe {
 	return &Describe{
 		gvr:         gvr,
 		path:        path,
@@ -41,7 +42,7 @@ func NewDescribe(gvr client.GVR, path string) *Describe {
 }
 
 // GVR returns the resource gvr.
-func (d *Describe) GVR() client.GVR {
+func (d *Describe) GVR() *client.GVR {
 	return d.gvr
 }
 
@@ -51,7 +52,7 @@ func (d *Describe) GetPath() string {
 }
 
 // SetOptions toggle model options.
-func (d *Describe) SetOptions(context.Context, ViewerToggleOpts) {}
+func (*Describe) SetOptions(context.Context, ViewerToggleOpts) {}
 
 // Filter filters the model.
 func (d *Describe) Filter(q string) {
@@ -90,7 +91,7 @@ func (d *Describe) fireResourceFailed(err error) {
 }
 
 // ClearFilter clear out the filter.
-func (d *Describe) ClearFilter() {
+func (*Describe) ClearFilter() {
 }
 
 // Peek returns current model state.
@@ -113,7 +114,7 @@ func (d *Describe) Watch(ctx context.Context) error {
 }
 
 func (d *Describe) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Describe canceled -- %q", d.gvr)
+	defer slog.Debug("Describe canceled", slogs.GVR, d.gvr)
 
 	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
 	delay := defaultReaderRefreshRate
@@ -125,7 +126,7 @@ func (d *Describe) updater(ctx context.Context) {
 			if err := d.refresh(ctx); err != nil {
 				d.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("Describe gave up!")
+					slog.Error("Describe gave up!", slogs.Error, err)
 					return
 				}
 			} else {
@@ -138,13 +139,16 @@ func (d *Describe) updater(ctx context.Context) {
 
 func (d *Describe) refresh(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&d.inUpdate, 0, 1) {
-		log.Debug().Msgf("Dropping update...")
+		slog.Debug("Dropping update...")
 		return nil
 	}
 	defer atomic.StoreInt32(&d.inUpdate, 0)
 
 	if err := d.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msgf("reconcile failed %q", d.gvr)
+		slog.Error("reconcile failed",
+			slogs.GVR, d.gvr,
+			slogs.Error, err,
+		)
 		d.fireResourceFailed(err)
 		return err
 	}
@@ -168,11 +172,7 @@ func (d *Describe) reconcile(ctx context.Context) error {
 }
 
 // Describe describes a given resource.
-func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (string, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("Describe model elapsed: %v", time.Since(t))
-	}(time.Now())
-
+func (d *Describe) describe(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	meta, err := getMeta(ctx, gvr)
 	if err != nil {
 		return "", err
@@ -181,9 +181,8 @@ func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (s
 	if !ok {
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
 	}
-
 	if desc, ok := meta.DAO.(*dao.Secret); ok {
-		desc.SetDecode(d.decode)
+		desc.SetDecodeData(d.decode)
 	}
 
 	return desc.Describe(path)

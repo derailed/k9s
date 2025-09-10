@@ -6,12 +6,13 @@ package xray
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -20,7 +21,7 @@ import (
 type Container struct{}
 
 // Render renders an xray node.
-func (c *Container) Render(ctx context.Context, ns string, o interface{}) error {
+func (c *Container) Render(ctx context.Context, ns string, o any) error {
 	co, ok := o.(render.ContainerRes)
 	if !ok {
 		return fmt.Errorf("expected ContainerRes, but got %T", o)
@@ -31,10 +32,10 @@ func (c *Container) Render(ctx context.Context, ns string, o interface{}) error 
 		return fmt.Errorf("no factory found in context")
 	}
 
-	root := NewTreeNode("containers", client.FQN(ns, co.Container.Name))
+	root := NewTreeNode(client.CoGVR, client.FQN(ns, co.Container.Name))
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+		return fmt.Errorf("expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 	pns, _ := client.Namespaced(parent.ID)
 	c.envRefs(f, root, pns, co.Container)
@@ -54,11 +55,11 @@ func (c *Container) envRefs(f dao.Factory, parent *TreeNode, ns string, co *v1.C
 
 	for _, e := range co.EnvFrom {
 		if e.ConfigMapRef != nil {
-			gvr, id := "v1/configmaps", client.FQN(ns, e.ConfigMapRef.Name)
+			gvr, id := client.CmGVR, client.FQN(ns, e.ConfigMapRef.Name)
 			addRef(f, parent, gvr, id, e.ConfigMapRef.Optional)
 		}
 		if e.SecretRef != nil {
-			gvr, id := "v1/secrets", client.FQN(ns, e.SecretRef.Name)
+			gvr, id := client.SecGVR, client.FQN(ns, e.SecretRef.Name)
 			addRef(f, parent, gvr, id, e.SecretRef.Optional)
 		}
 	}
@@ -68,7 +69,7 @@ func (c *Container) secretRefs(f dao.Factory, parent *TreeNode, ns string, ref *
 	if ref == nil {
 		return
 	}
-	gvr, id := "v1/secrets", client.FQN(ns, ref.LocalObjectReference.Name)
+	gvr, id := client.SecGVR, client.FQN(ns, ref.Name)
 	addRef(f, parent, gvr, id, ref.Optional)
 }
 
@@ -76,14 +77,14 @@ func (c *Container) configMapRefs(f dao.Factory, parent *TreeNode, ns string, re
 	if ref == nil {
 		return
 	}
-	gvr, id := "v1/configmaps", client.FQN(ns, ref.LocalObjectReference.Name)
+	gvr, id := client.CmGVR, client.FQN(ns, ref.Name)
 	addRef(f, parent, gvr, id, ref.Optional)
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func addRef(f dao.Factory, parent *TreeNode, gvr, id string, optional *bool) {
+func addRef(f dao.Factory, parent *TreeNode, gvr *client.GVR, id string, optional *bool) {
 	if parent.Find(gvr, id) == nil {
 		n := NewTreeNode(gvr, id)
 		validate(f, n, optional)
@@ -95,7 +96,10 @@ func validate(f dao.Factory, n *TreeNode, optional *bool) {
 	res, err := f.Get(n.GVR, n.ID, true, labels.Everything())
 	if err != nil || res == nil {
 		if optional == nil || !*optional {
-			log.Warn().Err(err).Msgf("Missing ref %q::%q", n.GVR, n.ID)
+			slog.Warn("Missing ref",
+				slogs.GVR, n.GVR,
+				slogs.ID, n.ID,
+			)
 			n.Extras[StatusKey] = MissingRefStatus
 		}
 		return

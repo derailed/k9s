@@ -5,13 +5,14 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
-	"gopkg.in/yaml.v2"
+	"github.com/derailed/k9s/internal/slogs"
+	"gopkg.in/yaml.v3"
 )
 
 // HotKeys represents a collection of plugins.
@@ -57,7 +58,10 @@ func (h HotKeys) LoadHotKeys(path string) error {
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.HotkeysSchema, bb); err != nil {
-		return fmt.Errorf("validation failed for %q: %w", path, err)
+		slog.Warn("Validation failed. Please update your config and restart.",
+			slogs.Path, path,
+			slogs.Error, err,
+		)
 	}
 
 	var hh HotKeys

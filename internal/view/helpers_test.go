@@ -6,6 +6,7 @@ package view
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/derailed/k9s/internal"
@@ -15,14 +16,13 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog"
 	"github.com/sahilm/fuzzy"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func init() {
-	zerolog.SetGlobalLevel(zerolog.Disabled)
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestParsePFAnn(t *testing.T) {
@@ -61,7 +61,7 @@ func TestParsePFAnn(t *testing.T) {
 }
 
 func TestExtractApp(t *testing.T) {
-	app := NewApp(mock.NewMockConfig())
+	app := NewApp(mock.NewMockConfig(t))
 
 	uu := map[string]struct {
 		app *App
@@ -133,7 +133,7 @@ func TestK8sEnv(t *testing.T) {
 	c := client.NewConfig(&flags)
 	env := k8sEnv(c)
 
-	assert.Equal(t, 5, len(env))
+	assert.Len(t, env, 5)
 	assert.Equal(t, cl, env["CLUSTER"])
 	assert.Equal(t, ctx, env["CONTEXT"])
 	assert.Equal(t, u, env["USER"])
@@ -160,7 +160,7 @@ func TestK9sEnv(t *testing.T) {
 	}
 	env := defaultEnv(c, "fred/blee", h, &r)
 
-	assert.Equal(t, 10, len(env))
+	assert.Len(t, env, 10)
 	assert.Equal(t, cl, env["CLUSTER"])
 	assert.Equal(t, ctx, env["CONTEXT"])
 	assert.Equal(t, u, env["USER"])
@@ -241,7 +241,7 @@ func TestUrlFor(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, urlFor(u.cfg, u.port))
+			assert.Equal(t, u.e, urlFor(&u.cfg, u.port))
 		})
 	}
 }
@@ -324,6 +324,29 @@ func Test_linesWithRegions(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
 			assert.Equal(t, u.e, linesWithRegions(u.lines, u.matches))
+		})
+	}
+}
+
+func Test_sanitizeEsc(t *testing.T) {
+	uu := map[string]struct {
+		s string
+		e string
+	}{
+		"empty": {},
+		"empty-brackets": {
+			s: "[]",
+			e: "[]",
+		},
+		"tag": {
+			s: "[fred[]",
+			e: "[fred]",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, sanitizeEsc(u.s))
 		})
 	}
 }

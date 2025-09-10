@@ -31,7 +31,7 @@ type TransferDialogOpts struct {
 	Cancel         cancelFunc
 }
 
-func ShowUploads(styles config.Dialog, pages *ui.Pages, opts TransferDialogOpts) {
+func ShowUploads(styles *config.Dialog, pages *ui.Pages, opts *TransferDialogOpts) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -98,7 +98,7 @@ func ShowUploads(styles config.Dialog, pages *ui.Pages, opts TransferDialogOpts)
 		dismissConfirm(pages)
 		opts.Cancel()
 	})
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		b := f.GetButton(i)
 		if b == nil {
 			continue

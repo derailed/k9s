@@ -14,50 +14,68 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultSTSHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "READY"},
+	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "SERVICE"},
+	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // StatefulSet renders a K8s StatefulSet to screen.
 type StatefulSet struct {
 	Base
 }
 
 // Header returns a header row.
-func (StatefulSet) Header(ns string) model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
-		model1.HeaderColumn{Name: "READY"},
-		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
-		model1.HeaderColumn{Name: "SERVICE"},
-		model1.HeaderColumn{Name: "CONTAINERS", Wide: true},
-		model1.HeaderColumn{Name: "IMAGES", Wide: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
-	}
+func (s StatefulSet) Header(_ string) model1.Header {
+	return s.doHeader(defaultSTSHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (s StatefulSet) Render(o interface{}, ns string, r *model1.Row) error {
+func (s StatefulSet) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected StatefulSet, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := s.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if s.specs.isEmpty() {
+		return nil
+	}
+	cols, err := s.specs.realize(raw, defaultSTSHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+func (s StatefulSet) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var sts appsv1.StatefulSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sts)
 	if err != nil {
 		return err
 	}
 
-	r.ID = client.MetaFQN(sts.ObjectMeta)
+	r.ID = client.MetaFQN(&sts.ObjectMeta)
 	r.Fields = model1.Fields{
 		sts.Namespace,
 		sts.Name,
-		computeVulScore(sts.ObjectMeta, &sts.Spec.Template.Spec),
+		computeVulScore(sts.Namespace, sts.Labels, &sts.Spec.Template.Spec),
 		strconv.Itoa(int(sts.Status.ReadyReplicas)) + "/" + strconv.Itoa(int(sts.Status.Replicas)),
 		asSelector(sts.Spec.Selector),
 		na(sts.Spec.ServiceName),
-		podContainerNames(sts.Spec.Template.Spec, true),
-		podImageNames(sts.Spec.Template.Spec, true),
+		podContainerNames(&sts.Spec.Template.Spec, true),
+		podImageNames(&sts.Spec.Template.Spec, true),
 		mapToStr(sts.Labels),
 		AsStatus(s.diagnose(sts.Spec.Replicas, sts.Status.Replicas, sts.Status.ReadyReplicas)),
 		ToAge(sts.GetCreationTimestamp()),

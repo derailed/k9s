@@ -15,45 +15,64 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultDSHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "UP-TO-DATE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // DaemonSet renders a K8s DaemonSet to screen.
 type DaemonSet struct {
 	Base
 }
 
 // Header returns a header row.
-func (DaemonSet) Header(ns string) model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
-		model1.HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "READY", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "UP-TO-DATE", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
-	}
+func (d DaemonSet) Header(_ string) model1.Header {
+	return d.doHeader(defaultDSHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (d DaemonSet) Render(o interface{}, ns string, r *model1.Row) error {
+func (d DaemonSet) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected DaemonSet, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := d.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if d.specs.isEmpty() {
+		return nil
+	}
+	cols, err := d.specs.realize(raw, defaultDSHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (d DaemonSet) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var ds appsv1.DaemonSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ds)
 	if err != nil {
 		return err
 	}
 
-	r.ID = client.MetaFQN(ds.ObjectMeta)
+	r.ID = client.MetaFQN(&ds.ObjectMeta)
 	r.Fields = model1.Fields{
 		ds.Namespace,
 		ds.Name,
-		computeVulScore(ds.ObjectMeta, &ds.Spec.Template.Spec),
+		computeVulScore(ds.Namespace, ds.Labels, &ds.Spec.Template.Spec),
 		strconv.Itoa(int(ds.Status.DesiredNumberScheduled)),
 		strconv.Itoa(int(ds.Status.CurrentNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberReady)),

@@ -6,43 +6,63 @@ package render
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+var defaultCRDHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "GROUP"},
+	model1.HeaderColumn{Name: "KIND"},
+	model1.HeaderColumn{Name: "VERSIONS"},
+	model1.HeaderColumn{Name: "SCOPE"},
+	model1.HeaderColumn{Name: "ALIASES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
 
 // CustomResourceDefinition renders a K8s CustomResourceDefinition to screen.
 type CustomResourceDefinition struct {
 	Base
 }
 
-// Header returns a header rbw.
-func (CustomResourceDefinition) Header(string) model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "GROUP"},
-		model1.HeaderColumn{Name: "KIND"},
-		model1.HeaderColumn{Name: "VERSIONS"},
-		model1.HeaderColumn{Name: "SCOPE"},
-		model1.HeaderColumn{Name: "ALIASES", Wide: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
-	}
+// Header returns a header row.
+func (c CustomResourceDefinition) Header(_ string) model1.Header {
+	return c.doHeader(defaultCRDHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (c CustomResourceDefinition) Render(o interface{}, ns string, r *model1.Row) error {
+func (c CustomResourceDefinition) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected CustomResourceDefinition, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
 
+	if err := c.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if c.specs.isEmpty() {
+		return nil
+	}
+	cols, err := c.specs.realize(raw, defaultCRDHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var crd v1.CustomResourceDefinition
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &crd)
 	if err != nil {
@@ -60,10 +80,10 @@ func (c CustomResourceDefinition) Render(o interface{}, ns string, r *model1.Row
 		}
 	}
 	if len(versions) == 0 {
-		log.Warn().Msgf("unable to assert CRD versions for %s", crd.Name)
+		slog.Warn("Unable to assert CRD versions", slogs.FQN, crd.Name)
 	}
 
-	r.ID = client.MetaFQN(crd.ObjectMeta)
+	r.ID = client.MetaFQN(&crd.ObjectMeta)
 	r.Fields = model1.Fields{
 		crd.Spec.Names.Plural,
 		crd.Spec.Group,
@@ -79,7 +99,7 @@ func (c CustomResourceDefinition) Render(o interface{}, ns string, r *model1.Row
 	return nil
 }
 
-func (c CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefinitionVersion) error {
+func (CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefinitionVersion) error {
 	if len(vv) == 0 {
 		return fmt.Errorf("unable to assert CRD servers versions for %s", n)
 	}
@@ -113,20 +133,4 @@ func (c CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefin
 	}
 
 	return errors.New(strings.Join(errs, " - "))
-}
-
-func extractMetaField(m map[string]interface{}, field string) string {
-	f, ok := m[field]
-	if !ok {
-		log.Error().Err(fmt.Errorf("failed to extract field from meta %s", field))
-		return NAValue
-	}
-
-	fs, ok := f.(string)
-	if !ok {
-		log.Error().Err(fmt.Errorf("failed to extract string from field %s", field))
-		return NAValue
-	}
-
-	return fs
 }

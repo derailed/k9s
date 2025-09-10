@@ -7,10 +7,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log/slog"
+	"maps"
 	"math"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,23 +21,28 @@ import (
 )
 
 const (
-	defaultServiceAccount      = "default"
-	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
+	defaultServiceAccount = "default"
+
+	// DefaultContainerAnnotation represents the annotation key for the default container.
+	DefaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
 )
 
 // GetDefaultContainer returns a container name if specified in an annotation.
-func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
-	defaultContainer, ok := m.Annotations[defaultContainerAnnotation]
+func GetDefaultContainer(m *metav1.ObjectMeta, spec *v1.PodSpec) (string, bool) {
+	defaultContainer, ok := m.Annotations[DefaultContainerAnnotation]
 	if !ok {
 		return "", false
 	}
 
-	for _, container := range spec.Containers {
-		if container.Name == defaultContainer {
+	for i := range spec.Containers {
+		if spec.Containers[i].Name == defaultContainer {
 			return defaultContainer, true
 		}
 	}
-	log.Warn().Msg(defaultContainer + " container  not found. " + defaultContainerAnnotation + " annotation will be ignored")
+	slog.Warn("Container not found. Annotation ignored",
+		slogs.Container, defaultContainer,
+		slogs.Annotation, DefaultContainerAnnotation,
+	)
 
 	return "", false
 }
@@ -43,7 +50,7 @@ func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
 func extractFQN(o runtime.Object) string {
 	u, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		log.Error().Err(fmt.Errorf("expecting unstructured but got %T", o))
+		slog.Error("Expecting unstructured", slogs.ResType, fmt.Sprintf("%T", o))
 		return client.NA
 	}
 
@@ -67,11 +74,12 @@ func inList(ll []string, s string) bool {
 	return false
 }
 
-func toPerc(v1, v2 float64) float64 {
-	if v2 == 0 {
+func toPerc(v, dv float64) float64 {
+	if dv == 0 {
 		return 0
 	}
-	return math.Round((v1 / v2) * 100)
+
+	return math.Round((v / dv) * 100)
 }
 
 // ToYAML converts a resource to its YAML representation.
@@ -79,21 +87,27 @@ func ToYAML(o runtime.Object, showManaged bool) (string, error) {
 	if o == nil {
 		return "", errors.New("no object to yamlize")
 	}
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return "", fmt.Errorf("expecting unstructured but got %T", o)
+	}
+	if u.Object == nil {
+		return "", fmt.Errorf("expecting unstructured object but got nil")
+	}
 
+	mm := u.Object
 	var (
 		buff bytes.Buffer
 		p    printers.YAMLPrinter
 	)
 	if !showManaged {
-		o = o.DeepCopyObject()
-		uo := o.(*unstructured.Unstructured).Object
-		if meta, ok := uo["metadata"].(map[string]interface{}); ok {
+		mm = maps.Clone(mm)
+		if meta, ok := mm["metadata"].(map[string]any); ok {
 			delete(meta, "managedFields")
 		}
 	}
-	err := p.PrintObj(o, &buff)
-	if err != nil {
-		log.Error().Msgf("Marshal Error %v", err)
+	if err := p.PrintObj(o, &buff); err != nil {
+		slog.Error("PrintObj failed", slogs.Error, err)
 		return "", err
 	}
 
@@ -107,6 +121,7 @@ func serviceAccountMatches(podSA, saName string) bool {
 	if podSA == "" {
 		podSA = defaultServiceAccount
 	}
+
 	return podSA == saName
 }
 

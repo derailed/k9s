@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"sync"
@@ -14,22 +15,26 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/sahilm/fuzzy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-type (
-	// SortFn represent a function that can sort columnar data.
-	SortFn func(rows Rows, sortCol SortColumn)
+// SortFn represent a function that can sort columnar data.
+type SortFn func(rows Rows, sortCol SortColumn)
 
-	// SortColumn represents a sortable column.
-	SortColumn struct {
-		Name string
-		ASC  bool
-	}
-)
+// SortColumn represents a sortable column.
+type SortColumn struct {
+	Name string
+	ASC  bool
+}
+
+// IsSet checks if the sort column is set.
+func (s SortColumn) IsSet() bool {
+	return s.Name != ""
+}
 
 const spacer = " "
 
@@ -44,26 +49,26 @@ type TableData struct {
 	header    Header
 	rowEvents *RowEvents
 	namespace string
-	gvr       client.GVR
+	gvr       *client.GVR
 	mx        sync.RWMutex
 }
 
 // NewTableData returns a new table.
-func NewTableData(gvr client.GVR) *TableData {
+func NewTableData(gvr *client.GVR) *TableData {
 	return &TableData{
 		gvr:       gvr,
 		rowEvents: NewRowEvents(10),
 	}
 }
 
-func NewTableDataFull(gvr client.GVR, ns string, h Header, re *RowEvents) *TableData {
+func NewTableDataFull(gvr *client.GVR, ns string, h Header, re *RowEvents) *TableData {
 	t := NewTableDataWithRows(gvr, h, re)
 	t.namespace = ns
 
 	return t
 }
 
-func NewTableDataWithRows(gvr client.GVR, h Header, re *RowEvents) *TableData {
+func NewTableDataWithRows(gvr *client.GVR, h Header, re *RowEvents) *TableData {
 	t := NewTableData(gvr)
 	t.header, t.rowEvents = h, re
 
@@ -126,7 +131,7 @@ func (t *TableData) HeaderCount() int {
 	return len(t.header)
 }
 
-func (t *TableData) HeadCol(n string, w bool) (HeaderColumn, int) {
+func (t *TableData) HeadCol(n string, w bool) (header HeaderColumn, idx int) {
 	idx, ok := t.header.IndexOf(n, w)
 	if !ok {
 		return HeaderColumn{}, -1
@@ -152,13 +157,17 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 	if err == nil {
 		td.rowEvents = rr
 	} else {
-		log.Error().Err(err).Msg("rx filter failed")
+		slog.Error("RX filter failed", slogs.Error, err)
 	}
 
 	return td
 }
 
 func (t *TableData) rxFilter(q string, inverse bool) (*RowEvents, error) {
+	if strings.Contains(q, " ") {
+		return t.rowEvents, nil
+	}
+
 	if inverse {
 		q = q[1:]
 	}
@@ -167,19 +176,21 @@ func (t *TableData) rxFilter(q string, inverse bool) (*RowEvents, error) {
 		return nil, fmt.Errorf("invalid rx filter %q: %w", q, err)
 	}
 
-	ageIndex, ok := t.header.IndexOf("AGE", true)
-
+	vidx := t.header.FilterColIndices(t.namespace, true)
 	rr := NewRowEvents(t.RowCount() / 2)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
-		ff := re.Row.Fields
-		if ok && ageIndex+1 <= len(ff) {
-			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
+		ff := make([]string, 0, len(re.Row.Fields))
+		for idx, r := range re.Row.Fields {
+			if !vidx.Has(idx) {
+				continue
+			}
+			ff = append(ff, r)
 		}
-		fields := strings.Join(ff, spacer)
-		if (inverse && !rx.MatchString(fields)) ||
-			((!inverse) && rx.MatchString(fields)) {
+		match := rx.MatchString(strings.Join(ff, spacer))
+		if (inverse && !match) || (!inverse && match) {
 			rr.Add(re)
 		}
+
 		return true
 	})
 
@@ -197,24 +208,22 @@ func (t *TableData) fuzzyFilter(q string) *RowEvents {
 	mm := fuzzy.Find(q, ss)
 	rr := NewRowEvents(t.RowCount() / 2)
 	for _, m := range mm {
-		re, ok := t.rowEvents.At(m.Index)
-		if !ok {
-			log.Error().Msgf("unable to find event for index in fuzzfilter: %d", m.Index)
-			continue
+		if re, ok := t.rowEvents.At(m.Index); !ok {
+			slog.Error("Unable to find event for index in fuzzfilter", slogs.Index, m.Index)
+		} else {
+			rr.Add(re)
 		}
-		rr.Add(re)
 	}
 
 	return rr
 }
 
 func (t *TableData) filterToast() *RowEvents {
+	rr := NewRowEvents(10)
 	idx, ok := t.header.IndexOf("VALID", true)
 	if !ok {
-		return nil
+		return rr
 	}
-
-	rr := NewRowEvents(10)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
 		if re.Row.Fields[idx] != "" {
 			rr.Add(re)
@@ -234,15 +243,13 @@ func (t *TableData) GetNamespace() string {
 
 func (t *TableData) Reset(ns string) {
 	t.mx.Lock()
-	{
-		t.namespace = ns
-	}
+	t.namespace = ns
 	t.mx.Unlock()
 
 	t.Clear()
 }
 
-func (t *TableData) Reconcile(ctx context.Context, r Renderer, oo []runtime.Object) error {
+func (t *TableData) Render(_ context.Context, r Renderer, oo []runtime.Object) error {
 	var rows Rows
 	if len(oo) > 0 {
 		if r.IsGeneric() {
@@ -265,7 +272,7 @@ func (t *TableData) Reconcile(ctx context.Context, r Renderer, oo []runtime.Obje
 	t.Update(rows)
 	t.SetHeader(t.namespace, r.Header(t.namespace))
 	if t.HeaderCount() == 0 {
-		return fmt.Errorf("fail to list resource %s", t.gvr)
+		return fmt.Errorf("no data found for resource %s", t.gvr)
 	}
 
 	return nil
@@ -319,36 +326,25 @@ func (t *TableData) Labelize(labels []string) *TableData {
 	return &data
 }
 
-// Customize returns a new model with customized column layout.
-func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual, wide bool) (*TableData, SortColumn) {
+// ComputeSortCol computes the best matched sort column.
+func (t *TableData) ComputeSortCol(vs *config.ViewSetting, sc SortColumn, manual bool) SortColumn {
 	if vs.IsBlank() {
 		if sc.Name != "" {
-			return t, sc
+			return sc
 		}
-		psc, err := t.sortCol(vs)
-		if err == nil {
-			return t, psc
+		if psc, err := t.sortCol(vs); err == nil {
+			return psc
 		}
-		return t, sc
+		return sc
+	}
+	if manual && sc.IsSet() {
+		return sc
+	}
+	if s, asc, err := vs.SortCol(); err == nil {
+		return SortColumn{Name: s, ASC: asc}
 	}
 
-	cols := vs.Columns
-	cdata := TableData{
-		gvr:       t.gvr,
-		namespace: t.namespace,
-		header:    t.header.Customize(cols, wide),
-	}
-	ids := t.header.MapIndices(cols, wide)
-	cdata.rowEvents = t.rowEvents.Customize(ids)
-	if manual || vs == nil {
-		return &cdata, sc
-	}
-	psc, err := cdata.sortCol(vs)
-	if err != nil {
-		return &cdata, sc
-	}
-
-	return &cdata, psc
+	return sc
 }
 
 func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {
@@ -428,32 +424,30 @@ func (t *TableData) SetHeader(ns string, h Header) {
 // Update computes row deltas and update the table data.
 func (t *TableData) Update(rows Rows) {
 	empty := t.Empty()
-	kk := make(map[string]struct{}, len(rows))
+	kk := sets.New[string]()
 	var blankDelta DeltaRow
 	t.mx.Lock()
-	{
-		for _, row := range rows {
-			kk[row.ID] = struct{}{}
-			if empty {
-				t.rowEvents.Add(NewRowEvent(EventAdd, row))
-				continue
-			}
-			if index, ok := t.rowEvents.FindIndex(row.ID); ok {
-				ev, ok := t.rowEvents.At(index)
-				if !ok {
-					continue
-				}
-				delta := NewDeltaRow(ev.Row, row, t.header)
-				if delta.IsBlank() {
-					ev.Kind, ev.Deltas, ev.Row = EventUnchanged, blankDelta, row
-					t.rowEvents.Set(index, ev)
-				} else {
-					t.rowEvents.Set(index, NewRowEventWithDeltas(row, delta))
-				}
-				continue
-			}
+	for _, row := range rows {
+		kk.Insert(row.ID)
+		if empty {
 			t.rowEvents.Add(NewRowEvent(EventAdd, row))
+			continue
 		}
+		if index, ok := t.rowEvents.FindIndex(row.ID); ok {
+			ev, ok := t.rowEvents.At(index)
+			if !ok {
+				continue
+			}
+			delta := NewDeltaRow(ev.Row, row, t.header)
+			if delta.IsBlank() {
+				ev.Kind, ev.Deltas, ev.Row = EventUnchanged, blankDelta, row
+				t.rowEvents.Set(index, ev)
+			} else {
+				t.rowEvents.Set(index, NewRowEventWithDeltas(row, delta))
+			}
+			continue
+		}
+		t.rowEvents.Add(NewRowEvent(EventAdd, row))
 	}
 	t.mx.Unlock()
 
@@ -463,25 +457,28 @@ func (t *TableData) Update(rows Rows) {
 }
 
 // Delete removes items in cache that are no longer valid.
-func (t *TableData) Delete(newKeys map[string]struct{}) {
+func (t *TableData) Delete(newKeys sets.Set[string]) {
 	t.mx.Lock()
-	{
-		victims := make([]string, 0, 10)
-		t.rowEvents.Range(func(_ int, e RowEvent) bool {
-			if _, ok := newKeys[e.Row.ID]; !ok {
-				victims = append(victims, e.Row.ID)
-			} else {
-				delete(newKeys, e.Row.ID)
-			}
-			return true
-		})
-		for _, id := range victims {
-			if err := t.rowEvents.Delete(id); err != nil {
-				log.Error().Err(err).Msgf("table delete failed: %q", id)
-			}
+	defer t.mx.Unlock()
+
+	victims := sets.New[string]()
+	t.rowEvents.Range(func(_ int, e RowEvent) bool {
+		if newKeys.Has(e.Row.ID) {
+			delete(newKeys, e.Row.ID)
+		} else {
+			victims.Insert(e.Row.ID)
+		}
+		return true
+	})
+
+	for _, id := range victims.UnsortedList() {
+		if err := t.rowEvents.Delete(id); err != nil {
+			slog.Error("Table delete failed",
+				slogs.Error, err,
+				slogs.Message, id,
+			)
 		}
 	}
-	t.mx.Unlock()
 }
 
 // Diff checks if two tables are equal.

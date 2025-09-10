@@ -56,7 +56,7 @@ func (c *Crumbs) StackPopped(_, _ model.Component) {
 }
 
 // StackTop indicates the top of the stack.
-func (c *Crumbs) StackTop(top model.Component) {}
+func (*Crumbs) StackTop(model.Component) {}
 
 // Refresh updates view with new crumbs.
 func (c *Crumbs) refresh(crumbs []string) {
@@ -66,9 +66,9 @@ func (c *Crumbs) refresh(crumbs []string) {
 		if i == last {
 			bgColor = c.styles.Frame().Crumb.ActiveColor
 		}
-		fmt.Fprintf(c, "[%s:%s:b] <%s> [-:%s:-] ",
+		_, _ = fmt.Fprintf(c, "[%s:%s:b] <%s> [-:%s:-] ",
 			c.styles.Frame().Crumb.FgColor,
-			bgColor, strings.Replace(strings.ToLower(crumb), " ", "", -1),
+			bgColor, strings.ReplaceAll(strings.ToLower(crumb), " ", ""),
 			c.styles.Body().BgColor)
 	}
 }

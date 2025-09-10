@@ -6,22 +6,23 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"runtime/debug"
 	"strings"
-
-	"github.com/derailed/k9s/internal/config/data"
-	"k8s.io/client-go/tools/clientcmd/api"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view"
+	"github.com/lmittmann/tint"
 	"github.com/mattn/go-colorable"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -56,7 +57,7 @@ func init() {
 		fmt.Printf("Fail to init k9s logs location %s\n", err)
 	}
 
-	rootCmd.SetFlagErrorFunc(func(command *cobra.Command, err error) error {
+	rootCmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return flagError{err: err}
 	})
 
@@ -74,42 +75,48 @@ func Execute() {
 	}
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(*cobra.Command, []string) error {
 	if err := config.InitLocs(); err != nil {
 		return err
 	}
-	file, err := os.OpenFile(
+	logFile, err := os.OpenFile(
 		*k9sFlags.LogFile,
 		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
 		data.DefaultFileMod,
 	)
 	if err != nil {
-		return fmt.Errorf("Log file %q init failed: %w", *k9sFlags.LogFile, err)
+		return fmt.Errorf("log file %q init failed: %w", *k9sFlags.LogFile, err)
 	}
 	defer func() {
-		if file != nil {
-			_ = file.Close()
+		if logFile != nil {
+			_ = logFile.Close()
 		}
 	}()
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error().Msgf("Boom! %v", err)
-			log.Error().Msg(string(debug.Stack()))
+			slog.Error("Boom!! k9s init failed", slogs.Error, err)
+			slog.Error("", slogs.Stack, string(debug.Stack()))
 			printLogo(color.Red)
 			fmt.Printf("%s", color.Colorize("Boom!! ", color.Red))
 			fmt.Printf("%v.\n", err)
 		}
 	}()
 
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
-	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
+	slog.SetDefault(slog.New(tint.NewHandler(logFile, &tint.Options{
+		Level:      parseLevel(*k9sFlags.LogLevel),
+		TimeFormat: time.RFC3339,
+	})))
 
 	cfg, err := loadConfiguration()
 	if err != nil {
-		log.Error().Err(err).Msgf("Fail to load global/context configuration")
+		slog.Warn("Fail to load global/context configuration", slogs.Error, err)
 	}
 	app := view.NewApp(cfg)
-	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
+	if app.Config.K9s.DefaultView != "" {
+		app.Config.SetActiveView(app.Config.K9s.DefaultView)
+	}
+
+	if err := app.Init(version, int(*k9sFlags.RefreshRate)); err != nil {
 		return err
 	}
 	if err := app.Run(); err != nil {
@@ -123,72 +130,72 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func loadConfiguration() (*config.Config, error) {
-	log.Info().Msg("🐶 K9s starting up...")
+	slog.Info("🐶 K9s starting up...")
 
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
 	var errs error
-	conn, err := client.InitConnection(k8sCfg)
-	k9sCfg.SetConnection(conn)
+
+	conn, err := client.InitConnection(k8sCfg, slog.Default())
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
+	k9sCfg.SetConnection(conn)
 
 	if err := k9sCfg.Load(config.AppConfigFile, false); err != nil {
 		errs = errors.Join(errs, err)
 	}
 	k9sCfg.K9s.Override(k9sFlags)
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
-		log.Error().Err(err).Msgf("config refine failed")
+		slog.Error("Fail to refine k9s config", slogs.Error, err)
 		errs = errors.Join(errs, err)
 	}
+
 	// Try to access server version if that fail. Connectivity issue?
 	if !conn.CheckConnectivity() {
 		errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
 	}
 	if !conn.ConnectionOK() {
+		slog.Warn("💣 Kubernetes connectivity toast!")
 		errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
+	} else {
+		slog.Info("✅ Kubernetes connectivity OK")
 	}
 
-	log.Info().Msg("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(false); err != nil {
-		log.Error().Err(err).Msg("Config save")
+		slog.Error("K9s config save failed", slogs.Error, err)
 		errs = errors.Join(errs, err)
 	}
 
 	return k9sCfg, errs
 }
 
-func parseLevel(level string) zerolog.Level {
+func parseLevel(level string) slog.Level {
 	switch level {
-	case "trace":
-		return zerolog.TraceLevel
 	case "debug":
-		return zerolog.DebugLevel
+		return slog.LevelDebug
 	case "warn":
-		return zerolog.WarnLevel
+		return slog.LevelWarn
 	case "error":
-		return zerolog.ErrorLevel
-	case "fatal":
-		return zerolog.FatalLevel
+		return slog.LevelError
 	default:
-		return zerolog.InfoLevel
+		return slog.LevelInfo
 	}
 }
 
 func initK9sFlags() {
 	k9sFlags = config.NewFlags()
-	rootCmd.Flags().IntVarP(
+	rootCmd.Flags().Float32VarP(
 		k9sFlags.RefreshRate,
 		"refresh", "r",
 		config.DefaultRefreshRate,
-		"Specify the default refresh rate as an integer (sec)",
+		"Specify the default refresh rate as a float (sec)",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogLevel,
 		"logLevel", "l",
 		config.DefaultLogLevel,
-		"Specify a log level (info, warn, debug, trace, error)",
+		"Specify a log level (error, warn, info, debug)",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogFile,
@@ -213,6 +220,12 @@ func initK9sFlags() {
 		"crumbsless",
 		false,
 		"Turn K9s crumbs off",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Splashless,
+		"splashless",
+		false,
+		"Turn K9s splash screen off",
 	)
 	rootCmd.Flags().BoolVarP(
 		k9sFlags.AllNamespaces,
@@ -369,9 +382,9 @@ func initK8sFlagCompletion() {
 		return cfg.AuthInfos
 	}))
 
-	_ = rootCmd.RegisterFlagCompletionFunc("namespace", func(cmd *cobra.Command, args []string, s string) ([]string, cobra.ShellCompDirective) {
+	_ = rootCmd.RegisterFlagCompletionFunc("namespace", func(_ *cobra.Command, _ []string, s string) ([]string, cobra.ShellCompDirective) {
 		conn := client.NewConfig(k8sFlags)
-		if c, err := client.InitConnection(conn); err == nil {
+		if c, err := client.InitConnection(conn, slog.Default()); err == nil {
 			if nss, err := c.ValidNamespaceNames(); err == nil {
 				return filterFlagCompletions(nss, s)
 			}
@@ -382,11 +395,11 @@ func initK8sFlagCompletion() {
 }
 
 func k8sFlagCompletion[T any](picker k8sPickerFn[T]) completeFn {
-	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return func(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		conn := client.NewConfig(k8sFlags)
 		cfg, err := conn.RawConfig()
 		if err != nil {
-			log.Error().Err(err).Msgf("k8s config getter failed")
+			slog.Error("K8s raw config getter failed", slogs.Error, err)
 		}
 
 		return filterFlagCompletions(picker(&cfg), toComplete)

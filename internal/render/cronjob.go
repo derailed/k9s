@@ -16,36 +16,56 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var defaultCJHeader = model1.Header{
+	model1.HeaderColumn{Name: "NAMESPACE"},
+	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: "SCHEDULE"},
+	model1.HeaderColumn{Name: "SUSPEND"},
+	model1.HeaderColumn{Name: "ACTIVE"},
+	model1.HeaderColumn{Name: "LAST_SCHEDULE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+}
+
 // CronJob renders a K8s CronJob to screen.
 type CronJob struct {
 	Base
 }
 
 // Header returns a header row.
-func (CronJob) Header(ns string) model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
-		model1.HeaderColumn{Name: "VS", VS: true},
-		model1.HeaderColumn{Name: "SCHEDULE"},
-		model1.HeaderColumn{Name: "SUSPEND"},
-		model1.HeaderColumn{Name: "ACTIVE"},
-		model1.HeaderColumn{Name: "LAST_SCHEDULE", Time: true},
-		model1.HeaderColumn{Name: "SELECTOR", Wide: true},
-		model1.HeaderColumn{Name: "CONTAINERS", Wide: true},
-		model1.HeaderColumn{Name: "IMAGES", Wide: true},
-		model1.HeaderColumn{Name: "LABELS", Wide: true},
-		model1.HeaderColumn{Name: "VALID", Wide: true},
-		model1.HeaderColumn{Name: "AGE", Time: true},
-	}
+func (c CronJob) Header(_ string) model1.Header {
+	return c.doHeader(defaultCJHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (c CronJob) Render(o interface{}, ns string, r *model1.Row) error {
+func (c CronJob) Render(o any, _ string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("expected CronJob, but got %T", o)
+		return fmt.Errorf("expected Unstructured, but got %T", o)
 	}
+	if err := c.defaultRow(raw, row); err != nil {
+		return err
+	}
+	if c.specs.isEmpty() {
+		return nil
+	}
+
+	cols, err := c.specs.realize(raw, defaultCJHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
+}
+
+// Render renders a K8s resource to screen.
+func (CronJob) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var cj batchv1.CronJob
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cj)
 	if err != nil {
@@ -57,18 +77,18 @@ func (c CronJob) Render(o interface{}, ns string, r *model1.Row) error {
 		lastScheduled = ToAge(*cj.Status.LastScheduleTime)
 	}
 
-	r.ID = client.MetaFQN(cj.ObjectMeta)
+	r.ID = client.MetaFQN(&cj.ObjectMeta)
 	r.Fields = model1.Fields{
 		cj.Namespace,
 		cj.Name,
-		computeVulScore(cj.ObjectMeta, &cj.Spec.JobTemplate.Spec.Template.Spec),
+		computeVulScore(cj.Namespace, cj.Labels, &cj.Spec.JobTemplate.Spec.Template.Spec),
 		cj.Spec.Schedule,
 		boolPtrToStr(cj.Spec.Suspend),
 		strconv.Itoa(len(cj.Status.Active)),
 		lastScheduled,
-		jobSelector(cj.Spec.JobTemplate.Spec),
-		podContainerNames(cj.Spec.JobTemplate.Spec.Template.Spec, true),
-		podImageNames(cj.Spec.JobTemplate.Spec.Template.Spec, true),
+		jobSelector(&cj.Spec.JobTemplate.Spec),
+		podContainerNames(&cj.Spec.JobTemplate.Spec.Template.Spec, true),
+		podImageNames(&cj.Spec.JobTemplate.Spec.Template.Spec, true),
 		mapToStr(cj.Labels),
 		"",
 		ToAge(cj.GetCreationTimestamp()),
@@ -79,7 +99,7 @@ func (c CronJob) Render(o interface{}, ns string, r *model1.Row) error {
 
 // Helpers
 
-func jobSelector(spec batchv1.JobSpec) string {
+func jobSelector(spec *batchv1.JobSpec) string {
 	if spec.Selector == nil {
 		return MissingValue
 	}
@@ -98,31 +118,31 @@ func jobSelector(spec batchv1.JobSpec) string {
 	return strings.Join(ss, " ")
 }
 
-func podContainerNames(spec v1.PodSpec, includeInit bool) string {
+func podContainerNames(spec *v1.PodSpec, includeInit bool) string {
 	cc := make([]string, 0, len(spec.Containers)+len(spec.InitContainers))
 
 	if includeInit {
-		for _, c := range spec.InitContainers {
-			cc = append(cc, c.Name)
+		for i := range spec.InitContainers {
+			cc = append(cc, spec.InitContainers[i].Name)
 		}
 	}
-	for _, c := range spec.Containers {
-		cc = append(cc, c.Name)
+	for i := range spec.Containers {
+		cc = append(cc, spec.Containers[i].Name)
 	}
 
 	return strings.Join(cc, ",")
 }
 
-func podImageNames(spec v1.PodSpec, includeInit bool) string {
+func podImageNames(spec *v1.PodSpec, includeInit bool) string {
 	cc := make([]string, 0, len(spec.Containers)+len(spec.InitContainers))
 
 	if includeInit {
-		for _, c := range spec.InitContainers {
-			cc = append(cc, c.Image)
+		for i := range spec.InitContainers {
+			cc = append(cc, spec.InitContainers[i].Image)
 		}
 	}
-	for _, c := range spec.Containers {
-		cc = append(cc, c.Image)
+	for i := range spec.Containers {
+		cc = append(cc, spec.Containers[i].Image)
 	}
 
 	return strings.Join(cc, ",")

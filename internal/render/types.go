@@ -45,7 +45,7 @@ const (
 	UnknownValue = "<unknown>"
 
 	// UnsetValue represent an unset value.
-	UnsetValue = ""
+	UnsetValue = "<unset>"
 
 	// ZeroValue represents a zero value.
 	ZeroValue = "0"

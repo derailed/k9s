@@ -12,4 +12,3 @@ k9s:
     active: svc
   featureGates:
     nodeShell: true
-  portForwardAddress: fred

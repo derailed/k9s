@@ -5,6 +5,7 @@ package render
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -13,35 +14,38 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// Alias renders a aliases to screen.
+var defaultAliasHeader = model1.Header{
+	model1.HeaderColumn{Name: "RESOURCE"},
+	model1.HeaderColumn{Name: "GROUP"},
+	model1.HeaderColumn{Name: "VERSION"},
+	model1.HeaderColumn{Name: "COMMAND"},
+}
+
+// Alias renders an aliases to screen.
 type Alias struct {
 	Base
 }
 
 // Header returns a header row.
-func (Alias) Header(ns string) model1.Header {
-	return model1.Header{
-		model1.HeaderColumn{Name: "RESOURCE"},
-		model1.HeaderColumn{Name: "COMMAND"},
-		model1.HeaderColumn{Name: "API-GROUP"},
-	}
+func (Alias) Header(string) model1.Header {
+	return defaultAliasHeader
 }
 
 // Render renders a K8s resource to screen.
 // BOZO!! Pass in a row with pre-alloc fields??
-func (Alias) Render(o interface{}, ns string, r *model1.Row) error {
+func (Alias) Render(o any, _ string, r *model1.Row) error {
 	a, ok := o.(AliasRes)
 	if !ok {
 		return fmt.Errorf("expected AliasRes, but got %T", o)
 	}
+	slices.Sort(a.Aliases)
 
-	r.ID = a.GVR
-	gvr := client.NewGVR(a.GVR)
-	res, grp := gvr.RG()
+	r.ID = a.GVR.String()
 	r.Fields = append(r.Fields,
-		res,
-		strings.Join(a.Aliases, ","),
-		grp,
+		a.GVR.R(),
+		a.GVR.G(),
+		a.GVR.V(),
+		strings.Join(a.Aliases, " "),
 	)
 
 	return nil
@@ -52,7 +56,7 @@ func (Alias) Render(o interface{}, ns string, r *model1.Row) error {
 
 // AliasRes represents an alias resource.
 type AliasRes struct {
-	GVR     string
+	GVR     *client.GVR
 	Aliases []string
 }
 

@@ -5,11 +5,12 @@ package render
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -33,7 +34,7 @@ func (Context) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Context) Header(ns string) model1.Header {
+func (Context) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "CLUSTER"},
@@ -43,7 +44,7 @@ func (Context) Header(ns string) model1.Header {
 }
 
 // Render renders a K8s resource to screen.
-func (c Context) Render(o interface{}, _ string, r *model1.Row) error {
+func (Context) Render(o any, _ string, r *model1.Row) error {
 	ctx, ok := o.(*NamedContext)
 	if !ok {
 		return fmt.Errorf("expected *NamedContext, but got %T", o)
@@ -88,14 +89,14 @@ func NewNamedContext(c ContextNamer, n string, ctx *api.Context) *NamedContext {
 func (c *NamedContext) IsCurrentContext(n string) bool {
 	cl, err := c.Config.CurrentContextName()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Fetching current context")
-		return false
+		slog.Error("Fail to retrieve current context. Exiting!")
+		os.Exit(1)
 	}
 	return cl == n
 }
 
 // GetObjectKind returns a schema object.
-func (c *NamedContext) GetObjectKind() schema.ObjectKind {
+func (*NamedContext) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 

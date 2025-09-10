@@ -4,7 +4,7 @@
 # See https://github.com/Telemaco019/duplik8s
 plugins:
   duplicate-pod:
-    shortCut: Ctrl-T
+    shortCut: Ctrl-B
     description: Duplicate Pod
     scopes:
       - po
