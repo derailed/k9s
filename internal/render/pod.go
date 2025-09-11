@@ -166,7 +166,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	cReady += iReady
 	allCounts := len(spec.Containers) + iTerminated
 
-	rgt, rgr := p.readinessGateStats(spec, &st)
+	rgr, rgt := p.readinessGateStats(spec, &st)
 	ready := hasPodReadyCondition(st.Conditions)
 	
 	var ccmx []mv1beta1.ContainerMetrics
