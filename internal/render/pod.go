@@ -167,7 +167,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	allCounts := len(spec.Containers) + iTerminated
 	rgr, rgt := p.readinessGateStats(spec, &st)
 	ready := hasPodReadyCondition(st.Conditions)
-	
+
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
 		ccmx = pwm.MX.Containers
