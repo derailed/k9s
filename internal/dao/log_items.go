@@ -207,7 +207,8 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int
 	ll := make([][]byte, len(l.items[index:]))
 	l.Lines(index, showTime, ll)
 	for i, line := range ll {
-		locs := rx.FindAllStringIndex(string(line), -1)
+		lineStr := string(line)
+		locs := rx.FindAllStringIndex(lineStr, -1)
 		if locs != nil && invert {
 			continue
 		}
@@ -217,7 +218,10 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int
 		matches = append(matches, i)
 		ii := make([]int, 0, 10)
 		for _, loc := range locs {
-			for j := loc[0]; j < loc[1]; j++ {
+			// Convert string indices to byte indices
+			startBytes := len([]byte(lineStr[:loc[0]]))
+			endBytes := len([]byte(lineStr[:loc[1]]))
+			for j := startBytes; j < endBytes; j++ {
 				ii = append(ii, j)
 			}
 		}
