@@ -46,7 +46,7 @@ const (
 	logRetryCount                  = 20
 	logBackoffInitial              = 500 * time.Millisecond
 	logBackoffMax                  = 30 * time.Second
-	logChannelBuffer               = 100  // Buffer size for log channel to reduce drops
+	logChannelBuffer               = 50   // Buffer size for log channel to reduce drops
 	streamEOF         streamResult = iota // legit container log close (no retry)
 	streamError                           // retryable error (network, auth, etc.)
 	streamCanceled                        // context canceled
