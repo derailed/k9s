@@ -197,13 +197,13 @@ func (b *Browser) Stop() {
 	b.Table.Stop()
 }
 
-func (b *Browser) SetFilter(s string) {
-	b.CmdBuff().SetText(s, "")
+func (b *Browser) SetFilter(s string, wipe bool) {
+	b.CmdBuff().SetText(s, "", wipe)
 }
 
-func (b *Browser) SetLabelSelector(sel labels.Selector) {
+func (b *Browser) SetLabelSelector(sel labels.Selector, wipe bool) {
 	if sel != nil {
-		b.CmdBuff().SetText(sel.String(), "")
+		b.CmdBuff().SetText(sel.String(), "", wipe)
 	}
 	b.GetModel().SetLabelSelector(sel)
 }

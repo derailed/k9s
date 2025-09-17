@@ -4,6 +4,7 @@
 package port_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -93,7 +94,7 @@ func TestPFsToTunnel(t *testing.T) {
 		},
 	}
 
-	f := func(port.PortTunnel) bool {
+	f := func(context.Context, port.PortTunnel) bool {
 		return true
 	}
 
