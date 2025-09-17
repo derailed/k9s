@@ -151,6 +151,74 @@ plugins:
         --context $CONTEXT
         -n $NAMESPACE $NAME
         | less -K
+  toggle-rset:
+    shortCut: Shift-T
+    confirm: false
+    scopes:
+      - resourcesets
+    description: Toggle to suspend or resume a ResourceSet
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        reconcile=$(kubectl --context $CONTEXT get resourceset -n $NAMESPACE $NAME -o=custom-columns='TYPE:.metadata.annotations.fluxcd\.controlplane\.io/reconcile' | tail -1);
+        verb=$([ $reconcile = "disabled" ] && echo "resume" || echo "suspend");
+        flux-operator
+        $verb rset
+        --kube-context $CONTEXT
+        -n $NAMESPACE $NAME
+        | less -K
+  toggle-inputprovider:
+    shortCut: Shift-T
+    confirm: false
+    scopes:
+      - resourcesetinputprovider
+    description: Toggle to suspend or resume an InputProvider
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        reconcile=$(kubectl --context $CONTEXT get resourcesetinputprovider -n $NAMESPACE $NAME -o=custom-columns='TYPE:.metadata.annotations.fluxcd\.controlplane\.io/reconcile' | tail -1);
+        verb=$([ $reconcile = "disabled" ] && echo "resume" || echo "suspend");
+        flux-operator
+        $verb inputprovider
+        --kube-context $CONTEXT
+        -n $NAMESPACE $NAME
+        | less -K
+  reconcile-rset:
+    shortCut: Shift-R
+    confirm: false
+    description: Flux reconcile
+    scopes:
+      - resourcesets
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        flux-operator
+        reconcile rset
+        --kube-context $CONTEXT
+        -n $NAMESPACE $NAME
+        | less -K
+  reconcile-inputprovider:
+    shortCut: Shift-R
+    confirm: false
+    description: Flux reconcile
+    scopes:
+      - resources
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        flux-operator
+        reconcile inputprovider
+        --kube-context $CONTEXT
+        -n $NAMESPACE $NAME
+        | less -K
   trace:
     shortCut: Shift-P
     confirm: false
