@@ -84,11 +84,11 @@ func NewGVR(s string) *GVR {
 }
 
 func (g *GVR) IsCommand() bool {
-	return g != nil && strings.Contains(g.raw, " ")
+	return !g.IsK8sRes()
 }
 
 func (g *GVR) IsK8sRes() bool {
-	return strings.Contains(g.raw, "/")
+	return g != nil && (strings.Contains(g.raw, "/") || reservedGVRs.Has(g))
 }
 
 // WithSubResource builds a new gvr with a sub resource.

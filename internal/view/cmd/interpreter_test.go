@@ -4,6 +4,7 @@
 package cmd_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/derailed/k9s/internal/view/cmd"
@@ -219,34 +220,48 @@ func TestFilterCmd(t *testing.T) {
 func TestLabelCmd(t *testing.T) {
 	uu := map[string]struct {
 		cmd    string
-		ok     bool
-		labels map[string]string
+		err    error
+		labels string
 	}{
 		"empty": {},
+
 		"plain": {
 			cmd:    "pod fred=blee",
-			ok:     true,
-			labels: map[string]string{"fred": "blee"},
+			labels: "fred=blee",
 		},
+
 		"multi": {
 			cmd:    "pod fred=blee,zorg=duh",
-			ok:     true,
-			labels: map[string]string{"fred": "blee", "zorg": "duh"},
+			labels: "fred=blee,zorg=duh",
 		},
+
+		"complex-lbls": {
+			cmd:    "pod 'fred in (blee,zorg),blee notin (zorg)'",
+			labels: "blee notin (zorg),fred in (blee,zorg)",
+		},
+
+		"no-lbls": {
+			cmd: "pod ns-1",
+		},
+
 		"multi-ns": {
 			cmd:    "pod fred=blee,zorg=duh ns1",
-			ok:     true,
-			labels: map[string]string{"fred": "blee", "zorg": "duh"},
+			labels: "fred=blee,zorg=duh",
 		},
+
 		"l-arg-spaced": {
 			cmd:    "pod   fred=blee   ",
-			ok:     true,
-			labels: map[string]string{"fred": "blee"},
+			labels: "fred=blee",
 		},
+
 		"l-arg-caps": {
 			cmd:    "POD  FRED=BLEE   ",
-			ok:     true,
-			labels: map[string]string{"fred": "blee"},
+			labels: "fred=blee",
+		},
+
+		"toast-labels": {
+			cmd: "pod =blee",
+			err: errors.New("found '=', expected: !, identifier, or 'end of string'"),
 		},
 	}
 
@@ -254,10 +269,10 @@ func TestLabelCmd(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			p := cmd.NewInterpreter(u.cmd)
-			ll, ok := p.LabelsArg()
-			assert.Equal(t, u.ok, ok)
-			if u.ok {
-				assert.Equal(t, u.labels, ll)
+			ll, err := p.LabelsSelector()
+			assert.Equal(t, u.err, err)
+			if err == nil {
+				assert.Equal(t, u.labels, ll.String())
 			}
 		})
 	}
@@ -591,6 +606,52 @@ func TestArgs(t *testing.T) {
 			assert.Equal(t, u.ok, ok)
 			if u.ok {
 				assert.Equal(t, u.ctx, ctx)
+			}
+		})
+	}
+}
+
+func Test_grokLabels(t *testing.T) {
+	uu := map[string]struct {
+		cmd  string
+		err  error
+		lbls string
+	}{
+		"empty": {},
+
+		"no-labels": {
+			cmd: "po @fred",
+		},
+
+		"plain-label": {
+			cmd:  "po a=b,b=c @fred",
+			lbls: "a=b,b=c",
+		},
+
+		"label-quotes": {
+			cmd:  "po 'a=b,b=c' @fred",
+			lbls: "a=b,b=c",
+		},
+
+		"partial-quotes-label": {
+			cmd:  "po 'a=b @fred",
+			lbls: "",
+		},
+
+		"complex": {
+			cmd:  "po 'a in (b,c),b notin (c,z)' fred'",
+			lbls: "a in (b,c),b notin (c,z)",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			sel, err := p.LabelsSelector()
+			assert.Equal(t, u.err, err)
+			if err == nil {
+				assert.Equal(t, u.lbls, sel.String())
 			}
 		})
 	}

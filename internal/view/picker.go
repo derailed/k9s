@@ -5,6 +5,7 @@ package view
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -29,9 +30,9 @@ func NewPicker() *Picker {
 	}
 }
 
-func (*Picker) SetCommand(*cmd.Interpreter)      {}
-func (*Picker) SetFilter(string)                 {}
-func (*Picker) SetLabelSelector(labels.Selector) {}
+func (*Picker) SetCommand(*cmd.Interpreter)            {}
+func (*Picker) SetFilter(string, bool)                 {}
+func (*Picker) SetLabelSelector(labels.Selector, bool) {}
 
 // Init initializes the view.
 func (p *Picker) Init(ctx context.Context) error {
@@ -48,7 +49,7 @@ func (p *Picker) Init(ctx context.Context) error {
 	p.ShowSecondaryText(false)
 	p.SetShortcutColor(pickerView.ShortcutColor.Color())
 	p.SetSelectedBackgroundColor(pickerView.FocusColor.Color())
-	p.SetTitle(" [aqua::b]Containers Picker ")
+	p.SetTitle(fmt.Sprintf(" [%s::b]Containers Picker ", app.Styles.Frame().Title.FgColor.String()))
 
 	p.SetInputCapture(func(evt *tcell.EventKey) *tcell.EventKey {
 		if a, ok := p.actions.Get(evt.Key()); ok {

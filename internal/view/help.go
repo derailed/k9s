@@ -45,9 +45,9 @@ func NewHelp(app *App) *Help {
 	}
 }
 
-func (*Help) SetCommand(*cmd.Interpreter)      {}
-func (*Help) SetFilter(string)                 {}
-func (*Help) SetLabelSelector(labels.Selector) {}
+func (*Help) SetCommand(*cmd.Interpreter)            {}
+func (*Help) SetFilter(string, bool)                 {}
+func (*Help) SetLabelSelector(labels.Selector, bool) {}
 
 // Init initializes the component.
 func (h *Help) Init(ctx context.Context) error {

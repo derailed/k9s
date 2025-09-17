@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -127,6 +128,131 @@ func TestAliasesSave(t *testing.T) {
 	require.NoError(t, a.Save())
 	require.NoError(t, a.LoadFile(config.AppAliasesFile))
 	assert.Len(t, a.Alias, c)
+}
+
+func TestAliasResolve(t *testing.T) {
+	uu := map[string]struct {
+		exp string
+		ok  bool
+		gvr *client.GVR
+		cmd *cmd.Interpreter
+	}{
+		"gvr": {
+			exp: "v1/pods",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods"),
+		},
+
+		"kind": {
+			exp: "pod",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods"),
+		},
+
+		"plural": {
+			exp: "pods",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods"),
+		},
+
+		"short-name": {
+			exp: "po",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods"),
+		},
+
+		"short-name-with-args": {
+			exp: "po 'a in (b,c)' @zorb bozo",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods 'a in (b,c)' @zorb bozo"),
+		},
+
+		"alias": {
+			exp: "pipo",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods"),
+		},
+
+		"toast-command": {
+			exp: "zorg",
+		},
+
+		"alias-no-args": {
+			exp: "wkl",
+			ok:  true,
+			gvr: client.WkGVR,
+			cmd: cmd.NewInterpreter("workloads"),
+		},
+
+		"alias-ns-arg": {
+			exp: "pp",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods default"),
+		},
+
+		"multi-alias-ns-inception": {
+			exp: "ppo",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods a=b,b=c default"),
+		},
+
+		"full-alias": {
+			exp: "ppc",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods @fred app=fred default"),
+		},
+
+		"plain-filter": {
+			exp: "po /fred @bozo ns-1",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods /fred @bozo ns-1"),
+		},
+
+		"alias-filter": {
+			exp: "pipo /fred @bozo ns-1",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods /fred @bozo ns-1"),
+		},
+
+		"complex-filter": {
+			exp: "ppc /fred @bozo ns-1",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods @bozo /fred app=fred ns-1"),
+		},
+	}
+
+	a := config.NewAliases()
+	a.Define(client.PodGVR, "po", "pipo", "pod")
+	a.Define(client.PodGVR, client.PodGVR.String())
+	a.Define(client.PodGVR, client.PodGVR.AsResourceName())
+	a.Define(client.WkGVR, client.WkGVR.String(), "workload", "wkl")
+	a.Define(client.NewGVR("pod default"), "pp")
+	a.Define(client.NewGVR("pipo a=b,b=c default"), "ppo")
+	a.Define(client.NewGVR("pod default app=fred @fred"), "ppc")
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.exp)
+			gvr, ok := a.Resolve(p)
+			assert.Equal(t, u.ok, ok)
+			if ok {
+				assert.Equal(t, u.gvr, gvr)
+				assert.Equal(t, u.cmd.GetLine(), p.GetLine())
+			}
+		})
+	}
 }
 
 // Helpers...

@@ -56,9 +56,9 @@ func NewXray(gvr *client.GVR) ResourceViewer {
 	}
 }
 
-func (*Xray) SetCommand(*cmd.Interpreter)      {}
-func (*Xray) SetFilter(string)                 {}
-func (*Xray) SetLabelSelector(labels.Selector) {}
+func (*Xray) SetCommand(*cmd.Interpreter)            {}
+func (*Xray) SetFilter(string, bool)                 {}
+func (*Xray) SetLabelSelector(labels.Selector, bool) {}
 
 // Init initializes the view.
 func (x *Xray) Init(ctx context.Context) error {
@@ -611,7 +611,7 @@ func (x *Xray) defaultContext() context.Context {
 	if x.CmdBuff().Empty() {
 		ctx = context.WithValue(ctx, internal.KeyLabels, labels.Everything())
 	} else {
-		if sel, err := ui.TrimLabelSelector(x.CmdBuff().GetText()); err == nil {
+		if sel, err := ui.ExtractLabelSelector(x.CmdBuff().GetText()); err == nil {
 			ctx = context.WithValue(ctx, internal.KeyLabels, sel)
 		}
 	}
@@ -690,7 +690,7 @@ func (x *Xray) styleTitle() string {
 		return title
 	}
 	if internal.IsLabelSelector(buff) {
-		if sel, err := ui.TrimLabelSelector(buff); err == nil {
+		if sel, err := ui.ExtractLabelSelector(buff); err == nil {
 			buff = sel.String()
 		}
 	}

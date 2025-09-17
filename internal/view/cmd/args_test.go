@@ -71,7 +71,7 @@ func TestFlagsNew(t *testing.T) {
 		"label-toast": {
 			i:  NewInterpreter("po"),
 			aa: []string{"="},
-			ll: make(args),
+			ll: args{labelKey: "="},
 		},
 
 		"multi-labels": {

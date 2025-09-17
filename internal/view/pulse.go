@@ -154,9 +154,9 @@ func (*Pulse) InCmdMode() bool {
 	return false
 }
 
-func (*Pulse) SetCommand(*cmd.Interpreter)      {}
-func (*Pulse) SetFilter(string)                 {}
-func (*Pulse) SetLabelSelector(labels.Selector) {}
+func (*Pulse) SetCommand(*cmd.Interpreter)            {}
+func (*Pulse) SetFilter(string, bool)                 {}
+func (*Pulse) SetLabelSelector(labels.Selector, bool) {}
 
 // StylesChanged notifies the skin changed.
 func (p *Pulse) StylesChanged(s *config.Styles) {
