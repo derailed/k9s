@@ -59,7 +59,7 @@ func Highlight(bb []byte, ii []int, c int) []byte {
 	for i := 0; i < len(bb); i++ {
 		if highlightMap[i] {
 			// Check if this is the start of a UTF-8 character
-			if i == 0 || (bb[i]&0xC0) != 0x80 {
+			if (bb[i] & 0xC0) != 0x80 {
 				// This is the start of a character, find the end
 				charStart := i
 				charEnd := i + 1

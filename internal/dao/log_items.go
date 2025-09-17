@@ -217,7 +217,6 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int
 		matches = append(matches, i)
 		ii := make([]int, 0, 10)
 		for _, loc := range locs {
-			// 直接使用字节索引，无需转换
 			for j := loc[0]; j < loc[1]; j++ {
 				ii = append(ii, j)
 			}
