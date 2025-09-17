@@ -1,6 +1,7 @@
 # K9s community plugins
 
-K9s plugins extend the tool to provide additional functionality via actions to further help you observe or administer your Kubernetes clusters.
+K9s plugins extend the tool to provide additional functionality via actions to further help you observe or administer
+your Kubernetes clusters.
 
 Following is an example of some plugin files in this directory. Other files are not listed in this table.
 
@@ -8,6 +9,7 @@ Following is an example of some plugin files in this directory. Other files are 
 | ------------------------------ | ----------------------------------------------------------------------------------------- | ----------------------------------- | --------- | ------------------------------------------------------------------------------------- |
 | ai-incident-investigation.yaml | Run AI investigation on application issues to find the root cause in seconds              | all                                 | Shift-h/o | [HolmesGPT](https://github.com/robusta-dev/holmesgpt)                                 |
 | argocd.yaml                    | Perform argocd operation quickly                                                          | applications                        | Shift-r   | [ArgoCD](https://argo-cd.readthedocs.io/en/stable/getting_started/)                   |
+| crd-wizard.yaml                | Clear and intuitive interface for visualizing and exploring CR(D)s                        | applications                        | Shift-w   | [crd-wizard](https://github.com/pehlicd/crd-wizard)                                   |
 | debug-container.yaml           | Add [ephemeral debug container](1)<br>([nicolaka/netshoot](2))                            | containers                          | Shift-d   |                                                                                       |
 | dive.yaml                      | Dive image layers                                                                         | containers                          | d         | [Dive](https://github.com/wagoodman/dive)                                             |
 | dup.yaml                       | Duplicate, edit and Debug resources                                                       | all                                 | Shift-d/e/v | [dup](https://github.com/vash/dup)                                                  |
@@ -30,6 +32,9 @@ Following is an example of some plugin files in this directory. Other files are 
 | start-alpine.yaml              | Starts a deployment for the `alpine:latest` docker image in the current namespace/context | deployments/pods                    | Ctrl-T    |                                                                                       |
 
 [1]: https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container
+
 [2]: https://github.com/nicolaka/netshoot
+
 [3]: https://keda.sh/
+
 [4]: https://inspektor-gadget.io/
