@@ -27,6 +27,7 @@ func TestIsSameSubject(t *testing.T) {
 			},
 			want: true,
 		},
+
 		"name-does-not-match": {
 			kind: rbacv1.UserKind,
 			name: "foo",
@@ -36,6 +37,7 @@ func TestIsSameSubject(t *testing.T) {
 			},
 			want: false,
 		},
+
 		"kind-does-not-match": {
 			kind: rbacv1.GroupKind,
 			name: "foo",
@@ -45,6 +47,7 @@ func TestIsSameSubject(t *testing.T) {
 			},
 			want: false,
 		},
+
 		"serviceAccount-all-match": {
 			kind:      rbacv1.ServiceAccountKind,
 			name:      "foo",
@@ -56,6 +59,7 @@ func TestIsSameSubject(t *testing.T) {
 			},
 			want: true,
 		},
+
 		"serviceAccount-namespace-no-match": {
 			kind:      rbacv1.ServiceAccountKind,
 			name:      "foo",
@@ -72,7 +76,7 @@ func TestIsSameSubject(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			same := isSameSubject(u.kind, u.namespace, u.name, &u.subject)
+			same := isSameSubject(u.kind, u.namespace, u.namespace, u.name, &u.subject)
 			assert.Equal(t, u.want, same)
 		})
 	}

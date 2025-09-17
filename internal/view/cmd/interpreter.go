@@ -4,9 +4,12 @@
 package cmd
 
 import (
+	"log/slog"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/slogs"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // Interpreter tracks user prompt input.
@@ -43,13 +46,59 @@ func (c *Interpreter) SwitchNS(ns string) {
 	}
 }
 
+func (c *Interpreter) Merge(p *Interpreter) {
+	if p == nil {
+		return
+	}
+	c.cmd = p.cmd
+	for k, v := range p.args {
+		// if _, ok := c.args[k]; !ok {
+		c.args[k] = v
+		// }
+	}
+	c.line = c.cmd + " " + c.args.String()
+}
+
 func (c *Interpreter) grok() {
 	ff := strings.Fields(c.line)
 	if len(ff) == 0 {
 		return
 	}
 	c.cmd = strings.ToLower(ff[0])
-	c.args = newArgs(c, ff[1:])
+
+	var lbls string
+	line := strings.TrimSpace(strings.Replace(c.line, c.cmd, "", 1))
+	if strings.Contains(line, "'") {
+		start, end, ok := quoteIndicies(line)
+		if ok {
+			lbls = line[start+1 : end]
+			line = strings.TrimSpace(strings.Replace(line, "'"+lbls+"'", "", 1))
+		} else {
+			slog.Error("Unmatched single quote in command line", slogs.Line, c.line)
+			line = ""
+		}
+	}
+	ff = strings.Fields(line)
+	if lbls != "" {
+		ff = append(ff, lbls)
+	}
+	c.args = newArgs(c, ff)
+}
+
+func quoteIndicies(s string) (start, end int, ok bool) {
+	start, end = -1, -1
+	for i, r := range s {
+		if r == '\'' {
+			if start == -1 {
+				start = i
+			} else if end == -1 {
+				end = i
+				break
+			}
+		}
+	}
+	ok = start != -1 && end != -1
+	return
 }
 
 // HasNS returns true if ns is present in prompt.
@@ -244,8 +293,6 @@ func (c *Interpreter) HasContext() (string, bool) {
 }
 
 // LabelsArg return the labels map if any.
-func (c *Interpreter) LabelsArg() (map[string]string, bool) {
-	ll, ok := c.args[labelKey]
-
-	return ToLabels(ll), ok
+func (c *Interpreter) LabelsSelector() (labels.Selector, error) {
+	return labels.Parse(c.args[labelKey])
 }

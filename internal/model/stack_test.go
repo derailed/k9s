@@ -305,13 +305,13 @@ func (c) InputHandler() func(*tcell.EventKey, func(tview.Primitive)) { return ni
 func (c) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
 	return nil
 }
-func (c) SetRect(int, int, int, int)       {}
-func (c) GetRect() (a, b, c, d int)        { return 0, 0, 0, 0 }
-func (c) GetFocusable() tview.Focusable    { return nil }
-func (c) Focus(func(tview.Primitive))      {}
-func (c) Blur()                            {}
-func (c) Start()                           {}
-func (c) Stop()                            {}
-func (c) Init(context.Context) error       { return nil }
-func (c) SetFilter(string)                 {}
-func (c) SetLabelSelector(labels.Selector) {}
+func (c) SetRect(int, int, int, int)             {}
+func (c) GetRect() (a, b, c, d int)              { return 0, 0, 0, 0 }
+func (c) GetFocusable() tview.Focusable          { return nil }
+func (c) Focus(func(tview.Primitive))            {}
+func (c) Blur()                                  {}
+func (c) Start()                                 {}
+func (c) Stop()                                  {}
+func (c) Init(context.Context) error             { return nil }
+func (c) SetFilter(string, bool)                 {}
+func (c) SetLabelSelector(labels.Selector, bool) {}

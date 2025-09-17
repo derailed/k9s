@@ -100,9 +100,12 @@ func (c *Command) contextCmd(p *cmd.Interpreter, pushCmd bool) error {
 		return useContext(c.app, ct)
 	}
 
-	gvr, v, err := c.viewMetaFor(p)
+	gvr, v, comd, err := c.viewMetaFor(p)
 	if err != nil {
 		return err
+	}
+	if comd != nil {
+		p = comd
 	}
 
 	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true, pushCmd)
@@ -126,7 +129,7 @@ func (c *Command) aliasCmd(p *cmd.Interpreter, pushCmd bool) error {
 	filter, _ := p.FilterArg()
 
 	v := NewAlias(client.AliGVR)
-	v.SetFilter(filter)
+	v.SetFilter(filter, true)
 
 	return c.exec(p, client.AliGVR, v, false, pushCmd)
 }
@@ -136,7 +139,7 @@ func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	if !ok {
 		return errors.New("invalid command. use `xray xxx`")
 	}
-	gvr, _, ok := c.alias.AsGVR(arg)
+	gvr, ok := c.alias.Resolve(p)
 	if !ok {
 		return fmt.Errorf("invalid resource name: %q", arg)
 	}
@@ -154,7 +157,7 @@ func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 		return err
 	}
 
-	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true, pushCmd)
+	return c.exec(p, client.XGVR, NewXray(gvr), true, pushCmd)
 }
 
 // Run execs the command by showing associated display.
@@ -162,9 +165,12 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) 
 	if c.specialCmd(p, pushCmd) {
 		return nil
 	}
-	gvr, v, err := c.viewMetaFor(p)
+	gvr, v, comd, err := c.viewMetaFor(p)
 	if err != nil {
 		return err
+	}
+	if comd != nil {
+		p.Merge(comd)
 	}
 
 	if context, ok := p.HasContext(); ok {
@@ -206,16 +212,18 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) 
 	}
 
 	co := c.componentFor(gvr, fqn, v)
-	co.SetFilter("")
-	co.SetLabelSelector(labels.Everything())
+	co.SetFilter("", true)
+	co.SetLabelSelector(labels.Everything(), true)
 	if f, ok := p.FilterArg(); ok {
-		co.SetFilter(f)
+		co.SetFilter("/"+f, true)
 	}
 	if f, ok := p.FuzzyArg(); ok {
-		co.SetFilter("-f " + f)
+		co.SetFilter("-f "+f, true)
 	}
-	if ss, ok := p.LabelsArg(); ok {
-		co.SetLabelSelector(labels.SelectorFromSet(ss))
+	if sel, err := p.LabelsSelector(); err == nil {
+		co.SetLabelSelector(sel, false)
+	} else {
+		slog.Error("Unable to grok labels selector", slogs.Error, err)
 	}
 
 	return c.exec(p, gvr, co, clearStack, pushCmd)
@@ -292,13 +300,10 @@ func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 	return true
 }
 
-func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, error) {
-	gvr, exp, ok := c.alias.AsGVR(p.Cmd())
+func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, *cmd.Interpreter, error) {
+	gvr, ok := c.alias.Resolve(p)
 	if !ok {
-		return client.NoGVR, nil, fmt.Errorf("`%s` command not found", p.Cmd())
-	}
-	if exp != "" {
-		p.Amend(cmd.NewInterpreter(gvr.String() + " " + exp))
+		return client.NoGVR, nil, nil, fmt.Errorf("`%s` command not found", p.Cmd())
 	}
 
 	v := MetaViewer{
@@ -310,7 +315,7 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, err
 		v = mv
 	}
 
-	return gvr, &v, nil
+	return gvr, &v, p, nil
 }
 
 func (*Command) componentFor(gvr *client.GVR, fqn string, v *MetaViewer) ResourceViewer {

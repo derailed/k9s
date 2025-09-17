@@ -10,16 +10,29 @@ import (
 )
 
 const (
-	cowCmd      = "cow"
-	canCmd      = "can"
-	nsFlag      = "-n"
-	filterFlag  = "/"
-	labelFlag   = "="
+	cowCmd         = "cow"
+	canCmd         = "can"
+	nsFlag         = "-n"
+	filterFlag     = "/"
+	labelFlagEq    = "="
+	labelFlagEqs   = "=="
+	labelFlagNotEq = "!="
+	labelFlagIn    = "in"
+	labelFlagNotin = "notin"
+	labelFlagQuote = "'"
+	label
 	fuzzyFlag   = "-f"
 	contextFlag = "@"
 )
 
 var (
+	labelFlags = []string{
+		labelFlagEq,
+		labelFlagEqs,
+		labelFlagNotEq,
+		labelFlagIn,
+		labelFlagNotin,
+	}
 	rbacRX = regexp.MustCompile(`^can\s+([ugs]):\s*([\w-:]+)\s*$`)
 
 	contextCmd = sets.New(

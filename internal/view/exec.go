@@ -180,6 +180,7 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 		}
 	}()
 
+	var interrupted bool
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func(cancel context.CancelFunc) {
@@ -191,6 +192,7 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 		case <-ctx.Done():
 			slog.Debug("Signal context canceled!")
 		}
+		interrupted = true
 	}(cancel)
 
 	cmds := make([]*exec.Cmd, 0, 1)
@@ -224,8 +226,8 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 
 	var o, e bytes.Buffer
 	err := pipe(ctx, opts, statusChan, &o, &e, cmds...)
-	if err != nil {
-		slog.Error("Exec failed",
+	if err != nil && !interrupted {
+		slog.Error("Pipe Exec failed",
 			slogs.Error, err,
 			slogs.Command, cmds,
 		)
@@ -235,7 +237,7 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 	return nil
 }
 
-func runKu(a *App, opts *shellOpts) (string, error) {
+func runKu(ctx context.Context, a *App, opts *shellOpts) (string, error) {
 	bin, err := exec.LookPath("kubectl")
 	if errors.Is(err, exec.ErrDot) {
 		slog.Error("Kubectl exec can not reside in current working directory", slogs.Error, err)
@@ -261,10 +263,10 @@ func runKu(a *App, opts *shellOpts) (string, error) {
 	}
 	opts.binary, opts.background = bin, false
 
-	return oneShoot(opts)
+	return oneShoot(ctx, opts)
 }
 
-func oneShoot(opts *shellOpts) (string, error) {
+func oneShoot(ctx context.Context, opts *shellOpts) (string, error) {
 	if opts.clear {
 		clearScreen()
 	}
@@ -273,7 +275,7 @@ func oneShoot(opts *shellOpts) (string, error) {
 		slogs.Bin, opts.binary,
 		slogs.Args, strings.Join(opts.args, " "),
 	)
-	cmd := exec.Command(opts.binary, opts.args...)
+	cmd := exec.CommandContext(ctx, opts.binary, opts.args...)
 
 	var err error
 	buff := bytes.NewBufferString("")
@@ -573,11 +575,20 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 
 		slog.Debug("Exec started")
 		err := cmd.Run()
-		slog.Debug("Running exec done", slogs.Error, err)
+		var ex *exec.ExitError
+		// Check if exec failed from a signal
+		if errors.As(err, &ex) && !ex.Exited() {
+			return nil
+		}
+		slog.Debug("Command exec done", slogs.Error, err)
 		if err == nil {
 			statusChan <- fmt.Sprintf("Command completed successfully: %q", cmd.String())
 		}
 		close(statusChan)
+
+		if err != nil {
+			err = fmt.Errorf("command failed. Check logs: %w", err)
+		}
 
 		return err
 	}

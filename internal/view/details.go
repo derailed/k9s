@@ -60,9 +60,9 @@ func NewDetails(app *App, title, subject, contentType string, searchable bool) *
 	return &d
 }
 
-func (*Details) SetCommand(*cmd.Interpreter)      {}
-func (*Details) SetFilter(string)                 {}
-func (*Details) SetLabelSelector(labels.Selector) {}
+func (*Details) SetCommand(*cmd.Interpreter)            {}
+func (*Details) SetFilter(string, bool)                 {}
+func (*Details) SetLabelSelector(labels.Selector, bool) {}
 
 // Init initializes the viewer.
 func (d *Details) Init(_ context.Context) error {

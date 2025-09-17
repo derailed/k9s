@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -81,19 +82,28 @@ func (a *Aliases) Clear() {
 	}
 }
 
-func (a *Aliases) Resolve(command string) (*client.GVR, string, bool) {
-	agvr, ok := a.Get(command)
-	if !ok {
-		return nil, "", false
-	}
-
-	p := cmd.NewInterpreter(agvr.String())
+func (a *Aliases) Resolve(p *cmd.Interpreter) (*client.GVR, bool) {
 	gvr, ok := a.Get(p.Cmd())
 	if !ok {
-		return agvr, "", true
+		return nil, false
 	}
 
-	return gvr, p.Args(), true
+	if gvr.IsK8sRes() {
+		p.Reset(strings.Replace(p.GetLine(), p.Cmd(), gvr.String(), 1))
+		return gvr, true
+	}
+
+	for gvr.IsCommand() {
+		ap := cmd.NewInterpreter(gvr.String())
+		gvr, ok = a.Get(ap.Cmd())
+		if !ok {
+			return gvr, false
+		}
+		ap.Merge(p)
+		p.Reset(strings.Replace(ap.GetLine(), ap.Cmd(), gvr.String(), 1))
+	}
+
+	return gvr, true
 }
 
 // Get retrieves an alias.
