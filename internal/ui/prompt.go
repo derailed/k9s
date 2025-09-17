@@ -5,6 +5,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/config"
@@ -177,7 +178,14 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if s, ok := m.CurrentSuggestion(); ok {
-			p.model.SetText(p.model.GetText()+s, "")
+			// Substitute the last word of the text with the suggestion if text isn't empty.
+			// Otherwise, just write the suggestion.
+			if words := strings.Fields(strings.TrimSpace(p.model.GetText())); len(words) != 0 {
+				text := strings.Join(words[0:len(words)-1], " ") + " " + s
+				p.model.SetText(strings.TrimSpace(text), "")
+			} else {
+				p.model.SetText(s, "")
+			}
 			m.ClearSuggestions()
 		}
 	}
@@ -226,16 +234,77 @@ func (p *Prompt) update(text, suggestion string) {
 	p.write(text, suggestion)
 }
 
+func (p *Prompt) getSuggestionCharIdxRanges(lastWord, suggest string) [][]int {
+	switch p.app.Config.K9s.SuggestionMode {
+	case string(config.SuggestionModeFuzzy):
+		idxRanges := make([][]int, 0, len(lastWord))
+		latestIdx := -1
+		for _, char := range lastWord {
+			// Find the character within the suggest, but only starting after where the last character was found.
+			foundIdx := strings.IndexRune(suggest[latestIdx+1:], char)
+			// This should never happen if we reached here, but just guarding.
+			if foundIdx == -1 {
+				return nil
+			}
+			// Offset by the cutoff length of the string from previous iterations.
+			foundIdx += latestIdx + 1
+			idxRanges = append(idxRanges, []int{foundIdx, foundIdx + 1})
+			latestIdx = foundIdx
+		}
+		return idxRanges
+	default:
+		// Get indices of where the last word of text lie within the suggestion.
+		// Could be anywhere if LONGEST_SUBSTRING mode suggestion is used.
+		// Otherwise at 0 for PREFIX/LONGEST_PREFIX suggestion modes.
+		startIdx := strings.Index(suggest, lastWord)
+		endIdx := startIdx + len(lastWord)
+		if startIdx == -1 {
+			return nil
+		}
+		return [][]int{{startIdx, endIdx}}
+	}
+}
+
 func (p *Prompt) write(text, suggest string) {
 	p.mx.Lock()
 	defer p.mx.Unlock()
 
 	p.SetCursorIndex(p.spacer + len(text))
+
+	written := text
+
 	if suggest != "" {
-		text += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
+		words := strings.Fields(strings.TrimSpace(text))
+
+		if len(words) != 0 {
+			// Append all words of text except the last one.
+			written = strings.Join(words[0:len(words)-1], " ") + " "
+			lastWord := words[len(words)-1]
+
+			if idxRanges := p.getSuggestionCharIdxRanges(lastWord, suggest); idxRanges != nil {
+				written += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest[0:idxRanges[0][0]])
+				for i, idxRange := range idxRanges {
+					if i > 0 {
+						written += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest[idxRanges[i-1][1]:idxRanges[i][0]])
+					}
+					written += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().FgColor, suggest[idxRange[0]:idxRange[1]])
+				}
+				written += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest[idxRanges[len(idxRanges)-1][1]:])
+			} else {
+				// `lastWord` isn't found within suggest as per the configured
+				// `SuggestionMode`. Just append `lastWord` again.
+				written += lastWord
+			}
+
+			written = strings.TrimSpace(written)
+		} else {
+			// No text, just write suggest in `SuggestColor`.
+			written = fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
+		}
 	}
+
 	p.StylesChanged(p.styles)
-	_, _ = fmt.Fprintf(p, defaultPrompt, p.icon, p.prefix, text)
+	_, _ = fmt.Fprintf(p, defaultPrompt, p.icon, p.prefix, written)
 }
 
 // ----------------------------------------------------------------------------

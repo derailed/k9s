@@ -58,7 +58,7 @@ func Test_toLabels(t *testing.T) {
 	}
 }
 
-func TestSuggestSubCommand(t *testing.T) {
+func TestSuggestSubCommandPrefix(t *testing.T) {
 	namespaceNames := map[string]struct{}{
 		"kube-system":   {},
 		"kube-public":   {},
@@ -69,26 +69,139 @@ func TestSuggestSubCommand(t *testing.T) {
 
 	tests := []struct {
 		Command     string
-		Suggestions []string
+		Suggestions map[string]float64
 	}{
 		{Command: "q", Suggestions: nil},
 		{Command: "xray  dp", Suggestions: nil},
 		{Command: "help  k", Suggestions: nil},
-		{Command: "ctx p", Suggestions: []string{"re", "rod"}},
-		{Command: "ctx   p", Suggestions: []string{"re", "rod"}},
-		{Command: "ctx pr", Suggestions: []string{"e", "od"}},
-		{Command: "ctx", Suggestions: []string{" develop", " pre", " prod", " test"}},
-		{Command: "ctx ", Suggestions: []string{"develop", "pre", "prod", "test"}},
-		{Command: "context   d", Suggestions: []string{"evelop"}},
-		{Command: "contexts   t", Suggestions: []string{"est"}},
+		{Command: "ctx p", Suggestions: map[string]float64{"pre": 0, "prod": 0}},
+		{Command: "ctx   p", Suggestions: map[string]float64{"pre": 0, "prod": 0}},
+		{Command: "ctx pr", Suggestions: map[string]float64{"pre": 0, "prod": 0}},
+		{Command: "ctx", Suggestions: map[string]float64{" develop": 0, " pre": 0, " prod": 0, " test": 0}},
+		{Command: "ctx ", Suggestions: map[string]float64{"develop": 0, "pre": 0, "prod": 0, "test": 0}},
+		{Command: "context   d", Suggestions: map[string]float64{"develop": 0}},
+		{Command: "contexts   t", Suggestions: map[string]float64{"test": 0}},
 		{Command: "po ", Suggestions: nil},
 		{Command: "po  x", Suggestions: nil},
-		{Command: "po k", Suggestions: []string{"ube-public", "ube-system"}},
-		{Command: "po  kube-", Suggestions: []string{"public", "system"}},
+		{Command: "po k", Suggestions: map[string]float64{"kube-public": 0, "kube-system": 0}},
+		{Command: "po  kube-", Suggestions: map[string]float64{"kube-public": 0, "kube-system": 0}},
 	}
 
 	for _, tt := range tests {
-		got := SuggestSubCommand(tt.Command, namespaceNames, contextNames)
+		got := SuggestSubCommand("PREFIX", tt.Command, namespaceNames, contextNames)
+		assert.Equal(t, tt.Suggestions, got)
+	}
+}
+
+func TestSuggestSubCommandFuzzy(t *testing.T) {
+	namespaceNames := map[string]struct{}{
+		"kube-system":   {},
+		"kube-public":   {},
+		"default":       {},
+		"nginx-ingress": {},
+	}
+	contextNames := []string{"develop", "test", "pre", "prod"}
+
+	// The weights are: 1 / distance.
+	// Distance is the number of needed character additions.
+	tests := []struct {
+		Command     string
+		Suggestions map[string]float64
+	}{
+		{Command: "q", Suggestions: nil},
+		{Command: "xray  dp", Suggestions: nil},
+		{Command: "help  k", Suggestions: nil},
+		{Command: "ctx p", Suggestions: map[string]float64{"develop": 1.0 / 6.0, "pre": 1.0 / 2.0, "prod": 1.0 / 3.0}},
+		{Command: "ctx   p", Suggestions: map[string]float64{"develop": 1.0 / 6.0, "pre": 1.0 / 2.0, "prod": 1.0 / 3.0}},
+		{Command: "ctx pr", Suggestions: map[string]float64{"pre": 1.0, "prod": 1.0 / 2.0}},
+		{Command: "ctx pr", Suggestions: map[string]float64{"pre": 1.0, "prod": 1.0 / 2.0}},
+		{Command: "ctx", Suggestions: map[string]float64{" develop": 1.0 / 7.0, " pre": 1.0 / 3.0, " prod": 1.0 / 4.0, " test": 1.0 / 4.0}},
+		{Command: "ctx ", Suggestions: map[string]float64{"develop": 1.0 / 7.0, "pre": 1.0 / 3.0, "prod": 1.0 / 4.0, "test": 1.0 / 4.0}},
+		{Command: "context   d", Suggestions: map[string]float64{"develop": 1.0 / 6.0, "prod": 1.0 / 3.0}},
+		{Command: "contexts   t", Suggestions: map[string]float64{"test": 1.0 / 3.0}},
+		{Command: "po ", Suggestions: nil},
+		{Command: "po  x", Suggestions: map[string]float64{"nginx-ingress": 1.0 / 12.0}},
+		{Command: "po k", Suggestions: map[string]float64{"kube-public": 1.0 / 10.0, "kube-system": 1.0 / 10.0}},
+		{Command: "po  kube-", Suggestions: map[string]float64{"kube-public": 1.0 / 6.0, "kube-system": 1.0 / 6.0}},
+		// Fuzzy-specific testcases.
+		{Command: "ctx pd", Suggestions: map[string]float64{"prod": 1.0 / 2.0}},
+		{Command: "ctx dp", Suggestions: map[string]float64{"develop": 1.0 / 5.0}},
+		{Command: "ctx tt", Suggestions: map[string]float64{"test": 1.0 / 2.0}},
+		{Command: "po dlt", Suggestions: map[string]float64{"default": 1.0 / 4.0}},
+	}
+
+	for _, tt := range tests {
+		got := SuggestSubCommand("FUZZY", tt.Command, namespaceNames, contextNames)
+		assert.Equal(t, tt.Suggestions, got)
+	}
+}
+
+func TestSuggestSubCommandLongestPrefix(t *testing.T) {
+	namespaceNames := map[string]struct{}{
+		"kube-system":   {},
+		"kube-public":   {},
+		"default":       {},
+		"nginx-ingress": {},
+	}
+	contextNames := []string{"develop", "test", "pre", "prod"}
+
+	tests := []struct {
+		Command     string
+		Suggestions map[string]float64
+	}{
+		{Command: "q", Suggestions: nil},
+		{Command: "xray  dp", Suggestions: nil},
+		{Command: "help  k", Suggestions: nil},
+		{Command: "ctx p", Suggestions: map[string]float64{"pre": 1.0 / 3.0, "prod": 1.0 / 4.0}},
+		{Command: "ctx   p", Suggestions: map[string]float64{"pre": 1.0 / 3.0, "prod": 1.0 / 4.0}},
+		{Command: "ctx pr", Suggestions: map[string]float64{"pre": 2.0 / 3.0, "prod": 2.0 / 4.0}},
+		{Command: "ctx", Suggestions: map[string]float64{" develop": 0, " pre": 0, " prod": 0, " test": 0}},
+		{Command: "ctx ", Suggestions: map[string]float64{"develop": 0, "pre": 0, "prod": 0, "test": 0}},
+		{Command: "context   d", Suggestions: map[string]float64{"develop": 1.0 / 7.0}},
+		{Command: "contexts   t", Suggestions: map[string]float64{"test": 1.0 / 4.0}},
+		{Command: "po ", Suggestions: nil},
+		{Command: "po  x", Suggestions: nil},
+		{Command: "po k", Suggestions: map[string]float64{"kube-public": 1.0 / 11.0, "kube-system": 1.0 / 11.0}},
+		{Command: "po  kube-", Suggestions: map[string]float64{"kube-public": 5.0 / 11.0, "kube-system": 5.0 / 11.0}},
+	}
+
+	for _, tt := range tests {
+		got := SuggestSubCommand("LONGEST_PREFIX", tt.Command, namespaceNames, contextNames)
+		assert.Equal(t, tt.Suggestions, got)
+	}
+}
+
+func TestSuggestSubCommandLongestSubstring(t *testing.T) {
+	namespaceNames := map[string]struct{}{
+		"kube-system":   {},
+		"kube-public":   {},
+		"default":       {},
+		"nginx-ingress": {},
+	}
+	contextNames := []string{"develop", "test", "pre", "prod"}
+
+	tests := []struct {
+		Command     string
+		Suggestions map[string]float64
+	}{
+		{Command: "q", Suggestions: nil},
+		{Command: "xray  dp", Suggestions: nil},
+		{Command: "help  k", Suggestions: nil},
+		{Command: "ctx p", Suggestions: map[string]float64{"develop": 1.0 / 7.0, "pre": 1.0 / 3.0, "prod": 1.0 / 4.0}},
+		{Command: "ctx   p", Suggestions: map[string]float64{"develop": 1.0 / 7.0, "pre": 1.0 / 3.0, "prod": 1.0 / 4.0}},
+		{Command: "ctx pr", Suggestions: map[string]float64{"pre": 2.0 / 3.0, "prod": 2.0 / 4.0}},
+		{Command: "ctx", Suggestions: map[string]float64{" develop": 0, " pre": 0, " prod": 0, " test": 0}},
+		{Command: "ctx ", Suggestions: map[string]float64{"develop": 0, "pre": 0, "prod": 0, "test": 0}},
+		{Command: "context   d", Suggestions: map[string]float64{"develop": 1.0 / 7.0, "prod": 1.0 / 4.0}},
+		{Command: "contexts   t", Suggestions: map[string]float64{"test": 1.0 / 4.0}},
+		{Command: "po ", Suggestions: nil},
+		{Command: "po  x", Suggestions: map[string]float64{"nginx-ingress": 1.0 / 13.0}},
+		{Command: "po k", Suggestions: map[string]float64{"kube-public": 1.0 / 11.0, "kube-system": 1.0 / 11.0}},
+		{Command: "po  kube-", Suggestions: map[string]float64{"kube-public": 5.0 / 11.0, "kube-system": 5.0 / 11.0}},
+	}
+
+	for _, tt := range tests {
+		got := SuggestSubCommand("LONGEST_SUBSTRING", tt.Command, namespaceNames, contextNames)
 		assert.Equal(t, tt.Suggestions, got)
 	}
 }

@@ -198,10 +198,12 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			return a.cmdHistory.List()
 		}
 
+		entriesMap := make(map[string]float64)
+
 		ls := strings.ToLower(s)
 		for alias := range maps.Keys(a.command.alias.Alias) {
-			if suggest, ok := cmd.ShouldAddSuggest(ls, alias); ok {
-				entries = append(entries, suggest)
+			if weight := cmd.ShouldAddSuggest(a.Config.K9s.SuggestionMode, ls, alias); weight != -1 {
+				entriesMap[alias] = weight
 			}
 		}
 
@@ -209,11 +211,26 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 		if err != nil {
 			slog.Error("Failed to obtain list of namespaces", slogs.Error, err)
 		}
-		entries = append(entries, cmd.SuggestSubCommand(s, namespaceNames, contextNames)...)
-		if len(entries) == 0 {
+		maps.Copy(entriesMap, cmd.SuggestSubCommand(a.Config.K9s.SuggestionMode, s, namespaceNames, contextNames))
+		if len(entriesMap) == 0 {
 			return nil
 		}
-		entries.Sort()
+
+		entries = make([]string, 0, len(entriesMap))
+		for k := range entriesMap {
+			entries = append(entries, k)
+		}
+
+		// PREFIX suggestion mode: all weights are set to 0, sort strings normally.
+		// FUZZY,LONGEST_PREFIX,LONGEST_SUBSTRING suggestion modes: sort based on weights
+		// and fallback to string sorting for equal weights.
+		sort.SliceStable(entries, func(i, j int) bool {
+			if entriesMap[entries[i]] == entriesMap[entries[j]] {
+				return entries[i] < entries[j]
+			}
+			return entriesMap[entries[i]] > entriesMap[entries[j]]
+		})
+
 		return
 	}
 }

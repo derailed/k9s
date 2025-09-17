@@ -50,6 +50,7 @@ type K9s struct {
 	Logger              Logger     `json:"logger" yaml:"logger"`
 	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
 	DefaultView         string     `json:"defaultView" yaml:"defaultView"`
+	SuggestionMode      string     `json:"suggestionMode" yaml:"suggestionMode,omitempty"`
 	manualRefreshRate   float32
 	manualReadOnly      *bool
 	manualCommand       *string
@@ -77,6 +78,7 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 		PortForwardAddress: defaultPFAddress(),
 		ShellPod:           NewShellPod(),
 		ImageScans:         NewImageScans(),
+		SuggestionMode:     string(DefaultSuggestionMode),
 		dir:                data.NewDir(AppContextsDir),
 		conn:               conn,
 		ks:                 ks,
@@ -152,6 +154,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	if k1.Thresholds != nil {
 		k.Thresholds = k1.Thresholds
 	}
+	k.SuggestionMode = k1.SuggestionMode
 }
 
 // AppScreenDumpDir fetch screen dumps dir.
@@ -332,6 +335,9 @@ func (k *K9s) Override(k9sFlags *Flags) {
 	}
 	k.manualCommand = k9sFlags.Command
 	k.manualScreenDumpDir = k9sFlags.ScreenDumpDir
+	if k9sFlags.SuggestionMode != nil && *k9sFlags.SuggestionMode != string(DefaultSuggestionMode) {
+		k.SuggestionMode = *k9sFlags.SuggestionMode
+	}
 }
 
 // IsHeadless returns headless setting.

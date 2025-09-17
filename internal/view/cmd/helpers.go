@@ -4,10 +4,10 @@
 package cmd
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 func ToLabels(s string) map[string]string {
@@ -30,18 +30,36 @@ func ToLabels(s string) map[string]string {
 }
 
 // ShouldAddSuggest checks if a suggestion match the given command.
-func ShouldAddSuggest(command, suggest string) (string, bool) {
-	if command != suggest && strings.HasPrefix(suggest, command) {
-		return strings.TrimPrefix(suggest, command), true
+func ShouldAddSuggest(suggestionMode, command, suggest string) float64 {
+	var condition bool
+	var weight float64 = 0
+
+	switch suggestionMode {
+	case "FUZZY":
+		// Weight is the inverse of the Levenshtein distance.
+		weight = 1 / float64(fuzzy.RankMatch(command, suggest))
+		condition = (weight != -1)
+	case "LONGEST_PREFIX":
+		condition = strings.HasPrefix(suggest, command)
+		weight = float64(len(command)) / float64(len(suggest))
+	case "LONGEST_SUBSTRING":
+		condition = strings.Contains(suggest, command)
+		weight = float64(len(command)) / float64(len(suggest))
+	default:
+		condition = strings.HasPrefix(suggest, command)
 	}
 
-	return "", false
+	if condition {
+		return weight
+	}
+
+	return -1
 }
 
 // SuggestSubCommand suggests namespaces or contexts based on current command.
-func SuggestSubCommand(command string, namespaces client.NamespaceNames, contexts []string) []string {
+func SuggestSubCommand(suggestionMode, command string, namespaces client.NamespaceNames, contexts []string) map[string]float64 {
 	p := NewInterpreter(command)
-	var suggests []string
+	var suggests map[string]float64
 	switch {
 	case p.IsCowCmd(), p.IsHelpCmd(), p.IsAliasCmd(), p.IsBailCmd(), p.IsDirCmd():
 		return nil
@@ -51,18 +69,18 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 		if !ok || ns == "" {
 			return nil
 		}
-		suggests = completeNS(ns, namespaces)
+		suggests = completeNS(suggestionMode, ns, namespaces)
 
 	case p.IsContextCmd():
 		n, ok := p.ContextArg()
 		if !ok {
 			return nil
 		}
-		suggests = completeCtx(command, n, contexts)
+		suggests = completeCtx(suggestionMode, command, n, contexts)
 
 	case p.HasNS():
 		if n, ok := p.HasContext(); ok {
-			suggests = completeCtx(command, n, contexts)
+			suggests = completeCtx(suggestionMode, command, n, contexts)
 		}
 		if len(suggests) > 0 {
 			break
@@ -72,43 +90,50 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 		if !ok {
 			return nil
 		}
-		suggests = completeNS(ns, namespaces)
+		suggests = completeNS(suggestionMode, ns, namespaces)
 
 	default:
 		if n, ok := p.HasContext(); ok {
-			suggests = completeCtx(command, n, contexts)
+			suggests = completeCtx(suggestionMode, command, n, contexts)
 		}
 	}
-	slices.Sort(suggests)
 
 	return suggests
 }
 
-func completeNS(s string, nn client.NamespaceNames) []string {
+func completeNS(suggestionMode, s string, nn client.NamespaceNames) map[string]float64 {
 	s = strings.ToLower(s)
-	var suggests []string
-	if suggest, ok := ShouldAddSuggest(s, client.NamespaceAll); ok {
-		suggests = append(suggests, suggest)
+	suggests := make(map[string]float64)
+	if weight := ShouldAddSuggest(suggestionMode, s, client.NamespaceAll); weight != -1 {
+		suggests[client.NamespaceAll] = weight
 	}
 	for ns := range nn {
-		if suggest, ok := ShouldAddSuggest(s, ns); ok {
-			suggests = append(suggests, suggest)
+		if weight := ShouldAddSuggest(suggestionMode, s, ns); weight != -1 {
+			suggests[ns] = weight
 		}
+	}
+
+	if len(suggests) == 0 {
+		return nil
 	}
 
 	return suggests
 }
 
-func completeCtx(command, s string, contexts []string) []string {
-	var suggests []string
+func completeCtx(suggestionMode, command, s string, contexts []string) map[string]float64 {
+	suggests := make(map[string]float64)
 	for _, ctxName := range contexts {
-		if suggest, ok := ShouldAddSuggest(s, ctxName); ok {
+		if weight := ShouldAddSuggest(suggestionMode, s, ctxName); weight != -1 {
 			if s == "" && !strings.HasSuffix(command, " ") {
-				suggests = append(suggests, " "+suggest)
+				suggests[" "+ctxName] = weight
 				continue
 			}
-			suggests = append(suggests, suggest)
+			suggests[ctxName] = weight
 		}
+	}
+
+	if len(suggests) == 0 {
+		return nil
 	}
 
 	return suggests
