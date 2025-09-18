@@ -177,30 +177,41 @@ func TestFilterCmd(t *testing.T) {
 		filter string
 	}{
 		"empty": {},
+
 		"normal": {
 			cmd:    "pod /fred",
 			ok:     true,
 			filter: "fred",
 		},
+
 		"caps": {
 			cmd:    "POD /FRED",
 			ok:     true,
 			filter: "fred",
 		},
+
 		"filter+ns": {
 			cmd:    "pod /fred ns1",
 			ok:     true,
 			filter: "fred",
 		},
+
 		"ns+filter": {
 			cmd:    "pod ns1 /fred",
 			ok:     true,
 			filter: "fred",
 		},
+
 		"ns+filter+labels": {
 			cmd:    "pod ns1 /fred app=blee,fred=zorg",
 			ok:     true,
 			filter: "fred",
+		},
+
+		"filtered": {
+			cmd:    "pod /cilium kube-system",
+			ok:     true,
+			filter: "cilium",
 		},
 	}
 
@@ -431,23 +442,33 @@ func TestContextCmd(t *testing.T) {
 		ctx string
 	}{
 		"empty": {},
+
 		"happy-full": {
 			cmd: "context ctx1",
 			ok:  true,
 			ctx: "ctx1",
 		},
+
 		"happy-alias": {
 			cmd: "ctx ctx1",
 			ok:  true,
 			ctx: "ctx1",
 		},
+
 		"toast": {
 			cmd: "ctxto ctx1",
 		},
+
 		"caps": {
 			cmd: "ctx Dev",
 			ok:  true,
 			ctx: "Dev",
+		},
+
+		"contains-key": {
+			cmd: "ctx kind-fred",
+			ok:  true,
+			ctx: "kind-fred",
 		},
 	}
 

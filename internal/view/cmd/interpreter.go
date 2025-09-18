@@ -52,9 +52,7 @@ func (c *Interpreter) Merge(p *Interpreter) {
 	}
 	c.cmd = p.cmd
 	for k, v := range p.args {
-		// if _, ok := c.args[k]; !ok {
 		c.args[k] = v
-		// }
 	}
 	c.line = c.cmd + " " + c.args.String()
 }

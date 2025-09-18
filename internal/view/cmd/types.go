@@ -17,8 +17,8 @@ const (
 	labelFlagEq    = "="
 	labelFlagEqs   = "=="
 	labelFlagNotEq = "!="
-	labelFlagIn    = "in"
-	labelFlagNotin = "notin"
+	labelFlagIn    = " in "
+	labelFlagNotin = " notin "
 	labelFlagQuote = "'"
 	label
 	fuzzyFlag   = "-f"

@@ -47,14 +47,14 @@ func Test_viewMetaFor(t *testing.T) {
 		"custom-alias": {
 			cmd: "pdl",
 			gvr: client.PodGVR,
-			p:   cmd.NewInterpreter("v1/pods @fred app=blee default"),
+			p:   cmd.NewInterpreter("v1/pods @fred 'app=blee' default"),
 			err: errors.New("blee"),
 		},
 
 		"inception": {
 			cmd: "pdal blee",
 			gvr: client.PodGVR,
-			p:   cmd.NewInterpreter("v1/pods @fred app=blee blee"),
+			p:   cmd.NewInterpreter("v1/pods @fred 'app=blee' blee"),
 			err: errors.New("blee"),
 		},
 	}
@@ -66,7 +66,7 @@ func Test_viewMetaFor(t *testing.T) {
 	}
 	c.alias.Define(client.PodGVR, "po", "pod", "pods", client.PodGVR.String())
 	c.alias.Define(client.NewGVR("pod default"), "pd")
-	c.alias.Define(client.NewGVR("pod @fred app=blee default"), "pdl")
+	c.alias.Define(client.NewGVR("pod @fred 'app=blee' default"), "pdl")
 	c.alias.Define(client.NewGVR("pdl"), "pdal")
 
 	for k, u := range uu {

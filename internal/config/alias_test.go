@@ -201,14 +201,14 @@ func TestAliasResolve(t *testing.T) {
 			exp: "ppo",
 			ok:  true,
 			gvr: client.PodGVR,
-			cmd: cmd.NewInterpreter("v1/pods a=b,b=c default"),
+			cmd: cmd.NewInterpreter("v1/pods 'a=b,b=c' default"),
 		},
 
 		"full-alias": {
 			exp: "ppc",
 			ok:  true,
 			gvr: client.PodGVR,
-			cmd: cmd.NewInterpreter("v1/pods @fred app=fred default"),
+			cmd: cmd.NewInterpreter("v1/pods @fred 'app=fred' default"),
 		},
 
 		"plain-filter": {
@@ -229,7 +229,21 @@ func TestAliasResolve(t *testing.T) {
 			exp: "ppc /fred @bozo ns-1",
 			ok:  true,
 			gvr: client.PodGVR,
-			cmd: cmd.NewInterpreter("v1/pods @bozo /fred app=fred ns-1"),
+			cmd: cmd.NewInterpreter("v1/pods @bozo /fred 'app=fred' ns-1"),
+		},
+
+		"filtered": {
+			exp: "pc",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods /cilium kube-system"),
+		},
+
+		"labels-in": {
+			exp: "ppp",
+			ok:  true,
+			gvr: client.PodGVR,
+			cmd: cmd.NewInterpreter("v1/pods 'app in (be,fe)'"),
 		},
 	}
 
@@ -241,6 +255,8 @@ func TestAliasResolve(t *testing.T) {
 	a.Define(client.NewGVR("pod default"), "pp")
 	a.Define(client.NewGVR("pipo a=b,b=c default"), "ppo")
 	a.Define(client.NewGVR("pod default app=fred @fred"), "ppc")
+	a.Define(client.NewGVR("pod /cilium kube-system"), "pc")
+	a.Define(client.NewGVR("pod 'app in (be,fe)'"), "ppp")
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
