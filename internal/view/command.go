@@ -215,7 +215,7 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) 
 	co.SetFilter("", true)
 	co.SetLabelSelector(labels.Everything(), true)
 	if f, ok := p.FilterArg(); ok {
-		co.SetFilter("/"+f, true)
+		co.SetFilter(f, true)
 	}
 	if f, ok := p.FuzzyArg(); ok {
 		co.SetFilter("-f "+f, true)

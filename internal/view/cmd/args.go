@@ -48,11 +48,11 @@ func newArgs(p *Interpreter, aa []string) args {
 				arguments[filterKey] = strings.ToLower(a[1:])
 			}
 
-		case isLabelArg(a):
-			arguments[labelKey] = strings.ToLower(a)
-
 		case strings.Index(a, contextFlag) == 0:
 			arguments[contextKey] = a[1:]
+
+		case isLabelArg(a):
+			arguments[labelKey] = strings.ToLower(a)
 
 		default:
 			switch {
@@ -86,6 +86,8 @@ func (a args) String() string {
 	for _, k := range slices.Sorted(kk) {
 		v := a[k]
 		switch k {
+		case labelKey:
+			v = "'" + v + "'"
 		case filterKey:
 			v = filterFlag + v
 		case contextKey:
