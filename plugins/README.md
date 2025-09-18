@@ -30,6 +30,7 @@ Following is an example of some plugin files in this directory. Other files are 
 | trace-dns.yaml                 | Trace DNS resolution using Inspektor Gadget (4)                                           | containers/pods/nodes               | Shift-d   |                                                                                       |
 | vector-dev-top.yaml            | Run `vector top` in vector.dev container                                                  | pods/container                      | h         | [vector top](https://vector.dev/highlights/2020-12-23-vector-top/)                    |
 | start-alpine.yaml              | Starts a deployment for the `alpine:latest` docker image in the current namespace/context | deployments/pods                    | Ctrl-T    |                                                                                       |
+| kubectl_ai.yml | Integrate kubectl-ai to implement intelligent operations using LLM (The intelligent capabilities and security depend on the LLM model already used by the kubectl-ai project, which is currently not mature, please do not use in production environments)  | all  | Ctrl-v   | [kubectl-ai](https://github.com/GoogleCloudPlatform/kubectl-ai)   |
 
 [1]: https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container
 
