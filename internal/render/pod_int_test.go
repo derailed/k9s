@@ -10,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	res "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -765,7 +766,7 @@ func Test_diagnose(t *testing.T) {
 			if u.err == "" {
 				assert.NoError(t, err)
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), u.err)
 			}
 		})
