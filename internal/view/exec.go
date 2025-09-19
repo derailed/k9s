@@ -587,7 +587,7 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 		close(statusChan)
 
 		if err != nil {
-			err = fmt.Errorf("command failed. Check logs: %w", err)
+			err = fmt.Errorf("command failed. Check k9s logs: %w", err)
 		}
 
 		return err
