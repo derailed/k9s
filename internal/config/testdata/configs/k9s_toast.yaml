@@ -15,7 +15,7 @@ k9s:
     invert: false
   skipLatestRevCheck: yes
   disablePodCounts: false
-  disableSanitizeConfirmation: false
+  disableSanitizeConfirmationAck: false
   shellPods:
     image: busybox:1.37.0
     namespace: default

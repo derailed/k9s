@@ -566,7 +566,7 @@ func TestConfigSaveFile(t *testing.T) {
 	}
 	cfg.K9s.APIServerTimeout = "30s"
 	cfg.K9s.ReadOnly = true
-	cfg.K9s.DisableSanitizeConfirmation = true
+	cfg.K9s.DisableSanitizeConfirmationAck = true
 	cfg.K9s.Logger.TailCount = 500
 	cfg.K9s.Logger.BufferSize = 800
 	cfg.K9s.UI.UseFullGVRTitle = true
