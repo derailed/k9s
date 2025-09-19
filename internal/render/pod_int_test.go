@@ -629,6 +629,149 @@ func Test_podRequests(t *testing.T) {
 	}
 }
 
+func Test_readinessGateStats(t *testing.T) {
+	const (
+		gate1 = "k9s.derailed.com/gate1"
+		gate2 = "k9s.derailed.com/gate2"
+	)
+
+	uu := map[string]struct {
+		spec *v1.PodSpec
+		st   *v1.PodStatus
+		r    int
+		t    int
+	}{
+		"empty": {
+			spec: &v1.PodSpec{},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: v1.PodReady, Status: v1.ConditionTrue}},
+			},
+			r: 0,
+			t: 0,
+		},
+		"single": {
+			spec: &v1.PodSpec{
+				ReadinessGates: []v1.PodReadinessGate{{ConditionType: gate1}},
+			},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: gate1, Status: v1.ConditionTrue}},
+			},
+			r: 1,
+			t: 1,
+		},
+		"multiple": {
+			spec: &v1.PodSpec{
+				ReadinessGates: []v1.PodReadinessGate{{ConditionType: gate1}, {ConditionType: gate2}},
+			},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: gate1, Status: v1.ConditionTrue}, {Type: gate2, Status: v1.ConditionTrue}, {Type: v1.PodReady, Status: v1.ConditionFalse}},
+			},
+			r: 2,
+			t: 2,
+		},
+		"mixed": {
+			spec: &v1.PodSpec{
+				ReadinessGates: []v1.PodReadinessGate{{ConditionType: gate1}, {ConditionType: gate2}},
+			},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: gate1, Status: v1.ConditionTrue}, {Type: gate2, Status: v1.ConditionFalse}, {Type: v1.PodReady, Status: v1.ConditionTrue}},
+			},
+			r: 1,
+			t: 2,
+		},
+		"missing": {
+			spec: &v1.PodSpec{
+				ReadinessGates: []v1.PodReadinessGate{{ConditionType: gate1}, {ConditionType: gate2}},
+			},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: gate1, Status: v1.ConditionTrue}, {Type: v1.PodReady, Status: v1.ConditionTrue}},
+			},
+			r: 1,
+			t: 2,
+		},
+	}
+
+	var p Pod
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			ready, total := p.readinessGateStats(u.spec, u.st)
+			assert.Equal(t, u.r, ready)
+			assert.Equal(t, u.t, total)
+		})
+	}
+}
+
+func Test_diagnose(t *testing.T) {
+	uu := map[string]struct {
+		phase    string
+		cr, ct   int
+		ready    bool
+		rgr, rgt int
+		err      string
+	}{
+		"completed": {
+			phase: Completed,
+			cr:    0,
+			ct:    1,
+			ready: true,
+			rgr:   0,
+			rgt:   0,
+			err:   "",
+		},
+		"container-ready-check-failed": {
+			phase: "Running",
+			cr:    1,
+			ct:    2,
+			ready: true,
+			rgr:   1,
+			rgt:   2,
+			err:   "container ready check failed: 1 of 2",
+		},
+		"readiness-gate-check-failed": {
+			phase: "Running",
+			cr:    1,
+			ct:    1,
+			ready: true,
+			rgr:   1,
+			rgt:   2,
+			err:   "readiness gate check failed: 1 of 2",
+		},
+		"pod-condition-ready-false": {
+			phase: "Running",
+			cr:    1,
+			ct:    1,
+			ready: false,
+			rgr:   0,
+			rgt:   0,
+			err:   "pod condition ready is false",
+		},
+		"pod-terminating": {
+			phase: "Terminating",
+			cr:    1,
+			ct:    1,
+			ready: true,
+			rgr:   1,
+			rgt:   1,
+			err:   "pod is terminating",
+		},
+	}
+
+	var p Pod
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			err := p.diagnose(u.phase, u.cr, u.ct, u.ready, u.rgr, u.rgt)
+			if u.err == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), u.err)
+			}
+		})
+	}
+}
+
 // Helpers...
 
 func makeContainer(n string, restartable bool, rc, rm, lc, lm string) v1.Container {
