@@ -302,8 +302,8 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 	if !b.app.ConOK() || cancel == nil || !b.app.IsRunning() {
 		return
 	}
-	// Skip warning on first view or if table data is empty (likely during initialization)
-	if b.firstView.Load() == 0 || mdata.Empty() {
+	// Skip warning on first view (likely during initialization)
+	if b.firstView.Load() == 0 || mdata.HeaderCount() == 0 {
 		b.firstView.Add(1)
 		return
 	}
@@ -316,7 +316,7 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 		b.setUpdating(true)
 		defer b.setUpdating(false)
 		if b.GetColumnCount() == 0 {
-			b.app.Flash().Warnf("No resources found for %s in namespace %s", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+			b.app.Flash().Warnf("No resources found for %s in %q namespace", b.GVR(), client.PrintNamespace(b.GetNamespace()))
 		}
 		b.refreshActions()
 		b.UpdateUI(cdata, mdata)
