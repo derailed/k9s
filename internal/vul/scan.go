@@ -52,7 +52,10 @@ func (s *Scan) Dump(w io.Writer) error {
 
 func (s *Scan) run(mm *match.Matches, store vulnerability.MetadataProvider) error {
 	for m := range mm.Enumerate() {
-		meta, err := store.VulnerabilityMetadata(vulnerability.Reference{ID: m.Vulnerability.ID, Namespace: m.Vulnerability.Namespace})
+		meta, err := store.VulnerabilityMetadata(vulnerability.Reference{
+			ID:        m.Vulnerability.ID,
+			Namespace: m.Vulnerability.Namespace,
+		})
 		if err != nil {
 			return err
 		}

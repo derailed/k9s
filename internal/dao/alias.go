@@ -61,11 +61,6 @@ func (*Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	return oo, nil
 }
 
-// AsGVR returns a matching gvr if it exists.
-func (a *Alias) AsGVR(alias string) (*client.GVR, string, bool) {
-	return a.Resolve(alias)
-}
-
 // Get fetch a resource.
 func (*Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, errors.New("nyi")

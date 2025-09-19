@@ -14,7 +14,7 @@ import (
 func TestAppGetCmd(t *testing.T) {
 	a := ui.NewApp(mock.NewMockConfig(t), "")
 	a.Init()
-	a.CmdBuff().SetText("blee", "")
+	a.CmdBuff().SetText("blee", "", true)
 
 	assert.Equal(t, "blee", a.GetCmd())
 }
@@ -22,7 +22,7 @@ func TestAppGetCmd(t *testing.T) {
 func TestAppInCmdMode(t *testing.T) {
 	a := ui.NewApp(mock.NewMockConfig(t), "")
 	a.Init()
-	a.CmdBuff().SetText("blee", "")
+	a.CmdBuff().SetText("blee", "", true)
 	assert.False(t, a.InCmdMode())
 
 	a.CmdBuff().SetActive(false)
@@ -32,7 +32,7 @@ func TestAppInCmdMode(t *testing.T) {
 func TestAppResetCmd(t *testing.T) {
 	a := ui.NewApp(mock.NewMockConfig(t), "")
 	a.Init()
-	a.CmdBuff().SetText("blee", "")
+	a.CmdBuff().SetText("blee", "", true)
 
 	a.ResetCmd()
 
@@ -46,7 +46,7 @@ func TestAppHasCmd(t *testing.T) {
 	a.ActivateCmd(true)
 	assert.False(t, a.HasCmd())
 
-	a.CmdBuff().SetText("blee", "")
+	a.CmdBuff().SetText("blee", "", true)
 	assert.True(t, a.InCmdMode())
 }
 

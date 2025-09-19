@@ -145,7 +145,7 @@ func showReplicasets(app *App, path string, labelSel labels.Selector, fieldSel s
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)
 	})
-	v.SetLabelSelector(labelSel)
+	v.SetLabelSelector(labelSel, true)
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
@@ -159,7 +159,7 @@ func showReplicasets(app *App, path string, labelSel labels.Selector, fieldSel s
 func showPods(app *App, path string, labelSel labels.Selector, fieldSel string) {
 	v := NewPod(client.PodGVR)
 	v.SetContextFn(podCtx(app, path, fieldSel))
-	v.SetLabelSelector(labelSel)
+	v.SetLabelSelector(labelSel, true)
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
