@@ -653,7 +653,8 @@ func (a *App) dirCmd(path string, pushCmd bool) error {
 		}
 	}
 	if pushCmd {
-		a.cmdHistory.Push("dir " + path)
+		state := model.NewCommandState("dir "+path, "", "")
+		a.cmdHistory.Push(state)
 	}
 
 	return a.inject(NewDir(path), true)
@@ -752,11 +753,79 @@ func (a *App) aliasCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(c, path string, clearStack, pushCmd bool) {
-	err := a.command.run(cmd.NewInterpreter(c), path, clearStack, pushCmd)
+func (a *App) gotoResource(target interface{}, path string, clearStack, pushCmd bool) {
+	var err error
+	var shouldRestoreState bool
+	var state *model.CommandState
+
+	switch v := target.(type) {
+	case string:
+		// Backward compatibility: simple command string
+		err = a.command.run(cmd.NewInterpreter(v), path, clearStack, pushCmd)
+	case *model.CommandState:
+		// New way: command state with filters
+		if v == nil {
+			a.App.Flash().Warn("Invalid command state")
+			return
+		}
+		state = v
+		shouldRestoreState = true
+		interpreter := cmd.NewInterpreter(v.String())
+		err = a.command.run(interpreter, path, clearStack, pushCmd)
+	default:
+		a.App.Flash().Warn("Invalid target type for navigation")
+		return
+	}
+
 	if err != nil {
 		d := a.Styles.Dialog()
 		dialog.ShowError(&d, a.Content.Pages, err.Error())
+		return
+	}
+
+	// After navigation, restore the filter state if needed
+	if shouldRestoreState && state != nil {
+		a.restoreFilterState(state)
+	}
+}
+
+// restoreFilterState restores filter state to the current view.
+func (a *App) restoreFilterState(state *model.CommandState) {
+	if state == nil || !state.HasFilters() {
+		return
+	}
+
+	top := a.Content.Top()
+	if top == nil {
+		return
+	}
+
+	// Try to cast directly to Browser first
+	if browser, ok := top.(*Browser); ok {
+		a.QueueUpdateDraw(func() {
+			if state.Labels != "" {
+				// For label selectors, set the text and apply the selector
+				browser.CmdBuff().SetText(state.Labels, "")
+				if sel, err := ui.TrimLabelSelector(state.Labels); err == nil {
+					browser.SetLabelSelector(sel)
+				}
+			} else if state.Filter != "" {
+				cmdBuff := browser.CmdBuff()
+
+				// Temporarily remove browser as listener to avoid BufferCompleted interference
+				cmdBuff.RemoveListener(browser)
+
+				// Set the filter text
+				cmdBuff.SetText(state.Filter, "")
+
+				// Add browser back as listener
+				cmdBuff.AddListener(browser)
+
+				// Now refresh to apply the filter
+				browser.Refresh()
+			}
+		})
+		return
 	}
 }
 
