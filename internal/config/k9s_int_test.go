@@ -26,16 +26,16 @@ func Test_k9sOverrides(t *testing.T) {
 	}{
 		"plain": {
 			k: &K9s{
-				LiveViewAutoRefresh:         false,
-				ScreenDumpDir:               "",
-				RefreshRate:                 10.0,
-				MaxConnRetry:                0,
-				ReadOnly:                    false,
-				NoExitOnCtrlC:               false,
-				UI:                          UI{},
-				SkipLatestRevCheck:          false,
-				DisablePodCounting:          false,
-				DisableSanitizeConfirmation: false,
+				LiveViewAutoRefresh:            false,
+				ScreenDumpDir:                  "",
+				RefreshRate:                    10.0,
+				MaxConnRetry:                   0,
+				ReadOnly:                       false,
+				NoExitOnCtrlC:                  false,
+				UI:                             UI{},
+				SkipLatestRevCheck:             false,
+				DisablePodCounting:             false,
+				DisableSanitizeConfirmationAck: false,
 			},
 			rate: 10.0,
 		},
@@ -67,9 +67,9 @@ func Test_k9sOverrides(t *testing.T) {
 					Crumbsless: true,
 					Splashless: true,
 				},
-				SkipLatestRevCheck:          false,
-				DisablePodCounting:          false,
-				DisableSanitizeConfirmation: true,
+				SkipLatestRevCheck:             false,
+				DisablePodCounting:             false,
+				DisableSanitizeConfirmationAck: true,
 			},
 			rate: 10.0,
 			ro:   true,
@@ -112,17 +112,19 @@ func Test_k9sOverrides(t *testing.T) {
 		},
 		"overrides-from-activeConfig": {
 			k: &K9s{
-				ReadOnly:                    true,
-				DisableSanitizeConfirmation: true,
+				RefreshRate:                    10.0,
+				ReadOnly:                       true,
+				DisableSanitizeConfirmationAck: true,
 				activeConfig: &data.Config{
 					Context: &data.Context{
-						ReadOnly:                    &falseVal,
-						DisableSanitizeConfirmation: &falseVal,
+						ReadOnly:                       &falseVal,
+						DisableSanitizeConfirmationAck: &falseVal,
 					},
 				},
 			},
-			ro:  false,
-			dsc: false,
+			rate: 10.0,
+			ro:   false,
+			dsc:  false,
 		},
 	}
 
@@ -135,7 +137,7 @@ func Test_k9sOverrides(t *testing.T) {
 			assert.Equal(t, u.sl, u.k.IsSplashless())
 			assert.Equal(t, u.hl, u.k.IsHeadless())
 			assert.Equal(t, u.ll, u.k.IsLogoless())
-			assert.Equal(t, u.dsc, u.k.IsSanitizeConfirmationDisabled())
+			assert.Equal(t, u.dsc, u.k.IsSanitizeConfirmationAckDisabled())
 		})
 	}
 }

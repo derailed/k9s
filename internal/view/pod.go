@@ -41,6 +41,7 @@ const (
 	pfIndicator      = "[orange::b]Ⓕ"
 	defaultTxRetries = 999
 	magicPrompt      = "Yes Please!"
+	sanitizeMessage  = "Sanitize deletes all pods in completed/error state"
 )
 
 // Pod represents a pod viewer.
@@ -286,10 +287,12 @@ func (p *Pod) sanitizeCmd(*tcell.EventKey) *tcell.EventKey {
 		p.Refresh()
 	}
 
-	if p.App().Config.IsSanitizeConfirmationDisabled() {
-		sanitizeFunc()
+	if p.App().Config.IsSanitizeConfirmationAckDisabled() {
+		d := p.App().Styles.Dialog()
+
+		dialog.ShowConfirm(&d, p.App().Content.Pages, "Sanitize", sanitizeMessage, sanitizeFunc, func() {})
 	} else {
-		msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", magicPrompt)
+		msg := fmt.Sprintf("%s\nPlease enter [orange::b]%s[-::-] to proceed.", sanitizeMessage, magicPrompt)
 		dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, sanitizeFunc, func() {})
 	}
 
