@@ -165,6 +165,8 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	iReady, iTerminated, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cReady += iReady
 	allCounts := len(spec.Containers) + iTerminated
+	rgr, rgt := p.readinessGateStats(spec, &st)
+	ready := hasPodReadyCondition(st.Conditions)
 
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
@@ -201,7 +203,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		asReadinessGate(spec, &st),
 		p.mapQOS(st.QOSClass),
 		mapToStr(pwm.Raw.GetLabels()),
-		AsStatus(p.diagnose(phase, cReady, allCounts)),
+		AsStatus(p.diagnose(phase, cReady, allCounts, ready, rgr, rgt)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
@@ -234,15 +236,24 @@ func (p *Pod) Healthy(_ context.Context, o any) error {
 	cr += icr
 	ct += ict
 
-	return p.diagnose(phase, cr, ct)
+	ready := hasPodReadyCondition(st.Conditions)
+	rgr, rgt := p.readinessGateStats(spec, &st)
+
+	return p.diagnose(phase, cr, ct, ready, rgr, rgt)
 }
 
-func (*Pod) diagnose(phase string, cr, ct int) error {
+func (*Pod) diagnose(phase string, cr, ct int, ready bool, rgr, rgt int) error {
 	if phase == Completed {
 		return nil
 	}
 	if cr != ct || ct == 0 {
 		return fmt.Errorf("container ready check failed: %d of %d", cr, ct)
+	}
+	if rgt > 0 && rgr != rgt {
+		return fmt.Errorf("readiness gate check failed: %d of %d", rgr, rgt)
+	}
+	if !ready {
+		return fmt.Errorf("pod condition ready is false")
 	}
 	if phase == Terminating {
 		return fmt.Errorf("pod is terminating")
@@ -424,6 +435,20 @@ func (*Pod) initContainerStats(cc []v1.Container, cos []v1.ContainerStatus) (rea
 			ready++
 		}
 		restart += int(cos[i].RestartCount)
+	}
+	return
+}
+
+func (*Pod) readinessGateStats(spec *v1.PodSpec, st *v1.PodStatus) (ready, total int) {
+	total = len(spec.ReadinessGates)
+	for _, readinessGate := range spec.ReadinessGates {
+		for _, condition := range st.Conditions {
+			if condition.Type == readinessGate.ConditionType {
+				if condition.Status == "True" {
+					ready++
+				}
+			}
+		}
 	}
 	return
 }
