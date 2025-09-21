@@ -154,6 +154,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 		return r, nil
 	}
 
+	//todo: investigate if custom-columns mechanic can return only pods on this node instead of listing all pods
 	pods, err := n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		slog.Error("Unable to list pods during node get", slogs.Error, err)
