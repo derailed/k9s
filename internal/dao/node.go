@@ -228,7 +228,11 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // CountPodsByNode returns map[nodeName]podCount.
 func (*Node) CountPodsByNode(oo []runtime.Object) (map[string]int, error) {
-	podCounts := make(map[string]int)
+	if len(oo) == 0 {
+		return map[string]int{}, nil
+	}
+
+	podCounts := make(map[string]int, 100)
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
