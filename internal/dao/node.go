@@ -239,13 +239,23 @@ func (*Node) CountPodsByNode(oo []runtime.Object) (map[string]int, error) {
 		if !ok {
 			return podCounts, fmt.Errorf("expecting *Unstructured but got `%T", o)
 		}
+
 		spec, ok := u.Object["spec"].(map[string]any)
 		if !ok {
 			return podCounts, fmt.Errorf("expecting spec interface map but got `%T", u.Object["spec"])
 		}
-		if nodeName, ok := spec["nodeName"].(string); ok && nodeName != "" {
-			podCounts[nodeName]++
+
+		nn, ok := spec["nodeName"]
+		if !ok {
+			continue
 		}
+
+		nodeName, ok := nn.(string)
+		if !ok || nodeName == "" {
+			continue
+		}
+
+		podCounts[nodeName]++
 	}
 
 	return podCounts, nil
