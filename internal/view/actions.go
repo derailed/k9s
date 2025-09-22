@@ -290,7 +290,7 @@ func jumperActions(r Runner, aa *ui.KeyActions) error {
 	return errs
 }
 
-func jumperAction(r Runner, _ *config.Jumper) ui.ActionHandler {
+func jumperAction(r Runner, j *config.Jumper) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		path := r.GetSelectedItem()
 		if path == "" {
@@ -300,8 +300,19 @@ func jumperAction(r Runner, _ *config.Jumper) ui.ActionHandler {
 			return nil
 		}
 
-		// TODO
+		env := r.EnvFn()()
+		if len(j.Variables) > 0 {
+			go extractVariables(r, &j.Variables, &env, 0, func() {
+				moveToView(r, j, &env)
+			})
+		} else {
+			moveToView(r, j, &env)
+		}
 
 		return nil
 	}
+}
+
+func moveToView(_ Runner, _ *config.Jumper, _ *Env) {
+	// TODO
 }
