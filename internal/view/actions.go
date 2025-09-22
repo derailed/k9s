@@ -313,6 +313,44 @@ func jumperAction(r Runner, j *config.Jumper) ui.ActionHandler {
 	}
 }
 
-func moveToView(_ Runner, _ *config.Jumper, _ *Env) {
-	// TODO
+func moveToView(r Runner, j *config.Jumper, env *Env) {
+	view, err := env.Substitute(j.View)
+	if err != nil {
+		slog.Warn("Invalid jumper view", slogs.Error, err)
+		return
+	}
+
+	filters := make([]string, len(j.Filters))
+	for i, a := range j.Filters {
+		filter, err := env.Substitute(a)
+		if err != nil {
+			slog.Error("Jumper Filter match failed", slogs.Error, err)
+			return
+		}
+		filters[i] = strings.TrimSpace(filter)
+	}
+
+	labels := make([]string, len(j.Labels))
+	for i, l := range j.Labels {
+		label, err := env.Substitute(l)
+		if err != nil {
+			slog.Error("Jumper Label value match failed", slogs.Error, err)
+			return
+		}
+
+		labels[i] = strings.TrimSpace(label)
+	}
+
+	viewFilter := ""
+	if len(filters) > 0 {
+		viewFilter = "/" + strings.TrimSpace(strings.Join(filters, "|"))
+	}
+
+	viewLabel := ""
+	if len(labels) > 0 {
+		viewLabel = strings.TrimSpace(strings.Join(labels, ","))
+	}
+
+	command := view + " " + viewLabel + " " + viewFilter
+	r.App().gotoResource(command, "", false, true)
 }
