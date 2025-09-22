@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/slogs"
+	"github.com/derailed/k9s/internal/ui/dialog"
 )
 
 type ExtractedEnvVar struct {
@@ -49,6 +50,8 @@ func extractVariableAction(r Runner, v *config.Variable, e *Env, done func(envVa
 		return
 	}
 
+	d := r.App().Styles.Dialog()
+
 	switch v.Display {
 	case config.VariableDisplayNone:
 		if len(datas) > 1 {
@@ -66,20 +69,48 @@ func extractVariableAction(r Runner, v *config.Variable, e *Env, done func(envVa
 			done(nil, fmt.Errorf("variable source provide too many data"))
 			return
 		}
-		// TODO
-		envVar := ExtractedEnvVar{
-			Key:   v.Name,
-			Value: datas[0],
+
+		textOpts := dialog.TextDialogOpts{
+			Title:           "Variable '" + v.Name + "'",
+			Text:            "Type a value for the variable '" + v.Name + "'",
+			Label:           "Value: ",
+			Placeholder:     "Expected value for '" + v.Name + "'...",
+			InitialValue:    datas[0],
+			MaxSize:         0,
+			AllowEmptyValue: false,
+			Selected: func(value *string) {
+				envVar := ExtractedEnvVar{
+					Key:   v.Name,
+					Value: *value,
+				}
+				done(&envVar, nil)
+			},
+			Cancel: func() {
+				done(nil, fmt.Errorf("no value typed for %q", v.Name))
+			},
 		}
-		done(&envVar, nil)
+		dialog.ShowText(&d, r.App().Content.Pages, &textOpts)
 
 	case config.VariableDisplaySelect:
-		// TODO
-		envVar := ExtractedEnvVar{
-			Key:   v.Name,
-			Value: datas[0],
+		listOpts := dialog.ListSelectionDialogOpts{
+			Title:                "Variable '" + v.Name + "'",
+			Text:                 "Select a value for the variable '" + v.Name + "'",
+			Label:                "Value: ",
+			Options:              datas,
+			InitialValueIndex:    0,
+			AllowUnSelectedValue: false,
+			Selected: func(_ int, value string) {
+				envVar := ExtractedEnvVar{
+					Key:   v.Name,
+					Value: value,
+				}
+				done(&envVar, nil)
+			},
+			Cancel: func() {
+				done(nil, fmt.Errorf("no value selected for %q", v.Name))
+			},
 		}
-		done(&envVar, nil)
+		dialog.ShowListSelection(&d, r.App().Content.Pages, &listOpts)
 	default:
 		done(nil, fmt.Errorf("unmanaged display options"))
 	}
