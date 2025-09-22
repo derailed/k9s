@@ -178,61 +178,72 @@ func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 			return nil
 		}
 
-		args := make([]string, len(p.Args))
-		for i, a := range p.Args {
-			arg, err := r.EnvFn()().Substitute(a)
-			if err != nil {
-				slog.Error("Plugin Args match failed", slogs.Error, err)
-				return nil
-			}
-			args[i] = arg
+		env := r.EnvFn()()
+		if len(p.Variables) > 0 {
+			go extractVariables(r, &p.Variables, &env, 0, func() {
+				executePlugin(r, p, &env)
+			})
+		} else {
+			executePlugin(r, p, &env)
 		}
-
-		cb := func() {
-			opts := shellOpts{
-				binary:     p.Command,
-				background: p.Background,
-				pipes:      p.Pipes,
-				args:       args,
-			}
-			suspend, errChan, statusChan := run(r.App(), &opts)
-			if !suspend {
-				r.App().Flash().Infof("Plugin command failed: %q", p.Description)
-				return
-			}
-			var errs error
-			for e := range errChan {
-				errs = errors.Join(errs, e)
-			}
-			if errs != nil {
-				if !strings.Contains(errs.Error(), "signal: interrupt") {
-					slog.Error("Plugin command failed", slogs.Error, errs)
-					r.App().cowCmd(errs.Error())
-					return
-				}
-			}
-			go func() {
-				for st := range statusChan {
-					if !p.OverwriteOutput {
-						r.App().Flash().Infof("Plugin command launched successfully: %q", st)
-					} else if strings.Contains(st, outputPrefix) {
-						infoMsg := strings.TrimPrefix(st, outputPrefix)
-						r.App().Flash().Info(strings.TrimSpace(infoMsg))
-						return
-					}
-				}
-			}()
-		}
-		if p.Confirm {
-			msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
-			d := r.App().Styles.Dialog()
-			dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
-			return nil
-		}
-		cb()
 
 		return nil
 	}
+}
+
+func executePlugin(r Runner, p *config.Plugin, env *Env) {
+	args := make([]string, len(p.Args))
+	for i, a := range p.Args {
+		arg, err := env.Substitute(a)
+		if err != nil {
+			slog.Error("Plugin Args match failed", slogs.Error, err)
+			return
+		}
+		args[i] = arg
+	}
+
+	cb := func() {
+		opts := shellOpts{
+			binary:     p.Command,
+			background: p.Background,
+			pipes:      p.Pipes,
+			args:       args,
+		}
+		suspend, errChan, statusChan := run(r.App(), &opts)
+		if !suspend {
+			r.App().Flash().Infof("Plugin command failed: %q", p.Description)
+			return
+		}
+		var errs error
+		for e := range errChan {
+			errs = errors.Join(errs, e)
+		}
+		if errs != nil {
+			if !strings.Contains(errs.Error(), "signal: interrupt") {
+				slog.Error("Plugin command failed", slogs.Error, errs)
+				r.App().cowCmd(errs.Error())
+				return
+			}
+		}
+		go func() {
+			for st := range statusChan {
+				if !p.OverwriteOutput {
+					r.App().Flash().Infof("Plugin command launched successfully: %q", st)
+				} else if strings.Contains(st, outputPrefix) {
+					infoMsg := strings.TrimPrefix(st, outputPrefix)
+					r.App().Flash().Info(strings.TrimSpace(infoMsg))
+					return
+				}
+			}
+		}()
+	}
+	if p.Confirm {
+		msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
+		d := r.App().Styles.Dialog()
+		dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
+		return
+	}
+	cb()
 }
 
 func jumperActions(r Runner, aa *ui.KeyActions) error {

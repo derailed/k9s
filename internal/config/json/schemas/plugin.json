@@ -19,6 +19,38 @@
       "args": {
         "type": "array",
         "items": { "type": ["string", "number"] }
+      },
+      "variables": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "source": { 
+              "type": "string", 
+              "enum": ["script", "static"]
+            },
+            "command": { "type": "string" },
+            "args": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "pipes": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "display": { 
+              "type": "string", 
+              "enum": ["none", "text", "select"]
+            }
+          },
+          "required": [
+            "name",
+            "source",
+            "display"
+          ]
+        }
       }
   },
   "required": ["shortCut", "description", "scopes", "command"]

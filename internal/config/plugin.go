@@ -29,17 +29,18 @@ type Plugins struct {
 
 // Plugin describes a K9s plugin.
 type Plugin struct {
-	Scopes          []string `yaml:"scopes"`
-	Args            []string `yaml:"args"`
-	ShortCut        string   `yaml:"shortCut"`
-	Override        bool     `yaml:"override"`
-	Pipes           []string `yaml:"pipes"`
-	Description     string   `yaml:"description"`
-	Command         string   `yaml:"command"`
-	Confirm         bool     `yaml:"confirm"`
-	Background      bool     `yaml:"background"`
-	Dangerous       bool     `yaml:"dangerous"`
-	OverwriteOutput bool     `yaml:"overwriteOutput"`
+	Scopes          []string   `yaml:"scopes"`
+	Args            []string   `yaml:"args"`
+	ShortCut        string     `yaml:"shortCut"`
+	Override        bool       `yaml:"override"`
+	Pipes           []string   `yaml:"pipes"`
+	Description     string     `yaml:"description"`
+	Command         string     `yaml:"command"`
+	Confirm         bool       `yaml:"confirm"`
+	Background      bool       `yaml:"background"`
+	Dangerous       bool       `yaml:"dangerous"`
+	OverwriteOutput bool       `yaml:"overwriteOutput"`
+	Variables       []Variable `yaml:"variables"`
 }
 
 func (p Plugin) String() string {
