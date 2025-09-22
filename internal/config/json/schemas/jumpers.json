@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s jumpers schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "jumpers": {
+      "type": "object",
+      "additionalProperties": {
+        "properties": {
+          "shortCut": { "type": "string" },
+          "override": { "type": "boolean" },
+          "description": { "type": "string" },
+          "scopes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "view": { "type": "string" },
+          "filters": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "labels": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "source": { 
+                  "type": "string", 
+                  "enum": ["script", "static"]
+                },
+                "command": { "type": "string" },
+                "args": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "pipes": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "display": { 
+                  "type": "string", 
+                  "enum": ["none", "text", "select"]
+                }
+              },
+              "required": [
+                "name",
+                "source",
+                "display"
+              ]
+            }
+          }
+        },
+        "required": [
+          "shortCut",
+          "description",
+          "scopes",
+          "view"
+        ]
+      },
+      "required": []
+    }
+  },
+  "required": ["jumpers"]
+}
