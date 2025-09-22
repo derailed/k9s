@@ -545,7 +545,7 @@ func asResource(r config.Limits) v1.ResourceRequirements {
 	}
 }
 
-func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *bytes.Buffer, cmds ...*exec.Cmd) error {
+func pipe(ctx context.Context, opts *shellOpts, statusChan chan<- string, w, e *bytes.Buffer, cmds ...*exec.Cmd) error {
 	if len(cmds) == 0 {
 		return nil
 	}
@@ -593,6 +593,11 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 		return err
 	}
 
+	if opts.background {
+		go backgroundPipe(ctx, statusChan, w, e, cmds)
+		return nil
+	}
+
 	last := len(cmds) - 1
 	for i := range cmds {
 		cmds[i].Stderr = os.Stderr
@@ -611,4 +616,59 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 	}
 
 	return cmds[len(cmds)-1].Wait()
+}
+
+func backgroundPipe(_ context.Context, statusChan chan<- string, w, e *bytes.Buffer, cmds []*exec.Cmd) {
+	cmds[0].Stdin = os.Stdin
+
+	out := bytes.Buffer{}
+	in := bytes.Buffer{}
+
+	for i := range cmds {
+		cmds[i].Stderr = e
+		cmds[i].Stdout = &out
+		isLast := false
+
+		if i > 0 {
+			cmds[i].Stdin = &in
+		}
+		if i+1 == len(cmds) {
+			cmds[i].Stdout = w
+			isLast = true
+		}
+
+		slog.Debug("Starting command", slogs.Command, cmds[i])
+		if err := cmds[i].Run(); err != nil {
+			slog.Error("Command exec failed", slogs.Error, err, slogs.Index, i)
+			statusChan <- fmt.Sprintf("pipe commands failed on command # %q", i-1)
+			close(statusChan)
+			return
+		}
+
+		slog.Debug("Command exec succeed", slogs.Index, i)
+
+		in.Reset()
+		if !isLast {
+			_, err := out.WriteTo(&in)
+			if err != nil {
+				slog.Error("Command output piping failed", slogs.Error, err, slogs.Index, i)
+				statusChan <- fmt.Sprintf("pipe commands failed on command # %q", i-1)
+				close(statusChan)
+				return
+			}
+			out.Reset()
+		}
+	}
+
+	for _, l := range strings.Split(w.String(), "\n") {
+		if l != "" {
+			statusChan <- fmt.Sprintf("%s %s", outputPrefix, l)
+		}
+	}
+
+	in.Reset()
+
+	statusChan <- "pipe commands completed successfully"
+	slog.Info("pipe commands ran successfully")
+	close(statusChan)
 }
