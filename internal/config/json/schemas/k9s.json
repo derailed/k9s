@@ -25,6 +25,7 @@
         "maxConnRetry": { "type": "integer" },
         "readOnly": { "type": "boolean" },
         "noExitOnCtrlC": { "type": "boolean" },
+        "allowSuspend": { "type": "boolean" },
         "skipLatestRevCheck": { "type": "boolean" },
         "disablePodCounting": { "type": "boolean" },
         "defaultView": { "type": "string" },
