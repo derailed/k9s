@@ -80,7 +80,7 @@ func TestTableViewFilter(t *testing.T) {
 	v.Refresh()
 
 	v.CmdBuff().SetActive(true)
-	v.CmdBuff().SetText("blee", "")
+	v.CmdBuff().SetText("blee", "", true)
 
 	assert.Equal(t, 5, v.GetRowCount())
 }

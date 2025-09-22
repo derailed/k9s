@@ -63,9 +63,9 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 	return &v
 }
 
-func (*LiveView) SetCommand(*cmd.Interpreter)      {}
-func (*LiveView) SetFilter(string)                 {}
-func (*LiveView) SetLabelSelector(labels.Selector) {}
+func (*LiveView) SetCommand(*cmd.Interpreter)            {}
+func (*LiveView) SetFilter(string, bool)                 {}
+func (*LiveView) SetLabelSelector(labels.Selector, bool) {}
 
 // Init initializes the viewer.
 func (v *LiveView) Init(_ context.Context) error {

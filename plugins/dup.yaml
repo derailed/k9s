@@ -1,0 +1,84 @@
+plugins:
+  dup:
+    shortCut: Shift-D
+    description: Duplicate
+    scopes:
+      - all
+    command: bash
+    background: false
+    confirm: true
+    args:
+      - -c
+      - "kubectl dup -k $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT"
+  dup_edit:
+    # Prompted to edit a new duplicate resource
+    shortCut: Shift-E
+    description: Duplicate + Edit
+    scopes:
+      - all
+    command: bash
+    background: false
+    confirm: true
+    args:
+      - -c
+      - "kubectl dup $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT"
+  dup_debug_pods:
+    # Spawn a resource with no readiness probes and infinite running command.
+    shortCut: Shift-V
+    description: Debug
+    scopes:
+      - pods
+    command: bash
+    background: true
+    confirm: true
+    args:
+      - -c
+      - "kubectl dup -kdl $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT"
+  dup_debug_deploy:
+    # Spawn a resource with no readiness probes and infinite running command.
+    shortCut: Shift-V
+    description: Debug
+    scopes:
+      - deployments
+    command: bash
+    background: true
+    confirm: true
+    args:
+      - -c
+      - "kubectl dup -kdl $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT"
+  dup_debug_sts:
+    # Spawn a resource with no readiness probes and infinite running command.
+    shortCut: Shift-V
+    description: Debug
+    scopes:
+      - statefulsets
+    command: bash
+    background: true
+    confirm: true
+    args:
+      - -c
+      - "kubectl dup -kdl $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT"
+  dup_debug_cronjob:
+    # Spawn a resource with no readiness probes and infinite running command.
+    shortCut: Shift-V
+    description: Debug
+    scopes:
+      - cronjobs
+    command: bash
+    background: true
+    confirm: true
+    args:
+      - -c
+      - "kubectl dup -kdl $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT"
+  dup_debug_jobs:
+    # Spawn a resource with no readiness probes and infinite running command.
+    shortCut: Shift-V
+    description: Debug
+    scopes:
+      - jobs
+    command: bash
+    background: true
+    confirm: true
+    args:
+      - -c
+      - "kubectl dup -kdl $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT"

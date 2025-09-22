@@ -81,6 +81,7 @@ const (
 
 	// Context tracks a context logger key.
 	Context = "context"
+
 	// Cluster tracks a cluster logger key.
 	Cluster = "cluster"
 

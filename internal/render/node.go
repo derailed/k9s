@@ -13,10 +13,12 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -48,6 +50,8 @@ var defaultNOHeader = model1.Header{
 	model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "GPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "GPU/C", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "SH-GPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "SH-GPU/C", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
@@ -130,6 +134,8 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 		client.ToPercentageStr(c.mem, a.mem),
 		toMu(a.gpu),
 		toMu(c.gpu),
+		toMu(a.gpuShared),
+		toMu(c.gpuShared),
 		mapToStr(no.Labels),
 		AsStatus(n.diagnose(statuses)),
 		ToAge(no.GetCreationTimestamp()),
@@ -203,8 +209,10 @@ func (n *NodeWithMetrics) DeepCopyObject() runtime.Object {
 }
 
 type metric struct {
-	cpu, gpu, mem    int64
-	lcpu, lgpu, lmem int64
+	cpu, mem       int64
+	lcpu, lmem     int64
+	gpu, gpuShared int64
+	lgpu           int64
 }
 
 func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c, a metric) {
@@ -215,8 +223,38 @@ func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c, a metric) {
 		c.mem = mx.Usage.Memory().Value()
 	}
 
-	a.gpu = extractGPU(no.Status.Allocatable).Value()
-	c.gpu = extractGPU(no.Status.Capacity).Value()
+	gpu, gpuShared := extractNodeGPU(no.Status.Allocatable)
+	if gpu != nil {
+		a.gpu = gpu.Value()
+	}
+	if gpuShared != nil {
+		a.gpuShared = gpuShared.Value()
+	}
+	gpu, gpuShared = extractNodeGPU(no.Status.Capacity)
+	if gpu != nil {
+		c.gpu = gpu.Value()
+	}
+	if gpuShared != nil {
+		c.gpuShared = gpuShared.Value()
+	}
+
+	return
+}
+
+func extractNodeGPU(rl v1.ResourceList) (main, shared *resource.Quantity) {
+	mm := make(map[string]*resource.Quantity, len(config.KnownGPUVendors))
+	for _, v := range config.KnownGPUVendors {
+		if q, ok := rl[v1.ResourceName(v)]; ok {
+			mm[v] = &q
+		}
+	}
+	for k, v := range mm {
+		if strings.HasSuffix(k, "shared") {
+			shared = v
+		} else {
+			main = v
+		}
+	}
 
 	return
 }
