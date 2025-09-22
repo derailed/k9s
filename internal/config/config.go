@@ -80,6 +80,16 @@ func (c *Config) ContextPluginsPath() (string, error) {
 	return AppContextPluginsFile(ct.GetClusterName(), c.K9s.activeContextName), nil
 }
 
+// ContextJumperPath returns a context specific jumper file spec.
+func (c *Config) ContextJumperPath() (string, error) {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return "", err
+	}
+
+	return AppContextJumpersFile(ct.GetClusterName(), c.K9s.activeContextName), nil
+}
+
 func setK8sTimeout(flags *genericclioptions.ConfigFlags, d time.Duration) {
 	v := d.String()
 	flags.Timeout = &v

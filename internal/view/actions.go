@@ -234,3 +234,74 @@ func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 		return nil
 	}
 }
+
+func jumperActions(r Runner, aa *ui.KeyActions) error {
+	aa.Range(func(k tcell.Key, a ui.KeyAction) {
+		if a.Opts.Jumper {
+			aa.Delete(k)
+		}
+	})
+
+	path, err := r.App().Config.ContextJumperPath()
+	if err != nil {
+		return err
+	}
+	pp := config.NewJumpers()
+	if err := pp.Load(path, true); err != nil {
+		return err
+	}
+
+	var (
+		errs    error
+		aliases = r.Aliases()
+	)
+	for k := range pp.Jumpers {
+		if !inScope(pp.Jumpers[k].Scopes, aliases) {
+			continue
+		}
+		key, err := asKey(pp.Jumpers[k].ShortCut)
+		if err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		if _, ok := aa.Get(key); ok {
+			if !pp.Jumpers[k].Override {
+				errs = errors.Join(errs, fmt.Errorf("duplicate jumper key found for %q in %q", pp.Jumpers[k].ShortCut, k))
+				continue
+			}
+			slog.Debug("Jumper override action shortcut",
+				slogs.Plugin, k,
+				slogs.Key, pp.Jumpers[k].ShortCut,
+			)
+		}
+
+		jumper := pp.Jumpers[k]
+		aa.Add(key, ui.NewKeyActionWithOpts(
+			pp.Jumpers[k].Description,
+			jumperAction(r, &jumper),
+			ui.ActionOpts{
+				Visible:   true,
+				Jumper:    true,
+				Dangerous: false,
+			},
+		))
+	}
+
+	return errs
+}
+
+func jumperAction(r Runner, _ *config.Jumper) ui.ActionHandler {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		path := r.GetSelectedItem()
+		if path == "" {
+			return evt
+		}
+		if r.EnvFn() == nil {
+			return nil
+		}
+
+		// TODO
+
+		return nil
+	}
+}

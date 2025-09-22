@@ -235,6 +235,11 @@ func AppContextHotkeysFile(cluster, context string) string {
 	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "hotkeys.yaml")
 }
 
+// AppContextJumpersFile generates a valid context specific jumpers file path.
+func AppContextJumpersFile(cluster, context string) string {
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "jumpers.yaml")
+}
+
 // AppContextConfig generates a valid context config file path.
 func AppContextConfig(cluster, context string) string {
 	return filepath.Join(AppContextDir(cluster, context), data.MainConfigFile)

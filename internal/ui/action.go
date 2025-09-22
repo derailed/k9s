@@ -27,6 +27,7 @@ type (
 		Plugin    bool
 		HotKey    bool
 		Dangerous bool
+		Jumper    bool
 	}
 
 	// KeyAction represents a keyboard action.
