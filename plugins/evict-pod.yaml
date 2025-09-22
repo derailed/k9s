@@ -1,0 +1,22 @@
+plugins:
+  # kubectl-evict-pod by Rajat Jindal
+  # Evict a pod from a node safely, respecting PodDisruptionBudgets.
+  # Source: https://github.com/rajatjindal/kubectl-evict-pod
+  # Install via:
+  #   krew: `kubectl krew install evict-pod`
+  evict-pod:
+    shortCut: Shift-E
+    description: Evict pod
+    dangerous: true
+    scopes:
+      - po
+    command: kubectl
+    background: true
+    confirm: false
+    args:
+      - evict-pod
+      - $NAME
+      - --namespace
+      - $NAMESPACE
+      - --context
+      - $CONTEXT
