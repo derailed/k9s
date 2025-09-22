@@ -24,6 +24,7 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/fatih/color"
+	"github.com/google/shlex"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -215,9 +216,13 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 	cmds = append(cmds, cmd)
 
 	for _, p := range opts.pipes {
-		tokens := strings.Split(p, " ")
-		if len(tokens) < 2 {
-			continue
+		tokens, err := shlex.Split(p)
+		if err != nil {
+			slog.Error("Pipe args parsing failed",
+				slogs.Error, err,
+				slogs.Command, cmds,
+			)
+			return err
 		}
 		cmd := exec.CommandContext(ctx, tokens[0], tokens[1:]...)
 		slog.Debug("Exec command", slogs.Command, cmd)
