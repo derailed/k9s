@@ -140,6 +140,9 @@ func (x *Xray) refreshActions() {
 		if err := pluginActions(x, aa); err != nil {
 			slog.Warn("Plugins load failed", slogs.Error, err)
 		}
+		if err := jumperActions(x, aa); err != nil {
+			slog.Warn("Jumpers load failed", slogs.Error, err)
+		}
 		if err := hotKeyActions(x, aa); err != nil {
 			slog.Warn("HotKeys load failed", slogs.Error, err)
 		}

@@ -80,6 +80,9 @@ var (
 
 	// AppHotKeysFile tracks hotkeys config file.
 	AppHotKeysFile string
+
+	// AppJumpersFile tracks jumpers config file.
+	AppJumpersFile string
 )
 
 // InitLogLoc initializes K9s logs location.
@@ -155,6 +158,7 @@ func initK9sEnvLocs() error {
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
+	AppJumpersFile = filepath.Join(AppConfigDir, "jumpers.yaml")
 
 	return nil
 }
@@ -176,6 +180,7 @@ func initXDGLocs() error {
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
+	AppJumpersFile = filepath.Join(AppConfigDir, "jumpers.yaml")
 
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
 	if e := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); e != nil {
@@ -228,6 +233,11 @@ func AppContextPluginsFile(cluster, context string) string {
 // AppContextHotkeysFile generates a valid context specific hotkeys file path.
 func AppContextHotkeysFile(cluster, context string) string {
 	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "hotkeys.yaml")
+}
+
+// AppContextJumpersFile generates a valid context specific jumpers file path.
+func AppContextJumpersFile(cluster, context string) string {
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "jumpers.yaml")
 }
 
 // AppContextConfig generates a valid context config file path.
