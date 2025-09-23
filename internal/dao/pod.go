@@ -370,14 +370,17 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 		bf.MaxInterval = logBackoffMax / 2
 		backoffCtx := backoff.WithContext(bf, ctx)
 		delay := logBackoffInitial
+		firstAttempt := true
 
 		for range logRetryCount {
 			// Check if we should stop retrying based on pod status
-			if pod, ok := logger.(*Pod); ok && pod.shouldStopRetrying(opts.Path) {
-				slog.Debug("Stopping log retry - pod is terminating or deleted",
-					slogs.Container, opts.Info(),
-				)
-				return
+			if !firstAttempt {
+				if pod, ok := logger.(*Pod); ok && pod.shouldStopRetrying(opts.Path) {
+					slog.Debug("Stopping log retry - pod is terminating or deleted",
+						slogs.Container, opts.Info(),
+					)
+					return
+				}
 			}
 
 			req, err := logger.Logs(opts.Path, podOpts)
@@ -449,6 +452,7 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 			// Reset backoff and delay on successful connection
 			bf.Reset()
 			delay = logBackoffInitial
+			firstAttempt = false
 		}
 
 		// Out of retries
