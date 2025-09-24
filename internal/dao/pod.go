@@ -370,25 +370,21 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 		bf.MaxInterval = logBackoffMax / 2
 		backoffCtx := backoff.WithContext(bf, ctx)
 		delay := logBackoffInitial
-		firstAttempt := true
 
 		for range logRetryCount {
-			// Check if we should stop retrying based on pod status
-			if !firstAttempt {
-				if pod, ok := logger.(*Pod); ok && pod.shouldStopRetrying(opts.Path) {
-					slog.Debug("Stopping log retry - pod is terminating or deleted",
-						slogs.Container, opts.Info(),
-					)
-					return
-				}
-			}
-
 			req, err := logger.Logs(opts.Path, podOpts)
 			if err != nil {
 				slog.Error("Log request failed",
 					slogs.Container, opts.Info(),
 					slogs.Error, err,
 				)
+				// Check if we should stop retrying based on pod status
+				if pod, ok := logger.(*Pod); ok && pod.shouldStopRetrying(opts.Path) {
+					slog.Debug("Stopping log retry - pod is terminating or deleted",
+						slogs.Container, opts.Info(),
+					)
+					return
+				}
 				select {
 				case <-ctx.Done():
 					return
@@ -406,6 +402,13 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 					slogs.Error, e,
 					slogs.Container, opts.Info(),
 				)
+				// Check if we should stop retrying based on pod status
+				if pod, ok := logger.(*Pod); ok && pod.shouldStopRetrying(opts.Path) {
+					slog.Debug("Stopping log retry - pod is terminating or deleted",
+						slogs.Container, opts.Info(),
+					)
+					return
+				}
 				select {
 				case <-ctx.Done():
 					return
@@ -452,7 +455,6 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 			// Reset backoff and delay on successful connection
 			bf.Reset()
 			delay = logBackoffInitial
-			firstAttempt = false
 		}
 
 		// Out of retries
@@ -470,7 +472,7 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions) streamResult {
 	defer func() {
 		if err := stream.Close(); err != nil && !errors.Is(err, io.ErrClosedPipe) {
-			slog.Error("Fail to close stream",
+			slog.Error("Failed to close stream",
 				slogs.Container, opts.Info(),
 				slogs.Error, err,
 			)
