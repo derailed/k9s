@@ -668,14 +668,3 @@ func validatePrivilegedPodCreation(nodeName string) error {
 	return nil
 }
 
-// getCurrentUser returns the current user for audit logging
-func getCurrentUser() string {
-	user := os.Getenv("USER")
-	if user == "" {
-		user = os.Getenv("USERNAME")
-	}
-	if user == "" {
-		user = "unknown"
-	}
-	return user
-}
