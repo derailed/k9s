@@ -425,13 +425,13 @@ func BenchmarkExtractSecrets(b *testing.B) {
 	obj := &unstructured.Unstructured{Object: unstructuredSecret}
 
 	b.Run("ExtractSecrets", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = ExtractSecrets(obj)
 		}
 	})
 
 	b.Run("ExtractSecretsDecoded", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = ExtractSecretsDecoded(obj, true)
 		}
 	})
