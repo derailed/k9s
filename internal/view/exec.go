@@ -667,4 +667,3 @@ func validatePrivilegedPodCreation(nodeName string) error {
 
 	return nil
 }
-
