@@ -657,15 +657,15 @@ func validatePrivilegedPodCreation(nodeName string) error {
 	}
 
 	if strings.TrimSpace(response) != "CREATE-PRIVILEGED-POD" {
-		return fmt.Errorf("privileged pod creation cancelled - operation requires explicit confirmation")
+		return fmt.Errorf("privileged pod creation canceled - operation requires explicit confirmation")
 	}
 
 	// Log the privileged access for audit purposes
 	slog.Warn("Creating privileged debug pod",
-		"node", nodeName,
-		"user", getCurrentUser(),
-		"timestamp", time.Now(),
-		"security_risk", "high",
+		slog.String("node", nodeName),
+		slog.String("user", getCurrentUser()),
+		slog.Time("timestamp", time.Now()),
+		slog.String("security_risk", "high"),
 	)
 
 	fmt.Printf("⚠️  WARNING: Privileged pod creation confirmed - proceeding with high-risk operation\n")

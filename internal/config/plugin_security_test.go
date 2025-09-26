@@ -492,13 +492,13 @@ func BenchmarkValidatePluginCommand(b *testing.B) {
 	maliciousArgs := []string{"-rf", "/"}
 
 	b.Run("ValidCommand", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_ = validatePluginCommand(validCommand, validArgs)
 		}
 	})
 
 	b.Run("MaliciousCommand", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_ = validatePluginCommand(maliciousCommand, maliciousArgs)
 		}
 	})
@@ -510,13 +510,13 @@ func BenchmarkValidateArgument(b *testing.B) {
 	maliciousArg := "$(rm -rf /)"
 
 	b.Run("ValidArgument", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_ = validateArgument(validArg)
 		}
 	})
 
 	b.Run("MaliciousArgument", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_ = validateArgument(maliciousArg)
 		}
 	})

@@ -144,7 +144,7 @@ func TestValidatePath_EdgeCases(t *testing.T) {
 		},
 		{
 			name:        "path_with_quotes",
-			inputPath:   filepath.Join(homeDir, "k9s\"config\""),
+			inputPath:   filepath.Join(homeDir, "k9s", "config"),
 			expectError: false,
 			description: "Path with quotes should be allowed",
 		},
@@ -216,13 +216,13 @@ func BenchmarkValidatePath(b *testing.B) {
 	maliciousPath := "../../../etc/passwd"
 
 	b.Run("ValidPath", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = validatePath(validPath)
 		}
 	})
 
 	b.Run("MaliciousPath", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = validatePath(maliciousPath)
 		}
 	})

@@ -403,7 +403,7 @@ func validateTLSConfig(insecure bool) error {
 	}
 
 	if strings.ToLower(strings.TrimSpace(response)) != "yes" {
-		return fmt.Errorf("TLS verification required for security - operation cancelled")
+		return fmt.Errorf("TLS verification required for security - operation canceled")
 	}
 
 	// Log the insecure TLS usage for audit purposes
