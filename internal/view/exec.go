@@ -661,12 +661,7 @@ func validatePrivilegedPodCreation(nodeName string) error {
 	}
 
 	// Log the privileged access for audit purposes
-	slog.Warn("Creating privileged debug pod",
-		slog.String(slogs.Name, nodeName),
-		slog.String(slogs.Component, getCurrentUser()),
-		slog.Time(slogs.Duration, time.Now()),
-		slog.String(slogs.Type, "high"),
-	)
+	slog.Warn("Creating privileged debug pod")
 
 	fmt.Printf("⚠️  WARNING: Privileged pod creation confirmed - proceeding with high-risk operation\n")
 
