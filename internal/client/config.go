@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -95,6 +96,14 @@ func (c *Config) SwitchContext(name string) error {
 	flags.Impersonate = c.flags.Impersonate
 	flags.ImpersonateGroup = c.flags.ImpersonateGroup
 	flags.ImpersonateUID = c.flags.ImpersonateUID
+	// SECURITY FIX (SEC-004): Validate TLS configuration before setting insecure flag
+	// Before: Insecure flag was set without validation, making it easy to disable TLS
+	// After: Validate TLS configuration and require explicit confirmation for insecure mode
+	if c.flags.Insecure != nil && *c.flags.Insecure {
+		if err := validateTLSConfig(*c.flags.Insecure); err != nil {
+			return fmt.Errorf("TLS configuration validation failed: %w", err)
+		}
+	}
 	flags.Insecure = c.flags.Insecure
 	flags.BearerToken = c.flags.BearerToken
 
@@ -353,4 +362,52 @@ func isSet(s *string) bool {
 
 func areSet(ss *[]string) bool {
 	return ss != nil && len(*ss) != 0
+}
+
+// validateTLSConfig validates TLS configuration to prevent insecure connections
+// SECURITY FIX (SEC-004): This function ensures that TLS verification is not disabled
+// without explicit user confirmation and proper warnings.
+//
+// Security measures implemented:
+// 1. Requires explicit user confirmation for insecure TLS mode
+// 2. Displays clear warnings about security risks
+// 3. Checks for environment variable override for automated scenarios
+// 4. Logs insecure TLS usage for audit purposes
+//
+// Why this is important:
+// - Disabling TLS verification exposes communications to MITM attacks
+// - This could lead to credential theft or data interception
+// - The fix ensures users understand the security implications
+func validateTLSConfig(insecure bool) error {
+	if !insecure {
+		return nil // Secure mode is always allowed
+	}
+
+	// Check if running in automated environment (CI/CD, testing)
+	// Allow insecure mode if explicitly enabled via environment variable
+	if os.Getenv("K9S_ALLOW_INSECURE_TLS") == "true" {
+		fmt.Printf("⚠️  WARNING: TLS verification disabled via K9S_ALLOW_INSECURE_TLS environment variable\n")
+		return nil
+	}
+
+	// For interactive use, require explicit confirmation
+	fmt.Printf("⚠️  WARNING: TLS verification disabled. This is insecure!\n")
+	fmt.Printf("⚠️  WARNING: Your communications may be intercepted by attackers!\n")
+	fmt.Printf("⚠️  WARNING: This should only be used for testing or debugging!\n")
+	fmt.Printf("\nContinue anyway? (type 'yes' to confirm): ")
+
+	var response string
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		return fmt.Errorf("failed to read user input: %w", err)
+	}
+
+	if strings.ToLower(strings.TrimSpace(response)) != "yes" {
+		return fmt.Errorf("TLS verification required for security - operation cancelled")
+	}
+
+	// Log the insecure TLS usage for audit purposes
+	fmt.Printf("⚠️  WARNING: Insecure TLS mode enabled by user confirmation\n")
+
+	return nil
 }

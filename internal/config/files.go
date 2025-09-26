@@ -6,10 +6,12 @@ package config
 import (
 	_ "embed"
 	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/adrg/xdg"
 	"github.com/derailed/k9s/internal/config/data"
@@ -87,7 +89,15 @@ func InitLogLoc() error {
 	var appLogDir string
 	switch {
 	case isEnvSet(K9sEnvLogsDir):
-		appLogDir = os.Getenv(K9sEnvLogsDir)
+		// SECURITY FIX (SEC-001): Validate environment variable path to prevent directory traversal
+		// Before: Direct use of os.Getenv() without validation could allow path traversal attacks
+		// After: Validate path against traversal patterns and restrict to user home directory
+		envPath := os.Getenv(K9sEnvLogsDir)
+		validatedPath, err := validatePath(envPath)
+		if err != nil {
+			return fmt.Errorf("invalid K9S_LOGS_DIR path: %w", err)
+		}
+		appLogDir = validatedPath
 	case isEnvSet(K9sEnvConfigDir):
 		tmpDir, err := UserTmpDir()
 		if err != nil {
@@ -119,7 +129,15 @@ func InitLocs() error {
 }
 
 func initK9sEnvLocs() error {
-	AppConfigDir = os.Getenv(K9sEnvConfigDir)
+	// SECURITY FIX (SEC-001): Validate environment variable path to prevent directory traversal
+	// Before: Direct use of os.Getenv() without validation could allow path traversal attacks
+	// After: Validate path against traversal patterns and restrict to user home directory
+	envPath := os.Getenv(K9sEnvConfigDir)
+	validatedPath, err := validatePath(envPath)
+	if err != nil {
+		return fmt.Errorf("invalid K9S_CONFIG_DIR path: %w", err)
+	}
+	AppConfigDir = validatedPath
 	if err := data.EnsureFullPath(AppConfigDir, data.DefaultDirMod); err != nil {
 		return err
 	}
@@ -295,4 +313,64 @@ func SkinFileFromName(n string) string {
 	}
 
 	return filepath.Join(AppSkinsDir, n+".yaml")
+}
+
+// validatePath validates environment variable paths to prevent directory traversal attacks
+// SECURITY FIX (SEC-001): This function prevents malicious environment variables from
+// being used to access sensitive system files through path traversal attacks.
+//
+// Security measures implemented:
+// 1. Checks for traversal patterns before resolving paths
+// 2. Resolves relative paths to absolute paths to detect traversal attempts
+// 3. Restricts paths to user home directory to prevent access to system files
+// 4. Returns empty string for empty input (fallback to defaults)
+//
+// Why this is important:
+// - Attackers could set K9S_CONFIG_DIR="../../../etc" to access system files
+// - This could lead to credential theft or system compromise
+// - The fix ensures k9s only operates within user-controlled directories
+func validatePath(envPath string) (string, error) {
+	// Allow empty paths to fall back to default behavior
+	if envPath == "" {
+		return "", nil
+	}
+
+	// First check for traversal patterns in the original path before resolving
+	// This catches patterns like "../../../etc" even if they resolve to valid paths
+	if strings.Contains(envPath, "..") {
+		return "", fmt.Errorf("path traversal not allowed: %s", envPath)
+	}
+
+	// Check for URL-encoded traversal patterns
+	if strings.Contains(envPath, "%2e%2e") || strings.Contains(envPath, "%2E%2E") {
+		return "", fmt.Errorf("encoded path traversal not allowed: %s", envPath)
+	}
+
+	// Check for Windows-style traversal patterns
+	if strings.Contains(envPath, "..\\") || strings.Contains(envPath, "..\\\\") {
+		return "", fmt.Errorf("Windows path traversal not allowed: %s", envPath)
+	}
+
+	// Resolve to absolute path to detect traversal attempts
+	absPath, err := filepath.Abs(envPath)
+	if err != nil {
+		return "", fmt.Errorf("invalid path: %w", err)
+	}
+
+	// Double-check for traversal patterns in the resolved path
+	if strings.Contains(absPath, "..") {
+		return "", fmt.Errorf("path traversal not allowed: %s", envPath)
+	}
+
+	// Restrict to user home directory for additional security
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("unable to determine user home directory: %w", err)
+	}
+
+	if !strings.HasPrefix(absPath, homeDir) {
+		return "", fmt.Errorf("path outside user directory not allowed: %s", absPath)
+	}
+
+	return absPath, nil
 }

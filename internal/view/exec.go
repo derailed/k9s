@@ -404,6 +404,13 @@ func nukeK9sShell(a *App) error {
 }
 
 func launchShellPod(ctx context.Context, a *App, node string) error {
+	// SECURITY FIX (SEC-005): Validate privileged pod creation to prevent unauthorized access
+	// Before: Privileged pods were created without user confirmation, allowing potential container escape
+	// After: Require explicit user confirmation and log privileged access for audit purposes
+	if err := validatePrivilegedPodCreation(node); err != nil {
+		return fmt.Errorf("privileged pod creation validation failed: %w", err)
+	}
+
 	var (
 		spo  = a.Config.K9s.ShellPod
 		spec = k9sShellPod(node, spo)
@@ -611,4 +618,69 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 	}
 
 	return cmds[len(cmds)-1].Wait()
+}
+
+// validatePrivilegedPodCreation validates privileged pod creation to prevent unauthorized access
+// SECURITY FIX (SEC-005): This function ensures that privileged pods with host access
+// are only created with explicit user confirmation and proper audit logging.
+//
+// Security measures implemented:
+// 1. Requires explicit user confirmation for privileged pod creation
+// 2. Displays clear warnings about security risks and potential for container escape
+// 3. Logs privileged access attempts for audit purposes
+// 4. Checks for environment variable override for automated scenarios
+//
+// Why this is important:
+// - Privileged pods can escape to the host system and compromise the entire node
+// - This could lead to full cluster compromise or data exfiltration
+// - The fix ensures users understand the security implications before proceeding
+func validatePrivilegedPodCreation(nodeName string) error {
+	// Check if running in automated environment (CI/CD, testing)
+	// Allow privileged pods if explicitly enabled via environment variable
+	if os.Getenv("K9S_ALLOW_PRIVILEGED_PODS") == "true" {
+		fmt.Printf("⚠️  WARNING: Privileged pod creation enabled via K9S_ALLOW_PRIVILEGED_PODS environment variable\n")
+		fmt.Printf("⚠️  WARNING: Creating privileged pod on node: %s\n", nodeName)
+		return nil
+	}
+
+	// For interactive use, require explicit confirmation
+	fmt.Printf("⚠️  WARNING: This will create a PRIVILEGED pod with HOST ACCESS!\n")
+	fmt.Printf("⚠️  WARNING: Node: %s\n", nodeName)
+	fmt.Printf("⚠️  WARNING: Risks: Full host system access, container escape, cluster compromise\n")
+	fmt.Printf("⚠️  WARNING: This should only be used for debugging or emergency access!\n")
+	fmt.Printf("\nContinue? (type 'CREATE-PRIVILEGED-POD' to confirm): ")
+
+	var response string
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		return fmt.Errorf("failed to read user input: %w", err)
+	}
+
+	if strings.TrimSpace(response) != "CREATE-PRIVILEGED-POD" {
+		return fmt.Errorf("privileged pod creation cancelled - operation requires explicit confirmation")
+	}
+
+	// Log the privileged access for audit purposes
+	slog.Warn("Creating privileged debug pod",
+		"node", nodeName,
+		"user", getCurrentUser(),
+		"timestamp", time.Now(),
+		"security_risk", "high",
+	)
+
+	fmt.Printf("⚠️  WARNING: Privileged pod creation confirmed - proceeding with high-risk operation\n")
+
+	return nil
+}
+
+// getCurrentUser returns the current user for audit logging
+func getCurrentUser() string {
+	user := os.Getenv("USER")
+	if user == "" {
+		user = os.Getenv("USERNAME")
+	}
+	if user == "" {
+		user = "unknown"
+	}
+	return user
 }

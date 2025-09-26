@@ -332,7 +332,7 @@ func initCertFlags() {
 		k8sFlags.Insecure,
 		"insecure-skip-tls-verify",
 		false,
-		"If true, the server's caCertFile will not be checked for validity",
+		"⚠️  DANGER: Disables TLS certificate verification. Use only for testing!",
 	)
 
 	rootCmd.Flags().StringVar(
