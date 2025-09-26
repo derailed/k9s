@@ -53,8 +53,18 @@ type flagError struct{ err error }
 func (e flagError) Error() string { return e.err.Error() }
 
 func init() {
+	// SECURITY FIX (SEC-001): Validate environment variable paths early to prevent directory traversal
+	// Before: Path validation was only called in run() function, allowing --help to bypass validation
+	// After: Validate paths in init() to ensure all commands are protected from path traversal attacks
 	if err := config.InitLogLoc(); err != nil {
 		fmt.Printf("Fail to init k9s logs location %s\n", err)
+		os.Exit(1)
+	}
+
+	// Validate K9S_CONFIG_DIR if set to prevent path traversal attacks
+	if err := config.InitLocs(); err != nil {
+		fmt.Printf("Invalid K9S_CONFIG_DIR path: %s\n", err)
+		os.Exit(1)
 	}
 
 	rootCmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
@@ -76,9 +86,7 @@ func Execute() {
 }
 
 func run(*cobra.Command, []string) error {
-	if err := config.InitLocs(); err != nil {
-		return err
-	}
+	// config.InitLocs() is now called in init() for early path validation
 	logFile, err := os.OpenFile(
 		*k9sFlags.LogFile,
 		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
