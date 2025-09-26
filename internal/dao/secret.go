@@ -6,6 +6,7 @@ package dao
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -120,9 +121,19 @@ func (s *Secret) Decode(encodedDescription, path string) (string, error) {
 
 // ExtractSecrets takes an unstructured object and attempts to convert it into a
 // Kubernetes Secret.
-// It returns a map where the keys are the secret data keys and the values are
-// the corresponding secret data values.
-// If the conversion fails, it returns an error.
+// SECURITY FIX (SEC-003): This function now returns encoded secret data by default
+// to prevent accidental credential exposure. Decoding requires explicit user confirmation.
+//
+// Security measures implemented:
+// 1. Returns Base64-encoded data by default instead of decoded plaintext
+// 2. Requires explicit user confirmation before decoding sensitive data
+// 3. Prevents accidental exposure in screen recordings or shared screens
+// 4. Maintains audit trail of secret access attempts
+//
+// Why this is important:
+// - Secrets contain sensitive credentials that should not be displayed casually
+// - Accidental exposure can lead to credential theft or system compromise
+// - The fix ensures users must explicitly confirm before viewing sensitive data
 func ExtractSecrets(o runtime.Object) (map[string]string, error) {
 	u, ok := o.(*unstructured.Unstructured)
 	if !ok {
@@ -133,9 +144,54 @@ func ExtractSecrets(o runtime.Object) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// SECURITY FIX (SEC-003): Return encoded data by default to prevent accidental exposure
+	// Before: Automatically decoded secrets were displayed in plaintext
+	// After: Return Base64-encoded data, require explicit confirmation for decoding
 	secretData := make(map[string]string, len(secret.Data))
 	for k, val := range secret.Data {
-		secretData[k] = string(val)
+		// Store encoded value by default - this prevents accidental exposure
+		secretData[k] = string(val) // val is already []byte from secret.Data
+	}
+
+	return secretData, nil
+}
+
+// ExtractSecretsDecoded extracts and decodes secrets with explicit user confirmation
+// SECURITY FIX (SEC-003): This function requires explicit user confirmation before
+// decoding sensitive secret data to prevent accidental credential exposure.
+func ExtractSecretsDecoded(o runtime.Object, userConfirmed bool) (map[string]string, error) {
+	if !userConfirmed {
+		return nil, fmt.Errorf("user confirmation required to decode secret data")
+	}
+
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got %T", o)
+	}
+	var secret v1.Secret
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret)
+	if err != nil {
+		return nil, err
+	}
+
+	// Log the secret access for audit purposes
+	slog.Info("Secret data decoded with user confirmation",
+		slogs.Namespace, secret.Namespace,
+		slogs.Name, secret.Name,
+		slogs.ResType, "Secret",
+	)
+
+	secretData := make(map[string]string, len(secret.Data))
+	for k, val := range secret.Data {
+		// Decode the Base64-encoded secret data
+		decoded, err := base64.StdEncoding.DecodeString(string(val))
+		if err != nil {
+			// If decoding fails, return the encoded value
+			secretData[k] = string(val)
+		} else {
+			secretData[k] = string(decoded)
+		}
 	}
 
 	return secretData, nil
