@@ -71,9 +71,9 @@ func (p *Pod) shouldStopRetrying(path string) bool {
 	switch pod.Status.Phase {
 	case v1.PodSucceeded, v1.PodFailed:
 		return true
+	default:
+		return false
 	}
-
-	return false
 }
 
 // Get returns a resource instance if found, else an error.
