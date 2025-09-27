@@ -348,7 +348,7 @@ func sshIn(a *App, fqn, co string) error {
 	cfg := a.Config.K9s.ShellPod
 	platform, err := getPodOS(a.factory, fqn)
 	if err != nil {
-		return fmt.Errorf("os detect failed: %w", err)
+		slog.Warn("os detect failed", slogs.Error, err)
 	}
 
 	args := buildShellArgs("exec", fqn, co, a.Conn().Config().Flags())
