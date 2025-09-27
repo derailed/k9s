@@ -100,7 +100,7 @@ func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) er
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
 		mapToStr(dp.Labels),
-		AsStatus(d.diagnose(desired, dp.Status.AvailableReplicas)),
+		AsStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
 		ToAge(dp.GetCreationTimestamp()),
 	}
 
