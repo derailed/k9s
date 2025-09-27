@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"maps"
 	"math"
 
 	"github.com/derailed/k9s/internal/client"
@@ -95,17 +94,12 @@ func ToYAML(o runtime.Object, showManaged bool) (string, error) {
 		return "", fmt.Errorf("expecting unstructured object but got nil")
 	}
 
-	mm := u.Object
-	var (
-		buff bytes.Buffer
-		p    printers.YAMLPrinter
-	)
+	var p printers.ResourcePrinter = &printers.YAMLPrinter{}
 	if !showManaged {
-		mm = maps.Clone(mm)
-		if meta, ok := mm["metadata"].(map[string]any); ok {
-			delete(meta, "managedFields")
-		}
+		p = &printers.OmitManagedFieldsPrinter{Delegate: p}
 	}
+
+	var buff bytes.Buffer
 	if err := p.PrintObj(o, &buff); err != nil {
 		slog.Error("PrintObj failed", slogs.Error, err)
 		return "", err
