@@ -10,9 +10,16 @@ import (
 // MaxHistory tracks max command history.
 const MaxHistory = 20
 
+// CommandState represents a complete command state including filters.
+type CommandState struct {
+	Command string `yaml:"command"`
+	Filter  string `yaml:"filter,omitempty"`
+	Labels  string `yaml:"labels,omitempty"`
+}
+
 // History represents a command history.
 type History struct {
-	commands   []string
+	states     []*CommandState
 	limit      int
 	currentIdx int
 }
@@ -27,48 +34,55 @@ func NewHistory(limit int) *History {
 
 // List returns the command history.
 func (h *History) List() []string {
-	return h.commands
+	commands := make([]string, len(h.states))
+	for i, state := range h.states {
+		if state != nil {
+			commands[i] = state.Command
+		}
+	}
+	return commands
 }
 
 // Top returns the last command in the history if present.
-func (h *History) Top() (string, bool) {
-	h.currentIdx = len(h.commands) - 1
-
+func (h *History) Top() (*CommandState, bool) {
+	h.currentIdx = len(h.states) - 1
 	return h.at(h.currentIdx)
 }
 
 // Last returns the nth command prior to last.
-func (h *History) Last(idx int) (string, bool) {
-	h.currentIdx = len(h.commands) - idx
-
+func (h *History) Last(idx int) (*CommandState, bool) {
+	h.currentIdx = len(h.states) - idx
 	return h.at(h.currentIdx)
 }
 
-func (h *History) at(idx int) (string, bool) {
-	if idx < 0 || idx >= len(h.commands) {
-		return "", false
+func (h *History) at(idx int) (*CommandState, bool) {
+	if idx < 0 || idx >= len(h.states) {
+		return nil, false
 	}
 
-	return h.commands[idx], true
+	state := h.states[idx]
+	if state == nil || state.IsEmpty() {
+		return nil, false
+	}
+
+	return state, true
 }
 
 // Back moves the history position index back by one.
-func (h *History) Back() (string, bool) {
+func (h *History) Back() (*CommandState, bool) {
 	if h.Empty() || h.currentIdx <= 0 {
-		return "", false
+		return nil, false
 	}
 	h.currentIdx--
-
 	return h.at(h.currentIdx)
 }
 
 // Forward moves the history position index forward by one
-func (h *History) Forward() (string, bool) {
+func (h *History) Forward() (*CommandState, bool) {
 	h.currentIdx++
-	if h.Empty() || h.currentIdx >= len(h.commands) {
-		return "", false
+	if h.Empty() || h.currentIdx >= len(h.states) {
+		return nil, false
 	}
-
 	return h.at(h.currentIdx)
 }
 
@@ -82,35 +96,79 @@ func (h *History) Pop() bool {
 // and returns a bool if the list changed.
 // Argument specifies how many to remove from the history
 func (h *History) popN(n int) bool {
-	pop := len(h.commands) - n
+	pop := len(h.states) - n
 	if h.Empty() || pop < 0 {
 		return false
 	}
-	h.commands = h.commands[:pop]
-	h.currentIdx = len(h.commands) - 1
+	h.states = h.states[:pop]
+	h.currentIdx = len(h.states) - 1
 
 	return true
 }
 
-// Push adds a new item.
-func (h *History) Push(c string) {
-	if c == "" || len(h.commands) >= h.limit {
+// Push adds a new command or command state to the history.
+// Accepts either a string or *CommandState.
+func (h *History) Push(cmd interface{}) {
+	var state *CommandState
+
+	switch v := cmd.(type) {
+	case string:
+		state = NewCommandState(strings.ToLower(v), "", "")
+	case *CommandState:
+		state = v
+	default:
 		return
 	}
-	if h.currentIdx < len(h.commands)-1 {
-		h.commands = h.commands[:h.currentIdx+1]
+
+	if state == nil || state.IsEmpty() || len(h.states) >= h.limit {
+		return
 	}
-	h.commands = append(h.commands, strings.ToLower(c))
-	h.currentIdx = len(h.commands) - 1
+	if h.currentIdx < len(h.states)-1 {
+		h.states = h.states[:h.currentIdx+1]
+	}
+	h.states = append(h.states, state)
+	h.currentIdx = len(h.states) - 1
 }
 
 // Clear clears out the stack.
 func (h *History) Clear() {
-	h.commands = nil
+	h.states = nil
 	h.currentIdx = -1
 }
 
 // Empty returns true if no history.
 func (h *History) Empty() bool {
-	return len(h.commands) == 0
+	return len(h.states) == 0
+}
+
+// States returns the command history with full state information.
+func (h *History) States() []*CommandState {
+	return h.states
+}
+
+func NewCommandState(command, filter, labels string) *CommandState {
+	return &CommandState{
+		Command: command,
+		Filter:  filter,
+		Labels:  labels,
+	}
+}
+
+func (cs *CommandState) IsEmpty() bool {
+	return cs.Command == ""
+}
+
+func (cs *CommandState) HasFilters() bool {
+	return cs.Filter != "" || cs.Labels != ""
+}
+
+func (cs *CommandState) String() string {
+	cmd := cs.Command
+	if cs.Filter != "" {
+		cmd += " /" + cs.Filter
+	}
+	if cs.Labels != "" {
+		cmd += " " + cs.Labels
+	}
+	return cmd
 }

@@ -339,13 +339,12 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 		if e := recover(); e != nil {
 			slog.Error("Failure detected during command exec", slogs.Error, e)
 			c.app.Content.Dump()
-			slog.Debug("Dumping history buffer", slogs.CmdHist, c.app.cmdHistory.List())
 			slog.Error("Dumping stack", slogs.Stack, string(debug.Stack()))
 
 			ci := cmd.NewInterpreter(podCmd)
 			currentCommand, ok := c.app.cmdHistory.Top()
-			if ok {
-				ci = ci.Reset(currentCommand)
+			if ok && currentCommand != nil {
+				ci = ci.Reset(currentCommand.Command)
 			}
 			err = c.run(ci, "", true, true)
 		}
@@ -364,7 +363,26 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 		return err
 	}
 	if pushCmd {
-		c.app.cmdHistory.Push(p.GetLine())
+		// Extract filter and label information from the command
+		filter := ""
+		labelSelector := ""
+		if f, ok := p.FilterArg(); ok {
+			filter = f
+		}
+		if ll, ok := p.LabelsArg(); ok {
+			// Convert labels map to string with -l prefix
+			var labelPairs []string
+			for k, v := range ll {
+				labelPairs = append(labelPairs, k+"="+v)
+			}
+			if len(labelPairs) > 0 {
+				labelSelector = "-l " + strings.Join(labelPairs, ",")
+			}
+		}
+
+		// Create command state with preserved filters
+		state := model.NewCommandState(p.GetLine(), filter, labelSelector)
+		c.app.cmdHistory.Push(state)
 	}
 	slog.Debug("History", slogs.Stack, strings.Join(c.app.cmdHistory.List(), "|"))
 

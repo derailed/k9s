@@ -48,6 +48,26 @@ func newArgs(p *Interpreter, aa []string) args {
 				arguments[filterKey] = strings.ToLower(a[1:])
 			}
 
+		case strings.Index(a, labelFlag) == 0:
+			if a == labelFlag {
+				i++
+				if i < len(aa) {
+					if ll := ToLabels(aa[i]); len(ll) != 0 {
+						arguments[labelKey] = strings.ToLower(aa[i])
+					}
+				}
+			} else {
+				labelQuery := a[2:]
+				if ll := ToLabels(labelQuery); len(ll) != 0 {
+					arguments[labelKey] = strings.ToLower(labelQuery)
+				}
+			}
+
+		case strings.Contains(a, labelAssignment):
+			if ll := ToLabels(a); len(ll) != 0 {
+				arguments[labelKey] = strings.ToLower(a)
+			}
+
 		case strings.Index(a, contextFlag) == 0:
 			arguments[contextKey] = a[1:]
 
