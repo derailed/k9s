@@ -77,8 +77,8 @@ func BenchmarkLogFlush(b *testing.B) {
 	items.Lines(0, false, ll)
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		v.Flush(ll)
 	}
 }
