@@ -69,7 +69,7 @@ func (p *Policy) loadClusterRoleBinding(kind, name string) (render.Policies, err
 	var nn []string
 	for i := range crbs {
 		for _, s := range crbs[i].Subjects {
-			if isSameSubject(kind, ns, n, &s) {
+			if isSameSubject(kind, ns, crbs[i].Namespace, n, &s) {
 				nn = append(nn, crbs[i].RoleRef.Name)
 			}
 		}
@@ -174,7 +174,7 @@ func (p *Policy) fetchRoleBindingNamespaces(kind, name string) (map[string]strin
 	ss := make(map[string]string, len(rbs))
 	for i := range rbs {
 		for _, s := range rbs[i].Subjects {
-			if isSameSubject(kind, ns, n, &s) {
+			if isSameSubject(kind, ns, rbs[i].Namespace, n, &s) {
 				ss[rbs[i].RoleRef.Kind+":"+rbs[i].RoleRef.Name] = rbs[i].Namespace
 			}
 		}
@@ -186,13 +186,17 @@ func (p *Policy) fetchRoleBindingNamespaces(kind, name string) (map[string]strin
 // isSameSubject verifies if the incoming type name and namespace match a subject from a
 // cluster/roleBinding. A ServiceAccount will always have a namespace and needs to be validated to ensure
 // we don't display permissions for a ServiceAccount with the same name in a different namespace
-func isSameSubject(kind, ns, name string, subject *rbacv1.Subject) bool {
+func isSameSubject(kind, ns, bns, name string, subject *rbacv1.Subject) bool {
 	if subject.Kind != kind || subject.Name != name {
 		return false
 	}
 	if kind == rbacv1.ServiceAccountKind {
 		// Kind and name were checked above, check the namespace
-		return client.IsAllNamespaces(ns) || subject.Namespace == ns
+		cns := subject.Namespace
+		if cns == "" {
+			cns = bns
+		}
+		return client.IsAllNamespaces(ns) || cns == ns
 	}
 	return true
 }

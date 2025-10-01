@@ -34,7 +34,7 @@ func TestTruncate(t *testing.T) {
 	}
 }
 
-func TestTrimLabelSelector(t *testing.T) {
+func TestExtractLabelSelector(t *testing.T) {
 	sel, _ := labels.Parse("app=fred,env=blee")
 	uu := map[string]struct {
 		sel string
@@ -55,7 +55,7 @@ func TestTrimLabelSelector(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			sel, err := TrimLabelSelector(u.sel)
+			sel, err := ExtractLabelSelector(u.sel)
 			assert.Equal(t, u.err, err)
 			assert.Equal(t, u.e, sel)
 		})

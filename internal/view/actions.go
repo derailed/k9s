@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
@@ -36,21 +37,11 @@ type Runner interface {
 }
 
 func hasAll(scopes []string) bool {
-	for _, s := range scopes {
-		if s == AllScopes {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(scopes, AllScopes)
 }
 
 func includes(aliases []string, s string) bool {
-	for _, a := range aliases {
-		if a == s {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(aliases, s)
 }
 
 func inScope(scopes []string, aliases sets.Set[string]) bool {

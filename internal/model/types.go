@@ -104,9 +104,13 @@ type Viewer interface {
 	SetCommand(*cmd.Interpreter)
 }
 
+// Filterer represents a filterable component.
 type Filterer interface {
-	SetFilter(string)
-	SetLabelSelector(labels.Selector)
+	// SetFilter sets the filter text.
+	SetFilter(string, bool)
+
+	// SetLabelSelector sets the label selector.
+	SetLabelSelector(labels.Selector, bool)
 }
 
 // Cruder performs crud operations.

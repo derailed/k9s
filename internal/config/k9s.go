@@ -26,9 +26,10 @@ type gpuVendors map[string]string
 var KnownGPUVendors = defaultGPUVendors
 
 var defaultGPUVendors = gpuVendors{
-	"nvidia": "nvidia.com/gpu",
-	"amd":    "amd.com/gpu",
-	"intel":  "gpu.intel.com/i915",
+	"nvidia":        "nvidia.com/gpu",
+	"nvidia-shared": "nvidia.com/gpu.shared",
+	"amd":           "amd.com/gpu",
+	"intel":         "gpu.intel.com/i915",
 }
 
 // K9s tracks K9s configuration options.

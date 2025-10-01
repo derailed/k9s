@@ -68,7 +68,7 @@ func TestCmdUpdate(t *testing.T) {
 	v.SetModel(m)
 
 	m.AddListener(v)
-	m.SetText("blee", "")
+	m.SetText("blee", "", true)
 	m.Add('!')
 
 	assert.Equal(t, "\x00\x00 [::b]blee!\n", v.GetText(false))

@@ -146,7 +146,7 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 }
 
 func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
-	if err := pts.CheckAvailable(); err != nil {
+	if err := pts.CheckAvailable(context.Background()); err != nil {
 		return err
 	}
 

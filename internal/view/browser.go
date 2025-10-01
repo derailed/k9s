@@ -197,13 +197,13 @@ func (b *Browser) Stop() {
 	b.Table.Stop()
 }
 
-func (b *Browser) SetFilter(s string) {
-	b.CmdBuff().SetText(s, "")
+func (b *Browser) SetFilter(s string, wipe bool) {
+	b.CmdBuff().SetText(s, "", wipe)
 }
 
-func (b *Browser) SetLabelSelector(sel labels.Selector) {
+func (b *Browser) SetLabelSelector(sel labels.Selector, wipe bool) {
 	if sel != nil {
-		b.CmdBuff().SetText(sel.String(), "")
+		b.CmdBuff().SetText(sel.String(), "", wipe)
 	}
 	b.GetModel().SetLabelSelector(sel)
 }
@@ -214,7 +214,7 @@ func (*Browser) BufferChanged(_, _ string) {}
 // BufferCompleted indicates input was accepted.
 func (b *Browser) BufferCompleted(text, _ string) {
 	if internal.IsLabelSelector(text) {
-		if sel, err := ui.TrimLabelSelector(text); err == nil {
+		if sel, err := ui.ExtractLabelSelector(text); err == nil {
 			b.GetModel().SetLabelSelector(sel)
 		}
 	} else {
@@ -302,8 +302,8 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 	if !b.app.ConOK() || cancel == nil || !b.app.IsRunning() {
 		return
 	}
-	// Skip warning on first view or if table data is empty (likely during initialization)
-	if b.firstView.Load() == 0 || mdata.Empty() {
+	// Skip warning on first view (likely during initialization)
+	if b.firstView.Load() == 0 || mdata.HeaderCount() == 0 {
 		b.firstView.Add(1)
 		return
 	}
@@ -316,7 +316,7 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 		b.setUpdating(true)
 		defer b.setUpdating(false)
 		if b.GetColumnCount() == 0 {
-			b.app.Flash().Warnf("No resources found for %s in namespace %s", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+			b.app.Flash().Warnf("No resources found for %s in %q namespace", b.GVR(), client.PrintNamespace(b.GetNamespace()))
 		}
 		b.refreshActions()
 		b.UpdateUI(cdata, mdata)
@@ -575,7 +575,7 @@ func (b *Browser) defaultContext() context.Context {
 	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR())
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
-		if sel, err := ui.TrimLabelSelector(b.CmdBuff().GetText()); err == nil {
+		if sel, err := ui.ExtractLabelSelector(b.CmdBuff().GetText()); err == nil {
 			ctx = context.WithValue(ctx, internal.KeyLabels, sel)
 		}
 	}
