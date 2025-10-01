@@ -82,7 +82,3 @@ func Highlight(bb []byte, ii []int, c int) []byte {
 
 	return result
 }
-
-func colorizeByte(b byte, color int) []byte {
-	return []byte(ANSIColorize(string(b), color))
-}
