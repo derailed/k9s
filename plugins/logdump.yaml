@@ -1,0 +1,33 @@
+plugins:
+  dumpFullPodLogs:
+    shortCut: Ctrl-L
+    description: "Download logs"
+    scopes:
+      - pods
+    command: pwsh
+    args:
+      - "-Command"
+      - >
+        $ns="$NAMESPACE";
+        $p="$NAME";
+        $ts=Get-Date -Format "yyyy-MM-dd-HH-mm-ss";
+        $file="$env:USERPROFILE\Downloads\${ns}_${p}_$ts.log";
+        kubectl logs $p -n $ns --tail=-1 | Out-File -FilePath $file -Encoding utf8;
+        Write-Output "✅ Saved logs for pod $p to $file";
+
+  dumpFullContainerLogs:
+    shortCut: Ctrl-L
+    description: "Download logs"
+    scopes:
+      - containers
+    command: pwsh
+    args:
+      - "-Command"
+      - >
+        $ns="$NAMESPACE";
+        $p="$POD";
+        $c="$NAME";
+        $ts=Get-Date -Format "yyyy-MM-dd-HH-mm-ss";
+        $file="$env:USERPROFILE\Downloads\${ns}_${p}_${c}_$ts.log";
+        kubectl logs $p -n $ns -c $c --tail=-1 | Out-File -FilePath $file -Encoding utf8;
+        Write-Output "✅ Saved logs for container $c to $file";
