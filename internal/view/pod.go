@@ -411,6 +411,7 @@ func shellIn(a *App, fqn, co string) error {
 	platform, err := getPodOS(a.factory, fqn)
 	if err != nil {
 		slog.Warn("OS detection failed (assuming linux)", slogs.Error, err)
+        platform = "linux"
 	}
 
 	args := computeShellArgs(fqn, co, a.Conn().Config().Flags(), platform)
