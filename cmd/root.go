@@ -116,7 +116,7 @@ func run(*cobra.Command, []string) error {
 		app.Config.SetActiveView(app.Config.K9s.DefaultView)
 	}
 
-	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
+	if err := app.Init(version, int(*k9sFlags.RefreshRate)); err != nil {
 		return err
 	}
 	if err := app.Run(); err != nil {
@@ -185,11 +185,11 @@ func parseLevel(level string) slog.Level {
 
 func initK9sFlags() {
 	k9sFlags = config.NewFlags()
-	rootCmd.Flags().IntVarP(
+	rootCmd.Flags().Float32VarP(
 		k9sFlags.RefreshRate,
 		"refresh", "r",
 		config.DefaultRefreshRate,
-		"Specify the default refresh rate as an integer (sec)",
+		"Specify the default refresh rate as a float (sec)",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogLevel,

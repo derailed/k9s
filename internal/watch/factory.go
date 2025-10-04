@@ -201,7 +201,11 @@ func (f *Factory) isClusterWide() bool {
 
 // CanForResource return an informer is user has access.
 func (f *Factory) CanForResource(ns string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error) {
-	auth, err := f.Client().CanI(ns, gvr, "", verbs)
+	var resName string
+	if gvr == client.NsGVR {
+		resName = ns
+	}
+	auth, err := f.Client().CanI(ns, gvr, resName, verbs)
 	if err != nil {
 		return nil, err
 	}

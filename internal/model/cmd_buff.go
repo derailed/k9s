@@ -132,9 +132,13 @@ func (c *CmdBuff) resetCancel() {
 }
 
 // SetText initializes the buffer with a command.
-func (c *CmdBuff) SetText(text, suggestion string) {
+func (c *CmdBuff) SetText(text, suggestion string, wipe bool) {
 	c.mx.Lock()
-	c.buff, c.suggestion = []rune(text), suggestion
+	if wipe {
+		c.buff, c.suggestion = []rune(text), suggestion
+	} else {
+		c.buff, c.suggestion = append(c.buff, []rune(text)...), suggestion
+	}
 	c.mx.Unlock()
 	c.fireBufferCompleted(c.GetText(), c.GetSuggestion())
 }
@@ -163,7 +167,7 @@ func (c *CmdBuff) Delete() {
 	if c.Empty() {
 		return
 	}
-	c.SetText(string(c.buff[:len(c.buff)-1]), "")
+	c.SetText(string(c.buff[:len(c.buff)-1]), "", true)
 	c.fireBufferChanged(c.GetText(), c.GetSuggestion())
 	if c.hasCancel() {
 		return

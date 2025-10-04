@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -60,7 +59,7 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	}
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
-	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
+	t.GetModel().SetRefreshRate(t.app.Config.K9s.RefreshDuration())
 	t.CmdBuff().AddListener(t)
 
 	return nil

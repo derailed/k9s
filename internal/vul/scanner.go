@@ -82,30 +82,37 @@ func (s *imageScanner) setScan(img string, sc *Scan) {
 
 // Init initializes image vulnerability database.
 func (s *imageScanner) Init(name, version string) {
-	s.mx.Lock()
-	defer s.mx.Unlock()
+	defer func(t time.Time) {
+		slog.Debug("VulDb initialization complete",
+			slogs.Elapsed, time.Since(t),
+		)
+	}(time.Now())
 
-	id := clio.Identification{Name: name, Version: version}
-	s.opts = options.DefaultGrype(id)
-	s.opts.GenerateMissingCPEs = true
+	opts := options.DefaultGrype(clio.Identification{Name: name, Version: version})
+	opts.GenerateMissingCPEs = true
 
-	var err error
-	s.provider, s.status, err = grype.LoadVulnerabilityDB(
-		s.opts.ToClientConfig(),
-		s.opts.ToCuratorConfig(),
-		s.opts.DB.AutoUpdate,
+	provider, status, err := grype.LoadVulnerabilityDB(
+		opts.ToClientConfig(),
+		opts.ToCuratorConfig(),
+		opts.DB.AutoUpdate,
 	)
 	if err != nil {
 		s.log.Error("VulDb load failed", slogs.Error, err)
 		return
 	}
+	s.mx.Lock()
+	s.opts, s.provider, s.status = opts, provider, status
+	s.mx.Unlock()
 
-	if e := validateDBLoad(err, s.status); e != nil {
+	if e := validateDBLoad(err, status); e != nil {
 		s.log.Error("VulDb validate failed", slogs.Error, e)
 		return
 	}
 
+	s.mx.Lock()
 	s.initialized = true
+	s.mx.Unlock()
+	slog.Debug("VulDB initialized")
 }
 
 // Stop closes scan database.
@@ -130,7 +137,7 @@ func (s *imageScanner) Score(ii ...string) string {
 	return sc.String()
 }
 
-func (s *imageScanner) isInitialized() bool {
+func (s *imageScanner) IsInitialized() bool {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 
@@ -138,9 +145,6 @@ func (s *imageScanner) isInitialized() bool {
 }
 
 func (s *imageScanner) Enqueue(ctx context.Context, images ...string) {
-	if !s.isInitialized() {
-		return
-	}
 	ctx, cancel := context.WithTimeout(ctx, imgScanTimeout)
 	defer cancel()
 

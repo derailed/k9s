@@ -65,9 +65,9 @@ func NewLog(gvr *client.GVR, opts *dao.LogOptions) *Log {
 	return &l
 }
 
-func (*Log) SetCommand(*cmd.Interpreter)      {}
-func (*Log) SetFilter(string)                 {}
-func (*Log) SetLabelSelector(labels.Selector) {}
+func (*Log) SetCommand(*cmd.Interpreter)            {}
+func (*Log) SetFilter(string, bool)                 {}
+func (*Log) SetLabelSelector(labels.Selector, bool) {}
 
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {

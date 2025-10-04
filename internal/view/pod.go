@@ -393,28 +393,33 @@ func containerShellIn(a *App, comp model.Component, path, co string) error {
 }
 
 func resumeShellIn(a *App, c model.Component, path, co string) {
+	var err error
 	c.Stop()
-	defer c.Start()
+	defer func() {
+		c.Start()
+		a.QueueUpdate(func() {
+			if err != nil {
+				a.Flash().Errf("Shell exec failed: %s", err)
+			}
+		})
+	}()
 
-	shellIn(a, path, co)
+	err = shellIn(a, path, co)
 }
 
-func shellIn(a *App, fqn, co string) {
+func shellIn(a *App, fqn, co string) error {
 	platform, err := getPodOS(a.factory, fqn)
 	if err != nil {
-		slog.Warn("OS detect failed", slogs.Error, err)
+		return err
 	}
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags(), platform)
 
+	args := computeShellArgs(fqn, co, a.Conn().Config().Flags(), platform)
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	err = runK(a, &shellOpts{
+	return runK(a, &shellOpts{
 		clear:  true,
 		banner: c.Sprintf(bannerFmt, fqn, co),
 		args:   args},
 	)
-	if err != nil {
-		a.Flash().Errf("Shell exec failed: %s", err)
-	}
 }
 
 func containerAttachIn(a *App, comp model.Component, path, co string) error {

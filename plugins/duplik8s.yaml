@@ -3,46 +3,18 @@
 #
 # See https://github.com/Telemaco019/duplik8s
 plugins:
-  duplicate-pod:
+  duplicate:
     shortCut: Ctrl-B
-    description: Duplicate Pod
+    description: Duplicate resource
     scopes:
       - po
-    command: kubectl
-    background: true
-    args:
-      - duplicate
-      - pod
-      - $NAME
-      - -n
-      - $NAMESPACE
-      - --context
-      - $CONTEXT
-  duplicate-deployment:
-    shortCut: Ctrl-T
-    description: Duplicate Deployment
-    scopes:
       - deploy
-    command: kubectl
-    background: true
-    args:
-      - duplicate
-      - deploy
-      - $NAME
-      - -n
-      - $NAMESPACE
-      - --context
-      - $CONTEXT
-  duplicate-statefulset:
-    shortCut: Ctrl-T
-    description: Duplicate StatefulSet
-    scopes:
       - statefulset
     command: kubectl
     background: true
     args:
       - duplicate
-      - statefulset
+      - $RESOURCE_NAME
       - $NAME
       - -n
       - $NAMESPACE

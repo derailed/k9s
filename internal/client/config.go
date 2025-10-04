@@ -20,7 +20,7 @@ import (
 
 const (
 	// DefaultCallTimeoutDuration is the default api server call timeout duration.
-	DefaultCallTimeoutDuration time.Duration = 15 * time.Second
+	DefaultCallTimeoutDuration time.Duration = 120 * time.Second
 
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true

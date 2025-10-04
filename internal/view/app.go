@@ -11,7 +11,6 @@ import (
 	"maps"
 	"os"
 	"os/signal"
-	"runtime"
 	"sort"
 	"strings"
 	"sync/atomic"
@@ -241,9 +240,8 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.NewKeyActionsFromMap(ui.KeyMap{
-		ui.KeyShift9:       ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
 		tcell.KeyCtrlE:     ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
-		tcell.KeyCtrlG:     ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
+		tcell.KeyCtrlG:     ui.NewSharedKeyAction("ToggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:         ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		ui.KeyLeftBracket:  ui.NewSharedKeyAction("Go Back", a.previousCommand, false),
 		ui.KeyRightBracket: ui.NewSharedKeyAction("Go Forward", a.nextCommand, false),
@@ -252,15 +250,6 @@ func (a *App) bindKeys() {
 		tcell.KeyEnter:     ui.NewKeyAction("Goto", a.gotoCmd, false),
 		tcell.KeyCtrlC:     ui.NewKeyAction("Quit", a.quitCmd, false),
 	}))
-}
-
-func (*App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
-	slog.Debug("GOR", slogs.GOR, runtime.NumGoroutine())
-	bb := make([]byte, 5_000_000)
-	runtime.Stack(bb, true)
-	slog.Debug("GOR stack", slogs.Stack, string(bb))
-
-	return evt
 }
 
 // ActiveView returns the currently active view.

@@ -184,7 +184,7 @@ func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth
 			slogs.Verb, verbs,
 		)
 		if resp != nil {
-			clog.Debug("[CAN] reps",
+			clog.Debug("[CAN] response",
 				slogs.AuthStatus, resp.Status.Allowed,
 				slogs.AuthReason, resp.Status.Reason,
 			)
@@ -196,7 +196,7 @@ func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth
 		}
 		if !resp.Status.Allowed {
 			a.cache.Add(key, false, cacheExpiry)
-			return auth, fmt.Errorf("`%s access denied for user on %q:%s", v, ns, gvr)
+			return auth, fmt.Errorf("(%s) access denied for user on resource %q:%s in namespace %q", v, name, gvr, ns)
 		}
 	}
 	auth = true

@@ -219,7 +219,7 @@ func (d *Dir) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, "apply")
 		args = append(args, opts...)
 		args = append(args, sel)
-		res, err := runKu(d.App(), &shellOpts{clear: false, args: args})
+		res, err := runKu(context.Background(), d.App(), &shellOpts{clear: false, args: args})
 		if err != nil {
 			res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
 		} else {
@@ -260,7 +260,7 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, "delete")
 		args = append(args, opts...)
 		args = append(args, sel)
-		res, err := runKu(d.App(), &shellOpts{clear: false, args: args})
+		res, err := runKu(context.Background(), d.App(), &shellOpts{clear: false, args: args})
 		if err != nil {
 			res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
 		} else {

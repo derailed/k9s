@@ -41,7 +41,7 @@ type Suggester interface {
 // PromptModel represents a prompt buffer.
 type PromptModel interface {
 	// SetText sets the model text.
-	SetText(txt, sug string)
+	SetText(txt, sug string, clear bool)
 
 	// GetText returns the current text.
 	GetText() string
@@ -159,7 +159,7 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		p.model.SetActive(false)
 
 	case tcell.KeyEnter, tcell.KeyCtrlE:
-		p.model.SetText(p.model.GetText(), "")
+		p.model.SetText(p.model.GetText(), "", true)
 		p.model.SetActive(false)
 
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
@@ -167,17 +167,17 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	case tcell.KeyUp:
 		if s, ok := m.NextSuggestion(); ok {
-			p.model.SetText(p.model.GetText(), s)
+			p.model.SetText(p.model.GetText(), s, true)
 		}
 
 	case tcell.KeyDown:
 		if s, ok := m.PrevSuggestion(); ok {
-			p.model.SetText(p.model.GetText(), s)
+			p.model.SetText(p.model.GetText(), s, true)
 		}
 
 	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if s, ok := m.CurrentSuggestion(); ok {
-			p.model.SetText(p.model.GetText()+s, "")
+			p.model.SetText(p.model.GetText()+s, "", true)
 			m.ClearSuggestions()
 		}
 	}

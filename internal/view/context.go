@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -40,7 +41,14 @@ func NewContext(gvr *client.GVR) ResourceViewer {
 
 func (c *Context) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+	if !c.App().Config.IsReadOnly() {
+		c.bindDangerousKeys(aa)
+	}
+}
+
+func (c *Context) bindDangerousKeys(aa *ui.KeyActions) {
 	aa.Add(ui.KeyR, ui.NewKeyAction("Rename", c.renameCmd, true))
+	aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", c.deleteCmd, true))
 }
 
 func (c *Context) renameCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -50,6 +58,24 @@ func (c *Context) renameCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	c.showRenameModal(contextName, c.renameDialogCallback)
+
+	return nil
+}
+
+func (c *Context) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
+	contextName := c.GetTable().GetSelectedItem()
+	if contextName == "" {
+		return evt
+	}
+
+	d := c.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, c.App().Content.Pages, "Delete", fmt.Sprintf("Delete context %q?", contextName), func() {
+		if err := c.App().factory.Client().Config().DelContext(contextName); err != nil {
+			c.App().Flash().Err(err)
+			return
+		}
+		c.Refresh()
+	}, func() {})
 
 	return nil
 }

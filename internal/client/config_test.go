@@ -32,7 +32,7 @@ func TestCallTimeout(t *testing.T) {
 			e: 1 * time.Minute,
 		},
 		"default": {
-			e: 15 * time.Second,
+			e: client.DefaultCallTimeoutDuration,
 		},
 	}
 

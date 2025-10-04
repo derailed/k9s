@@ -133,5 +133,5 @@ func (f *FishBuff) fireSuggestionChanged(ss []string) {
 	} else {
 		suggest = ss[f.suggestionIndex]
 	}
-	f.SetText(f.GetText(), suggest)
+	f.SetText(f.GetText(), suggest, true)
 }

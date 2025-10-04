@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"maps"
+	"slices"
 	"strings"
 )
 
@@ -46,13 +48,11 @@ func newArgs(p *Interpreter, aa []string) args {
 				arguments[filterKey] = strings.ToLower(a[1:])
 			}
 
-		case strings.Contains(a, labelFlag):
-			if ll := ToLabels(a); len(ll) != 0 {
-				arguments[labelKey] = strings.ToLower(a)
-			}
-
 		case strings.Index(a, contextFlag) == 0:
 			arguments[contextKey] = a[1:]
+
+		case isLabelArg(a):
+			arguments[labelKey] = strings.ToLower(a)
 
 		default:
 			switch {
@@ -80,10 +80,39 @@ func newArgs(p *Interpreter, aa []string) args {
 	return arguments
 }
 
+func (a args) String() string {
+	ss := make([]string, 0, len(a))
+	kk := maps.Keys(a)
+	for _, k := range slices.Sorted(kk) {
+		v := a[k]
+		switch k {
+		case labelKey:
+			v = "'" + v + "'"
+		case filterKey:
+			v = filterFlag + v
+		case contextKey:
+			v = contextFlag + v
+		}
+		ss = append(ss, v)
+	}
+
+	return strings.Join(ss, " ")
+}
+
 func (a args) hasFilters() bool {
 	_, fok := a[filterKey]
 	_, zok := a[fuzzyKey]
 	_, lok := a[labelKey]
 
 	return fok || zok || lok
+}
+
+func isLabelArg(arg string) bool {
+	for _, flag := range labelFlags {
+		if strings.Contains(arg, flag) {
+			return true
+		}
+	}
+
+	return false
 }

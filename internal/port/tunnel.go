@@ -4,6 +4,7 @@
 package port
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net"
@@ -15,9 +16,9 @@ import (
 type PortTunnels []PortTunnel
 
 // CheckAvailable checks if all port tunnels are available.
-func (t PortTunnels) CheckAvailable() error {
+func (t PortTunnels) CheckAvailable(ctx context.Context) error {
 	for _, pt := range t {
-		if !IsPortFree(pt) {
+		if !IsPortFree(ctx, pt) {
 			return fmt.Errorf("port %s is not available on host", pt.LocalPort)
 		}
 	}
@@ -55,8 +56,9 @@ func (t PortTunnel) PortMap() string {
 }
 
 // IsPortFree checks if a address/port pair is available on host.
-func IsPortFree(t PortTunnel) bool {
-	s, err := net.Listen("tcp", fmt.Sprintf("%s:%s", t.Address, t.LocalPort))
+func IsPortFree(ctx context.Context, t PortTunnel) bool {
+	var ncfg net.ListenConfig
+	s, err := ncfg.Listen(ctx, "tcp", fmt.Sprintf("%s:%s", t.Address, t.LocalPort))
 	if err != nil {
 		slog.Warn("Port is not available", slogs.Port, t.LocalPort, slogs.Address, t.Address)
 		return false

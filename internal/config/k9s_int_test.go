@@ -19,14 +19,14 @@ func Test_k9sOverrides(t *testing.T) {
 
 	uu := map[string]struct {
 		k                  *K9s
-		rate               int
+		rate               float32
 		ro, hl, cl, sl, ll bool
 	}{
 		"plain": {
 			k: &K9s{
 				LiveViewAutoRefresh: false,
 				ScreenDumpDir:       "",
-				RefreshRate:         10,
+				RefreshRate:         10.0,
 				MaxConnRetry:        0,
 				ReadOnly:            false,
 				NoExitOnCtrlC:       false,
@@ -34,13 +34,27 @@ func Test_k9sOverrides(t *testing.T) {
 				SkipLatestRevCheck:  false,
 				DisablePodCounting:  false,
 			},
-			rate: 10,
+			rate: 10.0,
+		},
+		"sub-second": {
+			k: &K9s{
+				LiveViewAutoRefresh: false,
+				ScreenDumpDir:       "",
+				RefreshRate:         0.5,
+				MaxConnRetry:        0,
+				ReadOnly:            false,
+				NoExitOnCtrlC:       false,
+				UI:                  UI{},
+				SkipLatestRevCheck:  false,
+				DisablePodCounting:  false,
+			},
+			rate: 2.0, // minimum enforced
 		},
 		"set": {
 			k: &K9s{
 				LiveViewAutoRefresh: false,
 				ScreenDumpDir:       "",
-				RefreshRate:         10,
+				RefreshRate:         10.0,
 				MaxConnRetry:        0,
 				ReadOnly:            true,
 				NoExitOnCtrlC:       false,
@@ -53,7 +67,7 @@ func Test_k9sOverrides(t *testing.T) {
 				SkipLatestRevCheck: false,
 				DisablePodCounting: false,
 			},
-			rate: 10,
+			rate: 10.0,
 			ro:   true,
 			hl:   true,
 			ll:   true,
@@ -64,7 +78,7 @@ func Test_k9sOverrides(t *testing.T) {
 			k: &K9s{
 				LiveViewAutoRefresh: false,
 				ScreenDumpDir:       "",
-				RefreshRate:         10,
+				RefreshRate:         10.0,
 				MaxConnRetry:        0,
 				ReadOnly:            false,
 				NoExitOnCtrlC:       false,
@@ -79,12 +93,12 @@ func Test_k9sOverrides(t *testing.T) {
 				},
 				SkipLatestRevCheck:  false,
 				DisablePodCounting:  false,
-				manualRefreshRate:   100,
+				manualRefreshRate:   100.0,
 				manualReadOnly:      &trueVal,
 				manualCommand:       &cmd,
 				manualScreenDumpDir: &dir,
 			},
-			rate: 100,
+			rate: 100.0,
 			ro:   true,
 			hl:   true,
 			ll:   true,
@@ -96,7 +110,7 @@ func Test_k9sOverrides(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.rate, u.k.GetRefreshRate())
+			assert.InDelta(t, u.rate, u.k.GetRefreshRate(), 0.001)
 			assert.Equal(t, u.ro, u.k.IsReadOnly())
 			assert.Equal(t, u.cl, u.k.IsCrumbsless())
 			assert.Equal(t, u.sl, u.k.IsSplashless())

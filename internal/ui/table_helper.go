@@ -58,8 +58,8 @@ func TrimCell(tv *SelectTable, row, col int) string {
 	return strings.TrimSpace(c.Text)
 }
 
-// TrimLabelSelector extracts label query.
-func TrimLabelSelector(s string) (labels.Selector, error) {
+// ExtractLabelSelector extracts label query.
+func ExtractLabelSelector(s string) (labels.Selector, error) {
 	selStr := s
 	if strings.Index(s, "-l") == 0 {
 		selStr = strings.TrimSpace(s[2:])

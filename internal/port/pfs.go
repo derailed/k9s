@@ -4,12 +4,13 @@
 package port
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
 
 // PortCheck checks if port is free on host.
-type PortChecker func(PortTunnel) bool
+type PortChecker func(context.Context, PortTunnel) bool
 
 // PFAnns represents a collection of port forward annotations.
 type PFAnns []*PFAnn
@@ -39,7 +40,7 @@ func (aa PFAnns) ToTunnels(address string, _ ContainerPortSpecs, available PortC
 		if err != nil {
 			return pts, err
 		}
-		if !available(pt) {
+		if !available(context.Background(), pt) {
 			return pts, fmt.Errorf("port %s is not available on host", pt.LocalPort)
 		}
 		pts = append(pts, pt)

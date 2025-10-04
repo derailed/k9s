@@ -164,9 +164,21 @@ func (c *Container) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	var err error
 	c.Stop()
-	defer c.Start()
-	shellIn(c.App(), c.GetTable().Path, path)
+	defer func() {
+		c.Start()
+		if err != nil {
+			c.App().QueueUpdate(func() {
+				if err != nil {
+					c.App().Flash().Errf("Shell exec failed: %s", err)
+				}
+			})
+
+			c.App().Flash().Err(err)
+		}
+	}()
+	err = shellIn(c.App(), c.GetTable().Path, path)
 
 	return nil
 }

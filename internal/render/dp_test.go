@@ -18,7 +18,7 @@ func TestDpRender(t *testing.T) {
 
 	require.NoError(t, c.Render(load(t, "dp"), "", &r))
 	assert.Equal(t, "icx/icx-db", r.ID)
-	assert.Equal(t, model1.Fields{"icx", "icx-db", "0", "1/1", "1", "1"}, r.Fields[:6])
+	assert.Equal(t, model1.Fields{"icx", "icx-db", "n/a", "1/1", "1", "1"}, r.Fields[:6])
 }
 
 func BenchmarkDpRender(b *testing.B) {

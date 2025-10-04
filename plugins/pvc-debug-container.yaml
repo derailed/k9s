@@ -1,0 +1,38 @@
+plugins:
+  pvc-shell:
+    shortCut: s
+    description: "Spawn an Ubuntu shell pod with this PVC mounted"
+    scopes:
+      - pvc
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        echo "Starting a shell pod with PVC $NAME mounted at /mnt/data"
+        cat <<EOF | kubectl --kubeconfig $KUBECONFIG apply -f > /dev/null 2>&1 -
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: pvc-shell
+          namespace: $NAMESPACE
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: shell
+              image: ubuntu:latest
+              command: ["bash"]
+              stdin: true
+              tty: true
+              volumeMounts:
+                - name: vol
+                  mountPath: /mnt/data
+          volumes:
+            - name: vol
+              persistentVolumeClaim:
+                claimName: $NAME
+        EOF
+        echo "Waiting for pod to be ready..."
+        kubectl --kubeconfig $KUBECONFIG -n $NAMESPACE wait --for=condition=Ready pod/pvc-shell > /dev/null 2>&1
+        kubectl --kubeconfig $KUBECONFIG -n $NAMESPACE exec -it pvc-shell -- bash
+        kubectl --kubeconfig $KUBECONFIG -n $NAMESPACE delete pod pvc-shell --grace-period=0 --force=true > /dev/null 2>&1

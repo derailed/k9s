@@ -1,5 +1,7 @@
 package client
 
+import "k8s.io/apimachinery/pkg/util/sets"
+
 var (
 	// Apps...
 	DpGVR  = NewGVR("apps/v1/deployments")
@@ -77,4 +79,29 @@ var (
 	CrbGVR  = NewGVR("rbac.authorization.k8s.io/v1/clusterrolebindings")
 	RoGVR   = NewGVR("rbac.authorization.k8s.io/v1/roles")
 	RobGVR  = NewGVR("rbac.authorization.k8s.io/v1/rolebindings")
+)
+
+var reservedGVRs = sets.New(
+	CpuGVR,
+	MemGVR,
+	WkGVR,
+	CoGVR,
+	CtGVR,
+	RefGVR,
+	PuGVR,
+	ScnGVR,
+	DirGVR,
+	PfGVR,
+	SdGVR,
+	BeGVR,
+	AliGVR,
+	XGVR,
+	HlpGVR,
+	QGVR,
+	HmGVR,
+	HmhGVR,
+	RbacGVR,
+	PolGVR,
+	UsrGVR,
+	GrpGVR,
 )
