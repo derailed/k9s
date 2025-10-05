@@ -276,6 +276,7 @@ func (v *LiveView) toggleManagedCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.managedField = !v.managedField
 	v.model.SetOptions(v.defaultCtx(), map[string]bool{model.ManagedFieldsOpts: v.managedField})
 
+	v.app.Flash().Info("toggled managed fields")
 	return nil
 }
 

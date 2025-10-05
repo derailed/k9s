@@ -626,8 +626,9 @@ func (a *App) toggleCrumbsCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		a.gotoResource(a.GetCmd(), "", true, true)
+	cmd := a.GetCmd()
+	if a.CmdBuff().IsActive() && cmd != "" {
+		a.gotoResource(cmd, "", true, true)
 		a.ResetCmd()
 		return nil
 	}

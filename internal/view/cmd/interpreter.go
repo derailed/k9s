@@ -14,16 +14,18 @@ import (
 
 // Interpreter tracks user prompt input.
 type Interpreter struct {
-	line string
-	cmd  string
-	args args
+	line    string
+	cmd     string
+	aliases []string
+	args    args
 }
 
 // NewInterpreter returns a new instance.
-func NewInterpreter(s string) *Interpreter {
+func NewInterpreter(s string, aliases ...string) *Interpreter {
 	c := Interpreter{
-		line: s,
-		args: make(args),
+		line:    s,
+		args:    make(args),
+		aliases: aliases,
 	}
 	c.grok()
 
@@ -38,11 +40,11 @@ func (c *Interpreter) ClearNS() {
 // SwitchNS replaces the current namespace with the provided one.
 func (c *Interpreter) SwitchNS(ns string) {
 	if ons, ok := c.NSArg(); ok && ons != client.BlankNamespace {
-		c.Reset(strings.TrimSpace(strings.Replace(c.line, " "+ons, " "+ns, 1)))
+		c.Reset(strings.TrimSpace(strings.Replace(c.line, " "+ons, " "+ns, 1)), "")
 		return
 	}
 	if ns != client.BlankNamespace {
-		c.Reset(strings.TrimSpace(c.line) + " " + ns)
+		c.Reset(strings.TrimSpace(c.line)+" "+ns, "")
 	}
 }
 
@@ -111,6 +113,10 @@ func (c *Interpreter) Cmd() string {
 	return c.cmd
 }
 
+func (c *Interpreter) Aliases() []string {
+	return c.aliases
+}
+
 func (c *Interpreter) Args() string {
 	return strings.TrimSpace(strings.Replace(c.line, c.cmd, "", 1))
 }
@@ -134,11 +140,24 @@ func (c *Interpreter) Amend(c1 *Interpreter) {
 }
 
 // Reset resets with new command.
-func (c *Interpreter) Reset(s string) *Interpreter {
-	c.line = s
+func (c *Interpreter) Reset(line, alias string) *Interpreter {
+	c.line = line
 	c.grok()
 
+	if alias != "" && alias != c.cmd {
+		c.addAlias(alias)
+	}
+
 	return c
+}
+
+func (c *Interpreter) addAlias(a string) {
+	for _, v := range c.aliases {
+		if v == a {
+			return
+		}
+	}
+	c.aliases = append(c.aliases, a)
 }
 
 // GetLine returns the prompt.
