@@ -67,7 +67,7 @@ func TestLogItemsFilter(t *testing.T) {
 				Path:      "fred/blee",
 				Container: "c1",
 			},
-			e: []int{1, 2},
+			e:       []int{1, 2},
 			indices: [][]int{{45, 46, 47, 48, 59, 60, 61, 62}, {64, 65, 66, 67, 70, 71, 72, 73, 76, 77, 78, 79}},
 		},
 	}
