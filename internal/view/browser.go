@@ -330,7 +330,7 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 	cancel = b.cancelFn
 	b.mx.RUnlock()
 
-	if !b.app.ConOK() || cancel == nil || !b.app.IsRunning() {
+	if cancel == nil || !b.app.IsRunning() {
 		return
 	}
 
