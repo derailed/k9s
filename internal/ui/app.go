@@ -190,6 +190,9 @@ func (a *App) ActivateCmd(b bool) {
 
 // GetCmd retrieves user command.
 func (a *App) GetCmd() string {
+	if sugs := a.cmdBuff.Suggestions(); len(sugs) >= 1 {
+		return a.cmdBuff.GetText() + sugs[0]
+	}
 	return a.cmdBuff.GetText()
 }
 

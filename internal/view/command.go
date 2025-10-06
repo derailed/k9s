@@ -118,7 +118,7 @@ func (*Command) namespaceCmd(p *cmd.Interpreter) bool {
 	}
 
 	if ns != "" {
-		_ = p.Reset(client.PodGVR.String())
+		_ = p.Reset(client.PodGVR.String(), "")
 		p.SwitchNS(ns)
 	}
 
@@ -139,7 +139,7 @@ func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	if !ok {
 		return errors.New("invalid command. use `xray xxx`")
 	}
-	gvr, ok := c.alias.Resolve(p)
+	gvr, ok := c.alias.Resolve(cmd.NewInterpreter(arg))
 	if !ok {
 		return fmt.Errorf("invalid resource name: %q", arg)
 	}
@@ -240,7 +240,7 @@ func (c *Command) defaultCmd(isRoot bool) error {
 	}
 	p := cmd.NewInterpreter(c.app.Config.ActiveView())
 	if p.IsBlank() {
-		return c.run(p.Reset(defCmd), "", true, true)
+		return c.run(p.Reset(defCmd, ""), "", true, true)
 	}
 
 	if err := c.run(p, "", true, true); err != nil {
@@ -248,7 +248,7 @@ func (c *Command) defaultCmd(isRoot bool) error {
 			slogs.Command, p.GetLine(),
 			slogs.Error, err,
 		)
-		p = p.Reset(defCmd)
+		p = p.Reset(defCmd, "")
 		return c.run(p, "", true, true)
 	}
 
@@ -345,7 +345,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 			ci := cmd.NewInterpreter(podCmd)
 			currentCommand, ok := c.app.cmdHistory.Top()
 			if ok {
-				ci = ci.Reset(currentCommand)
+				ci = ci.Reset(currentCommand, "")
 			}
 			err = c.run(ci, "", true, true)
 		}

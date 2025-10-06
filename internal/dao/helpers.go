@@ -86,16 +86,11 @@ func ToYAML(o runtime.Object, showManaged bool) (string, error) {
 	if o == nil {
 		return "", errors.New("no object to yamlize")
 	}
-	u, ok := o.(*unstructured.Unstructured)
-	if !ok {
-		return "", fmt.Errorf("expecting unstructured but got %T", o)
-	}
-	if u.Object == nil {
-		return "", fmt.Errorf("expecting unstructured object but got nil")
-	}
 
 	var p printers.ResourcePrinter = &printers.YAMLPrinter{}
+
 	if !showManaged {
+		o = o.DeepCopyObject()
 		p = &printers.OmitManagedFieldsPrinter{Delegate: p}
 	}
 
