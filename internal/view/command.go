@@ -139,7 +139,7 @@ func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	if !ok {
 		return errors.New("invalid command. use `xray xxx`")
 	}
-	gvr, ok := c.alias.Resolve(p)
+	gvr, ok := c.alias.Resolve(cmd.NewInterpreter(arg))
 	if !ok {
 		return fmt.Errorf("invalid resource name: %q", arg)
 	}
