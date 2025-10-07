@@ -47,14 +47,14 @@ func Test_viewMetaFor(t *testing.T) {
 		"custom-alias": {
 			cmd: "pdl",
 			gvr: client.PodGVR,
-			p:   cmd.NewInterpreter("v1/pods @fred 'app=blee' default"),
+			p:   cmd.NewInterpreter("v1/pods @fred 'app=blee' default", "pdl"),
 			err: errors.New("blee"),
 		},
 
 		"inception": {
 			cmd: "pdal blee",
 			gvr: client.PodGVR,
-			p:   cmd.NewInterpreter("v1/pods @fred 'app=blee' blee"),
+			p:   cmd.NewInterpreter("v1/pods @fred 'app=blee' blee", "pdal", "pod"),
 			err: errors.New("blee"),
 		},
 	}

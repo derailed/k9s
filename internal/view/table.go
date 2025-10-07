@@ -149,7 +149,12 @@ func (t *Table) Start() {
 	t.Styles().AddListener(t.Table)
 	cmds := []string{t.Table.GVR().String()}
 	if t.command != nil {
-		cmds = append(cmds, t.command.GetLine())
+		if t.command.GetLine() != t.Table.GVR().String() {
+			cmds = append(cmds, t.command.GetLine())
+		}
+		for _, a := range t.command.Aliases() {
+			cmds = append(cmds, a)
+		}
 	}
 	t.App().CustomView().AddListeners(t.Table, cmds...)
 }

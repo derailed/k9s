@@ -89,7 +89,7 @@ func (a *Aliases) Resolve(p *cmd.Interpreter) (*client.GVR, bool) {
 	}
 
 	if gvr.IsK8sRes() {
-		p.Reset(strings.Replace(p.GetLine(), p.Cmd(), gvr.String(), 1))
+		p.Reset(strings.Replace(p.GetLine(), p.Cmd(), gvr.String(), 1), gvr.String())
 		return gvr, true
 	}
 
@@ -100,7 +100,7 @@ func (a *Aliases) Resolve(p *cmd.Interpreter) (*client.GVR, bool) {
 			return gvr, false
 		}
 		ap.Merge(p)
-		p.Reset(strings.Replace(ap.GetLine(), ap.Cmd(), gvr.String(), 1))
+		p.Reset(strings.Replace(ap.GetLine(), ap.Cmd(), gvr.String(), 1), ap.Cmd())
 	}
 
 	return gvr, true
@@ -159,10 +159,14 @@ func (a *Aliases) LoadFile(path string) error {
 	}
 
 	a.mx.Lock()
-	defer a.mx.Unlock()
 	if err := yaml.Unmarshal(bb, a); err != nil {
 		return err
 	}
+
+	for k, v := range a.Alias {
+		a.Alias[k] = client.NewGVR(v.String())
+	}
+	defer a.mx.Unlock()
 
 	return nil
 }
