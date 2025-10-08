@@ -178,59 +178,190 @@ func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 			return nil
 		}
 
-		args := make([]string, len(p.Args))
-		for i, a := range p.Args {
-			arg, err := r.EnvFn()().Substitute(a)
-			if err != nil {
-				slog.Error("Plugin Args match failed", slogs.Error, err)
-				return nil
-			}
-			args[i] = arg
+		env := r.EnvFn()()
+		if len(p.Variables) > 0 {
+			go extractVariables(r, &p.Variables, &env, 0, func() {
+				executePlugin(r, p, &env)
+			})
+		} else {
+			executePlugin(r, p, &env)
 		}
-
-		cb := func() {
-			opts := shellOpts{
-				binary:     p.Command,
-				background: p.Background,
-				pipes:      p.Pipes,
-				args:       args,
-			}
-			suspend, errChan, statusChan := run(r.App(), &opts)
-			if !suspend {
-				r.App().Flash().Infof("Plugin command failed: %q", p.Description)
-				return
-			}
-			var errs error
-			for e := range errChan {
-				errs = errors.Join(errs, e)
-			}
-			if errs != nil {
-				if !strings.Contains(errs.Error(), "signal: interrupt") {
-					slog.Error("Plugin command failed", slogs.Error, errs)
-					r.App().cowCmd(errs.Error())
-					return
-				}
-			}
-			go func() {
-				for st := range statusChan {
-					if !p.OverwriteOutput {
-						r.App().Flash().Infof("Plugin command launched successfully: %q", st)
-					} else if strings.Contains(st, outputPrefix) {
-						infoMsg := strings.TrimPrefix(st, outputPrefix)
-						r.App().Flash().Info(strings.TrimSpace(infoMsg))
-						return
-					}
-				}
-			}()
-		}
-		if p.Confirm {
-			msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
-			d := r.App().Styles.Dialog()
-			dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
-			return nil
-		}
-		cb()
 
 		return nil
 	}
+}
+
+func executePlugin(r Runner, p *config.Plugin, env *Env) {
+	args := make([]string, len(p.Args))
+	for i, a := range p.Args {
+		arg, err := env.Substitute(a)
+		if err != nil {
+			slog.Error("Plugin Args match failed", slogs.Error, err)
+			return
+		}
+		args[i] = arg
+	}
+
+	cb := func() {
+		opts := shellOpts{
+			binary:     p.Command,
+			background: p.Background,
+			pipes:      p.Pipes,
+			args:       args,
+		}
+		suspend, errChan, statusChan := run(r.App(), &opts)
+		if !suspend {
+			r.App().Flash().Infof("Plugin command failed: %q", p.Description)
+			return
+		}
+		var errs error
+		for e := range errChan {
+			errs = errors.Join(errs, e)
+		}
+		if errs != nil {
+			if !strings.Contains(errs.Error(), "signal: interrupt") {
+				slog.Error("Plugin command failed", slogs.Error, errs)
+				r.App().cowCmd(errs.Error())
+				return
+			}
+		}
+		go func() {
+			for st := range statusChan {
+				if !p.OverwriteOutput {
+					r.App().Flash().Infof("Plugin command launched successfully: %q", st)
+				} else if strings.Contains(st, outputPrefix) {
+					infoMsg := strings.TrimPrefix(st, outputPrefix)
+					r.App().Flash().Info(strings.TrimSpace(infoMsg))
+					return
+				}
+			}
+		}()
+	}
+	if p.Confirm {
+		msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
+		d := r.App().Styles.Dialog()
+		dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
+		return
+	}
+	cb()
+}
+
+func jumperActions(r Runner, aa *ui.KeyActions) error {
+	aa.Range(func(k tcell.Key, a ui.KeyAction) {
+		if a.Opts.Jumper {
+			aa.Delete(k)
+		}
+	})
+
+	path, err := r.App().Config.ContextJumperPath()
+	if err != nil {
+		return err
+	}
+	pp := config.NewJumpers()
+	if err := pp.Load(path, true); err != nil {
+		return err
+	}
+
+	var (
+		errs    error
+		aliases = r.Aliases()
+	)
+	for k := range pp.Jumpers {
+		if !inScope(pp.Jumpers[k].Scopes, aliases) {
+			continue
+		}
+		key, err := asKey(pp.Jumpers[k].ShortCut)
+		if err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		if _, ok := aa.Get(key); ok {
+			if !pp.Jumpers[k].Override {
+				errs = errors.Join(errs, fmt.Errorf("duplicate jumper key found for %q in %q", pp.Jumpers[k].ShortCut, k))
+				continue
+			}
+			slog.Debug("Jumper override action shortcut",
+				slogs.Plugin, k,
+				slogs.Key, pp.Jumpers[k].ShortCut,
+			)
+		}
+
+		jumper := pp.Jumpers[k]
+		aa.Add(key, ui.NewKeyActionWithOpts(
+			pp.Jumpers[k].Description,
+			jumperAction(r, &jumper),
+			ui.ActionOpts{
+				Visible:   true,
+				Jumper:    true,
+				Dangerous: false,
+			},
+		))
+	}
+
+	return errs
+}
+
+func jumperAction(r Runner, j *config.Jumper) ui.ActionHandler {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		path := r.GetSelectedItem()
+		if path == "" {
+			return evt
+		}
+		if r.EnvFn() == nil {
+			return nil
+		}
+
+		env := r.EnvFn()()
+		if len(j.Variables) > 0 {
+			go extractVariables(r, &j.Variables, &env, 0, func() {
+				moveToView(r, j, &env)
+			})
+		} else {
+			moveToView(r, j, &env)
+		}
+
+		return nil
+	}
+}
+
+func moveToView(r Runner, j *config.Jumper, env *Env) {
+	view, err := env.Substitute(j.View)
+	if err != nil {
+		slog.Warn("Invalid jumper view", slogs.Error, err)
+		return
+	}
+
+	filters := make([]string, len(j.Filters))
+	for i, a := range j.Filters {
+		filter, err := env.Substitute(a)
+		if err != nil {
+			slog.Error("Jumper Filter match failed", slogs.Error, err)
+			return
+		}
+		filters[i] = strings.TrimSpace(filter)
+	}
+
+	labels := make([]string, len(j.Labels))
+	for i, l := range j.Labels {
+		label, err := env.Substitute(l)
+		if err != nil {
+			slog.Error("Jumper Label value match failed", slogs.Error, err)
+			return
+		}
+
+		labels[i] = strings.TrimSpace(label)
+	}
+
+	viewFilter := ""
+	if len(filters) > 0 {
+		viewFilter = "/" + strings.TrimSpace(strings.Join(filters, "|"))
+	}
+
+	viewLabel := ""
+	if len(labels) > 0 {
+		viewLabel = strings.TrimSpace(strings.Join(labels, ","))
+	}
+
+	command := view + " " + viewLabel + " " + viewFilter
+	r.App().gotoResource(command, "", false, true)
 }

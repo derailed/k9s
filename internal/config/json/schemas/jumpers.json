@@ -1,28 +1,28 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "K9s plugins schema",
+  "title": "K9s jumpers schema",
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "plugins": {
+    "jumpers": {
       "type": "object",
       "additionalProperties": {
         "properties": {
           "shortCut": { "type": "string" },
           "override": { "type": "boolean" },
           "description": { "type": "string" },
-          "confirm": { "type": "boolean" },
-          "dangerous": { "type": "boolean" },
           "scopes": {
             "type": "array",
             "items": { "type": "string" }
           },
-          "command": { "type": "string" },
-          "background": { "type": "boolean" },
-          "overwriteOutput": { "type": "boolean" },
-          "args": {
+          "view": { "type": "string" },
+          "filters": {
             "type": "array",
-            "items": { "type": ["string", "number"] }
+            "items": { "type": "string" }
+          },
+          "labels": {
+            "type": "array",
+            "items": { "type": "string" }
           },
           "variables": {
             "type": "array",
@@ -57,10 +57,15 @@
             }
           }
         },
-        "required": ["shortCut", "description", "scopes", "command"]
+        "required": [
+          "shortCut",
+          "description",
+          "scopes",
+          "view"
+        ]
       },
       "required": []
     }
   },
-  "required": ["plugins"]
+  "required": ["jumpers"]
 }
