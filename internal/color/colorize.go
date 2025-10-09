@@ -43,19 +43,42 @@ func ANSIColorize(text string, color int) string {
 
 // Highlight colorize bytes at given indices.
 func Highlight(bb []byte, ii []int, c int) []byte {
-	b := make([]byte, 0, len(bb))
-	for i, j := 0, 0; i < len(bb); i++ {
-		if j < len(ii) && ii[j] == i {
-			b = append(b, colorizeByte(bb[i], c)...)
-			j++
+	if len(ii) == 0 {
+		return bb
+	}
+
+	result := make([]byte, 0, len(bb)+len(ii)*20) // Extra space for color codes
+
+	// Create a map of byte positions that should be highlighted
+	highlightMap := make(map[int]bool)
+	for _, pos := range ii {
+		highlightMap[pos] = true
+	}
+
+	// Process each byte
+	for i := 0; i < len(bb); i++ {
+		if highlightMap[i] {
+			// Check if this is the start of a UTF-8 character
+			if (bb[i] & 0xC0) != 0x80 {
+				// This is the start of a character, find the end
+				charStart := i
+				charEnd := i + 1
+				for charEnd < len(bb) && (bb[charEnd]&0xC0) == 0x80 {
+					charEnd++
+				}
+				// Colorize the entire character
+				char := string(bb[charStart:charEnd])
+				colored := ANSIColorize(char, c)
+				result = append(result, []byte(colored)...)
+				i = charEnd - 1 // Skip the rest of the character bytes
+			} else {
+				// This is a continuation byte, skip it (already handled)
+				continue
+			}
 		} else {
-			b = append(b, bb[i])
+			result = append(result, bb[i])
 		}
 	}
 
-	return b
-}
-
-func colorizeByte(b byte, color int) []byte {
-	return []byte(ANSIColorize(string(b), color))
+	return result
 }
