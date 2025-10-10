@@ -21,6 +21,7 @@ import (
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -74,6 +75,35 @@ func (p *Pod) shouldStopRetrying(path string) bool {
 	default:
 		return false
 	}
+}
+
+func (p *Pod) Evict(ctx context.Context, path string) error {
+	ns, n := client.Namespaced(path)
+	auth, err := p.Client().CanI(ns, client.NewGVR(client.PodGVR.String()+":eviction"), n, []string{client.CreateVerb})
+	if err != nil {
+		return err
+	}
+
+	if !auth {
+		return fmt.Errorf("user is not authorized to evict %s", path)
+	}
+
+	dial, err := p.Client().Dial()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, p.Client().Config().CallTimeout())
+	defer cancel()
+
+	err = dial.CoreV1().Pods(ns).EvictV1(ctx, &policyv1.Eviction{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      n,
+			Namespace: ns,
+		},
+	})
+
+	return err
 }
 
 // Get returns a resource instance if found, else an error.
