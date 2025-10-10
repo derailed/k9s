@@ -1,0 +1,47 @@
+plugins:
+  get-all-resources-by-selected-namespace:
+    shortCut: m
+    confirm: false
+    description: List all resources of the selected namespace
+    scopes:
+      - namespaces
+    command: sh
+    background: false
+    args:
+      - -c
+      - 'for r in $(kubectl api-resources --verbs=list --namespaced -o name); do out=$(kubectl get --ignore-not-found --show-kind -n $NAME $r 2>/dev/null); if [ -n "$out" ]; then echo "$out"; echo ""; fi; done | less'
+  get-all-resources-in-current-namespace:
+    shortCut: m
+    confirm: false
+    description: List all resources of the current namespace
+    scopes:
+      - configmaps
+      - controllerrevisions
+      - daemonsets
+      - deployments
+      - endpoints
+      - endpointslices
+      - events
+      - horizontalpodautoscalers
+      - ingresses
+      - jobs
+      - leases
+      - limitranges
+      - networkpolicies
+      - persistentvolumeclaims
+      - poddisruptionbudgets
+      - pods
+      - replicasets
+      - replicationcontrollers
+      - resourcequotas
+      - rolebindings
+      - roles
+      - secrets
+      - serviceaccounts
+      - services
+      - statefulsets
+    command: sh
+    background: false
+    args:
+      - -c
+      - 'for r in $(kubectl api-resources --verbs=list --namespaced -o name); do out=$(kubectl get --ignore-not-found --show-kind -n $NAMESPACE $r 2>/dev/null); if [ -n "$out" ]; then echo "$out"; echo ""; fi; done | less'
