@@ -107,8 +107,7 @@ func TestLogStartStop(t *testing.T) {
 	v := newTestView()
 	m.AddListener(v)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	m.Start(ctx)
 	data := dao.NewLogItems()
 	data.Add(dao.NewLogItemFromString("line1"), dao.NewLogItemFromString("line2"))
@@ -230,8 +229,7 @@ func TestToggleAllContainers(t *testing.T) {
 	m := model.NewLog(client.NewGVR(""), opts, 10*time.Millisecond)
 	m.Init(makeFactory())
 	assert.Equal(t, "blee", m.GetContainer())
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	m.ToggleAllContainers(ctx)
 	assert.Empty(t, m.GetContainer())
