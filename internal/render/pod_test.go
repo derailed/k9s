@@ -173,7 +173,7 @@ func BenchmarkPodRender(b *testing.B) {
 		Raw: load(b, "po"),
 		MX:  makePodMX("nginx", "10m", "10Mi"),
 	}
-	var po render.Pod
+	po := render.NewPod()
 	r := model1.NewRow(12)
 
 	b.ReportAllocs()
