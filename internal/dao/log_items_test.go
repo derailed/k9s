@@ -19,10 +19,11 @@ func init() {
 
 func TestLogItemsFilter(t *testing.T) {
 	uu := map[string]struct {
-		q    string
-		opts dao.LogOptions
-		e    []int
-		err  error
+		q       string
+		opts    dao.LogOptions
+		e       []int
+		indices [][]int
+		err     error
 	}{
 		"empty": {
 			opts: dao.LogOptions{},
@@ -41,7 +42,8 @@ func TestLogItemsFilter(t *testing.T) {
 				Path:      "fred/blee",
 				Container: "c1",
 			},
-			e: []int{0, 1, 2},
+			e:       []int{0, 1, 2},
+			indices: [][]int{{26, 27}, {26, 27}, {26, 27}}, // matches container name "c1" at positions 26-27 in rendered format each line
 		},
 		"message": {
 			q: "zorg",
@@ -59,6 +61,15 @@ func TestLogItemsFilter(t *testing.T) {
 			},
 			e: []int{2},
 		},
+		"multi-origin-text-match": {
+			q: "will",
+			opts: dao.LogOptions{
+				Path:      "fred/blee",
+				Container: "c1",
+			},
+			e:       []int{1, 2},
+			indices: [][]int{{45, 46, 47, 48, 59, 60, 61, 62}, {64, 65, 66, 67, 70, 71, 72, 73, 76, 77, 78, 79}},
+		},
 	}
 
 	for k := range uu {
@@ -66,18 +77,21 @@ func TestLogItemsFilter(t *testing.T) {
 		ii := dao.NewLogItems()
 		ii.Add(
 			dao.NewLogItem([]byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))),
-			dao.NewLogItemFromString("Bumble bee tuna"),
-			dao.NewLogItemFromString("Jean Batiste Emmanuel Zorg"),
+			dao.NewLogItemFromString("Bumble bee tuna. will be back. will win."),
+			dao.NewLogItemFromString("Jean Batiste Emmanuel Zorg. wili, will. will, will"),
 		)
 		t.Run(k, func(t *testing.T) {
 			_, n := client.Namespaced(u.opts.Path)
 			for _, i := range ii.Items() {
 				i.Pod, i.Container = n, u.opts.Container
 			}
-			res, _, err := ii.Filter(0, u.q, false)
+			res, indices, err := ii.Filter(0, u.q, false)
 			assert.Equal(t, u.err, err)
 			if err == nil {
 				assert.Equal(t, u.e, res)
+				if u.indices != nil {
+					assert.Equal(t, u.indices, indices)
+				}
 			}
 		})
 	}

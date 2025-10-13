@@ -46,7 +46,7 @@ func (c *CronJob) ListImages(_ context.Context, fqn string) ([]string, error) {
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
 	ns, n := client.Namespaced(path)
-	auth, err := c.Client().CanI(ns, c.gvr, n, []string{client.GetVerb, client.CreateVerb})
+	auth, err := c.Client().CanI(ns, client.JobGVR, n, []string{client.GetVerb, client.CreateVerb})
 	if err != nil {
 		return err
 	}
