@@ -76,6 +76,8 @@ k9s:
       bgColor: black
       dialBgColor: black
       chartBgColor: black
+      focusFgColor: white
+      focusBgColor: orange
       defaultDialColors:
       - palegreen
       - orangered
