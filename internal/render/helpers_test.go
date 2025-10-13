@@ -56,7 +56,7 @@ func TestTableHydrate(t *testing.T) {
 	re := NewPod()
 	require.NoError(t, model1.Hydrate("blee", oo, rr, re))
 	assert.Len(t, rr, 1)
-	assert.Len(t, rr[0].Fields, 25)
+	assert.Len(t, rr[0].Fields, 26)
 }
 
 func TestToAge(t *testing.T) {

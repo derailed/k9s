@@ -10,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	res "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,6 +28,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 		"none": {
 			e: "Init:0/0",
 		},
+
 		"restart": {
 			status: v1.ContainerStatus{
 				Name:    "ic1",
@@ -36,6 +38,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 			restart: true,
 			e:       "Init:0/0",
 		},
+
 		"no-restart": {
 			status: v1.ContainerStatus{
 				Name:    "ic1",
@@ -44,6 +47,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 			},
 			e: "Init:0/0",
 		},
+
 		"terminated-reason": {
 			status: v1.ContainerStatus{
 				Name: "ic1",
@@ -56,6 +60,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 			},
 			e: "Init:blah",
 		},
+
 		"terminated-signal": {
 			status: v1.ContainerStatus{
 				Name: "ic1",
@@ -68,6 +73,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 			},
 			e: "Init:Signal:9",
 		},
+
 		"terminated-code": {
 			status: v1.ContainerStatus{
 				Name: "ic1",
@@ -79,6 +85,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 			},
 			e: "Init:ExitCode:1",
 		},
+
 		"terminated-restart": {
 			status: v1.ContainerStatus{
 				Name: "ic1",
@@ -89,6 +96,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 				},
 			},
 		},
+
 		"waiting": {
 			status: v1.ContainerStatus{
 				Name: "ic1",
@@ -100,6 +108,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 			},
 			e: "Init:blah",
 		},
+
 		"waiting-init": {
 			status: v1.ContainerStatus{
 				Name: "ic1",
@@ -111,6 +120,7 @@ func Test_checkInitContainerStatus(t *testing.T) {
 			},
 			e: "Init:0/0",
 		},
+
 		"running": {
 			status: v1.ContainerStatus{
 				Name: "ic1",
@@ -137,11 +147,13 @@ func Test_containerPhase(t *testing.T) {
 		ok     bool
 	}{
 		"none": {},
+
 		"empty": {
 			status: v1.PodStatus{
 				Phase: PhaseUnknown,
 			},
 		},
+
 		"waiting": {
 			status: v1.PodStatus{
 				Phase: PhaseUnknown,
@@ -166,6 +178,7 @@ func Test_containerPhase(t *testing.T) {
 			},
 			e: "waiting",
 		},
+
 		"terminated": {
 			status: v1.PodStatus{
 				Phase: PhaseUnknown,
@@ -190,6 +203,7 @@ func Test_containerPhase(t *testing.T) {
 			},
 			e: "done",
 		},
+
 		"terminated-sig": {
 			status: v1.PodStatus{
 				Phase: PhaseUnknown,
@@ -214,6 +228,7 @@ func Test_containerPhase(t *testing.T) {
 			},
 			e: "Signal:9",
 		},
+
 		"terminated-code": {
 			status: v1.PodStatus{
 				Phase: PhaseUnknown,
@@ -238,6 +253,7 @@ func Test_containerPhase(t *testing.T) {
 			},
 			e: "ExitCode:2",
 		},
+
 		"running": {
 			status: v1.PodStatus{
 				Phase: PhaseUnknown,
@@ -274,18 +290,20 @@ func Test_containerPhase(t *testing.T) {
 	}
 }
 
-func Test_restartableInitCO(t *testing.T) {
+func Test_isSideCarContainer(t *testing.T) {
 	always, never := v1.ContainerRestartPolicyAlways, v1.ContainerRestartPolicy("never")
 	uu := map[string]struct {
 		p *v1.ContainerRestartPolicy
 		e bool
 	}{
 		"empty": {},
-		"set": {
+
+		"sidecar": {
 			p: &always,
 			e: true,
 		},
-		"unset": {
+
+		"no-sidecar": {
 			p: &never,
 		},
 	}
@@ -293,7 +311,7 @@ func Test_restartableInitCO(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, restartableInitCO(u.p))
+			assert.Equal(t, u.e, isSideCarContainer(u.p))
 		})
 	}
 }
@@ -308,6 +326,7 @@ func Test_filterSidecarCO(t *testing.T) {
 			cc:  []v1.Container{},
 			ecc: []v1.Container{},
 		},
+
 		"restartable": {
 			cc: []v1.Container{
 				{
@@ -322,6 +341,7 @@ func Test_filterSidecarCO(t *testing.T) {
 				},
 			},
 		},
+
 		"not-restartable": {
 			cc: []v1.Container{
 				{
@@ -330,6 +350,7 @@ func Test_filterSidecarCO(t *testing.T) {
 			},
 			ecc: []v1.Container{},
 		},
+
 		"mixed": {
 			cc: []v1.Container{
 				{
@@ -427,13 +448,13 @@ func Test_lastRestart(t *testing.T) {
 	var p Pod
 	for name, u := range uu {
 		t.Run(name, func(t *testing.T) {
-			_, _, _, lr := p.Statuses(u.containerStatuses)
+			_, _, _, lr := p.ContainerStats(u.containerStatuses)
 			assert.Equal(t, u.expected, lr)
 		})
 	}
 }
 
-func Test_gatherPodMx(t *testing.T) {
+func Test_gatherPodMX(t *testing.T) {
 	uu := map[string]struct {
 		spec *v1.PodSpec
 		mx   []mv1beta1.ContainerMetrics
@@ -452,15 +473,19 @@ func Test_gatherPodMx(t *testing.T) {
 			c: metric{
 				cpu: 1,
 				mem: 22 * client.MegaByte,
+				gpu: 1,
 			},
 			r: metric{
 				cpu:  10,
 				mem:  1 * client.MegaByte,
+				gpu:  1,
 				lcpu: 20,
 				lmem: 2 * client.MegaByte,
+				lgpu: 1,
 			},
 			perc: "10",
 		},
+
 		"multi": {
 			spec: &v1.PodSpec{
 				Containers: []v1.Container{
@@ -471,8 +496,10 @@ func Test_gatherPodMx(t *testing.T) {
 			},
 			r: metric{
 				cpu:  11 + 93 + 11,
+				gpu:  1,
 				mem:  (22 + 1402 + 34) * client.MegaByte,
 				lcpu: 111 + 0 + 0,
+				lgpu: 1,
 				lmem: (44 + 2804 + 69) * client.MegaByte,
 			},
 			mx: []mv1beta1.ContainerMetrics{
@@ -482,10 +509,12 @@ func Test_gatherPodMx(t *testing.T) {
 			},
 			c: metric{
 				cpu: 1 + 51 + 1,
+				gpu: 1,
 				mem: (22 + 1275 + 27) * client.MegaByte,
 			},
 			perc: "46",
 		},
+
 		"sidecar": {
 			spec: &v1.PodSpec{
 				Containers: []v1.Container{
@@ -497,8 +526,10 @@ func Test_gatherPodMx(t *testing.T) {
 			},
 			r: metric{
 				cpu:  11 + 93,
+				gpu:  1,
 				mem:  (22 + 1402) * client.MegaByte,
 				lcpu: 111 + 0,
+				lgpu: 1,
 				lmem: (44 + 2804) * client.MegaByte,
 			},
 			mx: []mv1beta1.ContainerMetrics{
@@ -507,6 +538,7 @@ func Test_gatherPodMx(t *testing.T) {
 			},
 			c: metric{
 				cpu: 1 + 51,
+				gpu: 1,
 				mem: (22 + 1275) * client.MegaByte,
 			},
 			perc: "50",
@@ -516,16 +548,19 @@ func Test_gatherPodMx(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, r := gatherCoMX(u.spec, u.mx)
+			c, r := gatherPodMX(u.spec, u.mx)
 			assert.Equal(t, u.c.cpu, c.cpu)
 			assert.Equal(t, u.c.mem, c.mem)
 			assert.Equal(t, u.c.lcpu, c.lcpu)
 			assert.Equal(t, u.c.lmem, c.lmem)
+			assert.Equal(t, u.c.lgpu, c.lgpu)
 
 			assert.Equal(t, u.r.cpu, r.cpu)
 			assert.Equal(t, u.r.mem, r.mem)
 			assert.Equal(t, u.r.lcpu, r.lcpu)
 			assert.Equal(t, u.r.lmem, r.lmem)
+			assert.Equal(t, u.r.gpu, r.gpu)
+			assert.Equal(t, u.r.lgpu, r.lgpu)
 
 			assert.Equal(t, u.perc, client.ToPercentageStr(c.cpu, r.cpu))
 		})
@@ -555,9 +590,10 @@ func Test_podLimits(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m := cosLimits(u.cc)
+			c, m, g := cosLimits(u.cc)
 			assert.True(t, c.Equal(*u.l.Cpu()))
 			assert.True(t, m.Equal(*u.l.Memory()))
+			assert.True(t, g.Equal(*extractGPU(u.l)))
 		})
 	}
 }
@@ -565,29 +601,174 @@ func Test_podLimits(t *testing.T) {
 func Test_podRequests(t *testing.T) {
 	uu := map[string]struct {
 		cc []v1.Container
-		l  v1.ResourceList
+		e  v1.ResourceList
 	}{
 		"plain": {
 			cc: []v1.Container{
 				makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
 			},
-			l: makeRes("10m", "1Mi"),
+			e: makeRes("10m", "1Mi"),
 		},
+
 		"multi-co": {
 			cc: []v1.Container{
 				makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
 				makeContainer("c2", false, "10m", "1Mi", "40m", "4Mi"),
 			},
-			l: makeRes("20m", "2Mi"),
+			e: makeRes("20m", "2Mi"),
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m := cosRequests(u.cc)
-			assert.True(t, c.Equal(*u.l.Cpu()))
-			assert.True(t, m.Equal(*u.l.Memory()))
+			c, m, g := cosRequests(u.cc)
+			assert.True(t, c.Equal(*u.e.Cpu()))
+			assert.True(t, m.Equal(*u.e.Memory()))
+			assert.True(t, g.Equal(*extractGPU(u.e)))
+		})
+	}
+}
+
+func Test_readinessGateStats(t *testing.T) {
+	const (
+		gate1 = "k9s.derailed.com/gate1"
+		gate2 = "k9s.derailed.com/gate2"
+	)
+
+	uu := map[string]struct {
+		spec *v1.PodSpec
+		st   *v1.PodStatus
+		r    int
+		t    int
+	}{
+		"empty": {
+			spec: &v1.PodSpec{},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: v1.PodReady, Status: v1.ConditionTrue}},
+			},
+			r: 0,
+			t: 0,
+		},
+		"single": {
+			spec: &v1.PodSpec{
+				ReadinessGates: []v1.PodReadinessGate{{ConditionType: gate1}},
+			},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: gate1, Status: v1.ConditionTrue}},
+			},
+			r: 1,
+			t: 1,
+		},
+		"multiple": {
+			spec: &v1.PodSpec{
+				ReadinessGates: []v1.PodReadinessGate{{ConditionType: gate1}, {ConditionType: gate2}},
+			},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: gate1, Status: v1.ConditionTrue}, {Type: gate2, Status: v1.ConditionTrue}, {Type: v1.PodReady, Status: v1.ConditionFalse}},
+			},
+			r: 2,
+			t: 2,
+		},
+		"mixed": {
+			spec: &v1.PodSpec{
+				ReadinessGates: []v1.PodReadinessGate{{ConditionType: gate1}, {ConditionType: gate2}},
+			},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: gate1, Status: v1.ConditionTrue}, {Type: gate2, Status: v1.ConditionFalse}, {Type: v1.PodReady, Status: v1.ConditionTrue}},
+			},
+			r: 1,
+			t: 2,
+		},
+		"missing": {
+			spec: &v1.PodSpec{
+				ReadinessGates: []v1.PodReadinessGate{{ConditionType: gate1}, {ConditionType: gate2}},
+			},
+			st: &v1.PodStatus{
+				Conditions: []v1.PodCondition{{Type: gate1, Status: v1.ConditionTrue}, {Type: v1.PodReady, Status: v1.ConditionTrue}},
+			},
+			r: 1,
+			t: 2,
+		},
+	}
+
+	var p Pod
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			ready, total := p.readinessGateStats(u.spec, u.st)
+			assert.Equal(t, u.r, ready)
+			assert.Equal(t, u.t, total)
+		})
+	}
+}
+
+func Test_diagnose(t *testing.T) {
+	uu := map[string]struct {
+		phase    string
+		cr, ct   int
+		ready    bool
+		rgr, rgt int
+		err      string
+	}{
+		"completed": {
+			phase: Completed,
+			cr:    0,
+			ct:    1,
+			ready: true,
+			rgr:   0,
+			rgt:   0,
+			err:   "",
+		},
+		"container-ready-check-failed": {
+			phase: "Running",
+			cr:    1,
+			ct:    2,
+			ready: true,
+			rgr:   1,
+			rgt:   2,
+			err:   "container ready check failed: 1 of 2",
+		},
+		"readiness-gate-check-failed": {
+			phase: "Running",
+			cr:    1,
+			ct:    1,
+			ready: true,
+			rgr:   1,
+			rgt:   2,
+			err:   "readiness gate check failed: 1 of 2",
+		},
+		"pod-condition-ready-false": {
+			phase: "Running",
+			cr:    1,
+			ct:    1,
+			ready: false,
+			rgr:   0,
+			rgt:   0,
+			err:   "pod condition ready is false",
+		},
+		"pod-terminating": {
+			phase: "Terminating",
+			cr:    1,
+			ct:    1,
+			ready: true,
+			rgr:   1,
+			rgt:   1,
+			err:   "pod is terminating",
+		},
+	}
+
+	var p Pod
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			err := p.diagnose(u.phase, u.cr, u.ct, u.ready, u.rgr, u.rgt)
+			if u.err == "" {
+				assert.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), u.err)
+			}
 		})
 	}
 }
@@ -611,10 +792,12 @@ func makeContainer(n string, restartable bool, rc, rm, lc, lm string) v1.Contain
 func makeRes(c, m string) v1.ResourceList {
 	cpu, _ := res.ParseQuantity(c)
 	mem, _ := res.ParseQuantity(m)
+	gpu, _ := res.ParseQuantity(c)
 
 	return v1.ResourceList{
-		v1.ResourceCPU:    cpu,
-		v1.ResourceMemory: mem,
+		v1.ResourceCPU:                    cpu,
+		v1.ResourceMemory:                 mem,
+		v1.ResourceName("nvidia.com/gpu"): gpu,
 	}
 }
 

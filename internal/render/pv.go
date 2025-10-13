@@ -29,7 +29,7 @@ func (PersistentVolume) ColorerFunc() model1.ColorerFunc {
 		c := model1.DefaultColorer(ns, h, re)
 
 		idx, ok := h.IndexOf("STATUS", true)
-		if ok {
+		if !ok {
 			return c
 		}
 		switch strings.TrimSpace(re.Row.Fields[idx]) {

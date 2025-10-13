@@ -18,5 +18,5 @@ func TestDaemonSetRender(t *testing.T) {
 
 	require.NoError(t, c.Render(load(t, "ds"), "", &r))
 	assert.Equal(t, "kube-system/fluentd-gcp-v3.2.0", r.ID)
-	assert.Equal(t, model1.Fields{"kube-system", "fluentd-gcp-v3.2.0", "0", "2", "2", "2", "2", "2"}, r.Fields[:8])
+	assert.Equal(t, model1.Fields{"kube-system", "fluentd-gcp-v3.2.0", "n/a", "2", "2", "2", "2", "2"}, r.Fields[:8])
 }

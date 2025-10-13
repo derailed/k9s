@@ -66,30 +66,34 @@ func (s StatefulSet) defaultRow(raw *unstructured.Unstructured, r *model1.Row) e
 		return err
 	}
 
+	var desired int32
+	if sts.Spec.Replicas != nil {
+		desired = *sts.Spec.Replicas
+	}
 	r.ID = client.MetaFQN(&sts.ObjectMeta)
 	r.Fields = model1.Fields{
 		sts.Namespace,
 		sts.Name,
 		computeVulScore(sts.Namespace, sts.Labels, &sts.Spec.Template.Spec),
-		strconv.Itoa(int(sts.Status.ReadyReplicas)) + "/" + strconv.Itoa(int(sts.Status.Replicas)),
+		strconv.Itoa(int(sts.Status.ReadyReplicas)) + "/" + strconv.Itoa(int(desired)),
 		asSelector(sts.Spec.Selector),
 		na(sts.Spec.ServiceName),
 		podContainerNames(&sts.Spec.Template.Spec, true),
 		podImageNames(&sts.Spec.Template.Spec, true),
 		mapToStr(sts.Labels),
-		AsStatus(s.diagnose(sts.Spec.Replicas, sts.Status.Replicas, sts.Status.ReadyReplicas)),
+		AsStatus(s.diagnose(desired, sts.Status.Replicas, sts.Status.ReadyReplicas)),
 		ToAge(sts.GetCreationTimestamp()),
 	}
 
 	return nil
 }
 
-func (StatefulSet) diagnose(w *int32, d, r int32) error {
-	if d != r {
-		return fmt.Errorf("desired %d replicas got %d available", d, r)
+func (StatefulSet) diagnose(d, c, r int32) error {
+	if c != r {
+		return fmt.Errorf("desired %d replicas got %d available", c, r)
 	}
-	if w != nil && *w != r {
-		return fmt.Errorf("want %d replicas got %d available", *w, r)
+	if d != r {
+		return fmt.Errorf("want %d replicas got %d available", d, r)
 	}
 
 	return nil

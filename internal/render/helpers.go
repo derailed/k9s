@@ -35,13 +35,14 @@ func ExtractImages(spec *v1.PodSpec) []string {
 }
 
 func computeVulScore(ns string, lbls map[string]string, spec *v1.PodSpec) string {
-	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(ns, lbls) {
-		return "0"
+	if vul.ImgScanner == nil || !vul.ImgScanner.IsInitialized() || vul.ImgScanner.ShouldExcludes(ns, lbls) {
+		return NAValue
 	}
 	ii := ExtractImages(spec)
 	vul.ImgScanner.Enqueue(context.Background(), ii...)
+	sc := vul.ImgScanner.Score(ii...)
 
-	return vul.ImgScanner.Score(ii...)
+	return sc
 }
 
 func runesToNum(rr []rune) int64 {
@@ -263,6 +264,14 @@ func mapToIfc(m any) (s string) {
 	}
 
 	return
+}
+
+func toMu(v int64) string {
+	if v == 0 {
+		return NAValue
+	}
+
+	return strconv.Itoa(int(v))
 }
 
 func toMc(v int64) string {
