@@ -67,9 +67,9 @@ func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	var re render.Pod
 	phase := re.Phase(po.DeletionTimestamp, &po.Spec, &po.Status)
 	ss := po.Status.ContainerStatuses
-	cr, _, _, _ := re.Statuses(ss)
+	readyCnt, _, _, _ := re.ContainerStats(ss)
 	status := OkStatus
-	if cr != len(ss) {
+	if readyCnt != len(ss) {
 		status = ToastStatus
 	}
 	if phase == "Completed" {
@@ -77,7 +77,7 @@ func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	}
 
 	node.Extras[StatusKey] = status
-	node.Extras[InfoKey] = strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss))
+	node.Extras[InfoKey] = strconv.Itoa(readyCnt) + "/" + strconv.Itoa(len(ss))
 
 	return nil
 }
