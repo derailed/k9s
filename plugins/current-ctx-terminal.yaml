@@ -1,4 +1,4 @@
-plugins:
+plugins:  
   open-terminal:
     shortCut: Ctrl-T
     confirm: false

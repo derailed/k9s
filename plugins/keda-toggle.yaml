@@ -22,3 +22,5 @@ plugins:
         # If annotation not found, add it
         kubectl annotate scaledobject $NAME "$ANNOTATION"=0 -n $NAMESPACE --context $CONTEXT >/dev/null && echo "Keda autoscaling for $NAME disabled"
       fi
+
+

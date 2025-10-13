@@ -20,18 +20,14 @@ const (
 // Scans tracks scans per image.
 type Scans map[string]*Scan
 
-// Dump dumps reports to writer.
-func (s Scans) Dump(w io.Writer) error {
+// Dump dump reports to stdout.
+func (s Scans) Dump(w io.Writer) {
 	for k, v := range s {
 		_, _ = fmt.Fprintf(w, "Image: %s -- ", k)
 		v.Tally.Dump(w)
 		_, _ = fmt.Fprintln(w)
-		if err := v.Dump(w); err != nil {
-			return err
-		}
+		v.Dump(w)
 	}
-
-	return nil
 }
 
 // Scan tracks image vulnerability scan.
@@ -46,16 +42,13 @@ func newScan(img string) *Scan {
 }
 
 // Dump dump report to stdout.
-func (s *Scan) Dump(w io.Writer) error {
-	return s.Table.dump(w)
+func (s *Scan) Dump(w io.Writer) {
+	s.Table.dump(w)
 }
 
 func (s *Scan) run(mm *match.Matches, store vulnerability.MetadataProvider) error {
 	for m := range mm.Enumerate() {
-		meta, err := store.VulnerabilityMetadata(vulnerability.Reference{
-			ID:        m.Vulnerability.ID,
-			Namespace: m.Vulnerability.Namespace,
-		})
+		meta, err := store.VulnerabilityMetadata(vulnerability.Reference{ID: m.Vulnerability.ID, Namespace: m.Vulnerability.Namespace})
 		if err != nil {
 			return err
 		}

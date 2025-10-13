@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/tcell/v2"
@@ -22,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/sets"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -61,14 +59,13 @@ var defaultPodHeader = model1.Header{
 	model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "LAST RESTART", Attrs: model1.Attrs{Align: tview.AlignRight, Time: true, Wide: true}},
 	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
+	model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
 	model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
 	model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "GPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
 	model1.HeaderColumn{Name: "IP"},
 	model1.HeaderColumn{Name: "NODE"},
 	model1.HeaderColumn{Name: "SERVICE-ACCOUNT", Attrs: model1.Attrs{Wide: true}},
@@ -160,19 +157,18 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	}
 
 	dt := pwm.Raw.GetDeletionTimestamp()
-	cReady, _, cRestarts, lastRestart := p.ContainerStats(st.ContainerStatuses)
+	_, _, irc, _ := p.Statuses(st.InitContainerStatuses)
+	cr, _, rc, lr := p.Statuses(st.ContainerStatuses)
 
-	iReady, iTerminated, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
-	cReady += iReady
-	allCounts := len(spec.Containers) + iTerminated
-	rgr, rgt := p.readinessGateStats(spec, &st)
-	ready := hasPodReadyCondition(st.Conditions)
+	rcr, rcc := p.initContainerCounts(spec.InitContainers, st.InitContainerStatuses)
+	cr += rcr
+	cc := len(spec.Containers) + rcc
 
 	var ccmx []mv1beta1.ContainerMetrics
 	if pwm.MX != nil {
 		ccmx = pwm.MX.Containers
 	}
-	c, r := gatherPodMX(spec, ccmx)
+	c, r := gatherCoMX(spec, ccmx)
 	phase := p.Phase(dt, spec, &st)
 
 	ns, n := pwm.Raw.GetNamespace(), pwm.Raw.GetName()
@@ -183,19 +179,18 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		n,
 		computeVulScore(ns, pwm.Raw.GetLabels(), spec),
 		"●",
-		strconv.Itoa(cReady) + "/" + strconv.Itoa(allCounts),
+		strconv.Itoa(cr) + "/" + strconv.Itoa(cc),
 		phase,
-		strconv.Itoa(cRestarts + iRestarts),
-		ToAge(lastRestart),
+		strconv.Itoa(rc + irc),
+		ToAge(lr),
 		toMc(c.cpu),
+		toMi(c.mem),
 		toMc(r.cpu) + ":" + toMc(r.lcpu),
+		toMi(r.mem) + ":" + toMi(r.lmem),
 		client.ToPercentageStr(c.cpu, r.cpu),
 		client.ToPercentageStr(c.cpu, r.lcpu),
-		toMi(c.mem),
-		toMi(r.mem) + ":" + toMi(r.lmem),
 		client.ToPercentageStr(c.mem, r.mem),
 		client.ToPercentageStr(c.mem, r.lmem),
-		toMc(r.gpu) + ":" + toMc(r.lgpu),
 		na(st.PodIP),
 		na(spec.NodeName),
 		na(spec.ServiceAccountName),
@@ -203,7 +198,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		asReadinessGate(spec, &st),
 		p.mapQOS(st.QOSClass),
 		mapToStr(pwm.Raw.GetLabels()),
-		AsStatus(p.diagnose(phase, cReady, allCounts, ready, rgr, rgt)),
+		AsStatus(p.diagnose(phase, cr, cc)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
@@ -211,7 +206,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 }
 
 // Healthy checks component health.
-func (p *Pod) Healthy(_ context.Context, o any) error {
+func (p Pod) Healthy(_ context.Context, o any) error {
 	pwm, ok := o.(*PodWithMetrics)
 	if !ok {
 		slog.Error("Expected *PodWithMetrics", slogs.Type, fmt.Sprintf("%T", o))
@@ -229,31 +224,21 @@ func (p *Pod) Healthy(_ context.Context, o any) error {
 	}
 	dt := pwm.Raw.GetDeletionTimestamp()
 	phase := p.Phase(dt, spec, &st)
-	cr, _, _, _ := p.ContainerStats(st.ContainerStatuses)
-	ct := len(st.ContainerStatuses)
+	cr, _, _, _ := p.Statuses(st.ContainerStatuses)
 
-	icr, ict, _ := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
-	cr += icr
-	ct += ict
+	rcr, rcc := p.initContainerCounts(spec.InitContainers, st.InitContainerStatuses)
+	cr += rcr
+	cc := len(spec.Containers) + rcc
 
-	ready := hasPodReadyCondition(st.Conditions)
-	rgr, rgt := p.readinessGateStats(spec, &st)
-
-	return p.diagnose(phase, cr, ct, ready, rgr, rgt)
+	return p.diagnose(phase, cr, cc)
 }
 
-func (*Pod) diagnose(phase string, cr, ct int, ready bool, rgr, rgt int) error {
+func (*Pod) diagnose(phase string, cr, ct int) error {
 	if phase == Completed {
 		return nil
 	}
 	if cr != ct || ct == 0 {
 		return fmt.Errorf("container ready check failed: %d of %d", cr, ct)
-	}
-	if rgt > 0 && rgr != rgt {
-		return fmt.Errorf("readiness gate check failed: %d of %d", rgr, rgt)
-	}
-	if !ready {
-		return fmt.Errorf("pod condition ready is false")
 	}
 	if phase == Terminating {
 		return fmt.Errorf("pod is terminating")
@@ -309,16 +294,16 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 	return p
 }
 
-func gatherPodMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
+func gatherCoMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
 	cc := make([]v1.Container, 0, len(spec.InitContainers)+len(spec.Containers))
 	cc = append(cc, filterSidecarCO(spec.InitContainers)...)
 	cc = append(cc, spec.Containers...)
 
-	rcpu, rmem, rgpu := cosRequests(cc)
-	r.cpu, r.mem, r.gpu = rcpu.MilliValue(), rmem.Value(), rgpu.Value()
+	rcpu, rmem := cosRequests(cc)
+	r.cpu, r.mem = rcpu.MilliValue(), rmem.Value()
 
-	lcpu, lmem, lgpu := cosLimits(cc)
-	r.lcpu, r.lmem, r.lgpu = lcpu.MilliValue(), lmem.Value(), lgpu.Value()
+	lcpu, lmem := cosLimits(cc)
+	r.lcpu, r.lmem = lcpu.MilliValue(), lmem.Value()
 
 	ccpu, cmem := currentRes(ccmx)
 	c.cpu, c.mem = ccpu.MilliValue(), cmem.Value()
@@ -326,69 +311,52 @@ func gatherPodMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metri
 	return
 }
 
-func cosLimits(cc []v1.Container) (cpuQ, memQ, gpuQ *resource.Quantity) {
-	cpuQ, gpuQ, memQ = new(resource.Quantity), new(resource.Quantity), new(resource.Quantity)
+func cosLimits(cc []v1.Container) (cpuQ, memQ resource.Quantity) {
+	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	for i := range cc {
 		limits := cc[i].Resources.Limits
 		if len(limits) == 0 {
 			continue
 		}
-		if q := limits.Cpu(); q != nil {
-			cpuQ.Add(*q)
+		if limits.Cpu() != nil {
+			cpu.Add(*limits.Cpu())
 		}
-		if q := limits.Memory(); q != nil {
-			memQ.Add(*q)
-		}
-		if q := extractGPU(limits); q != nil {
-			gpuQ.Add(*q)
+		if limits.Memory() != nil {
+			mem.Add(*limits.Memory())
 		}
 	}
 
-	return
+	return *cpu, *mem
 }
 
-func cosRequests(cc []v1.Container) (cpuQ, memQ, gpuQ *resource.Quantity) {
-	cpuQ, gpuQ, memQ = new(resource.Quantity), new(resource.Quantity), new(resource.Quantity)
+func cosRequests(cc []v1.Container) (cpuQ, memQ resource.Quantity) {
+	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	for i := range cc {
 		co := cc[i]
 		rl := containerRequests(&co)
-		if q := rl.Cpu(); q != nil {
-			cpuQ.Add(*q)
+		if rl.Cpu() != nil {
+			cpu.Add(*rl.Cpu())
 		}
-		if q := rl.Memory(); q != nil {
-			memQ.Add(*q)
-		}
-		if q := extractGPU(rl); q != nil {
-			gpuQ.Add(*q)
+		if rl.Memory() != nil {
+			mem.Add(*rl.Memory())
 		}
 	}
 
-	return
+	return *cpu, *mem
 }
 
-func extractGPU(rl v1.ResourceList) *resource.Quantity {
-	for _, v := range config.KnownGPUVendors {
-		if q, ok := rl[v1.ResourceName(v)]; ok {
-			return &q
-		}
-	}
-
-	return &resource.Quantity{Format: resource.DecimalSI}
-}
-
-func currentRes(ccmx []mv1beta1.ContainerMetrics) (cpuQ, memQ *resource.Quantity) {
-	cpuQ = new(resource.Quantity)
-	memQ = new(resource.Quantity)
+func currentRes(ccmx []mv1beta1.ContainerMetrics) (cpuQ, memQ resource.Quantity) {
+	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	if ccmx == nil {
-		return
+		return *cpu, *mem
 	}
 	for _, co := range ccmx {
 		c, m := co.Usage.Cpu(), co.Usage.Memory()
-		cpuQ.Add(*c)
-		memQ.Add(*m)
+		cpu.Add(*c)
+		mem.Add(*m)
 	}
 
-	return
+	return *cpu, *mem
 }
 
 func (*Pod) mapQOS(class v1.PodQOSClass) string {
@@ -403,16 +371,16 @@ func (*Pod) mapQOS(class v1.PodQOSClass) string {
 	}
 }
 
-// ContainerStats reports pod container stats.
-func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, restartCnt int, latest metav1.Time) {
+// Statuses reports current pod container statuses.
+func (*Pod) Statuses(cc []v1.ContainerStatus) (cr, ct, rc int, latest metav1.Time) {
 	for i := range cc {
 		if cc[i].State.Terminated != nil {
-			terminatedCnt++
+			ct++
 		}
 		if cc[i].Ready {
-			readyCnt++
+			cr++
 		}
-		restartCnt += int(cc[i].RestartCount)
+		rc += int(cc[i].RestartCount)
 
 		if t := cc[i].LastTerminationState.Terminated; t != nil {
 			ts := cc[i].LastTerminationState.Terminated.FinishedAt
@@ -425,29 +393,14 @@ func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, re
 	return
 }
 
-func (*Pod) initContainerStats(cc []v1.Container, cos []v1.ContainerStatus) (ready, total, restart int) {
+func (*Pod) initContainerCounts(cc []v1.Container, cos []v1.ContainerStatus) (ready, total int) {
 	for i := range cos {
-		if !isSideCarContainer(cc[i].RestartPolicy) {
+		if !restartableInitCO(cc[i].RestartPolicy) {
 			continue
 		}
 		total++
 		if cos[i].Ready {
 			ready++
-		}
-		restart += int(cos[i].RestartCount)
-	}
-	return
-}
-
-func (*Pod) readinessGateStats(spec *v1.PodSpec, st *v1.PodStatus) (ready, total int) {
-	total = len(spec.ReadinessGates)
-	for _, readinessGate := range spec.ReadinessGates {
-		for _, condition := range st.Conditions {
-			if condition.Type == readinessGate.ConditionType {
-				if condition.Status == "True" {
-					ready++
-				}
-			}
 		}
 	}
 	return
@@ -504,15 +457,13 @@ func (*Pod) containerPhase(st *v1.PodStatus, status string) (string, bool) {
 
 func (*Pod) initContainerPhase(spec *v1.PodSpec, pst *v1.PodStatus, status string) (string, bool) {
 	count := len(spec.InitContainers)
-	sidecars := sets.New[string]()
+	rs := make(map[string]bool, count)
 	for i := range spec.InitContainers {
 		co := spec.InitContainers[i]
-		if isSideCarContainer(co.RestartPolicy) {
-			sidecars.Insert(co.Name)
-		}
+		rs[co.Name] = restartableInitCO(co.RestartPolicy)
 	}
 	for i := range pst.InitContainerStatuses {
-		if s := checkInitContainerStatus(&pst.InitContainerStatuses[i], i, count, sidecars.Has(pst.InitContainerStatuses[i].Name)); s != "" {
+		if s := checkInitContainerStatus(&pst.InitContainerStatuses[i], i, count, rs[pst.InitContainerStatuses[i].Name]); s != "" {
 			return s, true
 		}
 	}
@@ -634,15 +585,16 @@ func hasPodReadyCondition(conditions []v1.PodCondition) bool {
 	return false
 }
 
-func isSideCarContainer(p *v1.ContainerRestartPolicy) bool {
+func restartableInitCO(p *v1.ContainerRestartPolicy) bool {
 	return p != nil && *p == v1.ContainerRestartPolicyAlways
 }
 
 func filterSidecarCO(cc []v1.Container) []v1.Container {
 	rcc := make([]v1.Container, 0, len(cc))
 	for i := range cc {
-		if isSideCarContainer(cc[i].RestartPolicy) {
-			rcc = append(rcc, cc[i])
+		c := cc[i]
+		if c.RestartPolicy != nil && *c.RestartPolicy == v1.ContainerRestartPolicyAlways {
+			rcc = append(rcc, c)
 		}
 	}
 

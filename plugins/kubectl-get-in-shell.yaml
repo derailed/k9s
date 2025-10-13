@@ -12,3 +12,5 @@ plugins:
     args:
       - -c
       - (printf "copy/paste in a shell:\n\n"; if [ "$NAMESPACE" != "" -a  "$NAMESPACE" != "-"  ]; then printf "kubectl get  --context $CONTEXT -n $NAMESPACE $RESOURCE_NAME $NAME \n" ; else printf "kubectl get  --context $CONTEXT $RESOURCE_NAME $NAME \n"; fi ) |& less
+
+

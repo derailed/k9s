@@ -5,7 +5,7 @@ plugins:
     scopes:
       - application
     command: argocd
-    args:
+    args: 
     - app
     - sync
     - $NAME

@@ -15,14 +15,14 @@ plugins:
     background: false
     args:
       - kubectl
-      - argo
-      - rollouts
-      - get
-      - rollout
-      - $NAME
-      - --context
-      - $CONTEXT
-      - -n
+      - argo 
+      - rollouts 
+      - get 
+      - rollout 
+      - $NAME 
+      - --context 
+      - $CONTEXT 
+      - -n 
       - $NAMESPACE;
       - $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
   argo-rollouts-watch:
@@ -34,16 +34,16 @@ plugins:
     command: powershell
     background: false
     args:
-      - kubectl
-      - argo
-      - rollouts
-      - get
-      - rollout
-      - $NAME
-      - --context
-      - $CONTEXT
-      - -n
-      - $NAMESPACE
+      - kubectl 
+      - argo 
+      - rollouts 
+      - get 
+      - rollout 
+      - $NAME 
+      - --context 
+      - $CONTEXT 
+      - -n 
+      - $NAMESPACE 
       - -w;
       - $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
   argo-rollouts-promote:
@@ -55,14 +55,14 @@ plugins:
     command: powershell
     background: false
     args:
-      - kubectl
-      - argo
-      - rollouts
-      - promote
-      - $NAME
-      - --context
-      - $CONTEXT
-      - -n
+      - kubectl 
+      - argo 
+      - rollouts 
+      - promote 
+      - $NAME 
+      - --context 
+      - $CONTEXT 
+      - -n 
       - $NAMESPACE;
       - $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
   argo-rollouts-restart:
@@ -74,13 +74,13 @@ plugins:
     command: powershell
     background: false
     args:
-      - kubectl
-      - argo
-      - rollouts
-      - restart
-      - $NAME
-      - --context
-      - $CONTEXT
-      - -n
+      - kubectl 
+      - argo 
+      - rollouts 
+      - restart 
+      - $NAME 
+      - --context 
+      - $CONTEXT 
+      - -n 
       - $NAMESPACE;
       - $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')

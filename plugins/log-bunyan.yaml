@@ -11,9 +11,9 @@ plugins:
     background: false
     args:
       - -ic
-      - |
+      - | 
         kubectl logs -f $NAME -n $NAMESPACE --context $CONTEXT | bunyan -o short
-        exit 0
+        exit 0 
   bunyanlogsd:
     shortCut: Ctrl-L
     confirm: false

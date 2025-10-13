@@ -87,14 +87,13 @@ var defaultCOHeader = model1.Header{
 	model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "PROBES(L:R:S)"},
 	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "GPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "PORTS"},
 	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
@@ -111,7 +110,7 @@ func (c Container) Render(o any, _ string, row *model1.Row) error {
 }
 
 func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
-	cur, res := gatherContainerMX(cr.Container, cr.MX)
+	cur, res := gatherMetrics(cr.Container, cr.MX)
 	ready, state, restarts := falseStr, MissingValue, "0"
 	if cr.Status != nil {
 		ready, state, restarts = boolToStr(cr.Status.Ready), ToContainerState(cr.Status.State), strconv.Itoa(int(cr.Status.RestartCount))
@@ -128,14 +127,13 @@ func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
 		restarts,
 		probe(cr.Container.LivenessProbe) + ":" + probe(cr.Container.ReadinessProbe) + ":" + probe(cr.Container.StartupProbe),
 		toMc(cur.cpu),
+		toMi(cur.mem),
 		toMc(res.cpu) + ":" + toMc(res.lcpu),
+		toMi(res.mem) + ":" + toMi(res.lmem),
 		client.ToPercentageStr(cur.cpu, res.cpu),
 		client.ToPercentageStr(cur.cpu, res.lcpu),
-		toMi(cur.mem),
-		toMi(res.mem) + ":" + toMi(res.lmem),
 		client.ToPercentageStr(cur.mem, res.mem),
 		client.ToPercentageStr(cur.mem, res.lmem),
-		toMc(res.gpu) + ":" + toMc(res.lgpu),
 		ToContainerPorts(cr.Container.Ports),
 		AsStatus(c.diagnose(state, ready)),
 		ToAge(cr.Age),
@@ -172,36 +170,26 @@ func containerRequests(co *v1.Container) v1.ResourceList {
 	return nil
 }
 
-func gatherContainerMX(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric) {
+func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric) {
 	rList, lList := containerRequests(co), co.Resources.Limits
-
-	if q := rList.Cpu(); q != nil {
-		r.cpu = q.MilliValue()
+	if rList.Cpu() != nil {
+		r.cpu = rList.Cpu().MilliValue()
 	}
-	if q := lList.Cpu(); q != nil {
-		r.lcpu = q.MilliValue()
+	if rList.Memory() != nil {
+		r.mem = rList.Memory().Value()
 	}
-
-	if q := rList.Memory(); q != nil {
-		r.mem = q.Value()
+	if lList.Cpu() != nil {
+		r.lcpu = lList.Cpu().MilliValue()
 	}
-	if q := lList.Memory(); q != nil {
-		r.lmem = q.Value()
+	if lList.Memory() != nil {
+		r.lmem = lList.Memory().Value()
 	}
-
-	if q := extractGPU(rList); q != nil {
-		r.gpu = q.Value()
-	}
-	if q := extractGPU(lList); q != nil {
-		r.lgpu = q.Value()
-	}
-
 	if mx != nil {
-		if q := mx.Usage.Cpu(); q != nil {
-			c.cpu = q.MilliValue()
+		if mx.Usage.Cpu() != nil {
+			c.cpu = mx.Usage.Cpu().MilliValue()
 		}
-		if q := mx.Usage.Memory(); q != nil {
-			c.mem = q.Value()
+		if mx.Usage.Memory() != nil {
+			c.mem = mx.Usage.Memory().Value()
 		}
 	}
 
