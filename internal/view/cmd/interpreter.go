@@ -67,7 +67,7 @@ func (c *Interpreter) grok() {
 	c.cmd = strings.ToLower(ff[0])
 
 	var lbls string
-	line := strings.TrimSpace(strings.Replace(c.line, c.cmd, "", 1))
+	line := strings.TrimSpace(strings.Replace(c.line, ff[0], "", 1))
 	if strings.Contains(line, "'") {
 		start, end, ok := quoteIndicies(line)
 		if ok {
