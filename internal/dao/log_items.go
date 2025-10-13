@@ -14,8 +14,6 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-type podColors map[string]string
-
 var podPalette = []string{
 	"teal",
 	"green",
@@ -30,7 +28,7 @@ var podPalette = []string{
 // LogItems represents a collection of log items.
 type LogItems struct {
 	items     []*LogItem
-	podColors podColors
+	podColors map[string]string
 	mx        sync.RWMutex
 }
 
@@ -106,28 +104,25 @@ func (l *LogItems) Add(ii ...*LogItem) {
 	l.items = append(l.items, ii...)
 }
 
-func (l *LogItems) podColorFor(id string) string {
-	color, ok := l.podColors[id]
-	if ok {
-		return color
-	}
-	var idx int
-	for i, r := range id {
-		idx += i * int(r)
-	}
-	l.podColors[id] = podPalette[idx%len(podPalette)]
-
-	return l.podColors[id]
-}
-
 // Lines returns a collection of log lines.
 func (l *LogItems) Lines(index int, showTime bool, ll [][]byte) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
+	var colorIndex int
 	for i, item := range l.items[index:] {
+		id := item.ID()
+		color, ok := l.podColors[id]
+		if !ok {
+			if colorIndex >= len(podPalette) {
+				colorIndex = 0
+			}
+			color = podPalette[colorIndex]
+			l.podColors[id] = color
+			colorIndex++
+		}
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.Render(color, showTime, bb)
 		ll[i] = bb.Bytes()
 	}
 }
@@ -140,7 +135,7 @@ func (l *LogItems) StrLines(index int, showTime bool) []string {
 	ll := make([]string, len(l.items[index:]))
 	for i, item := range l.items[index:] {
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.Render("white", showTime, bb)
 		ll[i] = bb.String()
 	}
 
@@ -149,9 +144,20 @@ func (l *LogItems) StrLines(index int, showTime bool) []string {
 
 // Render returns logs as a collection of strings.
 func (l *LogItems) Render(index int, showTime bool, ll [][]byte) {
+	var colorIndex int
 	for i, item := range l.items[index:] {
+		id := item.ID()
+		color, ok := l.podColors[id]
+		if !ok {
+			if colorIndex >= len(podPalette) {
+				colorIndex = 0
+			}
+			color = podPalette[colorIndex]
+			l.podColors[id] = color
+			colorIndex++
+		}
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.Render(color, showTime, bb)
 		ll[i] = bb.Bytes()
 	}
 }
@@ -207,7 +213,7 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int
 	ll := make([][]byte, len(l.items[index:]))
 	l.Lines(index, showTime, ll)
 	for i, line := range ll {
-		locs := rx.FindAllIndex(line, -1)
+		locs := rx.FindIndex(line)
 		if locs != nil && invert {
 			continue
 		}
@@ -216,8 +222,8 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int
 		}
 		matches = append(matches, i)
 		ii := make([]int, 0, 10)
-		for _, loc := range locs {
-			for j := loc[0]; j < loc[1]; j++ {
+		for i := 0; i < len(locs); i += 2 {
+			for j := locs[i]; j < locs[i+1]; j++ {
 				ii = append(ii, j)
 			}
 		}
