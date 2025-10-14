@@ -13,7 +13,8 @@
           "properties": {
             "fgColor": {"type": "string"},
             "bgColor": {"type": "string"},
-            "logoColor": {"type": "string"}
+            "logoColor": {"type": "string"},
+            "logoUrl": {"type": "string"}
           }
         },
         "prompt": {
