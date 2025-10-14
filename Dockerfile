@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # The base image for building the k9s binary
-FROM --platform=$BUILDPLATFORM golang:1.25.1-alpine3.21 AS build
+FROM --platform=$BUILDPLATFORM golang:1.25.2-alpine3.21 AS build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -16,7 +16,7 @@ RUN apk --no-cache add --update make libx11-dev git gcc libc-dev curl \
 
 # -----------------------------------------------------------------------------
 # Build the final Docker image
-FROM --platform=$BUILDPLATFORM alpine:3.22.1
+FROM --platform=$BUILDPLATFORM alpine:3.22.2
 ARG KUBECTL_VERSION="v1.32.2"
 
 COPY --from=build /k9s/execs/k9s /bin/k9s
