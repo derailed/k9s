@@ -4,6 +4,9 @@
 package config
 
 import (
+	"os"
+	"strings"
+
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -47,6 +50,11 @@ func (s *ShellPod) Validate() {
 	if s.Image == "" {
 		s.Image = defaultDockerShellImage
 	}
+
+	if strings.Contains(s.Image, "$") {
+		s.Image = os.ExpandEnv(s.Image)
+	}
+
 	if len(s.Limits) == 0 {
 		s.Limits = defaultLimits()
 	}
