@@ -267,7 +267,7 @@ func TestLabelCmd(t *testing.T) {
 
 		"l-arg-caps": {
 			cmd:    "POD  FRED=BLEE   ",
-			labels: "fred=blee",
+			labels: "FRED=BLEE",
 		},
 
 		"toast-labels": {

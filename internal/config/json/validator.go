@@ -43,6 +43,15 @@ const (
 
 	// SkinSchema describes skin config schema.
 	SkinSchema = "skin.json"
+
+	// JumpersSchema describes Jumpers schema.
+	JumpersSchema = "jumpers.json"
+
+	// JumperSchema describes a Jumper snippet schema.
+	JumperSchema = "jumper.json"
+
+	// JumperMultiSchema describes Jumper snippets schema.
+	JumperMultiSchema = "jumper-multi.json"
 )
 
 var (
@@ -72,6 +81,15 @@ var (
 
 	//go:embed schemas/skin.json
 	skinSchema string
+
+	//go:embed schemas/jumpers.json
+	jumpersSchema string
+
+	//go:embed schemas/jumper.json
+	jumperSchema string
+
+	//go:embed schemas/jumper-multi.json
+	jumperMultiSchema string
 )
 
 // Validator tracks schemas validation.
@@ -93,6 +111,9 @@ func NewValidator() *Validator {
 			PluginMultiSchema: gojsonschema.NewStringLoader(pluginMultiSchema),
 			HotkeysSchema:     gojsonschema.NewStringLoader(hotkeysSchema),
 			SkinSchema:        gojsonschema.NewStringLoader(skinSchema),
+			JumpersSchema:     gojsonschema.NewStringLoader(jumpersSchema),
+			JumperSchema:      gojsonschema.NewStringLoader(jumperSchema),
+			JumperMultiSchema: gojsonschema.NewStringLoader(jumperMultiSchema),
 		},
 	}
 	v.register()
@@ -121,6 +142,20 @@ func (v *Validator) register() {
 func (v *Validator) ValidatePlugins(bb []byte) (string, error) {
 	var errs error
 	for _, k := range []string{PluginsSchema, PluginSchema, PluginMultiSchema} {
+		if err := v.Validate(k, bb); err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		return k, nil
+	}
+
+	return "", errs
+}
+
+// ValidateJumpers validates jumpers schema.
+func (v *Validator) ValidateJumpers(bb []byte) (string, error) {
+	var errs error
+	for _, k := range []string{JumpersSchema, JumperSchema, JumperMultiSchema} {
 		if err := v.Validate(k, bb); err != nil {
 			errs = errors.Join(errs, err)
 			continue
