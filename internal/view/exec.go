@@ -34,9 +34,10 @@ import (
 )
 
 const (
-	shellCheck   = `command -v bash >/dev/null && exec bash || exec sh`
-	bannerFmt    = "<<K9s-Shell>> Pod: %s | Container: %s \n"
-	outputPrefix = "[output]"
+	shellCheck    = `command -v bash >/dev/null && exec bash || exec sh`
+	winShellCheck = `where powershell >nul 2>&1 && powershell || cmd`
+	bannerFmt     = "<<K9s-Shell>> Pod: %s | Container: %s \n"
+	outputPrefix  = "[output]"
 )
 
 var editorEnvVars = []string{"K9S_EDITOR", "KUBE_EDITOR", "EDITOR"}
@@ -358,7 +359,7 @@ func sshIn(a *App, fqn, co string) error {
 		args = append(args, cfg.Args...)
 	} else {
 		if platform == windowsOS {
-			args = append(args, "--", powerShell)
+			args = append(args, "--", "cmd", "/c", winShellCheck)
 		}
 		args = append(args, "sh", "-c", shellCheck)
 	}
