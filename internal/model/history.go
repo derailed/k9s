@@ -4,7 +4,11 @@
 package model
 
 import (
+	"log/slog"
 	"strings"
+
+	"github.com/derailed/k9s/internal/slogs"
+	"github.com/derailed/k9s/internal/view/cmd"
 )
 
 // MaxHistory tracks max command history.
@@ -35,6 +39,21 @@ func (h *History) Top() (string, bool) {
 	h.currentIdx = len(h.commands) - 1
 
 	return h.at(h.currentIdx)
+}
+
+func (h *History) SwitchNS(ns string) {
+	c, ok := h.Top()
+	if !ok {
+		return
+	}
+	i := cmd.NewInterpreter(c)
+	i.SwitchNS(ns)
+	line := i.GetLine()
+	if _, ok := i.NSArg(); ok && line != c {
+		h.Push(line)
+		slog.Debug("History (switch-ns)", slogs.Stack, strings.Join(h.List(), "|"))
+		return
+	}
 }
 
 // Last returns the nth command prior to last.
@@ -97,6 +116,10 @@ func (h *History) Push(c string) {
 	if c == "" || len(h.commands) >= h.limit {
 		return
 	}
+	if t, ok := h.Top(); ok && t == c {
+		return
+	}
+
 	if h.currentIdx < len(h.commands)-1 {
 		h.commands = h.commands[:h.currentIdx+1]
 	}

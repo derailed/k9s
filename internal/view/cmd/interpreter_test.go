@@ -53,15 +53,43 @@ func TestNsCmd(t *testing.T) {
 		ns  string
 	}{
 		"empty": {},
+
 		"happy": {
 			cmd: "pod fred",
 			ok:  true,
 			ns:  "fred",
 		},
+
 		"ns-arg-spaced": {
 			cmd: "pod      fred   ",
 			ok:  true,
 			ns:  "fred",
+		},
+
+		"caps-no-ns": {
+			cmd: "Deploy",
+		},
+
+		"caps-with-ns": {
+			cmd: "DEPLOY Fred",
+			ok:  true,
+			ns:  "fred",
+		},
+
+		"no-ns": {
+			cmd: "pod",
+		},
+
+		"full-ns": {
+			cmd: "pod app=blee fred @zorg",
+			ok:  true,
+			ns:  "fred",
+		},
+
+		"full-repeat-ns": {
+			cmd: "pod app=blee blee @zorg",
+			ok:  true,
+			ns:  "blee",
 		},
 	}
 

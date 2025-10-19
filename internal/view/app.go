@@ -145,6 +145,11 @@ func (*App) stopImgScanner() {
 	}
 }
 
+func (a *App) clearHistory() {
+	a.cmdHistory.Clear()
+	a.filterHistory.Clear()
+}
+
 func (a *App) initImgScanner(version string) {
 	defer func(t time.Time) {
 		slog.Debug("Scanner init time", slogs.Elapsed, time.Since(t))

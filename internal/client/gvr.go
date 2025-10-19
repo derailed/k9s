@@ -83,7 +83,7 @@ func NewGVR(s string) *GVR {
 	return &gvr
 }
 
-func (g *GVR) IsCommand() bool {
+func (g *GVR) IsAlias() bool {
 	return !g.IsK8sRes()
 }
 
