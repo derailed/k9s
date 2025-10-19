@@ -138,6 +138,7 @@ func (c *Context) useCtx(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
 		app.Flash().Err(err)
 		return
 	}
+	c.App().clearHistory()
 	c.Refresh()
 	c.GetTable().Select(1, 0)
 }

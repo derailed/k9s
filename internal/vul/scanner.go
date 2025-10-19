@@ -178,10 +178,17 @@ func (s *imageScanner) scan(_ context.Context, img string, sc *Scan) error {
 		)
 	}(time.Now())
 
-	var errs error
 	packages, pkgContext, _, err := pkg.Provide(img, getProviderConfig(s.opts))
 	if err != nil {
-		errs = errors.Join(errs, fmt.Errorf("failed to catalog %s: %w", img, err))
+		return fmt.Errorf("failed to analyze image packages: %w", err)
+	}
+
+	processor, err := vex.NewProcessor(vex.ProcessorOptions{
+		Documents:   s.opts.VexDocuments,
+		IgnoreRules: s.opts.Ignore,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create VEX processor: %w", err)
 	}
 
 	v := grype.VulnerabilityMatcher{
@@ -190,12 +197,10 @@ func (s *imageScanner) scan(_ context.Context, img string, sc *Scan) error {
 		NormalizeByCVE:        s.opts.ByCVE,
 		FailSeverity:          s.opts.FailOnSeverity(),
 		Matchers:              getMatchers(s.opts),
-		VexProcessor: vex.NewProcessor(vex.ProcessorOptions{
-			Documents:   s.opts.VexDocuments,
-			IgnoreRules: s.opts.Ignore,
-		}),
+		VexProcessor:          processor,
 	}
 
+	var errs error
 	mm, _, err := v.FindMatches(packages, pkgContext)
 	if err != nil {
 		errs = errors.Join(errs, err)
