@@ -1,3 +1,6 @@
+# Manage/Inspect Istio Control Plane and Istio Proxy.
+# See https://istio.io
+# <Shift-D> Download Istio Proxy Config Dump.
 plugins:
   istio-proxy-download-config-dump:
     shortCut: Shift-D
