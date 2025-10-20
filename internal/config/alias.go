@@ -89,11 +89,11 @@ func (a *Aliases) Resolve(p *cmd.Interpreter) (*client.GVR, bool) {
 	}
 
 	if gvr.IsK8sRes() {
-		p.Reset(strings.Replace(p.GetLine(), p.Cmd(), gvr.String(), 1), gvr.String())
+		p.Reset(strings.Replace(p.GetLine(), p.Cmd(), gvr.String(), 1), p.Cmd())
 		return gvr, true
 	}
 
-	for gvr.IsCommand() {
+	for gvr.IsAlias() {
 		ap := cmd.NewInterpreter(gvr.String())
 		gvr, ok = a.Get(ap.Cmd())
 		if !ok {

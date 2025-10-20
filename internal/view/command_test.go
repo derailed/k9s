@@ -40,7 +40,7 @@ func Test_viewMetaFor(t *testing.T) {
 		"short-name": {
 			cmd: "po",
 			gvr: client.PodGVR,
-			p:   cmd.NewInterpreter("v1/pods"),
+			p:   cmd.NewInterpreter("v1/pods", "po"),
 			err: errors.New("blee"),
 		},
 
