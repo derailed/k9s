@@ -1,0 +1,16 @@
+plugins:
+  istio-proxy-download-config-dump:
+    shortCut: Shift-D
+    description: Download Istio Proxy Config Dump
+    scopes:
+      - container
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        FILE="$HOME/${POD}-config-dump-$(date +%Y%m%d-%H%M%S).json"
+        echo "Dumping config from pod: ${POD} (namespace: ${NAMESPACE})"
+        kubectl exec --context ${CONTEXT} -n ${NAMESPACE} ${POD} -c istio-proxy -- \
+          curl -s localhost:15000/config_dump | jq --monochrome-output . > "$FILE"
+        echo "Config dump saved to: $FILE" 
