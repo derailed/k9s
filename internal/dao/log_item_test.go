@@ -110,9 +110,8 @@ func BenchmarkLogItemRenderTS(b *testing.B) {
 	i := dao.NewLogItem(s)
 	i.Pod, i.Container = "fred", "blee"
 
-	b.ResetTimer()
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
 		i.Render("yellow", true, bb)
 	}
@@ -123,9 +122,8 @@ func BenchmarkLogItemRenderNoTS(b *testing.B) {
 	i := dao.NewLogItem(s)
 	i.Pod, i.Container = "fred", "blee"
 
-	b.ResetTimer()
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
 		i.Render("yellow", false, bb)
 	}

@@ -177,8 +177,8 @@ func BenchmarkPodRender(b *testing.B) {
 	r := model1.NewRow(12)
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		_ = po.Render(&pom, "", &r)
 	}
 }

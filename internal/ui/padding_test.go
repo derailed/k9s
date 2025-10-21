@@ -143,8 +143,8 @@ func BenchmarkMaxColumn(b *testing.B) {
 	pads := make(MaxyPad, table.HeaderCount())
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		ComputeMaxColumns(pads, "A", table)
 	}
 }

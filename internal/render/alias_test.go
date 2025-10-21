@@ -88,9 +88,8 @@ func BenchmarkAlias(b *testing.B) {
 	}
 	var a render.Alias
 
-	b.ResetTimer()
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		var r model1.Row
 		_ = a.Render(o, "ns-1", &r)
 	}

@@ -49,8 +49,8 @@ func BenchmarkUpdateLogs(b *testing.B) {
 	item := dao.NewLogItem([]byte("\033[0;38m2018-12-14T10:36:43.326972-07:00 \033[0;32mblee line"))
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		c <- item
 	}
 	close(c)

@@ -129,8 +129,8 @@ func BenchmarkDurationToSecond(b *testing.B) {
 	t := "2d22h3m50s"
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		durationToSeconds(t)
 	}
 }

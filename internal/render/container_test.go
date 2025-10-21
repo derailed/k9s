@@ -68,8 +68,8 @@ func BenchmarkContainerRender(b *testing.B) {
 	)
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		_ = c.Render(cres, "blee", &r)
 	}
 }

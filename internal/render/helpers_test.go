@@ -330,8 +330,8 @@ func BenchmarkMapToStr(b *testing.B) {
 	}
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		mapToStr(ll)
 	}
 }
@@ -371,8 +371,8 @@ func BenchmarkRunesToNum(b *testing.B) {
 	rr := []rune("5465")
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		runesToNum(rr)
 	}
 }
@@ -423,9 +423,9 @@ func TestIntToStr(t *testing.T) {
 
 func BenchmarkIntToStr(b *testing.B) {
 	v := 10
-	b.ResetTimer()
+
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		IntToStr(v)
 	}
 }

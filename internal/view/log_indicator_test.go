@@ -39,8 +39,8 @@ func BenchmarkLogIndicatorRefresh(b *testing.B) {
 	v := view.NewLogIndicator(config.NewConfig(nil), defaults, true)
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		v.Refresh()
 	}
 }

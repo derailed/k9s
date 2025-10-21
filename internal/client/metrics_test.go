@@ -102,9 +102,8 @@ func BenchmarkPodsMetrics(b *testing.B) {
 	}
 	mmx := make(client.PodsMetrics, 3)
 
-	b.ResetTimer()
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		m.PodsMetrics(&metrics, mmx)
 	}
 }
@@ -204,9 +203,8 @@ func BenchmarkNodesMetrics(b *testing.B) {
 	m := client.NewMetricsServer(nil)
 	mmx := make(client.NodesMetrics)
 
-	b.ResetTimer()
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		m.NodesMetrics(&nodes, &metrics, mmx)
 	}
 }
@@ -288,9 +286,9 @@ func BenchmarkClusterLoad(b *testing.B) {
 
 	m := client.NewMetricsServer(nil)
 	var mx client.ClusterMetrics
-	b.ResetTimer()
+
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		_ = m.ClusterLoad(&nodes, &metrics, &mx)
 	}
 }
