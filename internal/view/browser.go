@@ -562,6 +562,8 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.setNamespace(ns)
 	if client.IsClusterScoped(ns) {
 		b.app.Flash().Infof("Viewing %s...", b.GVR())
+	} else if ns == client.NamespaceNonKubeSystem {
+		b.app.Flash().Infof("Viewing %s in all non-Kubernetes system namespaces...", b.GVR())
 	} else {
 		b.app.Flash().Infof("Viewing %s in namespace `%s`...", b.GVR(), client.PrintNamespace(ns))
 	}
