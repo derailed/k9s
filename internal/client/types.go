@@ -26,6 +26,21 @@ const (
 	// DefaultNamespace designates the default namespace.
 	DefaultNamespace = "default"
 
+	// NamespaceKubeSystem designates the kube-system namespace.
+	NamespaceKubeSystem = "kube-system"
+
+	// NamespaceKubePublic designates the kube-public namespace.
+	NamespaceKubePublic = "kube-public"
+
+	// NamespaceKubeNodeLease designates the kube-node-lease namespace.
+	NamespaceKubeNodeLease = "kube-node-lease"
+
+	// NamespaceKubeFlannel designates the kube-flannel namespace.
+	NamespaceKubeFlannel = "kube-flannel"
+
+	// NamespaceNonKubeSystem designates the namespaces except kube-system.
+	NamespaceNonKubeSystem = "non-kube-system"
+
 	// ClusterScope designates a resource is not namespaced.
 	ClusterScope = "-"
 

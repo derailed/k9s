@@ -666,15 +666,20 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 	}
 
 	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
-	var index int
+	var index int = 0;
 	if ok, _ := b.app.Conn().CanI(client.NamespaceAll, client.NsGVR, "", client.ListAccess); ok {
-		aa.Add(ui.Key0, ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true))
-		b.namespaces[0] = client.NamespaceAll
-		index = 1
+		aa.Add(ui.NumKeys[index], ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true))
+		b.namespaces[index] = client.NamespaceAll
+		index++;
+	}
+	if ok, _ := b.app.Conn().CanI(client.NamespaceNonKubeSystem, client.NsGVR, "", client.ListAccess); ok {
+		aa.Add(ui.NumKeys[index], ui.NewKeyAction(client.NamespaceNonKubeSystem, b.switchNamespaceCmd, true))
+		b.namespaces[index] = client.NamespaceNonKubeSystem
+		index++;
 	}
 	favNamespaces := b.app.Config.FavNamespaces()
 	for _, ns := range favNamespaces {
-		if ns == client.NamespaceAll {
+		if ns == client.NamespaceAll || ns == client.NamespaceNonKubeSystem {
 			continue
 		}
 		if numKey, ok := ui.NumKeys[index]; ok {

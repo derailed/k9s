@@ -527,7 +527,7 @@ func (t *Table) styleTitle() string {
 	}
 
 	ns := t.GetModel().GetNamespace()
-	if client.IsClusterWide(ns) || ns == client.NotNamespaced {
+	if (client.IsClusterWide(ns) || ns == client.NotNamespaced) && ns != client.NamespaceNonKubeSystem {
 		ns = client.NamespaceAll
 	}
 	path := t.Path
