@@ -26,6 +26,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -364,6 +365,25 @@ func (b *Browser) TableLoadFailed(err error) {
 // ----------------------------------------------------------------------------
 // Actions...
 
+func (b *Browser) nsWarpCmd(*tcell.EventKey) *tcell.EventKey {
+	path := b.GetTable().GetSelectedItem()
+	if path == "" {
+		return nil
+	}
+
+	o, err := b.app.factory.Get(b.GVR(), path, true, nil)
+	if err != nil {
+		return nil
+	}
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil
+	}
+	b.App().gotoResource(b.GVR().String()+" "+u.GetNamespace(), "", true, true)
+
+	return nil
+}
+
 func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
@@ -500,7 +520,7 @@ func editRes(app *App, gvr *client.GVR, path string) error {
 		ns = client.BlankNamespace
 	}
 	if gvr == client.NsGVR {
-		ns = n
+		n = ns
 	}
 	if ok, err := app.Conn().CanI(ns, gvr, n, client.PatchAccess); !ok || err != nil {
 		return fmt.Errorf("current user can't edit resource %s", gvr)
@@ -641,6 +661,9 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 		return
 	}
 	aa.Add(ui.KeyN, ui.NewKeyAction("Copy Namespace", b.cpNsCmd, false))
+	if b.meta.Namespaced {
+		aa.Add(ui.KeyW, ui.NewKeyAction("Warp To Namespace", b.nsWarpCmd, true))
+	}
 
 	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
 	var index int

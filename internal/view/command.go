@@ -366,7 +366,7 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	if pushCmd {
 		c.app.cmdHistory.Push(p.GetLine())
 	}
-	slog.Debug("History", slogs.Stack, strings.Join(c.app.cmdHistory.List(), "|"))
+	slog.Debug("History (exec)", slogs.Stack, strings.Join(c.app.cmdHistory.List(), "|"))
 
 	return
 }
