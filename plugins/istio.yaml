@@ -1,6 +1,7 @@
 # Manage/Inspect Istio Control Plane and Istio Proxy.
 # See https://istio.io
 # <Shift-D> Download Istio Proxy Config Dump.
+# <Shift-P> Set Proxy Log Level to Debug.
 plugins:
   istio-proxy-download-config-dump:
     shortCut: Shift-D
@@ -17,3 +18,14 @@ plugins:
         kubectl exec --context ${CONTEXT} -n ${NAMESPACE} ${POD} -c istio-proxy -- \
           curl -s localhost:15000/config_dump | jq --monochrome-output . > "$FILE"
         echo "Config dump saved to: $FILE" 
+  istio-proxy-log-level-debug:
+    shortCut: Shift-P
+    description: Set Proxy Log Level to Debug
+    scopes:
+      - container
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        istioctl proxy-config log ${POD} -n ${NAMESPACE} --level debug        
