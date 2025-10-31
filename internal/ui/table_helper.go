@@ -84,18 +84,6 @@ func SkinTitle(fmat string, style *config.Frame) string {
 	return fmat
 }
 
-func sortIndicator(sort, asc bool, style *config.Table, name string) string {
-	if !sort {
-		return name
-	}
-
-	order := descIndicator
-	if asc {
-		order = ascIndicator
-	}
-	return fmt.Sprintf("%s[%s::b]%s[::]", name, style.Header.SorterColor, order)
-}
-
 func columnIndicator(sort, selected, asc bool, style *config.Table, name string) string {
 	// Build the column name with selection indicator
 	displayName := name

@@ -141,13 +141,6 @@ func (t *Table) getSelectedColIdx() int {
 	return t.selectedColIdx
 }
 
-func (t *Table) setSelectedColIdx(idx int) {
-	t.mx.Lock()
-	defer t.mx.Unlock()
-
-	t.selectedColIdx = idx
-}
-
 // SelectNextColumn moves the column selection to the right.
 func (t *Table) SelectNextColumn() {
 	data := t.GetFilteredData()
