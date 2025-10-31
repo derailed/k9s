@@ -96,6 +96,27 @@ func sortIndicator(sort, asc bool, style *config.Table, name string) string {
 	return fmt.Sprintf("%s[%s::b]%s[::]", name, style.Header.SorterColor, order)
 }
 
+func columnIndicator(sort, selected, asc bool, style *config.Table, name string) string {
+	// Build the column name with selection indicator
+	displayName := name
+	if selected {
+		// Make selected column bold
+		displayName = fmt.Sprintf("[::b]%s[::-]", name)
+	}
+
+	// Add sort indicator if this column is sorted
+	suffix := ""
+	if sort {
+		order := descIndicator
+		if asc {
+			order = ascIndicator
+		}
+		suffix = fmt.Sprintf("[%s::b]%s[::]", style.Header.SorterColor, order)
+	}
+
+	return displayName + suffix
+}
+
 func formatCell(field string, padding int) string {
 	if IsASCII(field) {
 		return Pad(field, padding)

@@ -37,25 +37,26 @@ type (
 // Table represents tabular data.
 type Table struct {
 	*SelectTable
-	gvr         *client.GVR
-	sortCol     model1.SortColumn
-	manualSort  bool
-	Path        string
-	Extras      string
-	actions     *KeyActions
-	cmdBuff     *model.FishBuff
-	styles      *config.Styles
-	viewSetting *config.ViewSetting
-	colorerFn   model1.ColorerFunc
-	decorateFn  DecorateFunc
-	wide        bool
-	toast       bool
-	hasMetrics  bool
-	ctx         context.Context
-	mx          sync.RWMutex
-	readOnly    bool
-	noIcon      bool
-	fullGVR     bool
+	gvr            *client.GVR
+	sortCol        model1.SortColumn
+	selectedColIdx int
+	manualSort     bool
+	Path           string
+	Extras         string
+	actions        *KeyActions
+	cmdBuff        *model.FishBuff
+	styles         *config.Styles
+	viewSetting    *config.ViewSetting
+	colorerFn      model1.ColorerFunc
+	decorateFn     DecorateFunc
+	wide           bool
+	toast          bool
+	hasMetrics     bool
+	ctx            context.Context
+	mx             sync.RWMutex
+	readOnly       bool
+	noIcon         bool
+	fullGVR        bool
 }
 
 // NewTable returns a new table view.
@@ -131,6 +132,84 @@ func (t *Table) getMSort() bool {
 	defer t.mx.RUnlock()
 
 	return t.manualSort
+}
+
+func (t *Table) getSelectedColIdx() int {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.selectedColIdx
+}
+
+func (t *Table) setSelectedColIdx(idx int) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.selectedColIdx = idx
+}
+
+// SelectNextColumn moves the column selection to the right.
+func (t *Table) SelectNextColumn() {
+	data := t.GetFilteredData()
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+
+	t.mx.Lock()
+	t.selectedColIdx++
+	if t.selectedColIdx >= data.HeaderCount() {
+		t.selectedColIdx = 0
+	}
+	t.mx.Unlock()
+
+	t.Refresh()
+}
+
+// SelectPrevColumn moves the column selection to the left.
+func (t *Table) SelectPrevColumn() {
+	data := t.GetFilteredData()
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+
+	t.mx.Lock()
+	t.selectedColIdx--
+	if t.selectedColIdx < 0 {
+		t.selectedColIdx = data.HeaderCount() - 1
+	}
+	t.mx.Unlock()
+
+	t.Refresh()
+}
+
+// SortSelectedColumn sorts by the currently selected column.
+func (t *Table) SortSelectedColumn() {
+	data := t.GetFilteredData()
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+
+	idx := t.getSelectedColIdx()
+	if idx < 0 || idx >= data.HeaderCount() {
+		return
+	}
+
+	header := data.Header()
+	if idx >= len(header) {
+		return
+	}
+
+	colName := header[idx].Name
+	sc := t.getSortCol()
+
+	// Toggle direction if same column, otherwise default to ascending
+	asc := true
+	if sc.Name == colName {
+		asc = !sc.ASC
+	}
+
+	t.SetSortCol(colName, asc)
+	t.Refresh()
 }
 
 // SetViewSetting sets custom view config is present.
@@ -486,8 +565,9 @@ func (t *Table) NameColIndex() int {
 func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 	sc := t.getSortCol()
 	sortCol := h.Name == sc.Name
+	selectedCol := col == t.getSelectedColIdx()
 	styles := t.styles.Table()
-	c := tview.NewTableCell(sortIndicator(sortCol, sc.ASC, &styles, h.Name))
+	c := tview.NewTableCell(columnIndicator(sortCol, selectedCol, sc.ASC, &styles, h.Name))
 	c.SetExpansion(1)
 	c.SetSelectable(false)
 	c.SetAlign(h.Align)
