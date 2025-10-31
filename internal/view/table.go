@@ -227,7 +227,7 @@ func (t *Table) bindKeys() {
 		tcell.KeyCtrlW:         ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
 		ui.KeyShiftN:           ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
 		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
-		ui.KeyShiftO:           ui.NewKeyAction("Sort Selected Column", t.sortSelectedColumnCmd, false),
+		tcell.KeyCtrlO:         ui.NewKeyAction("Sort Selected Column", t.sortSelectedColumnCmd, false),
 	})
 }
 

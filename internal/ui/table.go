@@ -155,9 +155,21 @@ func (t *Table) SelectNextColumn() {
 		return
 	}
 
+	// Count visible columns
+	visibleCount := 0
+	for _, h := range data.Header() {
+		if !t.shouldExcludeColumn(h) {
+			visibleCount++
+		}
+	}
+
+	if visibleCount == 0 {
+		return
+	}
+
 	t.mx.Lock()
 	t.selectedColIdx++
-	if t.selectedColIdx >= data.HeaderCount() {
+	if t.selectedColIdx >= visibleCount {
 		t.selectedColIdx = 0
 	}
 	t.mx.Unlock()
@@ -172,10 +184,22 @@ func (t *Table) SelectPrevColumn() {
 		return
 	}
 
+	// Count visible columns
+	visibleCount := 0
+	for _, h := range data.Header() {
+		if !t.shouldExcludeColumn(h) {
+			visibleCount++
+		}
+	}
+
+	if visibleCount == 0 {
+		return
+	}
+
 	t.mx.Lock()
 	t.selectedColIdx--
 	if t.selectedColIdx < 0 {
-		t.selectedColIdx = data.HeaderCount() - 1
+		t.selectedColIdx = visibleCount - 1
 	}
 	t.mx.Unlock()
 
@@ -190,16 +214,30 @@ func (t *Table) SortSelectedColumn() {
 	}
 
 	idx := t.getSelectedColIdx()
-	if idx < 0 || idx >= data.HeaderCount() {
+	if idx < 0 {
 		return
 	}
 
+	// Map visual column index to actual header column name
+	// (accounting for hidden columns)
 	header := data.Header()
-	if idx >= len(header) {
+	visibleCol := 0
+	var colName string
+	for _, h := range header {
+		if t.shouldExcludeColumn(h) {
+			continue
+		}
+		if visibleCol == idx {
+			colName = h.Name
+			break
+		}
+		visibleCol++
+	}
+
+	if colName == "" {
 		return
 	}
 
-	colName := header[idx].Name
 	sc := t.getSortCol()
 
 	// Toggle direction if same column, otherwise default to ascending
