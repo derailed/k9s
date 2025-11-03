@@ -96,8 +96,8 @@ func (t *Table) SendKey(evt *tcell.EventKey) {
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
 
-	// Handle Ctrl+Left/Right for column selection
-	if evt.Modifiers()&tcell.ModCtrl != 0 {
+	// Handle Shift+Left/Right for column selection
+	if evt.Modifiers()&tcell.ModShift != 0 {
 		if key == tcell.KeyLeft {
 			t.Table.SelectPrevColumn()
 			return nil
