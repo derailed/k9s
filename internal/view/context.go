@@ -169,5 +169,5 @@ func useContext(app *App, name string) error {
 		return err
 	}
 
-	return app.switchContext(cmd.NewInterpreter("ctx "+name), true)
+	return app.switchContext(cmd.NewInterpreter(fmt.Sprintf("ctx '%s'", name)), true)
 }
