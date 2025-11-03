@@ -141,8 +141,45 @@ func (t *Table) getSelectedColIdx() int {
 	return t.selectedColIdx
 }
 
-// SelectNextColumn moves the column selection to the right.
-func (t *Table) SelectNextColumn() {
+// initSelectedColumn initializes the selected column index based on current sort column.
+func (t *Table) initSelectedColumn() {
+	data := t.GetFilteredData()
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+
+	sc := t.getSortCol()
+	if sc.Name == "" {
+		t.mx.Lock()
+		t.selectedColIdx = 0
+		t.mx.Unlock()
+		return
+	}
+
+	// Find the visual column index for the current sort column
+	header := data.Header()
+	visibleCol := 0
+	for _, h := range header {
+		if t.shouldExcludeColumn(h) {
+			continue
+		}
+		if h.Name == sc.Name {
+			t.mx.Lock()
+			t.selectedColIdx = visibleCol
+			t.mx.Unlock()
+			return
+		}
+		visibleCol++
+	}
+
+	// If sort column not found in visible columns, default to 0
+	t.mx.Lock()
+	t.selectedColIdx = 0
+	t.mx.Unlock()
+}
+
+// moveSelectedColumn moves the column selection by delta (-1 for left, +1 for right).
+func (t *Table) moveSelectedColumn(delta int) {
 	data := t.GetFilteredData()
 	if data == nil || data.HeaderCount() == 0 {
 		return
@@ -161,42 +198,26 @@ func (t *Table) SelectNextColumn() {
 	}
 
 	t.mx.Lock()
-	t.selectedColIdx++
+	t.selectedColIdx += delta
+	// Wrap around
 	if t.selectedColIdx >= visibleCount {
 		t.selectedColIdx = 0
+	} else if t.selectedColIdx < 0 {
+		t.selectedColIdx = visibleCount - 1
 	}
 	t.mx.Unlock()
 
 	t.Refresh()
 }
 
+// SelectNextColumn moves the column selection to the right.
+func (t *Table) SelectNextColumn() {
+	t.moveSelectedColumn(1)
+}
+
 // SelectPrevColumn moves the column selection to the left.
 func (t *Table) SelectPrevColumn() {
-	data := t.GetFilteredData()
-	if data == nil || data.HeaderCount() == 0 {
-		return
-	}
-
-	// Count visible columns
-	visibleCount := 0
-	for _, h := range data.Header() {
-		if !t.shouldExcludeColumn(h) {
-			visibleCount++
-		}
-	}
-
-	if visibleCount == 0 {
-		return
-	}
-
-	t.mx.Lock()
-	t.selectedColIdx--
-	if t.selectedColIdx < 0 {
-		t.selectedColIdx = visibleCount - 1
-	}
-	t.mx.Unlock()
-
-	t.Refresh()
+	t.moveSelectedColumn(-1)
 }
 
 // SortSelectedColumn sorts by the currently selected column.
@@ -240,6 +261,7 @@ func (t *Table) SortSelectedColumn() {
 	}
 
 	t.SetSortCol(colName, asc)
+	t.setMSort(true)
 	t.Refresh()
 }
 
@@ -425,7 +447,16 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
+
+	oldSortCol := t.getSortCol()
 	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
+
+	// Initialize selected column index to match the current sort column
+	// This ensures the highlight starts at the sorted column
+	newSortCol := t.getSortCol()
+	if oldSortCol.Name != newSortCol.Name {
+		t.initSelectedColumn()
+	}
 
 	return data
 }
@@ -539,6 +570,10 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 		sc.Name = name
 		t.setSortCol(sc)
 		t.setMSort(true)
+
+		// Sync selected column index with the new sort column
+		t.initSelectedColumn()
+
 		t.Refresh()
 		return nil
 	}
