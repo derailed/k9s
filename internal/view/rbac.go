@@ -29,7 +29,7 @@ func NewRbac(gvr *client.GVR) ResourceViewer {
 	return &r
 }
 
-func (r *Rbac) bindKeys(aa *ui.KeyActions) {
+func (*Rbac) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 }
 

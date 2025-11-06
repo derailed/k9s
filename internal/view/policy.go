@@ -46,7 +46,7 @@ func (p *Policy) subjectCtx(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeySubjectName, p.subjectName)
 }
 
-func (p *Policy) bindKeys(aa *ui.KeyActions) {
+func (*Policy) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 }
 

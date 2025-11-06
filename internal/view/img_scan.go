@@ -41,7 +41,7 @@ func NewImageScan(gvr *client.GVR) ResourceViewer {
 // Name returns the component name.
 func (*ImageScan) Name() string { return imgScanTitle }
 
-func (i *ImageScan) bindKeys(aa *ui.KeyActions) {
+func (*ImageScan) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlZ, tcell.KeyCtrlW)
 }
 

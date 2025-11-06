@@ -25,6 +25,6 @@ func NewEvent(gvr *client.GVR) ResourceViewer {
 	return &e
 }
 
-func (e *Event) bindKeys(aa *ui.KeyActions) {
+func (*Event) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlD, ui.KeyE, ui.KeyA)
 }
