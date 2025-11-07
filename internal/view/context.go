@@ -169,5 +169,11 @@ func useContext(app *App, name string) error {
 		return err
 	}
 
-	return app.switchContext(cmd.NewInterpreter(fmt.Sprintf("ctx '%s'", name)), true)
+	return app.switchContext(cmd.NewInterpreter(buildContextCommand(name)), true)
+}
+
+// buildContextCommand creates the command string for switching contexts.
+// It quotes the context name to handle whitespace correctly.
+func buildContextCommand(contextName string) string {
+	return fmt.Sprintf("ctx '%s'", contextName)
 }
