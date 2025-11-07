@@ -386,6 +386,25 @@ K9s uses aliases to navigate most K8s resources.
 | Launch pulses view                                                              | `:`pulses or pu⏎              |                                                                        |
 | Launch XRay view                                                                | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
 | Launch Popeye view                                                              | `:`popeye or pop⏎             | See [popeye](#popeye)                                                  |
+| Mark resource                                                                   | `space`                       |                                                                        |
+| Mark range of resources                                                         | `ctrl-space`                  |                                                                        |
+| Clear all marks                                                                 | `ctrl-\`                      |                                                                        |
+| Save resources to file                                                          | `ctrl-s`                      |                                                                        |
+| Toggle faults/error display                                                     | `ctrl-z`                      |                                                                        |
+| Toggle wide columns                                                             | `ctrl-w`                      |                                                                        |
+| Toggle header                                                                   | `ctrl-e`                      |                                                                        |
+| Toggle breadcrumbs                                                              | `ctrl-g`                      |                                                                        |
+| Sort by Name                                                                    | `shift-n`                     |                                                                        |
+| Sort by Age                                                                     | `shift-a`                     |                                                                        |
+| Sort by Namespace                                                               | `shift-p`                     | Only when viewing all namespaces                                       |
+| Copy resource name                                                              | `c`                           |                                                                        |
+| Copy namespace                                                                  | `n`                           |                                                                        |
+| View YAML                                                                       | `y`                           |                                                                        |
+| View logs                                                                       | `l`                           | Resource specific                                                      |
+| View previous logs                                                              | `p`                           | Resource specific                                                      |
+| Shell into container                                                            | `s`                           | Pods only                                                              |
+| Attach to container                                                             | `a`                           | Pods only                                                              |
+| Port forward                                                                    | `shift-f`                     | Pods/Services                                                          |
 
 ---
 
