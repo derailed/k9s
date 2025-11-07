@@ -404,7 +404,25 @@ K9s uses aliases to navigate most K8s resources.
 | View previous logs                                                              | `p`                           | Resource specific                                                      |
 | Shell into container                                                            | `s`                           | Pods only                                                              |
 | Attach to container                                                             | `a`                           | Pods only                                                              |
-| Port forward                                                                    | `shift-f`                     | Pods/Services                                                          |
+| Describe resource                                                               | `d`                           |                                                                        |
+| Edit resource                                                                   | `e`                           | Not available in read-only mode                                        |
+| Show port-forwards                                                              | `f`                           | Pods/Services/Containers                                               |
+| Port forward                                                                    | `shift-f`                     | Pods/Services/Containers                                               |
+| Warp to namespace                                                               | `w`                           | When namespace column is available                                     |
+| Jump to owner                                                                   | `shift-j`                     | When resource has an owner                                             |
+| Use/switch namespace                                                            | `u`                           | Namespace view                                                         |
+| UsedBy (show resources using this)                                              | `u`                           | ServiceAccounts/PVCs/Secrets/ConfigMaps                                |
+| Benchmark (run/stop)                                                            | `b`                           | Services/Port-forwards                                                 |
+| Toggle text wrap                                                                | `w`                           | Log view                                                               |
+| Toggle timestamp                                                                | `t`                           | Log view                                                               |
+| Toggle fullscreen                                                               | `f`                           | Log/YAML/Details view                                                  |
+| Refresh/reload view                                                             | `ctrl-r`                      |                                                                        |
+| Trigger (CronJob)                                                               | `t`                           | CronJob view                                                           |
+| Cordon/Uncordon node                                                            | `u`                           | Node view                                                              |
+| Drain node                                                                      | `r`                           | Node view                                                              |
+| Restart resource                                                                | `r`                           | Deployments/DaemonSets/StatefulSets                                    |
+| Rollback resource                                                               | `ctrl-l`                      | ReplicaSets                                                            |
+| View ReplicaSets                                                                | `z`                           | Deployment view                                                        |
 
 ---
 
