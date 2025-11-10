@@ -25,6 +25,7 @@ type LogIndicator struct {
 	showTime                   bool
 	allContainers              bool
 	shouldDisplayAllContainers bool
+	columnLock                 bool
 }
 
 // NewLogIndicator returns a new indicator.
@@ -43,6 +44,10 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 	if cfg.K9s.Logger.DisableAutoscroll {
 		l.scrollStatus = 0
 	}
+	if cfg.K9s.Logger.ColumnLock {
+		l.columnLock = true
+	}
+
 	l.StylesChanged(styles)
 	styles.AddListener(&l)
 	l.SetTextAlign(tview.AlignCenter)
@@ -63,6 +68,11 @@ func (l *LogIndicator) AutoScroll() bool {
 	return atomic.LoadInt32(&l.scrollStatus) == 1
 }
 
+// ColumnLock reports the current column lock mode.
+func (l *LogIndicator) ColumnLock() bool {
+	return l.columnLock
+}
+
 // Timestamp reports the current timestamp mode.
 func (l *LogIndicator) Timestamp() bool {
 	return l.showTime
@@ -76,6 +86,11 @@ func (l *LogIndicator) TextWrap() bool {
 // FullScreen reports the current screen mode.
 func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
+}
+
+// ToggleColumnLock toggles the current column lock mode.
+func (l *LogIndicator) ToggleColumnLock() {
+	l.columnLock = !l.columnLock
 }
 
 // ToggleTimestamp toggles the current timestamp mode.
