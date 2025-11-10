@@ -155,6 +155,12 @@ func (l *LogIndicator) Refresh() {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Autoscroll", spacer)...)
 	}
 
+	if l.ColumnLock() {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "ColumnLock", spacer)...)
+	} else {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "ColumnLock", spacer)...)
+	}
+
 	if l.FullScreen() {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "FullScreen", spacer)...)
 	} else {

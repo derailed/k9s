@@ -30,7 +30,7 @@ func TestLogAutoScroll(t *testing.T) {
 	assert.Len(t, v.Hints(), 17)
 
 	v.toggleAutoScrollCmd(nil)
-	assert.Equal(t, "Autoscroll:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
+	assert.Equal(t, "Autoscroll:Off     ColumnLock:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
 }
 
 func TestLogColumnLock(t *testing.T) {
