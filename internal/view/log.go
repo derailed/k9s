@@ -57,13 +57,10 @@ var _ model.Component = (*Log)(nil)
 
 // NewLog returns a new viewer.
 func NewLog(gvr *client.GVR, opts *dao.LogOptions) *Log {
-	l := Log{
-		Flex:   tview.NewFlex(),
-		model:  model.NewLog(gvr, opts, defaultFlushTimeout),
-		follow: true,
+	return &Log{
+		Flex:  tview.NewFlex(),
+		model: model.NewLog(gvr, opts, defaultFlushTimeout),
 	}
-
-	return &l
 }
 
 func (*Log) SetCommand(*cmd.Interpreter)            {}
@@ -105,6 +102,9 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 	l.model.Init(l.app.factory)
 	l.updateTitle()
+
+	l.follow = !l.app.Config.K9s.Logger.DisableAutoscroll
+	l.columnLock = l.app.Config.K9s.Logger.ColumnLock
 
 	l.model.ToggleShowTimestamp(l.app.Config.K9s.Logger.ShowTime)
 

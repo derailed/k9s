@@ -39,13 +39,11 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
 		shouldDisplayAllContainers: allContainers,
+		columnLock:                 cfg.K9s.Logger.ColumnLock,
 	}
 
 	if cfg.K9s.Logger.DisableAutoscroll {
 		l.scrollStatus = 0
-	}
-	if cfg.K9s.Logger.ColumnLock {
-		l.columnLock = true
 	}
 
 	l.StylesChanged(styles)
