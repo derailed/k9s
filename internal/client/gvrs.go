@@ -71,14 +71,17 @@ var (
 	HmhGVR = NewGVR("helm-history")
 
 	// RBAC...
-	RbacGVR = NewGVR("rbac")
-	PolGVR  = NewGVR("policy")
-	UsrGVR  = NewGVR("users")
-	GrpGVR  = NewGVR("groups")
-	CrGVR   = NewGVR("rbac.authorization.k8s.io/v1/clusterroles")
-	CrbGVR  = NewGVR("rbac.authorization.k8s.io/v1/clusterrolebindings")
-	RoGVR   = NewGVR("rbac.authorization.k8s.io/v1/roles")
-	RobGVR  = NewGVR("rbac.authorization.k8s.io/v1/rolebindings")
+	RbacGVR  = NewGVR("rbac")
+	PolGVR   = NewGVR("policy")
+	UsrGVR   = NewGVR("users")
+	GrpGVR   = NewGVR("groups")
+	CrGVR    = NewGVR("rbac.authorization.k8s.io/v1/clusterroles")
+	CrbGVR   = NewGVR("rbac.authorization.k8s.io/v1/clusterrolebindings")
+	RoGVR    = NewGVR("rbac.authorization.k8s.io/v1/roles")
+	RobGVR   = NewGVR("rbac.authorization.k8s.io/v1/rolebindings")
+
+	// Karpenter...
+	NodeClaimGVR = NewGVR("karpenter.sh/v1/nodeclaims")
 )
 
 var reservedGVRs = sets.New(
