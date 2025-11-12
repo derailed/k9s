@@ -95,6 +95,19 @@ func (t *Table) SendKey(evt *tcell.EventKey) {
 
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
+
+	// Handle Shift+Left/Right for column selection
+	if evt.Modifiers()&tcell.ModShift != 0 {
+		if key == tcell.KeyLeft {
+			t.Table.SelectPrevColumn()
+			return nil
+		}
+		if key == tcell.KeyRight {
+			t.Table.SelectNextColumn()
+			return nil
+		}
+	}
+
 	if key == tcell.KeyUp || key == tcell.KeyDown {
 		return evt
 	}
@@ -214,6 +227,7 @@ func (t *Table) bindKeys() {
 		tcell.KeyCtrlW:         ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
 		ui.KeyShiftN:           ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
 		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
+		ui.KeyShiftS:           ui.NewKeyAction("Sort Selected Column", t.sortSelectedColumnCmd, false),
 	})
 }
 
@@ -224,6 +238,11 @@ func (t *Table) toggleFaultCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (t *Table) toggleWideCmd(*tcell.EventKey) *tcell.EventKey {
 	t.ToggleWide()
+	return nil
+}
+
+func (t *Table) sortSelectedColumnCmd(*tcell.EventKey) *tcell.EventKey {
+	t.Table.SortSelectedColumn()
 	return nil
 }
 

@@ -17,5 +17,5 @@ func TestContainerNew(t *testing.T) {
 
 	require.NoError(t, c.Init(makeCtx(t)))
 	assert.Equal(t, "Containers", c.Name())
-	assert.Len(t, c.Hints(), 19)
+	assert.Len(t, c.Hints(), 20)
 }
