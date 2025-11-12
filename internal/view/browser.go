@@ -379,7 +379,8 @@ func (b *Browser) nsWarpCmd(*tcell.EventKey) *tcell.EventKey {
 	if !ok {
 		return nil
 	}
-	b.App().gotoResource(b.GVR().String()+" "+u.GetNamespace(), "", true, true)
+	b.App().gotoResource("namespace", "", true, false)
+	b.App().gotoResource(b.GVR().String()+" "+u.GetNamespace(), "", false, true)
 
 	return nil
 }
