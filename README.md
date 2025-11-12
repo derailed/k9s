@@ -1052,6 +1052,8 @@ Colors can be defined by name or using a hex representation. Of recent, we've ad
 > NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 > NOTE: Please see [K9s Skins](https://k9scli.io/topics/skins/) for a list of available colors.
 
+List of skins and screenshots can be found at [K9s Skins Gallery](SKINS.md).
+
 To skin a specific context and provided the file `in-the-navy.yaml` is present in your skins directory.
 
 ```yaml
