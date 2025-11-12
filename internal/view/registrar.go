@@ -64,7 +64,7 @@ func miscViewers(vv MetaViewers) {
 		viewerFn: NewWorkload,
 	}
 	vv[client.CtGVR] = MetaViewer{
-		viewerFn: NewContext,
+		viewerFn: NewContextExtended,
 	}
 	vv[client.CoGVR] = MetaViewer{
 		viewerFn: NewContainer,
