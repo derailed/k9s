@@ -120,6 +120,7 @@
             "sinceSeconds": {"type": "integer"},
             "textWrap": {"type": "boolean"},
             "disableAutoscroll": {"type": "boolean"},
+            "columnLock": {"type": "boolean"},
             "showTime": {"type": "boolean"}
           }
         },

@@ -27,10 +27,34 @@ func TestLogAutoScroll(t *testing.T) {
 	v.GetModel().Set(ii)
 	v.GetModel().Notify()
 
-	assert.Len(t, v.Hints(), 16)
+	assert.Len(t, v.Hints(), 17)
 
 	v.toggleAutoScrollCmd(nil)
-	assert.Equal(t, "Autoscroll:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
+	assert.Equal(t, "Autoscroll:Off     ColumnLock:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
+}
+
+func TestLogColumnLock(t *testing.T) {
+	opts := dao.LogOptions{
+		Path:      "fred/p1",
+		Container: "blee",
+	}
+	v := NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
+
+	buff := dao.NewLogItems()
+	for i := range 100 {
+		buff.Add(dao.NewLogItemFromString(fmt.Sprintf("line-%d\n", i)))
+	}
+	v.GetModel().Set(buff)
+
+	v.toggleColumnLockCmd(nil)
+	const column = 2
+	v.Logs().ScrollTo(-1, column)
+	v.toggleAutoScrollCmd(nil)
+
+	r, c := v.Logs().GetScrollOffset()
+	assert.Equal(t, -1, r)
+	assert.Equal(t, column, c)
 }
 
 func TestLogViewNav(t *testing.T) {
