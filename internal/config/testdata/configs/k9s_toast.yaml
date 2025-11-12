@@ -15,7 +15,7 @@ k9s:
   skipLatestRevCheck: yes
   disablePodCounts: false
   shellPods:
-    image: busybox:1.35.0
+    image: busybox:1.37.0
     namespace: default
     limits:
       cpu: 100m
