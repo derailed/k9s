@@ -27,7 +27,7 @@ func TestLogAutoScroll(t *testing.T) {
 	v.GetModel().Set(ii)
 	v.GetModel().Notify()
 
-	assert.Len(t, v.Hints(), 16)
+	assert.Len(t, v.Hints(), 17)
 
 	v.toggleAutoScrollCmd(nil)
 	assert.Equal(t, "Autoscroll:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
