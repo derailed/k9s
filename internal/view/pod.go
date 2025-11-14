@@ -121,6 +121,13 @@ func (p *Pod) bindDangerousKeys(aa *ui.KeyActions) {
 				Visible:   true,
 				Dangerous: true,
 			}),
+		tcell.KeyCtrlV: ui.NewKeyActionWithOpts(
+			"Evict",
+			p.evictCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
 	})
 }
 
@@ -187,6 +194,58 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 	if err := p.App().inject(no, false); err != nil {
 		p.App().Flash().Err(err)
 	}
+
+	return nil
+}
+
+func (p *Pod) evictCmd(evt *tcell.EventKey) *tcell.EventKey {
+	selections := p.GetTable().GetSelectedItems()
+	if len(selections) == 0 {
+		return evt
+	}
+	res, err := dao.AccessorFor(p.App().factory, p.GVR())
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	evictable, ok := res.(dao.Evictable)
+	if !ok {
+		p.App().Flash().Err(fmt.Errorf("expecting an evictable for %q", p.GVR()))
+		return nil
+	}
+	if len(selections) > 1 {
+		p.App().Flash().Infof("Evict %d marked %s", len(selections), p.GVR())
+	} else {
+		p.App().Flash().Infof("Evict resource %s %s", p.GVR(), selections[0])
+	}
+	p.GetTable().ShowDeleted()
+
+	var pdbViolation bool
+	for i, path := range selections {
+		p.GetTable().DeleteMark(path)
+
+		if pdbViolation {
+			continue
+		}
+
+		if err := evictable.Evict(context.Background(), path); err != nil {
+			if strings.Contains(err.Error(), "violate") {
+				// If the error is due to PDB violation, don't attempt to evict the rest of the selection.
+				pdbViolation = true
+
+				message := "Eviction of %s failed because of PDB violation."
+				if i != len(selections)-1 {
+					message += " Skipping the rest."
+				}
+				p.App().Flash().Errf(message, path)
+				continue
+			}
+			p.App().Flash().Errf("Eviction failed with: %s", err)
+		} else {
+			p.App().factory.DeleteForwarder(path)
+		}
+	}
+	p.Refresh()
 
 	return nil
 }
