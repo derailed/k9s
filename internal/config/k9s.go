@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -42,6 +43,7 @@ type K9s struct {
 	MaxConnRetry        int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
 	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	AllowSuspend        bool       `json:"allowSuspend" yaml:"allowSuspend"`
 	PortForwardAddress  string     `yaml:"portForwardAddress"`
 	UI                  UI         `json:"ui" yaml:"ui"`
 	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
@@ -143,6 +145,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.MaxConnRetry = k1.MaxConnRetry
 	k.ReadOnly = k1.ReadOnly
 	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
+	k.AllowSuspend = k1.AllowSuspend
 	k.PortForwardAddress = k1.PortForwardAddress
 	k.UI = k1.UI
 	k.SkipLatestRevCheck = k1.SkipLatestRevCheck
@@ -438,4 +441,8 @@ func (k *K9s) Validate(c client.Connection, contextName, clusterName string) {
 	if cfg := k.getActiveConfig(); cfg != nil {
 		cfg.Validate(c, contextName, clusterName)
 	}
+}
+
+func (k *K9s) IsSuspendable() bool {
+	return k.AllowSuspend && runtime.GOOS != "windows"
 }
