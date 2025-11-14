@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -141,7 +142,32 @@ func (*Pod) podVolumeRefs(f dao.Factory, parent *TreeNode, ns string, vv []v1.Vo
 
 		pvc := vv[i].PersistentVolumeClaim
 		if pvc != nil {
-			addRef(f, parent, client.PvcGVR, client.FQN(ns, pvc.ClaimName), nil)
+			// Add PVC reference under the pod.
+			pvcID := client.FQN(ns, pvc.ClaimName)
+			addRef(f, parent, client.PvcGVR, pvcID, nil)
+
+			// If PVC is bound, also add its PV as a child under the PVC node.
+			if pvcNode := parent.Find(client.PvcGVR, pvcID); pvcNode != nil {
+				if obj, err := f.Get(client.PvcGVR, pvcID, true, labels.Everything()); err == nil && obj != nil {
+					var pvcObj v1.PersistentVolumeClaim
+					switch po := obj.(type) {
+					case *unstructured.Unstructured:
+						if err := runtime.DefaultUnstructuredConverter.FromUnstructured(po.Object, &pvcObj); err != nil {
+							break
+						}
+					case *v1.PersistentVolumeClaim:
+						pvcObj = *po
+					default:
+						// Best-effort conversion for other runtime.Objects.
+						if m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj); err == nil {
+							_ = runtime.DefaultUnstructuredConverter.FromUnstructured(m, &pvcObj)
+						}
+					}
+					if pvName := pvcObj.Spec.VolumeName; pvName != "" {
+						addRef(f, pvcNode, client.PvGVR, client.FQN(client.ClusterScope, pvName), nil)
+					}
+				}
+			}
 		}
 	}
 }
