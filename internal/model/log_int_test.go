@@ -23,8 +23,7 @@ func TestUpdateLogs(t *testing.T) {
 	m.AddListener(v)
 
 	c := make(dao.LogChan, 2)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	go m.updateLogs(ctx, c)
 
 	for i := range 2 * size {
