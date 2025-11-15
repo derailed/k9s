@@ -93,4 +93,57 @@ func TestNodeRender_PodPVCExpandsToPV(t *testing.T) {
 	assert.Equal(t, client.FQN(client.ClusterScope, "pv-web"), pvcNode.Children[0].ID)
 }
 
+func TestNodeRender_ErrorOnBadInputType(t *testing.T) {
+	var re xray.Node
+	root := xray.NewTreeNode(client.NodeGVR, "nodes")
+	ctx := context.WithValue(context.Background(), xray.KeyParent, root)
+	ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
+
+	// Pass a non-unstructured type to trigger input type error.
+	err := re.Render(ctx, "", &v1.Pod{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "expected Unstructured")
+}
+
+func TestNodeRender_ErrorWhenNoParentInContext(t *testing.T) {
+	var re xray.Node
+	o := load(t, "node")
+	// No KeyParent set.
+	ctx := context.WithValue(context.Background(), internal.KeyFactory, makeFactory())
+
+	err := re.Render(ctx, "", o)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "expecting a TreeNode")
+}
+
+func TestNodeRender_ErrorWhenNoFactoryInContext(t *testing.T) {
+	var re xray.Node
+	o := load(t, "node")
+	root := xray.NewTreeNode(client.NodeGVR, "nodes")
+	// No factory set.
+	ctx := context.WithValue(context.Background(), xray.KeyParent, root)
+
+	err := re.Render(ctx, "", o)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "expecting a factory")
+}
+
+func TestNodeRender_NoPodsFound(t *testing.T) {
+	// Factory has no pods listed for the node.
+	f := makeFactory()
+
+	var re xray.Node
+	o := load(t, "node")
+	root := xray.NewTreeNode(client.NodeGVR, "nodes")
+	ctx := context.WithValue(context.Background(), xray.KeyParent, root)
+	ctx = context.WithValue(ctx, internal.KeyFactory, f)
+
+	require.NoError(t, re.Render(ctx, "", o))
+
+	// Node is added under root, but it has no namespace/pod children.
+	require.Equal(t, 1, root.CountChildren(), "expected one node entry under root")
+	nodeEntry := root.Children[0]
+	assert.Equal(t, 0, nodeEntry.CountChildren(), "expected no namespaces/pods under node")
+}
+
 
