@@ -28,9 +28,8 @@ func BenchmarkDpRender(b *testing.B) {
 		o = load(b, "dp")
 	)
 
-	b.ResetTimer()
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		_ = c.Render(o, "", &r)
 	}
 }

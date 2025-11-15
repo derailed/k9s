@@ -28,9 +28,8 @@ func BenchmarkSvcRender(b *testing.B) {
 		s   = load(b, "svc")
 	)
 
-	b.ResetTimer()
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		_ = svc.Render(s, "", &r)
 	}
 }

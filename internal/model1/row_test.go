@@ -17,8 +17,8 @@ func BenchmarkRowCustomize(b *testing.B) {
 	row := model1.Row{ID: "fred", Fields: model1.Fields{"f1", "f2", "f3"}}
 	cols := []int{0, 1, 2}
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		_ = row.Customize(cols)
 	}
 }
