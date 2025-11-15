@@ -123,6 +123,12 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb && apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
   ```
 
+* On Fedora (42+)
+
+  ```shell
+  dnf install k9s
+  ```
+
 * Via [Winget](https://github.com/microsoft/winget-cli) for Windows
 
   ```shell
