@@ -84,6 +84,7 @@ var allowedCmds = sets.New[*client.GVR](
 	client.DsGVR,
 	client.StsGVR,
 	client.RsGVR,
+	client.NodeGVR,
 )
 
 func allowedXRay(gvr *client.GVR) bool {

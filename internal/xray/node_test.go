@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
-
 package xray_test
 
 import (
@@ -9,7 +8,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,52 +16,34 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func TestPodRender(t *testing.T) {
-	uu := map[string]struct {
-		file            string
-		count, children int
-		status          string
-	}{
-		"plain": {
-			file:     "po",
-			children: 1,
-			count:    7,
-			status:   xray.OkStatus,
-		},
-		"withInit": {
-			file:     "init",
-			children: 1,
-			count:    7,
-			status:   xray.OkStatus,
-		},
-		"cilium": {
-			file:     "cilium",
-			children: 1,
-			count:    8,
-			status:   xray.OkStatus,
-		},
-	}
-
-	var re xray.Pod
-	for k := range uu {
-		u := uu[k]
-		t.Run(k, func(t *testing.T) {
-			o := load(t, u.file)
-			root := xray.NewTreeNode(client.PodGVR, "pods")
-			ctx := context.WithValue(context.Background(), xray.KeyParent, root)
-			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
-
-			require.NoError(t, re.Render(ctx, "", &render.PodWithMetrics{Raw: o}))
-			assert.Equal(t, u.children, root.CountChildren())
-			assert.Equal(t, u.count, root.Count(client.NoGVR))
-		})
-	}
-}
-
-func TestPodPVCExpandsToPV(t *testing.T) {
-	// Arrange a factory that returns a bound PVC and its PV.
+func TestNodeRender(t *testing.T) {
+	// Prepare factory rows: one pod scheduled on node "minikube"
 	f := makeFactory()
 	f.rows = map[*client.GVR][]runtime.Object{
+		client.PodGVR: {load(t, "po")},
+	}
+
+	var re xray.Node
+	o := load(t, "node")
+
+	root := xray.NewTreeNode(client.NodeGVR, "nodes")
+	ctx := context.WithValue(context.Background(), xray.KeyParent, root)
+	ctx = context.WithValue(ctx, internal.KeyFactory, f)
+
+	require.NoError(t, re.Render(ctx, "", o))
+	// One node entry under root
+	assert.Equal(t, 1, root.CountChildren())
+	// Node has one namespace grouping (from pod renderer)
+	assert.Equal(t, 1, root.Children[0].CountChildren())
+	// That namespace has one pod
+	assert.Equal(t, 1, root.Children[0].Children[0].CountChildren())
+}
+
+func TestNodeRender_PodPVCExpandsToPV(t *testing.T) {
+	// Prepare factory rows: one pod on node plus a bound PVC and its PV.
+	f := makeFactory()
+	f.rows = map[*client.GVR][]runtime.Object{
+		client.PodGVR: {load(t, "po")},
 		client.PvcGVR: {
 			&v1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
@@ -84,21 +64,22 @@ func TestPodPVCExpandsToPV(t *testing.T) {
 		},
 	}
 
-	var re xray.Pod
-	o := load(t, "po")
-	root := xray.NewTreeNode(client.PodGVR, "pods")
+	var re xray.Node
+	o := load(t, "node")
+
+	root := xray.NewTreeNode(client.NodeGVR, "nodes")
 	ctx := context.WithValue(context.Background(), xray.KeyParent, root)
 	ctx = context.WithValue(ctx, internal.KeyFactory, f)
 
-	// Act
-	require.NoError(t, re.Render(ctx, "", &render.PodWithMetrics{Raw: o}))
-
-	// Assert: find PVC node under the rendered pod and ensure it has a PV child.
+	require.NoError(t, re.Render(ctx, "", o))
 	require.Equal(t, 1, root.CountChildren())
-	nsNode := root.Children[0]
+	nodeEntry := root.Children[0]
+	require.Equal(t, 1, nodeEntry.CountChildren())
+	nsNode := nodeEntry.Children[0]
 	require.GreaterOrEqual(t, nsNode.CountChildren(), 1)
 	podNode := nsNode.Children[0]
 
+	// Find PVC under the Pod and ensure the PV appears beneath it.
 	var pvcNode *xray.TreeNode
 	for _, c := range podNode.Children {
 		if c.GVR == client.PvcGVR && c.ID == client.FQN("default", "web") {
@@ -107,7 +88,9 @@ func TestPodPVCExpandsToPV(t *testing.T) {
 		}
 	}
 	require.NotNil(t, pvcNode, "PVC node not found under pod")
-	assert.Equal(t, 1, pvcNode.CountChildren(), "PVC should have PV child")
+	require.Equal(t, 1, pvcNode.CountChildren(), "PVC should have PV child")
 	assert.Equal(t, client.PvGVR, pvcNode.Children[0].GVR)
 	assert.Equal(t, client.FQN(client.ClusterScope, "pv-web"), pvcNode.Children[0].ID)
 }
+
+
