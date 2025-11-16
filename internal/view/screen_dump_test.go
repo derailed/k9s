@@ -17,5 +17,5 @@ func TestScreenDumpNew(t *testing.T) {
 
 	require.NoError(t, po.Init(makeCtx(t)))
 	assert.Equal(t, "ScreenDumps", po.Name())
-	assert.Len(t, po.Hints(), 5)
+	assert.Len(t, po.Hints(), 6)
 }
