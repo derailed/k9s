@@ -519,9 +519,6 @@ func editRes(app *App, gvr *client.GVR, path string) error {
 	if client.IsClusterScoped(ns) {
 		ns = client.BlankNamespace
 	}
-	if gvr == client.NsGVR {
-		n = ns
-	}
 	if ok, err := app.Conn().CanI(ns, gvr, n, client.PatchAccess); !ok || err != nil {
 		return fmt.Errorf("current user can't edit resource %s", gvr)
 	}
