@@ -471,7 +471,7 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
 	_, _, w, _ := l.GetRect()
-	_, _ = fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]\n", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
+	_, _ = fmt.Fprintf(l.ansiWriter, "[%s:-:b]%s[-:-:-]\n", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
 	l.follow = true
 
 	return nil
