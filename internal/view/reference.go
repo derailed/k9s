@@ -43,6 +43,7 @@ func (r *Reference) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlZ)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", r.gotoCmd, true),
+		ui.KeyShiftV:   ui.NewKeyAction("Sort GVR", r.GetTable().SortColCmd("GVR", true), false),
 	})
 }
 
