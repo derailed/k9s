@@ -150,6 +150,10 @@ func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth
 	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
+	if gvr == NsGVR {
+		// The name of the namespace is required to check permissions in some cases
+		ns = name
+	}
 	if IsClusterWide(ns) {
 		ns = BlankNamespace
 	}
