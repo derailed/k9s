@@ -130,14 +130,8 @@ func (p *Pod) bindKeys(aa *ui.KeyActions) {
 	}
 
 	aa.Bulk(ui.KeyMap{
-		ui.KeyO:      ui.NewKeyAction("Show Node", p.showNode, true),
-		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
-		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
-		ui.KeyShiftS: ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
-		ui.KeyShiftI: ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd("IP", true), false),
-		ui.KeyShiftO: ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd("NODE", true), false),
+		ui.KeyO: ui.NewKeyAction("Show Node", p.showNode, true),
 	})
-	aa.Merge(resourceSorters(p.GetTable()))
 }
 
 func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
@@ -591,15 +585,4 @@ func osFromSelector(s map[string]string) (string, bool) {
 	platform, ok := s[osSelector]
 
 	return platform, ok
-}
-
-func resourceSorters(t *Table) *ui.KeyActions {
-	return ui.NewKeyActionsFromMap(ui.KeyMap{
-		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", t.SortColCmd(cpuCol, false), false),
-		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", t.SortColCmd(memCol, false), false),
-		ui.KeyShiftX:   ui.NewKeyAction("Sort CPU/R", t.SortColCmd("%CPU/R", false), false),
-		ui.KeyShiftZ:   ui.NewKeyAction("Sort MEM/R", t.SortColCmd("%MEM/R", false), false),
-		tcell.KeyCtrlX: ui.NewKeyAction("Sort CPU/L", t.SortColCmd("%CPU/L", false), false),
-		tcell.KeyCtrlQ: ui.NewKeyAction("Sort MEM/L", t.SortColCmd("%MEM/L", false), false),
-	})
 }
