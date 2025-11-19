@@ -16,8 +16,10 @@ import (
 
 func TestNodeRender(t *testing.T) {
 	pom := render.NodeWithMetrics{
-		Raw: load(t, "no"),
-		MX:  makeNodeMX("n1", "10m", "20Mi"),
+		Raw:             load(t, "no"),
+		MX:              makeNodeMX("n1", "10m", "20Mi"),
+		RequestedCPU:    -1,
+		RequestedMemory: -1,
 	}
 
 	var no render.Node
@@ -26,8 +28,8 @@ func TestNodeRender(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "minikube", r.ID)
-	e := model1.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "Buildroot 2018.05.3", "4.15.0", "192.168.64.107", "<none>", "0", "10", "4000", "0", "20", "7874", "0", "n/a", "n/a"}
-	assert.Equal(t, e, r.Fields[:19])
+	e := model1.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "Buildroot 2018.05.3", "4.15.0", "192.168.64.107", "<none>", "0", "10", "4000", "n/a", "0", "n/a", "20", "7874", "n/a", "0", "n/a"}
+	assert.Equal(t, e, r.Fields[:21])
 }
 
 func BenchmarkNodeRender(b *testing.B) {

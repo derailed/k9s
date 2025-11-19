@@ -269,7 +269,6 @@ func (n *Node) CalculateRequestedResources(oo []runtime.Object, nodeName string)
 			continue
 		}
 
-		// Convert to Pod to check phase and calculate resources
 		var pod v1.Pod
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &pod); err != nil {
 			continue
@@ -280,9 +279,6 @@ func (n *Node) CalculateRequestedResources(oo []runtime.Object, nodeName string)
 			continue
 		}
 
-		// Calculate requests from containers
-		// Init containers run sequentially, so we take the max of their requests
-		// Regular containers run in parallel, so we sum their requests
 		var initCPU, initMem *resource.Quantity
 		for i := range pod.Spec.InitContainers {
 			co := pod.Spec.InitContainers[i]
@@ -306,11 +302,9 @@ func (n *Node) CalculateRequestedResources(oo []runtime.Object, nodeName string)
 			}
 		}
 
-		// Calculate pod-level requested resources
 		podCPUQ := resource.NewQuantity(0, resource.DecimalSI)
 		podMemQ := resource.NewQuantity(0, resource.BinarySI)
 
-		// Add max init container resources
 		if initCPU != nil {
 			podCPUQ.Add(*initCPU)
 		}
@@ -318,7 +312,6 @@ func (n *Node) CalculateRequestedResources(oo []runtime.Object, nodeName string)
 			podMemQ.Add(*initMem)
 		}
 
-		// Sum regular container requests
 		for i := range pod.Spec.Containers {
 			co := pod.Spec.Containers[i]
 			req := co.Resources.Requests
@@ -346,7 +339,6 @@ func (n *Node) CalculateRequestedResources(oo []runtime.Object, nodeName string)
 			"memory-requested-bytes", podMemQ.Value(),
 		)
 
-		// Add to cumulative totals
 		cpuQ.Add(*podCPUQ)
 		memQ.Add(*podMemQ)
 	}
