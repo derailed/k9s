@@ -44,10 +44,14 @@ var defaultNOHeader = model1.Header{
 	model1.HeaderColumn{Name: "PODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "CPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "MEM/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "GPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "GPU/C", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "SH-GPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
@@ -113,6 +117,33 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 	if pc := nwm.PodCount; pc == -1 {
 		podCount = NAValue
 	}
+
+	// Format requested resource absolute values
+	var cpuReq, memReq string
+	if nwm.RequestedCPU >= 0 {
+		cpuReq = toMc(nwm.RequestedCPU)
+	} else {
+		cpuReq = NAValue
+	}
+	if nwm.RequestedMemory >= 0 {
+		memReq = toMi(nwm.RequestedMemory)
+	} else {
+		memReq = NAValue
+	}
+
+	// Calculate requested resource percentages
+	var cpuReqPct, memReqPct string
+	if nwm.RequestedCPU >= 0 && a.cpu > 0 {
+		cpuReqPct = client.ToPercentageStr(nwm.RequestedCPU, a.cpu)
+	} else {
+		cpuReqPct = NAValue
+	}
+	if nwm.RequestedMemory >= 0 && a.mem > 0 {
+		memReqPct = client.ToPercentageStr(nwm.RequestedMemory, a.mem)
+	} else {
+		memReqPct = NAValue
+	}
+
 	r.ID = client.FQN("", no.Name)
 	r.Fields = model1.Fields{
 		no.Name,
@@ -128,10 +159,14 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 		podCount,
 		toMc(c.cpu),
 		toMc(a.cpu),
+		cpuReq,
 		client.ToPercentageStr(c.cpu, a.cpu),
+		cpuReqPct,
 		toMi(c.mem),
 		toMi(a.mem),
+		memReq,
 		client.ToPercentageStr(c.mem, a.mem),
+		memReqPct,
 		toMu(a.gpu),
 		toMu(c.gpu),
 		toMu(a.gpuShared),
@@ -193,9 +228,11 @@ func (Node) diagnose(ss []string) error {
 
 // NodeWithMetrics represents a node with its associated metrics.
 type NodeWithMetrics struct {
-	Raw      *unstructured.Unstructured
-	MX       *mv1beta1.NodeMetrics
-	PodCount int
+	Raw            *unstructured.Unstructured
+	MX             *mv1beta1.NodeMetrics
+	PodCount       int
+	RequestedCPU   int64 // Sum of CPU requests from all non-terminated pods in milliCPU
+	RequestedMemory int64 // Sum of memory requests from all non-terminated pods in bytes
 }
 
 // GetObjectKind returns a schema object.
