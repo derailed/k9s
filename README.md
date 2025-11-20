@@ -466,6 +466,8 @@ You can now override the context portForward default address configuration by se
       textWrap: false
       # Autoscroll in logs will be disabled. Default is false.
       disableAutoscroll: false
+      # Enable column locking when autoscroll is enabled. Default is false.
+      columnLock: false
       # Toggles log line timestamp info. Default false
       showTime: false
     # Provide shell pod customization when nodeShell feature gate is enabled!
@@ -1118,6 +1120,7 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     disableAutoscroll: false
+    columnLock: false
     showTime: false
   thresholds:
     cpu:

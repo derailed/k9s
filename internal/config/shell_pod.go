@@ -7,7 +7,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-const defaultDockerShellImage = "busybox:1.35.0"
+const defaultDockerShellImage = "busybox:1.37.0"
 
 // Limits represents resource limits.
 type Limits map[v1.ResourceName]string

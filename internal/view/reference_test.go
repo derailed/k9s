@@ -17,5 +17,5 @@ func TestReferenceNew(t *testing.T) {
 
 	require.NoError(t, s.Init(makeCtx(t)))
 	assert.Equal(t, "References", s.Name())
-	assert.Len(t, s.Hints(), 4)
+	assert.Len(t, s.Hints(), 5)
 }

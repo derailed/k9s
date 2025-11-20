@@ -37,25 +37,26 @@ type (
 // Table represents tabular data.
 type Table struct {
 	*SelectTable
-	gvr         *client.GVR
-	sortCol     model1.SortColumn
-	manualSort  bool
-	Path        string
-	Extras      string
-	actions     *KeyActions
-	cmdBuff     *model.FishBuff
-	styles      *config.Styles
-	viewSetting *config.ViewSetting
-	colorerFn   model1.ColorerFunc
-	decorateFn  DecorateFunc
-	wide        bool
-	toast       bool
-	hasMetrics  bool
-	ctx         context.Context
-	mx          sync.RWMutex
-	readOnly    bool
-	noIcon      bool
-	fullGVR     bool
+	gvr            *client.GVR
+	sortCol        model1.SortColumn
+	selectedColIdx int
+	manualSort     bool
+	Path           string
+	Extras         string
+	actions        *KeyActions
+	cmdBuff        *model.FishBuff
+	styles         *config.Styles
+	viewSetting    *config.ViewSetting
+	colorerFn      model1.ColorerFunc
+	decorateFn     DecorateFunc
+	wide           bool
+	toast          bool
+	hasMetrics     bool
+	ctx            context.Context
+	mx             sync.RWMutex
+	readOnly       bool
+	noIcon         bool
+	fullGVR        bool
 }
 
 // NewTable returns a new table view.
@@ -131,6 +132,137 @@ func (t *Table) getMSort() bool {
 	defer t.mx.RUnlock()
 
 	return t.manualSort
+}
+
+func (t *Table) getSelectedColIdx() int {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.selectedColIdx
+}
+
+// initSelectedColumn initializes the selected column index based on current sort column.
+func (t *Table) initSelectedColumn() {
+	data := t.GetFilteredData()
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+
+	sc := t.getSortCol()
+	if sc.Name == "" {
+		t.mx.Lock()
+		t.selectedColIdx = 0
+		t.mx.Unlock()
+		return
+	}
+
+	// Find the visual column index for the current sort column
+	header := data.Header()
+	visibleCol := 0
+	for _, h := range header {
+		if t.shouldExcludeColumn(h) {
+			continue
+		}
+		if h.Name == sc.Name {
+			t.mx.Lock()
+			t.selectedColIdx = visibleCol
+			t.mx.Unlock()
+			return
+		}
+		visibleCol++
+	}
+
+	// If sort column not found in visible columns, default to 0
+	t.mx.Lock()
+	t.selectedColIdx = 0
+	t.mx.Unlock()
+}
+
+// moveSelectedColumn moves the column selection by delta (-1 for left, +1 for right).
+func (t *Table) moveSelectedColumn(delta int) {
+	data := t.GetFilteredData()
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+
+	// Count visible columns
+	visibleCount := 0
+	for _, h := range data.Header() {
+		if !t.shouldExcludeColumn(h) {
+			visibleCount++
+		}
+	}
+
+	if visibleCount == 0 {
+		return
+	}
+
+	t.mx.Lock()
+	t.selectedColIdx += delta
+	// Wrap around
+	if t.selectedColIdx >= visibleCount {
+		t.selectedColIdx = 0
+	} else if t.selectedColIdx < 0 {
+		t.selectedColIdx = visibleCount - 1
+	}
+	t.mx.Unlock()
+
+	t.Refresh()
+}
+
+// SelectNextColumn moves the column selection to the right.
+func (t *Table) SelectNextColumn() {
+	t.moveSelectedColumn(1)
+}
+
+// SelectPrevColumn moves the column selection to the left.
+func (t *Table) SelectPrevColumn() {
+	t.moveSelectedColumn(-1)
+}
+
+// SortSelectedColumn sorts by the currently selected column.
+func (t *Table) SortSelectedColumn() {
+	data := t.GetFilteredData()
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+
+	idx := t.getSelectedColIdx()
+	if idx < 0 {
+		return
+	}
+
+	// Map visual column index to actual header column name
+	// (accounting for hidden columns)
+	header := data.Header()
+	visibleCol := 0
+	var colName string
+	for _, h := range header {
+		if t.shouldExcludeColumn(h) {
+			continue
+		}
+		if visibleCol == idx {
+			colName = h.Name
+			break
+		}
+		visibleCol++
+	}
+
+	if colName == "" {
+		return
+	}
+
+	sc := t.getSortCol()
+
+	// Toggle direction if same column, otherwise default to ascending
+	asc := true
+	if sc.Name == colName {
+		asc = !sc.ASC
+	}
+
+	t.SetSortCol(colName, asc)
+	t.setMSort(true)
+	t.Refresh()
 }
 
 // SetViewSetting sets custom view config is present.
@@ -315,7 +447,16 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
+
+	oldSortCol := t.getSortCol()
 	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
+
+	// Initialize selected column index to match the current sort column
+	// This ensures the highlight starts at the sorted column
+	newSortCol := t.getSortCol()
+	if oldSortCol.Name != newSortCol.Name {
+		t.initSelectedColumn()
+	}
 
 	return data
 }
@@ -429,6 +570,10 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 		sc.Name = name
 		t.setSortCol(sc)
 		t.setMSort(true)
+
+		// Sync selected column index with the new sort column
+		t.initSelectedColumn()
+
 		t.Refresh()
 		return nil
 	}
@@ -486,8 +631,9 @@ func (t *Table) NameColIndex() int {
 func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 	sc := t.getSortCol()
 	sortCol := h.Name == sc.Name
+	selectedCol := col == t.getSelectedColIdx()
 	styles := t.styles.Table()
-	c := tview.NewTableCell(sortIndicator(sortCol, sc.ASC, &styles, h.Name))
+	c := tview.NewTableCell(columnIndicator(sortCol, selectedCol, sc.ASC, &styles, h.Name))
 	c.SetExpansion(1)
 	c.SetSelectable(false)
 	c.SetAlign(h.Align)

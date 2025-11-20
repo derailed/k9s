@@ -49,6 +49,7 @@ type Log struct {
 	cancelUpdates     bool
 	mx                sync.Mutex
 	follow            bool
+	columnLock        bool
 	requestOneRefresh bool
 }
 
@@ -56,13 +57,10 @@ var _ model.Component = (*Log)(nil)
 
 // NewLog returns a new viewer.
 func NewLog(gvr *client.GVR, opts *dao.LogOptions) *Log {
-	l := Log{
-		Flex:   tview.NewFlex(),
-		model:  model.NewLog(gvr, opts, defaultFlushTimeout),
-		follow: true,
+	return &Log{
+		Flex:  tview.NewFlex(),
+		model: model.NewLog(gvr, opts, defaultFlushTimeout),
 	}
-
-	return &l
 }
 
 func (*Log) SetCommand(*cmd.Interpreter)            {}
@@ -104,6 +102,9 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 	l.model.Init(l.app.factory)
 	l.updateTitle()
+
+	l.follow = !l.app.Config.K9s.Logger.DisableAutoscroll
+	l.columnLock = l.app.Config.K9s.Logger.ColumnLock
 
 	l.model.ToggleShowTimestamp(l.app.Config.K9s.Logger.ShowTime)
 
@@ -258,6 +259,7 @@ func (l *Log) bindKeys() {
 		ui.KeyShiftC:    ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyM:         ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
+		ui.KeyShiftL:    ui.NewKeyAction("Toggle ColumnLock", l.toggleColumnLockCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
@@ -363,7 +365,12 @@ func (l *Log) Flush(lines [][]byte) {
 		_, _ = l.ansiWriter.Write(lines[i])
 	}
 	if l.follow {
-		l.logs.ScrollToEnd()
+		if l.columnLock {
+			// Enables end tracking without resetting column
+			l.logs.SetScrollable(false).SetScrollable(true)
+		} else {
+			l.logs.ScrollToEnd()
+		}
 	}
 }
 
@@ -464,7 +471,7 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
 	_, _, w, _ := l.GetRect()
-	_, _ = fmt.Fprintf(l.ansiWriter, "\n[%s:-:b]%s[-:-:-]", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
+	_, _ = fmt.Fprintf(l.ansiWriter, "[%s:-:b]%s[-:-:-]\n", l.app.Styles.Views().Log.FgColor.String(), strings.Repeat("-", w-4))
 	l.follow = true
 
 	return nil
@@ -502,6 +509,18 @@ func (l *Log) toggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	l.indicator.ToggleAutoScroll()
 	l.follow = l.indicator.AutoScroll()
+	l.indicator.Refresh()
+
+	return nil
+}
+
+func (l *Log) toggleColumnLockCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+
+	l.indicator.ToggleColumnLock()
+	l.columnLock = l.indicator.ColumnLock()
 	l.indicator.Refresh()
 
 	return nil
