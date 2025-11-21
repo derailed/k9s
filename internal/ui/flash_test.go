@@ -28,8 +28,7 @@ func TestFlash(t *testing.T) {
 	a := ui.NewApp(mock.NewMockConfig(t), "test")
 	f := ui.NewFlash(a)
 	f.SetTestMode(true)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	go f.Watch(ctx, a.Flash().Channel())
 
 	for k := range uu {
