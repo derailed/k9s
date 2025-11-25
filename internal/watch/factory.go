@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -73,7 +74,9 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Selector) ([]runtime.Object, error) {
-	if client.IsAllNamespace(ns) {
+	isNonKubeSystem := (ns == client.NamespaceNonKubeSystem)
+
+	if client.IsAllNamespace(ns) || isNonKubeSystem {
 		ns = client.BlankNamespace
 	}
 	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
@@ -88,6 +91,9 @@ func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Select
 		oo, err = inf.Lister().ByNamespace(ns).List(lbls)
 	}
 	if !wait || (wait && inf.Informer().HasSynced()) {
+		if isNonKubeSystem {
+			return f.filterSystemNamespaces(oo), err
+        }
 		return oo, err
 	}
 
@@ -95,7 +101,32 @@ func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Select
 	if client.IsClusterScoped(ns) {
 		return inf.Lister().List(lbls)
 	}
+
+	// Filter if in non-kube-system mode
+	if isNonKubeSystem {
+		return f.filterSystemNamespaces(oo), err
+	}
 	return inf.Lister().ByNamespace(ns).List(lbls)
+}
+
+// filterSystemNamespaces removes Kubernetes system namespaces from results
+func (f *Factory) filterSystemNamespaces(objects []runtime.Object) []runtime.Object {
+	filtered := make([]runtime.Object, 0, len(objects))
+	for _, obj := range objects {
+		meta, ok := obj.(metav1.Object)
+		if !ok {
+			// If we can't get metadata, include it
+			filtered = append(filtered, obj)
+			continue
+		}
+
+		namespace := meta.GetNamespace()
+		// Exclude Kubernetes system namespaces
+		if !client.IsSystemNamespace(namespace) {
+			filtered = append(filtered, obj)
+		}
+	}
+	return filtered
 }
 
 // HasSynced checks if given informer is up to date.

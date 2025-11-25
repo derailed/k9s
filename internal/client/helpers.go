@@ -19,7 +19,15 @@ var toFileName = regexp.MustCompile(`[^(\w/.)]`)
 
 // IsClusterWide returns true if ns designates cluster scope, false otherwise.
 func IsClusterWide(ns string) bool {
-	return ns == NamespaceAll || ns == BlankNamespace || ns == ClusterScope
+	return ns == NamespaceAll || ns == BlankNamespace || ns == ClusterScope || ns == NamespaceNonKubeSystem
+}
+
+// IsSystemNamespace returns true if the namespace is a Kubernetes system namespace.
+func IsSystemNamespace(ns string) bool {
+	return ns == NamespaceKubeSystem ||
+		ns == NamespaceKubePublic ||
+		ns == NamespaceKubeNodeLease ||
+		ns == NamespaceKubeFlannel
 }
 
 func PrintNamespace(ns string) string {
