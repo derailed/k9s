@@ -356,7 +356,7 @@ func isStandardGroup(gv string) bool {
 }
 
 func isScalable(gvr *client.GVR) bool {
-	ss := sets.New(client.DpGVR, client.StsGVR)
+	ss := sets.New(client.DpGVR, client.StsGVR, client.RsGVR)
 
 	return ss.Has(gvr)
 }

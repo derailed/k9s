@@ -44,7 +44,7 @@ func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
 		return
 	}
 
-	if !dao.IsCRD(meta) || dao.IsScalable(meta) {
+	if dao.IsScalable(meta) {
 		aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
 			ui.ActionOpts{
 				Visible:   true,
