@@ -136,6 +136,12 @@ type Nuker interface {
 	Delete(context.Context, string, *metav1.DeletionPropagation, Grace) error
 }
 
+// Evictable represents an evictable resource.
+type Evictable interface {
+	// Evict evicts a resource (pod) from the node it's running on.
+	Evict(context.Context, string) error
+}
+
 // Switchable represents a switchable resource.
 type Switchable interface {
 	// Switch changes the active context.
