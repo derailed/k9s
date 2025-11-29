@@ -279,6 +279,10 @@ func (p *Pulse) bindKeys() {
 		tcell.KeyUp:      ui.NewKeyAction("Prev", p.nextFocusCmd(dirUp), false),
 		tcell.KeyRight:   ui.NewKeyAction("Next", p.nextFocusCmd(dirLeft), false),
 		tcell.KeyLeft:    ui.NewKeyAction("Next", p.nextFocusCmd(dirRight), false),
+		ui.KeyH:          ui.NewKeyAction("Prev", p.nextFocusCmd(dirRight), false),
+		ui.KeyJ:          ui.NewKeyAction("Down", p.nextFocusCmd(dirDown), false),
+		ui.KeyK:          ui.NewKeyAction("Up", p.nextFocusCmd(dirUp), false),
+		ui.KeyL:          ui.NewKeyAction("Next", p.nextFocusCmd(dirLeft), false),
 	}))
 }
 
