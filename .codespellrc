@@ -1,0 +1,7 @@
+[codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = .git*,go.sum,.codespellrc,change_logs
+check-hidden = true
+# case sensitive as python regex
+ignore-regex = \b(BU|attachIn|Copin|UpToDate)\b
+ignore-words-list = notin,tre,ons,ore
