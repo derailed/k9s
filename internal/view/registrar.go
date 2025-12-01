@@ -42,6 +42,9 @@ func coreViewers(vv MetaViewers) {
 	vv[client.NodeGVR] = MetaViewer{
 		viewerFn: NewNode,
 	}
+	vv[client.NodeAllocGVR] = MetaViewer{
+		viewerFn: NewNodeAlloc,
+	}
 	vv[client.SecGVR] = MetaViewer{
 		viewerFn: NewSecret,
 	}

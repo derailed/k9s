@@ -270,6 +270,14 @@ func loadK9s(m ResourceMetas) {
 		Verbs:        []string{},
 		Categories:   []string{k9sCat},
 	}
+	m[client.NodeAllocGVR] = &metav1.APIResource{
+		Name:         "nodes-alloc",
+		Kind:         "NodeAlloc",
+		SingularName: "node-alloc",
+		ShortNames:   []string{"na"},
+		Verbs:        []string{},
+		Categories:   []string{k9sCat},
+	}
 }
 
 func loadHelm(m ResourceMetas) {
