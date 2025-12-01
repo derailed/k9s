@@ -228,10 +228,10 @@ func (Node) diagnose(ss []string) error {
 
 // NodeWithMetrics represents a node with its associated metrics.
 type NodeWithMetrics struct {
-	Raw            *unstructured.Unstructured
-	MX             *mv1beta1.NodeMetrics
-	PodCount       int
-	RequestedCPU   int64 // Sum of CPU requests from all non-terminated pods in milliCPU
+	Raw             *unstructured.Unstructured
+	MX              *mv1beta1.NodeMetrics
+	PodCount        int
+	RequestedCPU    int64 // Sum of CPU requests from all non-terminated pods in milliCPU
 	RequestedMemory int64 // Sum of memory requests from all non-terminated pods in bytes
 }
 

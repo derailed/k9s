@@ -28,11 +28,7 @@ type NodeAlloc struct {
 	Resource
 }
 
-// List returns a collection of node resources with allocated CPU and memory.
-// This implementation always enables pod counting to calculate allocated resources.
 func (n *NodeAlloc) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	// NodeAllocGVR is a k9s alias, not a real Kubernetes resource.
-	// We need to list nodes using NodeGVR instead.
 	lsel := labels.Everything()
 	if sel, ok := ctx.Value(internal.KeyLabels).(labels.Selector); ok {
 		lsel = sel
@@ -47,7 +43,6 @@ func (n *NodeAlloc) List(ctx context.Context, ns string) ([]runtime.Object, erro
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
 	}
 
-	// Always enable pod counting for node allocation view
 	var pods []runtime.Object
 	pods, err = n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
 	if err != nil {
@@ -63,18 +58,15 @@ func (n *NodeAlloc) List(ctx context.Context, ns string) ([]runtime.Object, erro
 
 		fqn := extractFQN(o)
 		_, name := client.Namespaced(fqn)
-		podCount := -1
-		var requestedCPU, requestedMemory int64 = -1, -1
 
-		// Always calculate pod count and requested resources
-		podCount, err = n.CountPods(pods, name)
+		podCount, err := n.CountPods(pods, name)
 		if err != nil {
 			slog.Error("Unable to get pods count",
 				slogs.ResName, name,
 				slogs.Error, err,
 			)
 		}
-		requestedCPU, requestedMemory, err = n.CalculateRequestedResources(pods, name)
+		requestedCPU, requestedMemory, err := n.CalculateRequestedResources(pods, name)
 		if err != nil {
 			slog.Error("Unable to calculate requested resources",
 				slogs.ResName, name,

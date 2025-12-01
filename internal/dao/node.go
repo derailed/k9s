@@ -15,7 +15,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -153,21 +152,12 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
-	var requestedCPU, requestedMemory int64 = -1, -1
-	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)
-	if shouldCountPods {
-		pods, err := n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
-		if err == nil {
-			_, name := client.Namespaced(path)
-			requestedCPU, requestedMemory, _ = n.CalculateRequestedResources(pods, name)
-		}
-	}
-
+	// Requested CPU and memory are only calculated in NodeAlloc view, not in regular Node view
 	return &render.NodeWithMetrics{
 		Raw:             raw,
 		MX:              nmx,
-		RequestedCPU:    requestedCPU,
-		RequestedMemory: requestedMemory,
+		RequestedCPU:    -1,
+		RequestedMemory: -1,
 	}, nil
 }
 
@@ -201,7 +191,6 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		fqn := extractFQN(o)
 		_, name := client.Namespaced(fqn)
 		podCount := -1
-		var requestedCPU, requestedMemory int64 = -1, -1
 		if shouldCountPods {
 			podCount, err = n.CountPods(pods, name)
 			if err != nil {
@@ -210,20 +199,14 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 					slogs.Error, err,
 				)
 			}
-			requestedCPU, requestedMemory, err = n.CalculateRequestedResources(pods, name)
-			if err != nil {
-				slog.Error("Unable to calculate requested resources",
-					slogs.ResName, name,
-					slogs.Error, err,
-				)
-			}
 		}
+		// Requested CPU and memory are only calculated in NodeAlloc view, not in regular Node view
 		res = append(res, &render.NodeWithMetrics{
 			Raw:             u,
 			MX:              nmx[name],
 			PodCount:        podCount,
-			RequestedCPU:    requestedCPU,
-			RequestedMemory: requestedMemory,
+			RequestedCPU:    -1,
+			RequestedMemory: -1,
 		})
 	}
 
@@ -248,102 +231,6 @@ func (*Node) CountPods(oo []runtime.Object, nodeName string) (int, error) {
 	}
 
 	return count, nil
-}
-
-// CalculateRequestedResources calculates the sum of CPU and memory requests
-// from all non-terminated pods on a given node.
-func (n *Node) CalculateRequestedResources(oo []runtime.Object, nodeName string) (cpu int64, memory int64, err error) {
-	cpuQ := resource.NewQuantity(0, resource.DecimalSI)
-	memQ := resource.NewQuantity(0, resource.BinarySI)
-
-	for _, o := range oo {
-		u, ok := o.(*unstructured.Unstructured)
-		if !ok {
-			continue
-		}
-		spec, ok := u.Object["spec"].(map[string]any)
-		if !ok {
-			continue
-		}
-		if node, ok := spec["nodeName"]; !ok || node != nodeName {
-			continue
-		}
-
-		var pod v1.Pod
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &pod); err != nil {
-			continue
-		}
-
-		// Skip terminated pods (Succeeded or Failed)
-		if pod.Status.Phase == v1.PodSucceeded || pod.Status.Phase == v1.PodFailed {
-			continue
-		}
-
-		var initCPU, initMem *resource.Quantity
-		for i := range pod.Spec.InitContainers {
-			co := pod.Spec.InitContainers[i]
-			req := co.Resources.Requests
-			if len(req) == 0 {
-				req = co.Resources.Limits
-			}
-			if len(req) == 0 {
-				continue
-			}
-
-			if q := req.Cpu(); q != nil {
-				if initCPU == nil || q.Cmp(*initCPU) > 0 {
-					initCPU = q
-				}
-			}
-			if q := req.Memory(); q != nil {
-				if initMem == nil || q.Cmp(*initMem) > 0 {
-					initMem = q
-				}
-			}
-		}
-
-		podCPUQ := resource.NewQuantity(0, resource.DecimalSI)
-		podMemQ := resource.NewQuantity(0, resource.BinarySI)
-
-		if initCPU != nil {
-			podCPUQ.Add(*initCPU)
-		}
-		if initMem != nil {
-			podMemQ.Add(*initMem)
-		}
-
-		for i := range pod.Spec.Containers {
-			co := pod.Spec.Containers[i]
-			req := co.Resources.Requests
-			if len(req) == 0 {
-				req = co.Resources.Limits
-			}
-			if len(req) == 0 {
-				continue
-			}
-
-			if q := req.Cpu(); q != nil {
-				podCPUQ.Add(*q)
-			}
-			if q := req.Memory(); q != nil {
-				podMemQ.Add(*q)
-			}
-		}
-
-		slog.Debug("Calculating requested resources for non-terminated pod",
-			slogs.ResName, pod.Name,
-			slogs.Namespace, pod.Namespace,
-			slogs.PodPhase, pod.Status.Phase,
-			"node", nodeName,
-			"cpu-requested-m", podCPUQ.MilliValue(),
-			"memory-requested-bytes", podMemQ.Value(),
-		)
-
-		cpuQ.Add(*podCPUQ)
-		memQ.Add(*podMemQ)
-	}
-
-	return cpuQ.MilliValue(), memQ.Value(), nil
 }
 
 // GetPods returns all pods running on given node.
