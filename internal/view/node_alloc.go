@@ -38,7 +38,6 @@ func NewNodeAlloc(gvr *client.GVR) ResourceViewer {
 }
 
 func (n *NodeAlloc) nodeAllocContext(ctx context.Context) context.Context {
-	// Always enable pod counting for this view
 	return context.WithValue(ctx, internal.KeyPodCounting, true)
 }
 

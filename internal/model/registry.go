@@ -116,7 +116,7 @@ var Registry = map[*client.GVR]ResourceMeta{
 	},
 	client.NodeAllocGVR: {
 		DAO:      new(dao.NodeAlloc),
-		Renderer: new(render.Node),
+		Renderer: new(render.NodeAlloc),
 	},
 	client.SvcGVR: {
 		DAO:          new(dao.Service),
