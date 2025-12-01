@@ -6,6 +6,7 @@ package ui
 import (
 	"fmt"
 	"sync"
+	"unicode"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -152,7 +153,13 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		p.model.Delete()
 
 	case tcell.KeyRune:
-		p.model.Add(evt.Rune())
+		r := evt.Rune()
+		// Filter out control characters and non-printable runes that may come from
+		// terminal escape sequences (e.g., cursor position reports like [7;15R)
+		// Only accept printable characters for user input
+		if isValidInputRune(r) {
+			p.model.Add(r)
+		}
 
 	case tcell.KeyEscape:
 		p.model.ClearText(true)
@@ -292,6 +299,18 @@ func (p *Prompt) prefixesFor(k model.BufferKind) (ic, prefix rune) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+// isValidInputRune checks if a rune is valid for user input.
+// It filters out control characters and non-printable characters that may
+// come from terminal escape sequences (e.g., cursor position reports).
+func isValidInputRune(r rune) bool {
+	// Reject control characters (0x00-0x1F, 0x7F) except for common whitespace
+	if unicode.IsControl(r) && r != '\t' && r != '\n' && r != '\r' {
+		return false
+	}
+	// Only accept printable characters
+	return unicode.IsPrint(r) || unicode.IsSpace(r)
+}
 
 func (p *Prompt) colorFor(k model.BufferKind) tcell.Color {
 	//nolint:exhaustive
