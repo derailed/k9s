@@ -69,9 +69,7 @@ func init() {
 // Execute root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		if !errors.As(err, &flagError{}) {
-			panic(err)
-		}
+		os.Exit(1)
 	}
 }
 
