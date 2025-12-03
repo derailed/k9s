@@ -113,6 +113,11 @@ func gotoCmd(r Runner, cmd, path string, clearStack bool) ui.ActionHandler {
 }
 
 func pluginActions(r Runner, aa *ui.KeyActions) error {
+	// Skip plugin loading if no valid connection
+	if r.App().Conn() == nil || !r.App().Conn().ConnectionOK() {
+		return nil
+	}
+
 	aa.Range(func(k tcell.Key, a ui.KeyAction) {
 		if a.Opts.Plugin {
 			aa.Delete(k)
