@@ -223,6 +223,10 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 }
 
 func (a *App) contextNames() ([]string, error) {
+	// Return empty list if no factory
+	if a.factory == nil {
+		return []string{}, nil
+	}
 	contexts, err := a.factory.Client().Config().Contexts()
 	if err != nil {
 		return nil, err
@@ -303,7 +307,7 @@ func (a *App) buildHeader() tview.Primitive {
 	}
 
 	clWidth := clusterInfoWidth
-	if a.Conn().ConnectionOK() {
+	if a.Conn() != nil && a.Conn().ConnectionOK() {
 		n, err := a.Conn().Config().CurrentClusterName()
 		if err == nil {
 			size := len(n) + clusterInfoPad
