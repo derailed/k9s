@@ -5,7 +5,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -106,20 +105,21 @@ func (a *App) Init(version string, _ int) error {
 	a.App.Init()
 	a.SetInputCapture(a.keyboard)
 	a.bindKeys()
-	if a.Conn() == nil {
-		return errors.New("no client connection detected")
-	}
-	ns := a.Config.ActiveNamespace()
 
-	a.factory = watch.NewFactory(a.Conn())
-	a.initFactory(ns)
+	// Allow initialization even without a valid connection
+	// We'll fall back to context view in defaultCmd
+	if a.Conn() != nil {
+		ns := a.Config.ActiveNamespace()
+		a.factory = watch.NewFactory(a.Conn())
+		a.initFactory(ns)
 
-	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s)
-	a.clusterModel.AddListener(a.clusterInfo())
-	a.clusterModel.AddListener(a.statusIndicator())
-	if a.Conn().ConnectionOK() {
-		a.clusterModel.Refresh()
-		a.clusterInfo().Init()
+		a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s)
+		a.clusterModel.AddListener(a.clusterInfo())
+		a.clusterModel.AddListener(a.statusIndicator())
+		if a.Conn().ConnectionOK() {
+			a.clusterModel.Refresh()
+			a.clusterInfo().Init()
+		}
 	}
 
 	a.command = NewCommand(a)
@@ -223,6 +223,10 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 }
 
 func (a *App) contextNames() ([]string, error) {
+	// Return empty list if no factory
+	if a.factory == nil {
+		return []string{}, nil
+	}
 	contexts, err := a.factory.Client().Config().Contexts()
 	if err != nil {
 		return nil, err
@@ -303,7 +307,7 @@ func (a *App) buildHeader() tview.Primitive {
 	}
 
 	clWidth := clusterInfoWidth
-	if a.Conn().ConnectionOK() {
+	if a.Conn() != nil && a.Conn().ConnectionOK() {
 		n, err := a.Conn().Config().CurrentClusterName()
 		if err == nil {
 			size := len(n) + clusterInfoPad
@@ -351,6 +355,11 @@ func (a *App) Resume() {
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
+	if a.Conn() == nil || !a.Conn().ConnectionOK() || a.factory == nil || a.clusterModel == nil {
+		slog.Debug("Skipping cluster updater - no valid connection")
+		return
+	}
+
 	if err := a.refreshCluster(ctx); err != nil {
 		slog.Error("Cluster updater failed!", slogs.Error, err)
 		return
@@ -379,6 +388,10 @@ func (a *App) clusterUpdater(ctx context.Context) {
 }
 
 func (a *App) refreshCluster(context.Context) error {
+	if a.Conn() == nil || a.factory == nil || a.clusterModel == nil {
+		return nil
+	}
+
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
@@ -474,7 +487,18 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		if err := a.Config.Save(true); err != nil {
 			slog.Error("Fail to save config to disk", slogs.Subsys, "config", slogs.Error, err)
 		}
-		a.initFactory(ns)
+
+		if a.factory == nil && a.Conn() != nil {
+			a.factory = watch.NewFactory(a.Conn())
+			a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s)
+			a.clusterModel.AddListener(a.clusterInfo())
+			a.clusterModel.AddListener(a.statusIndicator())
+		}
+
+		if a.factory != nil {
+			a.initFactory(ns)
+		}
+
 		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
 			return err
 		}
@@ -487,7 +511,10 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
-		a.clusterModel.Reset(a.factory)
+
+		if a.clusterModel != nil {
+			a.clusterModel.Reset(a.factory)
+		}
 	}
 
 	return nil
