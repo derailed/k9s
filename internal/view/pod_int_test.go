@@ -56,7 +56,7 @@ func TestComputeShellArgs(t *testing.T) {
 			co:  "c1",
 			os:  windowsOS,
 			cfg: new(genericclioptions.ConfigFlags),
-			e:   "exec -it -n fred blee -c c1 -- powershell",
+			e:   "exec -it -n fred blee -c c1 -- cmd /c " + winShellCheck,
 		},
 
 		"full": {
@@ -68,7 +68,7 @@ func TestComputeShellArgs(t *testing.T) {
 				Context:     newStr("coolContext"),
 				BearerToken: newStr("coolToken"),
 			},
-			e: "exec -it -n fred blee --kubeconfig coolConfig --context coolContext --token coolToken -c c1 -- powershell",
+			e: "exec -it -n fred blee --kubeconfig coolConfig --context coolContext --token coolToken -c c1 -- cmd /c " + winShellCheck,
 		},
 	}
 
