@@ -18,7 +18,7 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v9.1.0
+        uses: golangci/golangci-lint-action@v9.2.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           version: v2.1.1
