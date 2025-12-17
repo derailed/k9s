@@ -1,0 +1,19 @@
+plugins:
+  # Copy pure YAML output using (kubectl-neat)[https://github.com/itaysk/kubectl-neat] and macOS pbcopy
+  neat:
+    shortCut: Shift-Y
+    overwriteOutput: true
+    confirm: false
+    background: true
+    description: Copy YAML (Neat)
+    scopes:
+    - all
+    command: bash
+    args:
+      - -c
+      - |
+        if [[ -n "$NAMESPACE" ]]; then
+          kubectl --context $CONTEXT -n $NAMESPACE get $RESOURCE_NAME $NAME -o yaml | kubectl neat | pbcopy | echo "YAML Neat copied"
+        else
+          kubectl --context $CONTEXT get $RESOURCE_NAME $NAME -o yaml | kubectl neat | pbcopy | echo "YAML Neat copied"
+        fi
