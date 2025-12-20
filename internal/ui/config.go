@@ -29,11 +29,12 @@ type synchronizer interface {
 
 // Configurator represents an application configuration.
 type Configurator struct {
-	Config     *config.Config
-	Styles     *config.Styles
-	customView *config.CustomView
-	BenchFile  string
-	skinFile   string
+	Config            *config.Config
+	Styles            *config.Styles
+	customView        *config.CustomView
+	customNavigations *config.CustomNavigations
+	BenchFile         string
+	skinFile          string
 }
 
 func (c *Configurator) CustomView() *config.CustomView {
@@ -42,6 +43,15 @@ func (c *Configurator) CustomView() *config.CustomView {
 	}
 
 	return c.customView
+}
+
+// CustomNavigations returns the custom navigations configuration.
+func (c *Configurator) CustomNavigations() *config.CustomNavigations {
+	if c.customNavigations == nil {
+		c.customNavigations = config.NewCustomNavigations()
+	}
+
+	return c.customNavigations
 }
 
 // HasSkin returns true if a skin file was located.
@@ -93,6 +103,52 @@ func (c *Configurator) RefreshCustomViews() error {
 	c.CustomView().Reset()
 
 	return c.CustomView().Load(config.AppViewsFile)
+}
+
+// CustomNavigationsWatcher watches for navigation config file changes.
+func (c *Configurator) CustomNavigationsWatcher(ctx context.Context, s synchronizer) error {
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			select {
+			case evt := <-w.Events:
+				if evt.Name == config.AppNavigationsFile && evt.Op != fsnotify.Chmod {
+					s.QueueUpdateDraw(func() {
+						if err := c.RefreshCustomNavigations(); err != nil {
+							slog.Warn("Custom navigations refresh failed", slogs.Error, err)
+						}
+					})
+				}
+			case err := <-w.Errors:
+				slog.Warn("CustomNavigations watcher failed", slogs.Error, err)
+				return
+			case <-ctx.Done():
+				slog.Debug("CustomNavigationsWatcher canceled", slogs.FileName, config.AppNavigationsFile)
+				if err := w.Close(); err != nil {
+					slog.Error("Closing CustomNavigations watcher", slogs.Error, err)
+				}
+				return
+			}
+		}
+	}()
+
+	if err := w.Add(config.AppNavigationsFile); err != nil {
+		return err
+	}
+	slog.Debug("Loading custom navigations", slogs.FileName, config.AppNavigationsFile)
+
+	return c.RefreshCustomNavigations()
+}
+
+// RefreshCustomNavigations load navigation configuration changes.
+func (c *Configurator) RefreshCustomNavigations() error {
+	c.CustomNavigations().Reset()
+
+	return c.CustomNavigations().Load(config.AppNavigationsFile)
 }
 
 // SkinsDirWatcher watches for skin directory file changes.
