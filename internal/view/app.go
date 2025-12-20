@@ -351,6 +351,9 @@ func (a *App) Resume() {
 		if err := a.CustomViewsWatcher(ctx, a); err != nil {
 			slog.Warn("CustomView watcher failed", slogs.Error, err)
 		}
+		if err := a.CustomNavigationsWatcher(ctx, a); err != nil {
+			slog.Warn("CustomNavigations watcher failed", slogs.Error, err)
+		}
 	}
 }
 
