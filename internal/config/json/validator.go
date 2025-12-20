@@ -43,6 +43,9 @@ const (
 
 	// SkinSchema describes skin config schema.
 	SkinSchema = "skin.json"
+
+	// NavigationsSchema describes navigations config schema.
+	NavigationsSchema = "navigations.json"
 )
 
 var (
@@ -72,6 +75,9 @@ var (
 
 	//go:embed schemas/skin.json
 	skinSchema string
+
+	//go:embed schemas/navigations.json
+	navigationsSchema string
 )
 
 // Validator tracks schemas validation.
@@ -93,6 +99,7 @@ func NewValidator() *Validator {
 			PluginMultiSchema: gojsonschema.NewStringLoader(pluginMultiSchema),
 			HotkeysSchema:     gojsonschema.NewStringLoader(hotkeysSchema),
 			SkinSchema:        gojsonschema.NewStringLoader(skinSchema),
+			NavigationsSchema: gojsonschema.NewStringLoader(navigationsSchema),
 		},
 	}
 	v.register()

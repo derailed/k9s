@@ -72,6 +72,9 @@ var (
 	// AppViewsFile tracks custom views config file.
 	AppViewsFile string
 
+	// AppNavigationsFile tracks custom navigations config file.
+	AppNavigationsFile string
+
 	// AppAliasesFile tracks aliases config file.
 	AppAliasesFile string
 
@@ -155,6 +158,7 @@ func initK9sEnvLocs() error {
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
+	AppNavigationsFile = filepath.Join(AppConfigDir, "navigations.yaml")
 
 	return nil
 }
@@ -176,6 +180,7 @@ func initXDGLocs() error {
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
+	AppNavigationsFile = filepath.Join(AppConfigDir, "navigations.yaml")
 
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
 	if e := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); e != nil {

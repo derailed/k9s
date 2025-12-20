@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s custom navigations schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "k9s": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "navigations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "targetGVR": { 
+                "type": "string",
+                "description": "The target resource to navigate to (e.g., 'mygroup.io/v1/patchjobs')"
+              },
+              "labelSelector": { 
+                "type": "string",
+                "description": "Label-based filtering for the target resource. Supports Go template syntax."
+              },
+              "fieldSelector": { 
+                "type": "string",
+                "description": "Field-based filtering for the target resource. Supports Go template syntax."
+              },
+              "targetNamespace": { 
+                "type": "string",
+                "description": "Namespace handling: 'same' (default), 'all', or a specific namespace name"
+              }
+            },
+            "required": ["targetGVR"]
+          }
+        }
+      },
+      "required": ["navigations"]
+    }
+  },
+  "required": ["k9s"]
+}
