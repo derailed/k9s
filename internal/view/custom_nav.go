@@ -43,22 +43,23 @@ func customNavigate(app *App, sourceGVR *client.GVR, sourcePath string, rule *co
 	// Build label selector if specified
 	var labelSel labels.Selector
 	if rule.LabelSelector != "" {
-		labelStr, err := applyTemplate(rule.LabelSelector, sourceObj)
-		if err != nil {
-			return fmt.Errorf("failed to process label selector template: %w", err)
+		labelStr, labelErr := applyTemplate(rule.LabelSelector, sourceObj)
+		if labelErr != nil {
+			return fmt.Errorf("failed to process label selector template: %w", labelErr)
 		}
-		labelSel, err = labels.Parse(labelStr)
-		if err != nil {
-			return fmt.Errorf("invalid label selector: %w", err)
+		labelSel, labelErr = labels.Parse(labelStr)
+		if labelErr != nil {
+			return fmt.Errorf("invalid label selector: %w", labelErr)
 		}
 	}
 
 	// Build field selector if specified
 	var fieldSel string
 	if rule.FieldSelector != "" {
-		fieldSel, err = applyTemplate(rule.FieldSelector, sourceObj)
-		if err != nil {
-			return fmt.Errorf("failed to process field selector template: %w", err)
+		var fieldErr error
+		fieldSel, fieldErr = applyTemplate(rule.FieldSelector, sourceObj)
+		if fieldErr != nil {
+			return fmt.Errorf("failed to process field selector template: %w", fieldErr)
 		}
 	}
 
@@ -112,7 +113,7 @@ func fetchResourceObject(app *App, gvr *client.GVR, path string) (map[string]int
 }
 
 // determineTargetNamespace determines which namespace to use for the target resource.
-func determineTargetNamespace(sourcePath string, targetNSConfig string, sourceObj map[string]interface{}) (string, error) {
+func determineTargetNamespace(sourcePath, targetNSConfig string, sourceObj map[string]interface{}) (string, error) {
 	sourceNS, _ := client.Namespaced(sourcePath)
 
 	switch targetNSConfig {
