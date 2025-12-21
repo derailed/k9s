@@ -65,7 +65,6 @@ func customNavigate(app *App, sourceGVR *client.GVR, sourcePath string, rule *co
 
 	// Set up the context for the navigation
 	v.SetContextFn(func(ctx context.Context) context.Context {
-		ctx = context.WithValue(ctx, internal.KeyPath, sourcePath)
 		if fieldSel != "" {
 			ctx = context.WithValue(ctx, internal.KeyFields, fieldSel)
 		}
