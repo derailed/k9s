@@ -187,7 +187,6 @@ func TestPluginLoadSymlink(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, os.Symlink(filepath.Join(wd, "testdata", "plugins", "plugins.yaml"), linkFile))
 
-	// Also symlink the plugins directory to ensure directory symlinks are handled.
 	linkDir := filepath.Join(tmp, "plugins-dir-symlink")
 	require.NoError(t, os.Symlink(filepath.Join(wd, "testdata", "plugins", "dir"), linkDir))
 
