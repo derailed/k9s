@@ -140,6 +140,25 @@ func (p Plugins) loadDir(dir string) error {
 		if err != nil {
 			return err
 		}
+
+		// Handle symlink
+		if info.Mode()&os.ModeSymlink != 0 {
+			slog.Debug("Resolve symlink", slogs.Context, path)
+
+			target, err := filepath.EvalSymlinks(path)
+			if err != nil {
+				return err
+			}
+
+			if ti, lerr := os.Lstat(target); lerr != nil {
+				return lerr
+			} else if ti.Mode()&os.ModeSymlink != 0 {
+				slog.Debug("Symlink target remains a symlink, skipping", slogs.Context, target)
+				return nil
+			}
+
+			return p.loadDir(target)
+		}
 		if info.IsDir() || !isYamlFile(info.Name()) {
 			return nil
 		}

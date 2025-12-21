@@ -4,6 +4,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -175,4 +177,64 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 			assert.Equal(t, u.ee, p)
 		})
 	}
+}
+
+func TestPluginLoadSymlink(t *testing.T) {
+	tmp := t.TempDir()
+
+	linkFile := filepath.Join(tmp, "plugins-symlink.yaml")
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Symlink(filepath.Join(wd, "testdata", "plugins", "plugins.yaml"), linkFile))
+
+	// Also symlink the plugins directory to ensure directory symlinks are handled.
+	linkDir := filepath.Join(tmp, "plugins-dir-symlink")
+	require.NoError(t, os.Symlink(filepath.Join(wd, "testdata", "plugins", "dir"), linkDir))
+
+	p := NewPlugins()
+	require.NoError(t, p.loadDir(tmp))
+
+	ee := Plugins{
+		Plugins: plugins{
+			"blah": Plugin{
+				Scopes:      []string{"po", "dp"},
+				Args:        []string{"-n", "$NAMESPACE", "-boolean"},
+				ShortCut:    "shift-s",
+				Description: "blee",
+				Command:     "duh",
+				Confirm:     true,
+			},
+			"snippet.1": {
+				ShortCut:        "shift-s",
+				Command:         "duh",
+				Scopes:          []string{"po", "dp"},
+				Args:            []string{"-n", "$NAMESPACE", "-boolean"},
+				Description:     "blee",
+				Confirm:         true,
+				OverwriteOutput: true,
+			},
+			"snippet.2": {
+				Scopes:      []string{"svc", "ing"},
+				Args:        []string{"-n", "$NAMESPACE", "-oyaml"},
+				ShortCut:    "shift-r",
+				Description: "bla",
+				Command:     "duha",
+				Background:  true,
+			},
+			"crapola": {
+				Scopes:      []string{"pods"},
+				Command:     "crapola",
+				Description: "crapola",
+				ShortCut:    "Shift-1",
+			},
+			"bozo": {
+				Scopes:      []string{"pods", "svc"},
+				Command:     "bozo",
+				Description: "bozo",
+				ShortCut:    "Shift-2",
+			},
+		},
+	}
+
+	assert.Equal(t, ee, p)
 }
