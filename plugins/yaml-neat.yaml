@@ -1,5 +1,5 @@
 plugins:
-  # Copies the pure object YAML for share or reuse elsewhere using (kubectl-neat)[https://github.com/itaysk/kubectl-neat] and `pbcopy` on macOS
+  # Copies the pure object YAML to reuse elsewhere using [kubectl-neat](https://github.com/itaysk/kubectl-neat) & `pbcopy` on macOS
   # ⚠️ NOTE: The neat project is not maintained anymore. Refer to https://github.com/itaysk/kubectl-neat for mor information
   neat:
     shortCut: Shift-Y
