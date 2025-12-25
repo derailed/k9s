@@ -93,8 +93,54 @@ func maxChromaForLH(L, h float64) float64 {
 	return lo
 }
 
+// chromaPreserveFactor controls how much original chroma to preserve during
+// inversion. 0.5 means we try to keep 50% of the original chroma, which
+// provides a good balance between color differentiation and L inversion.
+const chromaPreserveFactor = 0.5
+
+// closestLForChroma finds the L value closest to targetL that can support
+// the given chroma at the given hue. It searches toward 0.5 first (where
+// gamut is typically larger), then away from 0.5 if needed.
+func closestLForChroma(targetL, C, h float64) float64 {
+	if maxChromaForLH(targetL, h) >= C {
+		return targetL
+	}
+
+	// Search toward 0.5 first (where gamut is larger)
+	if targetL < 0.5 {
+		for L := targetL; L <= 0.5; L += 0.01 {
+			if maxChromaForLH(L, h) >= C {
+				return L
+			}
+		}
+		// Continue searching above 0.5 if needed
+		for L := 0.51; L <= 0.95; L += 0.01 {
+			if maxChromaForLH(L, h) >= C {
+				return L
+			}
+		}
+	} else {
+		for L := targetL; L >= 0.5; L -= 0.01 {
+			if maxChromaForLH(L, h) >= C {
+				return L
+			}
+		}
+		// Continue searching below 0.5 if needed
+		for L := 0.49; L >= 0.05; L -= 0.01 {
+			if maxChromaForLH(L, h) >= C {
+				return L
+			}
+		}
+	}
+
+	return targetL
+}
+
 // InvertColor inverts the color's lightness in Oklch space while preserving
-// relative chroma (saturation relative to the maximum possible at that lightness).
+// chroma (saturation). For chromatic colors, L is adjusted toward 0.5 only
+// as needed to preserve a fraction of the original chroma (set by
+// chromaPreserveFactor), since the sRGB gamut has less room for chroma at
+// extreme lightness values.
 // Special colors (default, transparent) are returned unchanged.
 func (c Color) InvertColor() Color {
 	if c == DefaultColor || c == TransparentColor || c == "" {
@@ -118,18 +164,25 @@ func (c Color) InvertColor() Color {
 
 	L, C, h := col.OkLch()
 
-	maxC := maxChromaForLH(L, h)
-	relativeChroma := 0.0
-	if maxC > 0 {
-		relativeChroma = C / maxC
+	// For achromatic colors, simply invert L
+	if C < 0.01 {
+		return NewColor(colorful.OkLch(1.0-L, 0, h).Clamped().Hex())
 	}
 
-	invertedL := 1.0 - L
+	// For chromatic colors, find L closest to inverted that preserves
+	// at least chromaPreserveFactor of the original chroma
+	targetL := 1.0 - L
+	minC := C * chromaPreserveFactor
+	actualL := closestLForChroma(targetL, minC, h)
 
-	maxCInverted := maxChromaForLH(invertedL, h)
-	invertedC := relativeChroma * maxCInverted
+	// Use as much of the original chroma as the gamut allows at actualL
+	maxC := maxChromaForLH(actualL, h)
+	actualC := C
+	if maxC < C {
+		actualC = maxC
+	}
 
-	inverted := colorful.OkLch(invertedL, invertedC, h).Clamped()
+	inverted := colorful.OkLch(actualL, actualC, h).Clamped()
 
 	return NewColor(inverted.Hex())
 }

@@ -170,24 +170,24 @@ func TestInvertColor(t *testing.T) {
 			expect: "#7e0000",
 		},
 		"blue_to_light": {
-			// L=0.452, C=0.313, h=264.1
+			// L=0.452, C=0.313, h=264.1 -> L adjusted to 0.55 to preserve chroma
 			c:      "#0000ff",
-			expect: "#0c4eff",
+			expect: "#1f5bff",
 		},
 		"green_to_dark": {
-			// L=0.866, C=0.295, h=142.5
+			// L=0.866, C=0.295, h=142.5 -> L adjusted to 0.44 to preserve chroma
 			c:      "#00ff00",
-			expect: "#000c00",
+			expect: "#006600",
 		},
 		"yellow_to_dark": {
-			// L=0.968, C=0.211, h=109.8
+			// L=0.968, C=0.211, h=109.8 -> L adjusted to 0.49 to preserve chroma
 			c:      "#ffff00",
-			expect: "#000000",
+			expect: "#656501",
 		},
 		"cyan_to_dark": {
-			// L=0.905, C=0.155, h=194.8
+			// L=0.905, C=0.155, h=194.8 -> L adjusted to 0.46 to preserve chroma
 			c:      "#00ffff",
-			expect: "#000404",
+			expect: "#016464",
 		},
 		"dark_gray_to_light": {
 			c:      "#333333",
@@ -298,37 +298,31 @@ func TestInvertColorSelfInverting(t *testing.T) {
 }
 
 func TestInvertColorOutOfGamut(t *testing.T) {
-	// These highly saturated colors would produce out-of-gamut results
-	// if we simply inverted L without adjusting chroma. The relative chroma
-	// approach scales chroma to stay within the sRGB gamut.
+	// These highly saturated colors would produce out-of-gamut results if we
+	// simply inverted L without adjustment. The chroma-preserving approach
+	// finds an L closer to 0.5 where sufficient chroma is available.
 	//
-	// Note: Round-trip is intentionally lossy for saturated colors at extreme
-	// lightness values. When chroma is scaled down to fit the gamut at inverted
-	// lightness, re-inverting scales back up but may hit different gamut limits.
-	//
-	// For colors with very high L (yellow, cyan), inverted L is very low where
-	// max chroma is tiny. The resulting near-black color has unstable hue.
+	// For colors with very high L (yellow, cyan), the ideal inverted L would
+	// be very low where max chroma is tiny. Instead, L is adjusted toward 0.5
+	// to preserve chromaPreserveFactor (0.5) of the original chroma.
 	uu := map[string]struct {
 		c      string
 		expect string
 	}{
 		"saturated_yellow": {
-			// L=0.968, C=0.211 - very high L means inverted L=0.032 has tiny max C
-			// Hue shifts because inverted chroma is zero
+			// L=0.968, C=0.211 -> L adjusted to 0.49 to preserve 50% chroma
 			c:      "#ffff00",
-			expect: "#000000",
+			expect: "#656501",
 		},
 		"saturated_cyan": {
-			// L=0.905, C=0.155 - high L means inverted L=0.095 has limited max C
-			// Hue shifts because inverted chroma is near-zero
+			// L=0.905, C=0.155 -> L adjusted to 0.46 to preserve 50% chroma
 			c:      "#00ffff",
-			expect: "#000404",
+			expect: "#016464",
 		},
 		"saturated_blue": {
-			// L=0.452, C=0.313 - low L means inverted L=0.548 allows more C
-			// Hue is preserved because inverted color has meaningful chroma
+			// L=0.452, C=0.313 -> L adjusted to 0.55 to preserve chroma
 			c:      "#0000ff",
-			expect: "#0c4eff",
+			expect: "#1f5bff",
 		},
 	}
 
