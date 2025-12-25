@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/tcell/v2"
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 const (
@@ -28,6 +29,15 @@ func (c Colors) Colors() []tcell.Color {
 	}
 
 	return cc
+}
+
+// Invert returns a new Colors with all colors inverted.
+func (c Colors) Invert() Colors {
+	inverted := make(Colors, len(c))
+	for i, color := range c {
+		inverted[i] = color.InvertColor()
+	}
+	return inverted
 }
 
 // Color represents a color.
@@ -65,4 +75,61 @@ func (c Color) Color() tcell.Color {
 	}
 
 	return tcell.GetColor(string(c)).TrueColor()
+}
+
+// maxChromaForLH finds the maximum chroma at a given lightness and hue
+// that stays within the sRGB gamut using binary search.
+func maxChromaForLH(L, h float64) float64 {
+	lo, hi := 0.0, 0.4
+	for hi-lo > 0.001 {
+		mid := (lo + hi) / 2
+		col := colorful.OkLch(L, mid, h)
+		if col.IsValid() {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+	return lo
+}
+
+// InvertColor inverts the color's lightness in Oklch space while preserving
+// relative chroma (saturation relative to the maximum possible at that lightness).
+// Special colors (default, transparent) are returned unchanged.
+func (c Color) InvertColor() Color {
+	if c == DefaultColor || c == TransparentColor || c == "" {
+		return c
+	}
+
+	tc := c.Color()
+	if tc == tcell.ColorDefault {
+		return c
+	}
+
+	hex := tc.TrueColor().Hex()
+	if hex < 0 {
+		return c
+	}
+
+	col, err := colorful.Hex(fmt.Sprintf("#%06x", hex))
+	if err != nil {
+		return c
+	}
+
+	L, C, h := col.OkLch()
+
+	maxC := maxChromaForLH(L, h)
+	relativeChroma := 0.0
+	if maxC > 0 {
+		relativeChroma = C / maxC
+	}
+
+	invertedL := 1.0 - L
+
+	maxCInverted := maxChromaForLH(invertedL, h)
+	invertedC := relativeChroma * maxCInverted
+
+	inverted := colorful.OkLch(invertedL, invertedC, h).Clamped()
+
+	return NewColor(inverted.Hex())
 }
