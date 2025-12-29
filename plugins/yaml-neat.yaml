@@ -1,0 +1,20 @@
+plugins:
+  # Copies the pure object YAML to reuse elsewhere using [kubectl-neat](https://github.com/itaysk/kubectl-neat) & `pbcopy` on macOS
+  # ⚠️ NOTE: The neat project is not maintained anymore. Refer to https://github.com/itaysk/kubectl-neat for mor information
+  neat:
+    shortCut: Shift-Y
+    overwriteOutput: true
+    confirm: false
+    background: true
+    description: Copy YAML (Neat)
+    scopes:
+    - all
+    command: bash
+    args:
+      - -c
+      - |
+        if [[ -n "$NAMESPACE" ]]; then
+          kubectl --context $CONTEXT -n $NAMESPACE get $RESOURCE_NAME $NAME -o yaml | kubectl neat | pbcopy | echo "YAML neat copied" || echo "Failed: YAML neat NOT copied"
+        else
+          kubectl --context $CONTEXT get $RESOURCE_NAME $NAME -o yaml | kubectl neat | pbcopy | echo "YAML neat copied" || echo "Failed: YAML neat NOT copied"
+        fi
