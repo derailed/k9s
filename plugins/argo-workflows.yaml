@@ -1,3 +1,6 @@
+# Plugin to interact with argo workflows directly from k9s.
+# As the plugin acts as a wrapper around the argo (workflows) CLI, it must be installed for
+# the plugin to work. To install it, see https://github.com/argoproj/argo-workflows/releases/
 plugins:
   view-workflow:
     shortCut: v
