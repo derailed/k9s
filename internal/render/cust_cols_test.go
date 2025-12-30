@@ -5,11 +5,13 @@ package render
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/client-go/util/jsonpath"
 )
 
 func TestParseSpecs(t *testing.T) {
@@ -232,4 +234,31 @@ func TestParseSpecs(t *testing.T) {
 			assert.Equal(t, u.e, cols)
 		})
 	}
+}
+
+func TestHydrateNilObject(t *testing.T) {
+	cc := ColumnSpecs{
+		{
+			Header: model1.HeaderColumn{Name: "test"},
+			Spec:   "{.metadata.name}",
+		},
+	}
+
+	parser := jsonpath.New(fmt.Sprintf("column%d", 0)).AllowMissingKeys(true)
+	err := parser.Parse("{.metadata.name}")
+	assert.NoError(t, err)
+
+	parsers := []*jsonpath.JSONPath{parser}
+	rh := model1.Header{
+		{Name: "test"},
+	}
+	row := &model1.Row{
+		Fields: model1.Fields{"value1"},
+	}
+
+	// Test with nil object - should not panic
+	cols, err := hydrate(nil, cc, parsers, rh, row)
+	assert.NoError(t, err)
+	assert.Len(t, cols, 1)
+	assert.Equal(t, NAValue, cols[0].Value)
 }
