@@ -4,6 +4,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -175,4 +177,33 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 			assert.Equal(t, u.ee, p)
 		})
 	}
+}
+
+func TestPluginLoadDirSymlink(t *testing.T) {
+	// Get absolute path to the real plugin directory
+	realDir, err := filepath.Abs("testdata/plugins/dir")
+	require.NoError(t, err)
+
+	// Create a temp directory to hold the symlink
+	tmpDir := t.TempDir()
+	symlinkDir := filepath.Join(tmpDir, "plugins-symlink")
+
+	// Create symlink to the real directory
+	err = os.Symlink(realDir, symlinkDir)
+	require.NoError(t, err)
+
+	// Load plugins from the symlinked directory
+	p := NewPlugins()
+	require.NoError(t, p.loadDir(symlinkDir))
+
+	// Verify plugins were loaded correctly
+	assert.Len(t, p.Plugins, 4)
+	_, ok := p.Plugins["snippet.1"]
+	assert.True(t, ok)
+	_, ok = p.Plugins["snippet.2"]
+	assert.True(t, ok)
+	_, ok = p.Plugins["crapola"]
+	assert.True(t, ok)
+	_, ok = p.Plugins["bozo"]
+	assert.True(t, ok)
 }

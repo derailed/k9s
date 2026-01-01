@@ -131,14 +131,32 @@ func (p *Plugins) load(path string) error {
 }
 
 func (p Plugins) loadDir(dir string) error {
-	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
-		return nil
+	// Resolve symlinks in the directory path to support symlinked plugin directories
+	resolvedDir, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		return err
 	}
 
 	var errs error
-	errs = errors.Join(errs, filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	errs = errors.Join(errs, filepath.Walk(resolvedDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+		// Handle symlinked files: resolve to get real file info
+		if info.Mode()&os.ModeSymlink != 0 {
+			resolvedPath, err := filepath.EvalSymlinks(path)
+			if err != nil {
+				return nil
+			}
+			resolvedInfo, err := os.Stat(resolvedPath)
+			if err != nil {
+				return nil
+			}
+			path = resolvedPath
+			info = resolvedInfo
 		}
 		if info.IsDir() || !isYamlFile(info.Name()) {
 			return nil
