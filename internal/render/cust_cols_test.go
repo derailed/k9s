@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/util/jsonpath"
 )
 
@@ -246,7 +247,7 @@ func TestHydrateNilObject(t *testing.T) {
 
 	parser := jsonpath.New(fmt.Sprintf("column%d", 0)).AllowMissingKeys(true)
 	err := parser.Parse("{.metadata.name}")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	parsers := []*jsonpath.JSONPath{parser}
 	rh := model1.Header{
@@ -258,7 +259,7 @@ func TestHydrateNilObject(t *testing.T) {
 
 	// Test with nil object - should not panic
 	cols, err := hydrate(nil, cc, parsers, rh, row)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, cols, 1)
 	assert.Equal(t, NAValue, cols[0].Value)
 }

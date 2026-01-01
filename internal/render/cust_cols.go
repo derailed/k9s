@@ -172,6 +172,14 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			continue
 		}
 
+		if o == nil {
+			cols[idx] = RenderedCol{
+				Header: cc[idx].Header,
+				Value:  NAValue,
+			}
+			continue
+		}
+
 		var (
 			vals [][]reflect.Value
 			err  error
