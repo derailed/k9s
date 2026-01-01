@@ -219,6 +219,22 @@ plugins:
         --kube-context $CONTEXT
         -n $NAMESPACE $NAME
         | less -K
+  reconcile-fluxinstance:
+    shortCut: Shift-R
+    confirm: false
+    description: Flux reconcile
+    scopes:
+      - fluxinstances
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        flux-operator
+        reconcile instance
+        --kube-context $CONTEXT
+        -n $NAMESPACE $NAME
+        | less -K
   trace:
     shortCut: Shift-Q
     confirm: false
