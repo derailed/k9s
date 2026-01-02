@@ -20,6 +20,9 @@ endif
 
 default: help
 
+fmt:                     ## Format Go code
+	@go fmt ./...
+
 test:                    ## Run all tests
 	@go clean --testcache && go test ./...
 

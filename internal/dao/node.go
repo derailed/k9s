@@ -152,7 +152,13 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
-	return &render.NodeWithMetrics{Raw: raw, MX: nmx}, nil
+	// Requested CPU and memory are only calculated in NodeAlloc view, not in regular Node view
+	return &render.NodeWithMetrics{
+		Raw:             raw,
+		MX:              nmx,
+		RequestedCPU:    -1,
+		RequestedMemory: -1,
+	}, nil
 }
 
 // List returns a collection of node resources.
@@ -194,10 +200,13 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 				)
 			}
 		}
+		// Requested CPU and memory are only calculated in NodeAlloc view, not in regular Node view
 		res = append(res, &render.NodeWithMetrics{
-			Raw:      u,
-			MX:       nmx[name],
-			PodCount: podCount,
+			Raw:             u,
+			MX:              nmx[name],
+			PodCount:        podCount,
+			RequestedCPU:    -1,
+			RequestedMemory: -1,
 		})
 	}
 
