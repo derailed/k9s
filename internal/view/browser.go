@@ -517,6 +517,9 @@ func editRes(app *App, gvr *client.GVR, path string) error {
 		return fmt.Errorf("nothing selected %q", path)
 	}
 	ns, n := client.Namespaced(path)
+	if n == "" {
+		return fmt.Errorf("missing resource name in path %q", path)
+	}
 	if client.IsClusterScoped(ns) {
 		ns = client.BlankNamespace
 	}
