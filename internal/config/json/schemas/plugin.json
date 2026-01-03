@@ -15,6 +15,7 @@
       },
       "command": { "type": "string" },
       "background": { "type": "boolean" },
+      "forwardInterrupt": { "type": "boolean" },
       "overwriteOutput": { "type": "boolean" },
       "args": {
         "type": "array",
