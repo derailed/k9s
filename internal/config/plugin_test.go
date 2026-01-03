@@ -190,6 +190,11 @@ func TestPluginLoadSymlink(t *testing.T) {
 	linkDir := filepath.Join(tmp, "plugins-dir-symlink")
 	require.NoError(t, os.Symlink(filepath.Join(wd, "testdata", "plugins", "dir"), linkDir))
 
+	// Add a symlink with an infinite loop
+	loopDir := filepath.Join(tmp, "loop")
+	require.NoError(t, os.Mkdir(loopDir, 0o755))
+	require.NoError(t, os.Symlink(loopDir, filepath.Join(loopDir, "self")))
+
 	p := NewPlugins()
 	require.NoError(t, p.loadDir(tmp))
 
