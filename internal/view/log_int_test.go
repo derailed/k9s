@@ -10,6 +10,8 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
+	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +29,7 @@ func TestLogAutoScroll(t *testing.T) {
 	v.GetModel().Set(ii)
 	v.GetModel().Notify()
 
-	assert.Len(t, v.Hints(), 18)
+	assert.Len(t, v.Hints(), 20)
 
 	v.toggleAutoScrollCmd(nil)
 	assert.Equal(t, "Autoscroll:Off     ColumnLock:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
@@ -55,6 +57,111 @@ func TestLogColumnLock(t *testing.T) {
 	r, c := v.Logs().GetScrollOffset()
 	assert.Equal(t, -1, r)
 	assert.Equal(t, column, c)
+}
+
+func TestLogHorizontalScroll(t *testing.T) {
+	opts := dao.LogOptions{
+		Path:      "fred/p1",
+		Container: "blee",
+	}
+	v := NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
+	if v.indicator.TextWrap() {
+		v.toggleTextWrapCmd(nil)
+	}
+
+	buff := dao.NewLogItems()
+	buff.Add(dao.NewLogItemFromString("this is a very long log line that needs horizontal scrolling to view completely\n"))
+	v.GetModel().Set(buff)
+	v.toggleAutoScrollCmd(nil)
+
+	_, c := v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Initial column offset should be 0")
+
+	v.scrollRightCmd(nil)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 16, c, "Column offset should be 16 after scroll right")
+
+	v.scrollRightCmd(nil)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 32, c, "Column offset should be 32 after second scroll right")
+
+	v.scrollLeftCmd(nil)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 16, c, "Column offset should be 16 after scroll left")
+
+	v.scrollLeftCmd(nil)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should be 0 after second scroll left")
+
+	v.scrollLeftCmd(nil)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should stay at 0 when scrolling left at beginning")
+
+	v.Logs().ScrollTo(0, 0)
+	if !v.indicator.TextWrap() {
+		v.toggleTextWrapCmd(nil)
+	}
+	v.scrollRightCmd(nil)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should stay at 0 when wrap is enabled")
+}
+
+func TestLogMouseHorizontalScroll(t *testing.T) {
+	opts := dao.LogOptions{
+		Path:      "fred/p1",
+		Container: "blee",
+	}
+	v := NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
+	if v.indicator.TextWrap() {
+		v.toggleTextWrapCmd(nil)
+	}
+
+	buff := dao.NewLogItems()
+	buff.Add(dao.NewLogItemFromString("this is a very long log line that needs horizontal scrolling to view completely\n"))
+	v.GetModel().Set(buff)
+	v.toggleAutoScrollCmd(nil)
+
+	_, c := v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Initial column offset should be 0")
+
+	// Test mouse scroll right
+	event := tcell.NewEventMouse(0, 0, tcell.WheelRight, tcell.ModNone)
+	v.mouseHandler(tview.MouseScrollRight, event)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 16, c, "Column offset should be 16 after mouse scroll right")
+
+	// Test mouse scroll right again
+	v.mouseHandler(tview.MouseScrollRight, event)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 32, c, "Column offset should be 32 after second mouse scroll right")
+
+	// Test mouse scroll left
+	event = tcell.NewEventMouse(0, 0, tcell.WheelLeft, tcell.ModNone)
+	v.mouseHandler(tview.MouseScrollLeft, event)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 16, c, "Column offset should be 16 after mouse scroll left")
+
+	// Test mouse scroll left again
+	v.mouseHandler(tview.MouseScrollLeft, event)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should be 0 after second mouse scroll left")
+
+	// Test boundary: scroll left at position 0
+	v.mouseHandler(tview.MouseScrollLeft, event)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should stay at 0 when mouse scrolling left at beginning")
+
+	// Test wrap mode disables mouse horizontal scroll
+	v.Logs().ScrollTo(0, 0)
+	if !v.indicator.TextWrap() {
+		v.toggleTextWrapCmd(nil)
+	}
+	event = tcell.NewEventMouse(0, 0, tcell.WheelRight, tcell.ModNone)
+	v.mouseHandler(tview.MouseScrollRight, event)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should stay at 0 when wrap is enabled with mouse scroll")
 }
 
 func TestLogViewNav(t *testing.T) {

@@ -34,6 +34,7 @@ const (
 	logFmt              = "([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	logCoFmt            = "([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	defaultFlushTimeout = 50 * time.Millisecond
+	defaultScrollAmount = 16
 )
 
 // Log represents a generic log viewer.
@@ -96,6 +97,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor.String(), l.app.Styles.Views().Log.BgColor.String())
 	l.AddItem(l.logs, 0, 1, true)
 	l.bindKeys()
+	l.logs.SetMouseCapture(l.mouseHandler)
 
 	l.StylesChanged(l.app.Styles)
 	l.toggleFullScreen()
@@ -266,6 +268,8 @@ func (l *Log) bindKeys() {
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
+		tcell.KeyLeft:   ui.NewKeyAction("Scroll Left", l.scrollLeftCmd, false),
+		tcell.KeyRight:  ui.NewKeyAction("Scroll Right", l.scrollRightCmd, false),
 	})
 	if l.model.HasDefaultContainer() {
 		l.logs.Actions().Add(ui.KeyA, ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true))
@@ -550,4 +554,62 @@ func (l *Log) toggleFullScreen() {
 
 func (l *Log) isContainerLogView() bool {
 	return l.model.HasDefaultContainer()
+}
+
+func (l *Log) scrollLeftCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	if l.indicator.TextWrap() {
+		return nil
+	}
+
+	r, c := l.logs.GetScrollOffset()
+	c -= defaultScrollAmount
+	if c < 0 {
+		c = 0
+	}
+	l.logs.ScrollTo(r, c)
+
+	return nil
+}
+
+func (l *Log) scrollRightCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	if l.indicator.TextWrap() {
+		return nil
+	}
+
+	r, c := l.logs.GetScrollOffset()
+	l.logs.ScrollTo(r, c+defaultScrollAmount)
+
+	return nil
+}
+
+func (l *Log) mouseHandler(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	if l.app.InCmdMode() {
+		return action, event
+	}
+	if l.indicator.TextWrap() {
+		return action, event
+	}
+
+	switch action {
+	case tview.MouseScrollLeft:
+		r, c := l.logs.GetScrollOffset()
+		c -= defaultScrollAmount
+		if c < 0 {
+			c = 0
+		}
+		l.logs.ScrollTo(r, c)
+		return action, nil
+	case tview.MouseScrollRight:
+		r, c := l.logs.GetScrollOffset()
+		l.logs.ScrollTo(r, c+defaultScrollAmount)
+		return action, nil
+	}
+
+	return action, event
 }
