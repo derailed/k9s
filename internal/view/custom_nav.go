@@ -92,7 +92,7 @@ func customNavigate(app *App, sourceGVR *client.GVR, sourcePath string, rule *co
 }
 
 // fetchResourceObject retrieves the full resource object for templating.
-func fetchResourceObject(app *App, gvr *client.GVR, path string) (map[string]interface{}, error) {
+func fetchResourceObject(app *App, gvr *client.GVR, path string) (map[string]any, error) {
 	accessor, err := dao.AccessorFor(app.factory, gvr)
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func fetchResourceObject(app *App, gvr *client.GVR, path string) (map[string]int
 }
 
 // determineTargetNamespace determines which namespace to use for the target resource.
-func determineTargetNamespace(sourcePath, targetNSConfig string, sourceObj map[string]interface{}) (string, error) {
+func determineTargetNamespace(sourcePath, targetNSConfig string, sourceObj map[string]any) (string, error) {
 	sourceNS, _ := client.Namespaced(sourcePath)
 
 	switch targetNSConfig {
@@ -131,7 +131,7 @@ func determineTargetNamespace(sourcePath, targetNSConfig string, sourceObj map[s
 }
 
 // applyTemplate applies Go template to the selector using the source resource data.
-func applyTemplate(tmplStr string, data map[string]interface{}) (string, error) {
+func applyTemplate(tmplStr string, data map[string]any) (string, error) {
 	tmpl, err := template.New("selector").Parse(tmplStr)
 	if err != nil {
 		return "", err
