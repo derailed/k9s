@@ -17,6 +17,7 @@ k9s:
     splashless: false
     reactive: false
     noIcons: false
+    invert: false
     defaultsToFullScreen: false
     useFullGVRTitle: true
   skipLatestRevCheck: false

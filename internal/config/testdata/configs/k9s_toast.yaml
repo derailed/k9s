@@ -12,6 +12,7 @@ k9s:
     crumbsless: false
     splashless: false
     noIcons: false
+    invert: false
   skipLatestRevCheck: yes
   disablePodCounts: false
   shellPods:

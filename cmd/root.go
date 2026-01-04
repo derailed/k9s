@@ -225,6 +225,12 @@ func initK9sFlags() {
 		false,
 		"Turn K9s splash screen off",
 	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Invert,
+		"invert",
+		false,
+		"Invert skin (dark to light, light to dark), preserving colors",
+	)
 	rootCmd.Flags().BoolVarP(
 		k9sFlags.AllNamespaces,
 		"all-namespaces", "A",

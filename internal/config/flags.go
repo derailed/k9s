@@ -27,6 +27,7 @@ type Flags struct {
 	Write         *bool
 	Crumbsless    *bool
 	Splashless    *bool
+	Invert        *bool
 	ScreenDumpDir *string
 }
 
@@ -44,6 +45,7 @@ func NewFlags() *Flags {
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
 		Splashless:    boolPtr(false),
+		Invert:        boolPtr(false),
 		ScreenDumpDir: strPtr(AppDumpsDir),
 	}
 }
