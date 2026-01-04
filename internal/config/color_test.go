@@ -4,7 +4,6 @@
 package config_test
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
@@ -121,13 +120,14 @@ func TestColorToColor(t *testing.T) {
 	}
 }
 
-// getOklch returns L, C, h for a hex color string.
-func getOklch(hex string) (L, C, h float64) {
+// getOkch returns c, h for a hex color string.
+func getOkch(hex string) (c, h float64) {
 	col, err := colorful.Hex(hex)
 	if err != nil {
-		return 0, 0, 0
+		return 0, 0
 	}
-	return col.OkLch()
+	_, c, h = col.OkLch()
+	return c, h
 }
 
 // huesEqual checks if two hues are equal within tolerance, handling wraparound.
@@ -241,14 +241,14 @@ func TestInvertColorPreservesHue(t *testing.T) {
 			original := config.NewColor(u.c)
 			inverted := original.InvertColor()
 
-			_, _, hOrig := getOklch(u.c)
-			_, cInv, hInv := getOklch(string(inverted))
+			_, hOrig := getOkch(u.c)
+			cInv, hInv := getOkch(string(inverted))
 
 			// Only check hue if inverted color has meaningful chroma (C > 0.05)
 			// Below this threshold, sRGB quantization causes hue instability
 			if cInv > 0.05 {
 				assert.True(t, huesEqual(hOrig, hInv, 1.0),
-					fmt.Sprintf("hue should be preserved: original h=%.1f, inverted h=%.1f", hOrig, hInv))
+					"hue should be preserved: original h=%.1f, inverted h=%.1f", hOrig, hInv)
 			}
 		})
 	}
@@ -346,11 +346,11 @@ func TestInvertColorOutOfGamut(t *testing.T) {
 
 			// Only check hue preservation for colors with meaningful inverted chroma (C > 0.05)
 			// Below this threshold, sRGB quantization causes hue instability
-			_, cInv, hInv := getOklch(invertedStr)
+			cInv, hInv := getOkch(invertedStr)
 			if cInv > 0.05 {
-				_, _, hOrig := getOklch(u.c)
+				_, hOrig := getOkch(u.c)
 				assert.True(t, huesEqual(hOrig, hInv, 1.0),
-					fmt.Sprintf("hue should be preserved: original h=%.1f, inverted h=%.1f", hOrig, hInv))
+					"hue should be preserved: original h=%.1f, inverted h=%.1f", hOrig, hInv)
 			}
 		})
 	}

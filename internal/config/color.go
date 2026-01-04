@@ -79,11 +79,11 @@ func (c Color) Color() tcell.Color {
 
 // maxChromaForLH finds the maximum chroma at a given lightness and hue
 // that stays within the sRGB gamut using binary search.
-func maxChromaForLH(L, h float64) float64 {
+func maxChromaForLH(l, h float64) float64 {
 	lo, hi := 0.0, 0.4
 	for hi-lo > 0.001 {
 		mid := (lo + hi) / 2
-		col := colorful.OkLch(L, mid, h)
+		col := colorful.OkLch(l, mid, h)
 		if col.IsValid() {
 			lo = mid
 		} else {
@@ -101,34 +101,34 @@ const chromaPreserveFactor = 0.5
 // closestLForChroma finds the L value closest to targetL that can support
 // the given chroma at the given hue. It searches toward 0.5 first (where
 // gamut is typically larger), then away from 0.5 if needed.
-func closestLForChroma(targetL, C, h float64) float64 {
-	if maxChromaForLH(targetL, h) >= C {
+func closestLForChroma(targetL, c, h float64) float64 {
+	if maxChromaForLH(targetL, h) >= c {
 		return targetL
 	}
 
 	// Search toward 0.5 first (where gamut is larger)
 	if targetL < 0.5 {
-		for L := targetL; L <= 0.5; L += 0.01 {
-			if maxChromaForLH(L, h) >= C {
-				return L
+		for ll := targetL; ll <= 0.5; ll += 0.01 {
+			if maxChromaForLH(ll, h) >= c {
+				return ll
 			}
 		}
 		// Continue searching above 0.5 if needed
-		for L := 0.51; L <= 0.95; L += 0.01 {
-			if maxChromaForLH(L, h) >= C {
-				return L
+		for ll := 0.51; ll <= 0.95; ll += 0.01 {
+			if maxChromaForLH(ll, h) >= c {
+				return ll
 			}
 		}
 	} else {
-		for L := targetL; L >= 0.5; L -= 0.01 {
-			if maxChromaForLH(L, h) >= C {
-				return L
+		for ll := targetL; ll >= 0.5; ll -= 0.01 {
+			if maxChromaForLH(ll, h) >= c {
+				return ll
 			}
 		}
 		// Continue searching below 0.5 if needed
-		for L := 0.49; L >= 0.05; L -= 0.01 {
-			if maxChromaForLH(L, h) >= C {
-				return L
+		for ll := 0.49; ll >= 0.05; ll -= 0.01 {
+			if maxChromaForLH(ll, h) >= c {
+				return ll
 			}
 		}
 	}
