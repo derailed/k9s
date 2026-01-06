@@ -227,6 +227,8 @@ func (h *Help) showHotKeys() (model.MenuHints, error) {
 }
 
 func (*Help) showGeneral() model.MenuHints {
+	_, markRangeKeyLabel := pickMarkRangeKey()
+
 	return model.MenuHints{
 		{
 			Mnemonic:    "?",
@@ -285,7 +287,7 @@ func (*Help) showGeneral() model.MenuHints {
 			Description: "Mark",
 		},
 		{
-			Mnemonic:    "Ctrl-space",
+			Mnemonic:    markRangeKeyLabel,
 			Description: "Mark Range",
 		},
 		{
