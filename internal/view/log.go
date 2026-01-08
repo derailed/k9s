@@ -662,11 +662,11 @@ func (l *Log) maxScrollColumn() int {
 	if width <= 0 {
 		return l.maxLineWidth
 	}
-	max := l.maxLineWidth - width
-	if max < 0 {
+	maxCol := l.maxLineWidth - width
+	if maxCol < 0 {
 		return 0
 	}
-	return max
+	return maxCol
 }
 
 func (l *Log) updateMaxLineWidth(lines [][]byte) {
