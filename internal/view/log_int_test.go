@@ -161,6 +161,18 @@ func TestLogMouseHorizontalScroll(t *testing.T) {
 	_, c = v.Logs().GetScrollOffset()
 	assert.Equal(t, 0, c, "Column offset should stay at 0 when mouse scrolling left at beginning")
 
+	// Test Shift+wheel down for horizontal scroll (terminal-dependent)
+	event = tcell.NewEventMouse(0, 0, tcell.WheelDown, tcell.ModShift)
+	v.mouseHandler(tview.MouseScrollDown, event)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, scrollAmount, c, "Column offset should increase by scroll amount after shift+wheel down")
+
+	// Test Shift+wheel up for horizontal scroll back
+	event = tcell.NewEventMouse(0, 0, tcell.WheelUp, tcell.ModShift)
+	v.mouseHandler(tview.MouseScrollUp, event)
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should decrease by scroll amount after shift+wheel up")
+
 	// Test wrap mode disables mouse horizontal scroll
 	v.Logs().ScrollTo(0, 0)
 	if !v.indicator.TextWrap() {

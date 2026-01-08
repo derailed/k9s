@@ -4,6 +4,7 @@
 package view
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
@@ -25,6 +27,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	runewidth "github.com/mattn/go-runewidth"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -55,6 +58,7 @@ type Log struct {
 	follow            bool
 	columnLock        bool
 	requestOneRefresh bool
+	maxLineWidth      int
 }
 
 var _ model.Component = (*Log)(nil)
@@ -148,6 +152,7 @@ func (l *Log) LogResume() {
 func (l *Log) LogCleared() {
 	l.app.QueueUpdateDraw(func() {
 		l.logs.Clear()
+		l.maxLineWidth = 0
 	})
 }
 
@@ -170,6 +175,7 @@ func (l *Log) LogChanged(lines [][]byte) {
 		if l.logs.GetText(true) == logMessage {
 			l.logs.Clear()
 		}
+		l.updateMaxLineWidth(lines)
 		l.Flush(lines)
 	})
 }
@@ -474,6 +480,7 @@ func saveData(dir, fqn, logs string) (string, error) {
 
 func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 	l.model.Clear()
+	l.maxLineWidth = 0
 	return nil
 }
 
@@ -591,6 +598,9 @@ func (l *Log) scrollHorizontal(delta int) bool {
 	if c < 0 {
 		c = 0
 	}
+	if maxCol := l.maxScrollColumn(); c > maxCol {
+		c = maxCol
+	}
 	l.logs.ScrollTo(r, c)
 	return true
 }
@@ -600,7 +610,7 @@ func (l *Log) scrollLeftCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	if !l.canScrollHorizontally() {
-		return nil
+		return evt
 	}
 	l.scrollHorizontal(-l.getScrollAmount())
 	return nil
@@ -611,7 +621,7 @@ func (l *Log) scrollRightCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	if !l.canScrollHorizontally() {
-		return nil
+		return evt
 	}
 	l.scrollHorizontal(l.getScrollAmount())
 	return nil
@@ -629,7 +639,70 @@ func (l *Log) mouseHandler(action tview.MouseAction, event *tcell.EventMouse) (t
 	case tview.MouseScrollRight:
 		l.scrollHorizontal(l.getScrollAmount())
 		return action, nil
+	case tview.MouseScrollUp:
+		if event.Modifiers()&tcell.ModShift != 0 {
+			l.scrollHorizontal(-l.getScrollAmount())
+			return action, nil
+		}
+	case tview.MouseScrollDown:
+		if event.Modifiers()&tcell.ModShift != 0 {
+			l.scrollHorizontal(l.getScrollAmount())
+			return action, nil
+		}
 	}
 
 	return action, event
+}
+
+func (l *Log) maxScrollColumn() int {
+	if l.maxLineWidth <= 0 {
+		return 0
+	}
+	_, _, width, _ := l.logs.GetInnerRect()
+	if width <= 0 {
+		return l.maxLineWidth
+	}
+	max := l.maxLineWidth - width
+	if max < 0 {
+		return 0
+	}
+	return max
+}
+
+func (l *Log) updateMaxLineWidth(lines [][]byte) {
+	for _, line := range lines {
+		for _, seg := range bytes.Split(line, EOL) {
+			if w := visibleWidth(seg); w > l.maxLineWidth {
+				l.maxLineWidth = w
+			}
+		}
+	}
+}
+
+func visibleWidth(line []byte) int {
+	clean := make([]rune, 0, len(line))
+	for i := 0; i < len(line); {
+		if line[i] == 0x1b && i+1 < len(line) && line[i+1] == '[' {
+			i += 2
+			for i < len(line) && (line[i] < 0x40 || line[i] > 0x7e) {
+				i++
+			}
+			if i < len(line) {
+				i++
+			}
+			continue
+		}
+		if line[i] == '\r' {
+			i++
+			continue
+		}
+		r, size := utf8.DecodeRune(line[i:])
+		if r == utf8.RuneError && size == 1 {
+			i++
+			continue
+		}
+		clean = append(clean, r)
+		i += size
+	}
+	return runewidth.StringWidth(string(clean))
 }
