@@ -77,7 +77,7 @@ func TestLogHorizontalScroll(t *testing.T) {
 
 	// Get the dynamic scroll amount
 	scrollAmount := v.getScrollAmount()
-	assert.Greater(t, scrollAmount, 0, "Scroll amount should be positive")
+	assert.Positive(t, scrollAmount, "Scroll amount should be positive")
 
 	_, c := v.Logs().GetScrollOffset()
 	assert.Equal(t, 0, c, "Initial column offset should be 0")
@@ -129,7 +129,7 @@ func TestLogMouseHorizontalScroll(t *testing.T) {
 
 	// Get the dynamic scroll amount
 	scrollAmount := v.getScrollAmount()
-	assert.Greater(t, scrollAmount, 0, "Scroll amount should be positive")
+	assert.Positive(t, scrollAmount, "Scroll amount should be positive")
 
 	_, c := v.Logs().GetScrollOffset()
 	assert.Equal(t, 0, c, "Initial column offset should be 0")
@@ -194,7 +194,7 @@ func TestLogScrollHelpers(t *testing.T) {
 
 	// Test getScrollAmount returns positive value
 	amount := v.getScrollAmount()
-	assert.Greater(t, amount, 0, "Scroll amount should be positive")
+	assert.Positive(t, amount, "Scroll amount should be positive")
 
 	// Test scrollHorizontal helper
 	v.Logs().ScrollTo(0, 0)
