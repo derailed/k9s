@@ -598,8 +598,10 @@ func (l *Log) scrollHorizontal(delta int) bool {
 	if c < 0 {
 		c = 0
 	}
-	if maxCol := l.maxScrollColumn(); c > maxCol {
-		c = maxCol
+	if l.maxLineWidth > 0 {
+		if maxCol := l.maxScrollColumn(); c > maxCol {
+			c = maxCol
+		}
 	}
 	l.logs.ScrollTo(r, c)
 	return true
