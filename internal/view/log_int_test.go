@@ -75,20 +75,24 @@ func TestLogHorizontalScroll(t *testing.T) {
 	v.GetModel().Set(buff)
 	v.toggleAutoScrollCmd(nil)
 
+	// Get the dynamic scroll amount
+	scrollAmount := v.getScrollAmount()
+	assert.Greater(t, scrollAmount, 0, "Scroll amount should be positive")
+
 	_, c := v.Logs().GetScrollOffset()
 	assert.Equal(t, 0, c, "Initial column offset should be 0")
 
 	v.scrollRightCmd(nil)
 	_, c = v.Logs().GetScrollOffset()
-	assert.Equal(t, 16, c, "Column offset should be 16 after scroll right")
+	assert.Equal(t, scrollAmount, c, "Column offset should increase by scroll amount after scroll right")
 
 	v.scrollRightCmd(nil)
 	_, c = v.Logs().GetScrollOffset()
-	assert.Equal(t, 32, c, "Column offset should be 32 after second scroll right")
+	assert.Equal(t, scrollAmount*2, c, "Column offset should increase by scroll amount after second scroll right")
 
 	v.scrollLeftCmd(nil)
 	_, c = v.Logs().GetScrollOffset()
-	assert.Equal(t, 16, c, "Column offset should be 16 after scroll left")
+	assert.Equal(t, scrollAmount, c, "Column offset should decrease by scroll amount after scroll left")
 
 	v.scrollLeftCmd(nil)
 	_, c = v.Logs().GetScrollOffset()
@@ -123,6 +127,10 @@ func TestLogMouseHorizontalScroll(t *testing.T) {
 	v.GetModel().Set(buff)
 	v.toggleAutoScrollCmd(nil)
 
+	// Get the dynamic scroll amount
+	scrollAmount := v.getScrollAmount()
+	assert.Greater(t, scrollAmount, 0, "Scroll amount should be positive")
+
 	_, c := v.Logs().GetScrollOffset()
 	assert.Equal(t, 0, c, "Initial column offset should be 0")
 
@@ -130,18 +138,18 @@ func TestLogMouseHorizontalScroll(t *testing.T) {
 	event := tcell.NewEventMouse(0, 0, tcell.WheelRight, tcell.ModNone)
 	v.mouseHandler(tview.MouseScrollRight, event)
 	_, c = v.Logs().GetScrollOffset()
-	assert.Equal(t, 16, c, "Column offset should be 16 after mouse scroll right")
+	assert.Equal(t, scrollAmount, c, "Column offset should increase by scroll amount after mouse scroll right")
 
 	// Test mouse scroll right again
 	v.mouseHandler(tview.MouseScrollRight, event)
 	_, c = v.Logs().GetScrollOffset()
-	assert.Equal(t, 32, c, "Column offset should be 32 after second mouse scroll right")
+	assert.Equal(t, scrollAmount*2, c, "Column offset should increase by scroll amount after second mouse scroll right")
 
 	// Test mouse scroll left
 	event = tcell.NewEventMouse(0, 0, tcell.WheelLeft, tcell.ModNone)
 	v.mouseHandler(tview.MouseScrollLeft, event)
 	_, c = v.Logs().GetScrollOffset()
-	assert.Equal(t, 16, c, "Column offset should be 16 after mouse scroll left")
+	assert.Equal(t, scrollAmount, c, "Column offset should decrease by scroll amount after mouse scroll left")
 
 	// Test mouse scroll left again
 	v.mouseHandler(tview.MouseScrollLeft, event)
@@ -162,6 +170,52 @@ func TestLogMouseHorizontalScroll(t *testing.T) {
 	v.mouseHandler(tview.MouseScrollRight, event)
 	_, c = v.Logs().GetScrollOffset()
 	assert.Equal(t, 0, c, "Column offset should stay at 0 when wrap is enabled with mouse scroll")
+}
+
+func TestLogScrollHelpers(t *testing.T) {
+	opts := dao.LogOptions{
+		Path:      "fred/p1",
+		Container: "blee",
+	}
+	v := NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
+
+	// Test canScrollHorizontally
+	if v.indicator.TextWrap() {
+		v.toggleTextWrapCmd(nil)
+	}
+	assert.True(t, v.canScrollHorizontally(), "Should be able to scroll when wrap is disabled")
+
+	v.toggleTextWrapCmd(nil)
+	assert.False(t, v.canScrollHorizontally(), "Should not be able to scroll when wrap is enabled")
+
+	// Reset wrap mode
+	v.toggleTextWrapCmd(nil)
+
+	// Test getScrollAmount returns positive value
+	amount := v.getScrollAmount()
+	assert.Greater(t, amount, 0, "Scroll amount should be positive")
+
+	// Test scrollHorizontal helper
+	v.Logs().ScrollTo(0, 0)
+	scrolled := v.scrollHorizontal(10)
+	assert.True(t, scrolled, "scrollHorizontal should return true when scrolling is allowed")
+	_, c := v.Logs().GetScrollOffset()
+	assert.Equal(t, 10, c, "Column offset should be 10 after scrolling right by 10")
+
+	// Test scrollHorizontal respects left boundary
+	v.Logs().ScrollTo(0, 5)
+	v.scrollHorizontal(-10) // Try to scroll left by 10 when at position 5
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should be clamped to 0")
+
+	// Test scrollHorizontal when wrap is enabled
+	v.toggleTextWrapCmd(nil)
+	v.Logs().ScrollTo(0, 0)
+	scrolled = v.scrollHorizontal(10)
+	assert.False(t, scrolled, "scrollHorizontal should return false when wrap is enabled")
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c, "Column offset should remain 0 when wrap is enabled")
 }
 
 func TestLogViewNav(t *testing.T) {

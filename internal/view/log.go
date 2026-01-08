@@ -34,7 +34,10 @@ const (
 	logFmt              = "([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	logCoFmt            = "([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	defaultFlushTimeout = 50 * time.Millisecond
-	defaultScrollAmount = 16
+	// fallbackScrollAmount is used when view width cannot be determined
+	fallbackScrollAmount = 16
+	// scrollFraction determines how much of the visible width to scroll (2/3 like less)
+	scrollFraction = 2.0 / 3.0
 )
 
 // Log represents a generic log viewer.
@@ -556,21 +559,50 @@ func (l *Log) isContainerLogView() bool {
 	return l.model.HasDefaultContainer()
 }
 
-func (l *Log) scrollLeftCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if l.app.InCmdMode() {
-		return evt
+// canScrollHorizontally checks if horizontal scrolling is allowed.
+func (l *Log) canScrollHorizontally() bool {
+	return !l.app.InCmdMode() && !l.indicator.TextWrap()
+}
+
+// getScrollAmount calculates the scroll amount based on visible width.
+// Uses 2/3 of the visible width (similar to less command) for better UX.
+func (l *Log) getScrollAmount() int {
+	_, _, width, _ := l.logs.GetInnerRect()
+	if width <= 0 {
+		return fallbackScrollAmount
 	}
-	if l.indicator.TextWrap() {
-		return nil
+	amount := int(float64(width) * scrollFraction)
+	if amount < 1 {
+		return 1
+	}
+	return amount
+}
+
+// scrollHorizontal scrolls the log view horizontally by the given delta.
+// Positive delta scrolls right, negative scrolls left.
+// Returns true if scrolling was performed.
+func (l *Log) scrollHorizontal(delta int) bool {
+	if !l.canScrollHorizontally() {
+		return false
 	}
 
 	r, c := l.logs.GetScrollOffset()
-	c -= defaultScrollAmount
+	c += delta
 	if c < 0 {
 		c = 0
 	}
 	l.logs.ScrollTo(r, c)
+	return true
+}
 
+func (l *Log) scrollLeftCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	if !l.canScrollHorizontally() {
+		return nil
+	}
+	l.scrollHorizontal(-l.getScrollAmount())
 	return nil
 }
 
@@ -578,36 +610,24 @@ func (l *Log) scrollRightCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if l.app.InCmdMode() {
 		return evt
 	}
-	if l.indicator.TextWrap() {
+	if !l.canScrollHorizontally() {
 		return nil
 	}
-
-	r, c := l.logs.GetScrollOffset()
-	l.logs.ScrollTo(r, c+defaultScrollAmount)
-
+	l.scrollHorizontal(l.getScrollAmount())
 	return nil
 }
 
 func (l *Log) mouseHandler(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-	if l.app.InCmdMode() {
-		return action, event
-	}
-	if l.indicator.TextWrap() {
+	if !l.canScrollHorizontally() {
 		return action, event
 	}
 
 	switch action {
 	case tview.MouseScrollLeft:
-		r, c := l.logs.GetScrollOffset()
-		c -= defaultScrollAmount
-		if c < 0 {
-			c = 0
-		}
-		l.logs.ScrollTo(r, c)
+		l.scrollHorizontal(-l.getScrollAmount())
 		return action, nil
 	case tview.MouseScrollRight:
-		r, c := l.logs.GetScrollOffset()
-		l.logs.ScrollTo(r, c+defaultScrollAmount)
+		l.scrollHorizontal(l.getScrollAmount())
 		return action, nil
 	}
 
