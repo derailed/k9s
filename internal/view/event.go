@@ -28,11 +28,28 @@ func NewEvent(gvr *client.GVR) ResourceViewer {
 func (e *Event) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlD, ui.KeyE, ui.KeyA)
 	aa.Bulk(ui.KeyMap{
-		ui.KeyShiftL: ui.NewKeyAction("Sort LastSeen", e.GetTable().SortColCmd("LAST SEEN", false), false),
-		ui.KeyShiftF: ui.NewKeyAction("Sort FirstSeen", e.GetTable().SortColCmd("FIRST SEEN", false), false),
-		ui.KeyShiftT: ui.NewKeyAction("Sort Type", e.GetTable().SortColCmd("TYPE", true), false),
-		ui.KeyShiftR: ui.NewKeyAction("Sort Reason", e.GetTable().SortColCmd("REASON", true), false),
-		ui.KeyShiftS: ui.NewKeyAction("Sort Source", e.GetTable().SortColCmd("SOURCE", true), false),
-		ui.KeyShiftC: ui.NewKeyAction("Sort Count", e.GetTable().SortColCmd("COUNT", true), false),
+		tcell.KeyCtrlZ: ui.NewKeyAction("Toggle Warnings/Errors", e.toggleWarnErrorCmd, false),
+		ui.KeyShiftL:   ui.NewKeyAction("Sort LastSeen", e.GetTable().SortColCmd("LAST SEEN", false), false),
+		ui.KeyShiftF:   ui.NewKeyAction("Sort FirstSeen", e.GetTable().SortColCmd("FIRST SEEN", false), false),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", e.GetTable().SortColCmd("TYPE", true), false),
+		ui.KeyShiftR:   ui.NewKeyAction("Sort Reason", e.GetTable().SortColCmd("REASON", true), false),
+		ui.KeyShiftS:   ui.NewKeyAction("Sort Source", e.GetTable().SortColCmd("SOURCE", true), false),
+		ui.KeyShiftC:   ui.NewKeyAction("Sort Count", e.GetTable().SortColCmd("COUNT", true), false),
 	})
+}
+
+func (e *Event) toggleWarnErrorCmd(*tcell.EventKey) *tcell.EventKey {
+	b, ok := e.ResourceViewer.(*Browser)
+	if !ok {
+		return nil
+	}
+	filter := b.CmdBuff().GetText()
+	if filter == "Warning|Error" {
+		e.SetFilter("", true)
+		e.App().Flash().Info("Showing all events")
+	} else {
+		e.SetFilter("Warning|Error", true)
+		e.App().Flash().Info("Showing Warning and Error events only")
+	}
+	return nil
 }

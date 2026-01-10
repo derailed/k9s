@@ -309,7 +309,7 @@ func (c *Interpreter) HasContext() (string, bool) {
 	return ctx, ok && ctx != ""
 }
 
-// LabelsArg return the labels map if any.
+// LabelsSelector returns the label selector if any.
 func (c *Interpreter) LabelsSelector() (labels.Selector, error) {
 	return labels.Parse(c.args[labelKey])
 }
