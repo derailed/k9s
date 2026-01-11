@@ -30,11 +30,14 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## Maintenance Release!
 
+Oops! I've missed a PR in the v0.50.17 excitement ;( Dropping v0.50.18 with feelings...
+
 Sponsorships are dropping at an alarming rate which puts this project in the red. This is becoming a concern and sad not to mention unsustainable ;( If you dig `k9s` and want to help the project, please consider `paying it forward!` and don't become just another `satisfied, non paying customer!`. K9s does take a lot of my `free` time to maintain, enhance and keep the light on. Many cool ideas are making it straight to the `freezer` as I just can't budget them in.
 I know many of you work for big corporations, so please put in the word/work and have them help us out via sponsorships or other means.
 
 Thank you!
 
+---
 
 ## A Word From Our Sponsors...
 
@@ -81,9 +84,9 @@ To all the good folks and orgs below that opted to `pay it forward` and join our
 * [#3735](https://github.com/derailed/k9s/issues/3735) Cannot decode secret if there is no get permissions for all secrets
 * [#3708](https://github.com/derailed/k9s/issues/3708) Editing a single Namespace opens the editor with a list of all Namespaces
 * [#3731](https://github.com/derailed/k9s/issues/3731) feat: add neat plugin
-
 * [#3735](https://github.com/derailed/k9s/issues/3735) Cannot decode secret if there is no get permissions for all secrets
 * [#3708](https://github.com/derailed/k9s/issues/3708) Editing a single Namespace opens the editor with a list of all Namespaces
+* [#3649](https://github.com/derailed/k9s/issues/3649) Improved Column Sorting
 
 ---
 
@@ -109,6 +112,7 @@ Please be sure to give `Big Thanks!` and `ATTA Girls/Boys!` to all the fine cont
 * [#3671](https://github.com/derailed/k9s/pull/3671) fix fails to modify or delete namespaces using RBAC
 * [#3669](https://github.com/derailed/k9s/pull/3669) feat: logs column lock
 * [#3663](https://github.com/derailed/k9s/pull/3663) Map Q to "Back"
+* [#3661](https://github.com/derailed/k9s/pull/3661) refactor: remove unused sorting key bindings from various views
 * [#3859](https://github.com/derailed/k9s/pull/3859) fix: update busybox image version to 1.37.0 in configuration files
 * [#3650](https://github.com/derailed/k9s/pull/3650) Sort all columns
 * [#3458](https://github.com/derailed/k9s/pull/3458) Document how to install on Fedora
