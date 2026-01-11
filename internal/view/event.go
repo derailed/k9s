@@ -9,6 +9,8 @@ import (
 	"github.com/derailed/tcell/v2"
 )
 
+const faultsFilter = "Warning|Error"
+
 // Event represents a command alias view.
 type Event struct {
 	ResourceViewer
@@ -28,7 +30,7 @@ func NewEvent(gvr *client.GVR) ResourceViewer {
 func (e *Event) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlD, ui.KeyE, ui.KeyA)
 	aa.Bulk(ui.KeyMap{
-		tcell.KeyCtrlZ: ui.NewKeyAction("Toggle Warnings/Errors", e.toggleWarnErrorCmd, false),
+		tcell.KeyCtrlZ: ui.NewKeyAction("Toggle Faults", e.toggleFaults, false),
 		ui.KeyShiftL:   ui.NewKeyAction("Sort LastSeen", e.GetTable().SortColCmd("LAST SEEN", false), false),
 		ui.KeyShiftF:   ui.NewKeyAction("Sort FirstSeen", e.GetTable().SortColCmd("FIRST SEEN", false), false),
 		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", e.GetTable().SortColCmd("TYPE", true), false),
@@ -38,17 +40,17 @@ func (e *Event) bindKeys(aa *ui.KeyActions) {
 	})
 }
 
-func (e *Event) toggleWarnErrorCmd(*tcell.EventKey) *tcell.EventKey {
+func (e *Event) toggleFaults(*tcell.EventKey) *tcell.EventKey {
 	b, ok := e.ResourceViewer.(*Browser)
 	if !ok {
 		return nil
 	}
 	filter := b.CmdBuff().GetText()
-	if filter == "Warning|Error" {
+	if filter == faultsFilter {
 		e.SetFilter("", true)
 		e.App().Flash().Info("Showing all events")
 	} else {
-		e.SetFilter("Warning|Error", true)
+		e.SetFilter(faultsFilter, true)
 		e.App().Flash().Info("Showing Warning and Error events only")
 	}
 	return nil

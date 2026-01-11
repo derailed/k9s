@@ -115,7 +115,7 @@ func (f *Factory) Get(gvr *client.GVR, fqn string, wait bool, _ labels.Selector)
 		ns = client.BlankNamespace
 	}
 
-	inf, err := f.CanForResource(ns, gvr, []string{client.GetVerb})
+	inf, err := f.CanForInstance(fqn, gvr, []string{client.GetVerb})
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +202,24 @@ func (f *Factory) isClusterWide() bool {
 // CanForResource return an informer is user has access.
 func (f *Factory) CanForResource(ns string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error) {
 	auth, err := f.Client().CanI(ns, gvr, "", verbs)
+	if err != nil {
+		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("%v access denied on resource %q:%q", verbs, ns, gvr)
+	}
+
+	return f.ForResource(ns, gvr)
+}
+
+// CanForResource return an informer is user has access.
+func (f *Factory) CanForInstance(fqn string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error) {
+	ns, n := namespaced(fqn)
+	if client.IsAllNamespace(ns) {
+		ns = client.BlankNamespace
+	}
+
+	auth, err := f.Client().CanI(ns, gvr, n, verbs)
 	if err != nil {
 		return nil, err
 	}

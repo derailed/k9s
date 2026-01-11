@@ -43,6 +43,8 @@ var stdGroups = sets.New[string](
 	"v1",
 )
 
+var scalableRes = sets.New(client.DpGVR, client.StsGVR, client.RsGVR, client.RcGVR)
+
 // ResourceMetas represents a collection of resource metadata.
 type ResourceMetas map[*client.GVR]*metav1.APIResource
 
@@ -356,9 +358,7 @@ func isStandardGroup(gv string) bool {
 }
 
 func isScalable(gvr *client.GVR) bool {
-	ss := sets.New(client.DpGVR, client.StsGVR, client.RsGVR)
-
-	return ss.Has(gvr)
+	return scalableRes.Has(gvr)
 }
 
 var deprecatedGVRs = sets.New(
