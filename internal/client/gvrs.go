@@ -8,6 +8,7 @@ var (
 	StsGVR = NewGVR("apps/v1/statefulsets")
 	DsGVR  = NewGVR("apps/v1/daemonsets")
 	RsGVR  = NewGVR("apps/v1/replicasets")
+	RcGVR  = NewGVR("apps/v1/replicationcontrollers")
 
 	// Core...
 	SaGVR   = NewGVR("v1/serviceaccounts")
