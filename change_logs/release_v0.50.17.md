@@ -25,6 +25,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 * [A cool new way - Joe Satriani](https://www.youtube.com/watch?v=4apA948yOF0)
 * [Song for you - Ray Charles](https://www.youtube.com/watch?v=CzAkTrDiXxg)
 * [Kill the pain - SYZGYX](https://www.youtube.com/watch?v=5XuvMhHZorw&list=RD5XuvMhHZorw&start_radio=1)
+
 ---
 
 ## Maintenance Release!
