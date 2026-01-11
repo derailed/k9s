@@ -17,6 +17,7 @@ require (
 	github.com/go-errors/errors v1.5.1
 	github.com/itchyny/gojq v0.12.18
 	github.com/lmittmann/tint v1.0.7
+	github.com/lucasb-eyer/go-colorful v1.3.0
 	github.com/mattn/go-colorable v0.1.14
 	github.com/mattn/go-runewidth v0.0.19
 	github.com/olekukonko/tablewriter v1.1.2
@@ -243,7 +244,6 @@ require (
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
-	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/masahiro331/go-mvn-version v0.0.0-20250131095131-f4974fa13b8a // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
