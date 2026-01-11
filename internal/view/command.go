@@ -47,15 +47,20 @@ func NewCommand(app *App) *Command {
 
 // AliasesFor gather all known aliases for a given resource.
 func (c *Command) AliasesFor(gvr *client.GVR) sets.Set[string] {
+	if c.alias == nil {
+		return sets.New[string]()
+	}
 	return c.alias.AliasesFor(gvr)
 }
 
 // Init initializes the command.
 func (c *Command) Init(path string) error {
-	c.alias = dao.NewAlias(c.app.factory)
-	if _, err := c.alias.Ensure(path); err != nil {
-		slog.Error("Ensure aliases failed", slogs.Error, err)
-		return err
+	if c.app.factory != nil {
+		c.alias = dao.NewAlias(c.app.factory)
+		if _, err := c.alias.Ensure(path); err != nil {
+			slog.Error("Ensure aliases failed", slogs.Error, err)
+			return err
+		}
 	}
 	customViewers = loadCustomViewers()
 
@@ -66,6 +71,10 @@ func (c *Command) Init(path string) error {
 func (c *Command) Reset(path string, nuke bool) error {
 	c.mx.Lock()
 	defer c.mx.Unlock()
+
+	if c.alias == nil {
+		return nil
+	}
 
 	if nuke {
 		c.alias.Clear()
@@ -138,6 +147,9 @@ func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	arg, cns, ok := p.XrayArgs()
 	if !ok {
 		return errors.New("invalid command. use `xray xxx`")
+	}
+	if c.alias == nil {
+		return fmt.Errorf("no connection available")
 	}
 	gvr, ok := c.alias.Resolve(cmd.NewInterpreter(arg))
 	if !ok {
@@ -301,6 +313,9 @@ func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 }
 
 func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, *cmd.Interpreter, error) {
+	if c.alias == nil {
+		return client.NoGVR, nil, nil, fmt.Errorf("no connection available")
+	}
 	gvr, ok := c.alias.Resolve(p)
 	if !ok {
 		return client.NoGVR, nil, nil, fmt.Errorf("`%s` command not found", p.Cmd())

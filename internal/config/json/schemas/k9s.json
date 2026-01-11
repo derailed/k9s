@@ -42,7 +42,8 @@
             "reactive": {"type": "boolean"},
             "skin": {"type": "string"},
             "defaultsToFullScreen": {"type": "boolean"},
-            "useFullGVRTitle": {"type": "boolean"}
+            "useFullGVRTitle": {"type": "boolean"},
+            "invert": {"type": "boolean"}
           }
         },
         "shellPod": {
