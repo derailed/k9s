@@ -1,5 +1,5 @@
 NAME            := k9s
-VERSION         ?= v0.50.16
+VERSION         ?= v0.50.17
 PACKAGE         := github.com/derailed/$(NAME)
 OUTPUT_BIN      ?= execs/${NAME}
 GO_FLAGS        ?=
