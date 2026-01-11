@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"syscall"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -149,6 +150,10 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	})
+
+	if a.Config.K9s.IsSuspendable() {
+		a.actions.Add(tcell.KeyCtrlZ, NewKeyAction("Suspend", a.suspendCmd, false))
+	}
 }
 
 // BailOut exits the application.
@@ -201,6 +206,21 @@ func (a *App) CmdBuff() *model.FishBuff {
 // HasCmd check if cmd buffer is active and has a command.
 func (a *App) HasCmd() bool {
 	return a.cmdBuff.IsActive() && !a.cmdBuff.Empty()
+}
+
+func (a *App) suspendCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.InCmdMode() {
+		return evt
+	}
+
+	a.Suspend(func() {
+		err := syscall.Kill(syscall.Getpid(), syscall.SIGTSTP)
+		if err != nil {
+			a.Flash().Err(err)
+		}
+	})
+
+	return nil
 }
 
 // InCmdMode check if command mode is active.
