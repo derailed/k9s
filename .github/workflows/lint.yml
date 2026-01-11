@@ -21,4 +21,4 @@ jobs:
         uses: golangci/golangci-lint-action@v9.2.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: v2.1.1
+          version: v2.6
