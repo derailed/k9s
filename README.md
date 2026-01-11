@@ -378,6 +378,7 @@ K9s uses aliases to navigate most K8s resources.
 | To view all saved resources                                                     | `:`screendump or sd⏎          |                                                                        |
 | To delete a resource (TAB and ENTER to confirm)                                 | `ctrl-d`                      |                                                                        |
 | To kill a resource (no confirmation dialog, equivalent to kubectl delete --now) | `ctrl-k`                      |                                                                        |
+| To evict a pod (no confirmation dialog)                                         | `ctrl-v`                      |                                                                        |
 | Launch pulses view                                                              | `:`pulses or pu⏎              |                                                                        |
 | Launch XRay view                                                                | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
 | Launch Popeye view                                                              | `:`popeye or pop⏎             | See [popeye](#popeye)                                                  |
