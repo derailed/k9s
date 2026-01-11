@@ -477,9 +477,12 @@ func NewStyles() *Styles {
 }
 
 // Reset resets styles.
-func (s *Styles) Reset() {
+func (s *Styles) Reset(invert bool) {
 	if err := yaml.Unmarshal(stockSkinTpl, s); err != nil {
 		s.K9s = newStyle()
+	}
+	if invert {
+		s.K9s.Invert()
 	}
 }
 
@@ -569,8 +572,203 @@ func (s *Styles) Views() Views {
 	return s.K9s.Views
 }
 
+// Invert inverts all colors in the Style.
+func (s *Style) Invert() {
+	s.Body.Invert()
+	s.Prompt.Invert()
+	s.Help.Invert()
+	s.Frame.Invert()
+	s.Info.Invert()
+	s.Views.Invert()
+	s.Dialog.Invert()
+}
+
+// Invert inverts all colors in Body.
+func (b *Body) Invert() {
+	b.FgColor = b.FgColor.InvertColor()
+	b.BgColor = b.BgColor.InvertColor()
+	b.LogoColor = b.LogoColor.InvertColor()
+	b.LogoColorMsg = b.LogoColorMsg.InvertColor()
+	b.LogoColorInfo = b.LogoColorInfo.InvertColor()
+	b.LogoColorWarn = b.LogoColorWarn.InvertColor()
+	b.LogoColorError = b.LogoColorError.InvertColor()
+}
+
+// Invert inverts all colors in Prompt.
+func (p *Prompt) Invert() {
+	p.FgColor = p.FgColor.InvertColor()
+	p.BgColor = p.BgColor.InvertColor()
+	p.SuggestColor = p.SuggestColor.InvertColor()
+	p.Border.Invert()
+}
+
+// Invert inverts all colors in PromptBorder.
+func (p *PromptBorder) Invert() {
+	p.CommandColor = p.CommandColor.InvertColor()
+	p.DefaultColor = p.DefaultColor.InvertColor()
+}
+
+// Invert inverts all colors in Help.
+func (h *Help) Invert() {
+	h.FgColor = h.FgColor.InvertColor()
+	h.BgColor = h.BgColor.InvertColor()
+	h.SectionColor = h.SectionColor.InvertColor()
+	h.KeyColor = h.KeyColor.InvertColor()
+	h.NumKeyColor = h.NumKeyColor.InvertColor()
+}
+
+// Invert inverts all colors in Dialog.
+func (d *Dialog) Invert() {
+	d.FgColor = d.FgColor.InvertColor()
+	d.BgColor = d.BgColor.InvertColor()
+	d.ButtonFgColor = d.ButtonFgColor.InvertColor()
+	d.ButtonBgColor = d.ButtonBgColor.InvertColor()
+	d.ButtonFocusFgColor = d.ButtonFocusFgColor.InvertColor()
+	d.ButtonFocusBgColor = d.ButtonFocusBgColor.InvertColor()
+	d.LabelFgColor = d.LabelFgColor.InvertColor()
+	d.FieldFgColor = d.FieldFgColor.InvertColor()
+}
+
+// Invert inverts all colors in Frame.
+func (f *Frame) Invert() {
+	f.Title.Invert()
+	f.Border.Invert()
+	f.Menu.Invert()
+	f.Crumb.Invert()
+	f.Status.Invert()
+}
+
+// Invert inverts all colors in Title.
+func (t *Title) Invert() {
+	t.FgColor = t.FgColor.InvertColor()
+	t.BgColor = t.BgColor.InvertColor()
+	t.HighlightColor = t.HighlightColor.InvertColor()
+	t.CounterColor = t.CounterColor.InvertColor()
+	t.FilterColor = t.FilterColor.InvertColor()
+}
+
+// Invert inverts all colors in Border.
+func (b *Border) Invert() {
+	b.FgColor = b.FgColor.InvertColor()
+	b.FocusColor = b.FocusColor.InvertColor()
+}
+
+// Invert inverts all colors in Menu.
+func (m *Menu) Invert() {
+	m.FgColor = m.FgColor.InvertColor()
+	m.KeyColor = m.KeyColor.InvertColor()
+	m.NumKeyColor = m.NumKeyColor.InvertColor()
+}
+
+// Invert inverts all colors in Crumb.
+func (c *Crumb) Invert() {
+	c.FgColor = c.FgColor.InvertColor()
+	c.BgColor = c.BgColor.InvertColor()
+	c.ActiveColor = c.ActiveColor.InvertColor()
+}
+
+// Invert inverts all colors in Status.
+func (s *Status) Invert() {
+	s.NewColor = s.NewColor.InvertColor()
+	s.ModifyColor = s.ModifyColor.InvertColor()
+	s.AddColor = s.AddColor.InvertColor()
+	s.PendingColor = s.PendingColor.InvertColor()
+	s.ErrorColor = s.ErrorColor.InvertColor()
+	s.HighlightColor = s.HighlightColor.InvertColor()
+	s.KillColor = s.KillColor.InvertColor()
+	s.CompletedColor = s.CompletedColor.InvertColor()
+}
+
+// Invert inverts all colors in Info.
+func (i *Info) Invert() {
+	i.SectionColor = i.SectionColor.InvertColor()
+	i.FgColor = i.FgColor.InvertColor()
+	i.CPUColor = i.CPUColor.InvertColor()
+	i.MEMColor = i.MEMColor.InvertColor()
+	i.K9sRevColor = i.K9sRevColor.InvertColor()
+}
+
+// Invert inverts all colors in Views.
+func (v *Views) Invert() {
+	v.Table.Invert()
+	v.Xray.Invert()
+	v.Charts.Invert()
+	v.Yaml.Invert()
+	v.Picker.Invert()
+	v.Log.Invert()
+}
+
+// Invert inverts all colors in Table.
+func (t *Table) Invert() {
+	t.FgColor = t.FgColor.InvertColor()
+	t.BgColor = t.BgColor.InvertColor()
+	t.CursorFgColor = t.CursorFgColor.InvertColor()
+	t.CursorBgColor = t.CursorBgColor.InvertColor()
+	t.MarkColor = t.MarkColor.InvertColor()
+	t.Header.Invert()
+}
+
+// Invert inverts all colors in TableHeader.
+func (t *TableHeader) Invert() {
+	t.FgColor = t.FgColor.InvertColor()
+	t.BgColor = t.BgColor.InvertColor()
+	t.SorterColor = t.SorterColor.InvertColor()
+}
+
+// Invert inverts all colors in Xray.
+func (x *Xray) Invert() {
+	x.FgColor = x.FgColor.InvertColor()
+	x.BgColor = x.BgColor.InvertColor()
+	x.CursorColor = x.CursorColor.InvertColor()
+	x.CursorTextColor = x.CursorTextColor.InvertColor()
+	x.GraphicColor = x.GraphicColor.InvertColor()
+}
+
+// Invert inverts all colors in Charts.
+func (c *Charts) Invert() {
+	c.BgColor = c.BgColor.InvertColor()
+	c.DialBgColor = c.DialBgColor.InvertColor()
+	c.ChartBgColor = c.ChartBgColor.InvertColor()
+	c.FocusFgColor = c.FocusFgColor.InvertColor()
+	c.FocusBgColor = c.FocusBgColor.InvertColor()
+	c.DefaultDialColors = c.DefaultDialColors.Invert()
+	c.DefaultChartColors = c.DefaultChartColors.Invert()
+	for k, v := range c.ResourceColors {
+		c.ResourceColors[k] = v.Invert()
+	}
+}
+
+// Invert inverts all colors in Yaml.
+func (y *Yaml) Invert() {
+	y.KeyColor = y.KeyColor.InvertColor()
+	y.ValueColor = y.ValueColor.InvertColor()
+	y.ColonColor = y.ColonColor.InvertColor()
+}
+
+// Invert inverts all colors in Picker.
+func (p *Picker) Invert() {
+	p.MainColor = p.MainColor.InvertColor()
+	p.FocusColor = p.FocusColor.InvertColor()
+	p.ShortcutColor = p.ShortcutColor.InvertColor()
+}
+
+// Invert inverts all colors in Log.
+func (l *Log) Invert() {
+	l.FgColor = l.FgColor.InvertColor()
+	l.BgColor = l.BgColor.InvertColor()
+	l.Indicator.Invert()
+}
+
+// Invert inverts all colors in LogIndicator.
+func (l *LogIndicator) Invert() {
+	l.FgColor = l.FgColor.InvertColor()
+	l.BgColor = l.BgColor.InvertColor()
+	l.ToggleOnColor = l.ToggleOnColor.InvertColor()
+	l.ToggleOffColor = l.ToggleOffColor.InvertColor()
+}
+
 // Load K9s configuration from file.
-func (s *Styles) Load(path string) error {
+func (s *Styles) Load(path string, invert bool) error {
 	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -580,6 +778,10 @@ func (s *Styles) Load(path string) error {
 	}
 	if err := yaml.Unmarshal(bb, s); err != nil {
 		return err
+	}
+
+	if invert {
+		s.K9s.Invert()
 	}
 
 	return nil

@@ -247,31 +247,55 @@ func (t *Table) sortSelectedColumnCmd(*tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := t.GetSelectedItem()
-	if path == "" {
+	paths := t.GetSelectedItems()
+	if len(paths) == 0 {
 		return evt
 	}
-	_, n := client.Namespaced(path)
-	if err := clipboardWrite(n); err != nil {
+
+	names := make([]string, 0, len(paths))
+	for _, path := range paths {
+		_, n := client.Namespaced(path)
+		names = append(names, n)
+	}
+
+	text := strings.Join(names, "\n")
+	if err := clipboardWrite(text); err != nil {
 		t.app.Flash().Err(err)
 		return nil
 	}
-	t.app.Flash().Info("Resource name copied to clipboard...")
+
+	if len(names) > 1 {
+		t.app.Flash().Infof("%d resource names copied to clipboard...", len(names))
+	} else {
+		t.app.Flash().Info("Resource name copied to clipboard...")
+	}
 
 	return nil
 }
 
 func (t *Table) cpNsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := t.GetSelectedItem()
-	if path == "" {
+	paths := t.GetSelectedItems()
+	if len(paths) == 0 {
 		return evt
 	}
-	ns, _ := client.Namespaced(path)
-	if err := clipboardWrite(ns); err != nil {
+
+	namespaces := make([]string, 0, len(paths))
+	for _, path := range paths {
+		ns, _ := client.Namespaced(path)
+		namespaces = append(namespaces, ns)
+	}
+
+	text := strings.Join(namespaces, "\n")
+	if err := clipboardWrite(text); err != nil {
 		t.app.Flash().Err(err)
 		return nil
 	}
-	t.app.Flash().Info("Resource namespace copied to clipboard...")
+
+	if len(namespaces) > 1 {
+		t.app.Flash().Infof("%d resource namespaces copied to clipboard...", len(namespaces))
+	} else {
+		t.app.Flash().Info("Resource namespace copied to clipboard...")
+	}
 
 	return nil
 }

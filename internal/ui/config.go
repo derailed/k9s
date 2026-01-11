@@ -266,39 +266,40 @@ func (c *Configurator) RefreshStyles(s synchronizer) {
 }
 
 func (c *Configurator) loadSkinFile(synchronizer) {
+	invert := c.Config.K9s.IsInvert()
 	skin, ok := c.activeSkin()
 	if !ok {
 		slog.Debug("No custom skin found. Using stock skin")
-		c.updateStyles("")
+		c.updateStyles("", invert)
 		return
 	}
 
 	skinFile := config.SkinFileFromName(skin)
 	slog.Debug("Loading skin file", slogs.Skin, skinFile)
-	if err := c.Styles.Load(skinFile); err != nil {
+	if err := c.Styles.Load(skinFile, invert); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			slog.Warn("Skin file not found in skins dir",
 				slogs.Skin, filepath.Base(skinFile),
 				slogs.Dir, config.AppSkinsDir,
 				slogs.Error, err,
 			)
-			c.updateStyles("")
+			c.updateStyles("", invert)
 		} else {
 			slog.Error("Failed to parse skin file",
 				slogs.Path, filepath.Base(skinFile),
 				slogs.Error, err,
 			)
-			c.updateStyles(skinFile)
+			c.updateStyles(skinFile, invert)
 		}
 	} else {
-		c.updateStyles(skinFile)
+		c.updateStyles(skinFile, invert)
 	}
 }
 
-func (c *Configurator) updateStyles(f string) {
+func (c *Configurator) updateStyles(f string, invert bool) {
 	c.skinFile = f
 	if f == "" {
-		c.Styles.Reset()
+		c.Styles.Reset(invert)
 	}
 	c.Styles.Update()
 

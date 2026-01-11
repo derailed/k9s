@@ -17,6 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/derailed/k9s/internal/slogs"
+	"github.com/karrick/godirwalk"
 	"gopkg.in/yaml.v3"
 )
 
@@ -136,15 +137,19 @@ func (p Plugins) loadDir(dir string) error {
 	}
 
 	var errs error
-	errs = errors.Join(errs, filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() || !isYamlFile(info.Name()) {
+	errs = errors.Join(errs, godirwalk.Walk(dir, &godirwalk.Options{
+		FollowSymbolicLinks: true,
+		Callback: func(path string, de *godirwalk.Dirent) error {
+			if de.IsDir() || !isYamlFile(de.Name()) {
+				return nil
+			}
+			errs = errors.Join(errs, p.load(path))
 			return nil
-		}
-		errs = errors.Join(errs, p.load(path))
-		return nil
+		},
+		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
+			slog.Warn("Error at %s: %v - skipping node", slogs.Path, osPathname, slogs.Error, err)
+			return godirwalk.SkipNode
+		},
 	}))
 
 	return errs
