@@ -7,7 +7,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
+	_ "unsafe"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -61,7 +63,7 @@ type Table struct {
 
 // NewTable returns a new table view.
 func NewTable(gvr *client.GVR) *Table {
-	return &Table{
+	tbl := &Table{
 		SelectTable: &SelectTable{
 			Table: tview.NewTable(),
 			model: model.NewTable(gvr),
@@ -73,7 +75,29 @@ func NewTable(gvr *client.GVR) *Table {
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: model1.SortColumn{ASC: true},
 	}
+	tbl.SetMouseCapture(tbl.mouseCapture)
+	return tbl
 }
+
+func (t *Table) mouseCapture(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	x, y := event.Position()
+	if t.InRect(x, y) && action == tview.MouseLeftClick {
+		if row, col := tableCellAt(t.Table, x, y); row == 0 {
+			name := t.GetCell(row, col).Text
+			name, _, _ = strings.Cut(name, "[")
+			sc := t.getSortCol()
+			asc := sc.Name != name || !sc.ASC
+			t.SetSortCol(name, asc)
+			t.setMSort(true)
+			t.Refresh()
+			event = nil
+		}
+	}
+	return action, event
+}
+
+//go:linkname tableCellAt github.com/derailed/tview.(*Table).cellAt
+func tableCellAt(*tview.Table, int, int) (int, int)
 
 // SetFullGVR toggles full GVR title display.
 func (t *Table) SetFullGVR(b bool) {
