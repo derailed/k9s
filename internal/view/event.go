@@ -31,12 +31,6 @@ func (e *Event) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlD, ui.KeyE, ui.KeyA)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyCtrlZ: ui.NewKeyAction("Toggle Faults", e.toggleFaults, false),
-		ui.KeyShiftL:   ui.NewKeyAction("Sort LastSeen", e.GetTable().SortColCmd("LAST SEEN", false), false),
-		ui.KeyShiftF:   ui.NewKeyAction("Sort FirstSeen", e.GetTable().SortColCmd("FIRST SEEN", false), false),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", e.GetTable().SortColCmd("TYPE", true), false),
-		ui.KeyShiftR:   ui.NewKeyAction("Sort Reason", e.GetTable().SortColCmd("REASON", true), false),
-		ui.KeyShiftS:   ui.NewKeyAction("Sort Source", e.GetTable().SortColCmd("SOURCE", true), false),
-		ui.KeyShiftC:   ui.NewKeyAction("Sort Count", e.GetTable().SortColCmd("COUNT", true), false),
 	})
 }
 

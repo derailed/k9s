@@ -20,7 +20,7 @@ func TestPodNew(t *testing.T) {
 
 	require.NoError(t, po.Init(makeCtx(t)))
 	assert.Equal(t, "Pods", po.Name())
-	assert.Len(t, po.Hints(), 28)
+	assert.Len(t, po.Hints(), 19)
 }
 
 // Helpers...
