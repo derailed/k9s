@@ -18,18 +18,9 @@ func NewCRD(gvr *client.GVR) ResourceViewer {
 	s := CRD{
 		ResourceViewer: NewOwnerExtender(NewBrowser(gvr)),
 	}
-	s.AddBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showCRD)
 
 	return &s
-}
-
-func (s *CRD) bindKeys(aa *ui.KeyActions) {
-	aa.Bulk(ui.KeyMap{
-		ui.KeyShiftV: ui.NewKeyAction("Sort Versions", s.GetTable().SortColCmd("VERSIONS", false), true),
-		ui.KeyShiftR: ui.NewKeyAction("Sort Group", s.GetTable().SortColCmd("GROUP", true), true),
-		ui.KeyShiftK: ui.NewKeyAction("Sort Kind", s.GetTable().SortColCmd("KIND", true), true),
-	})
 }
 
 func (*CRD) showCRD(app *App, _ ui.Tabular, _ *client.GVR, path string) {

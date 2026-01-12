@@ -31,20 +31,9 @@ func NewDaemonSet(gvr *client.GVR) ResourceViewer {
 			),
 		),
 	)
-	d.AddBindKeysFn(d.bindKeys)
 	d.GetTable().SetEnterFn(d.showPods)
 
 	return &d
-}
-
-func (d *DaemonSet) bindKeys(aa *ui.KeyActions) {
-	aa.Bulk(ui.KeyMap{
-		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", d.GetTable().SortColCmd("DESIRED", true), false),
-		ui.KeyShiftC: ui.NewKeyAction("Sort Current", d.GetTable().SortColCmd("CURRENT", true), false),
-		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", d.GetTable().SortColCmd(readyCol, true), false),
-		ui.KeyShiftU: ui.NewKeyAction("Sort UpToDate", d.GetTable().SortColCmd(uptodateCol, true), false),
-		ui.KeyShiftL: ui.NewKeyAction("Sort Available", d.GetTable().SortColCmd(availCol, true), false),
-	})
 }
 
 func (d *DaemonSet) showPods(app *App, _ ui.Tabular, _ *client.GVR, path string) {

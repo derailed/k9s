@@ -150,6 +150,7 @@ func (b *Browser) suggestFilter() model.SuggestionFunc {
 func (b *Browser) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
+		ui.KeyQ:         ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
 		tcell.KeyHelp:   ui.NewSharedKeyAction("Help", b.helpCmd, false),
 	})
@@ -516,6 +517,9 @@ func editRes(app *App, gvr *client.GVR, path string) error {
 		return fmt.Errorf("nothing selected %q", path)
 	}
 	ns, n := client.Namespaced(path)
+	if n == "" {
+		return fmt.Errorf("missing resource name in path %q", path)
+	}
 	if client.IsClusterScoped(ns) {
 		ns = client.BlankNamespace
 	}
