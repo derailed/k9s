@@ -91,13 +91,14 @@ type (
 
 	// Body tracks body styles.
 	Body struct {
-		FgColor        Color `json:"fgColor" yaml:"fgColor"`
-		BgColor        Color `json:"bgColor" yaml:"bgColor"`
-		LogoColor      Color `json:"logoColor" yaml:"logoColor"`
-		LogoColorMsg   Color `json:"logoColorMsg" yaml:"logoColorMsg"`
-		LogoColorInfo  Color `json:"logoColorInfo" yaml:"logoColorInfo"`
-		LogoColorWarn  Color `json:"logoColorWarn" yaml:"logoColorWarn"`
-		LogoColorError Color `json:"logoColorError" yaml:"logoColorError"`
+		FgColor        Color  `json:"fgColor" yaml:"fgColor"`
+		BgColor        Color  `json:"bgColor" yaml:"bgColor"`
+		LogoColor      Color  `json:"logoColor" yaml:"logoColor"`
+		LogoColorMsg   Color  `json:"logoColorMsg" yaml:"logoColorMsg"`
+		LogoColorInfo  Color  `json:"logoColorInfo" yaml:"logoColorInfo"`
+		LogoColorWarn  Color  `json:"logoColorWarn" yaml:"logoColorWarn"`
+		LogoColorError Color  `json:"logoColorError" yaml:"logoColorError"`
+		LogoUrl        string `json:"logoUrl" yaml:"logoUrl"`
 	}
 
 	// Dialog tracks dialog styles.
@@ -343,6 +344,7 @@ func newBody() Body {
 		LogoColorInfo:  "green",
 		LogoColorWarn:  "mediumvioletred",
 		LogoColorError: "red",
+		LogoUrl:        "",
 	}
 }
 
@@ -769,6 +771,7 @@ func (l *LogIndicator) Invert() {
 
 // Load K9s configuration from file.
 func (s *Styles) Load(path string, invert bool) error {
+	s.K9s.Body.LogoUrl = ""
 	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
