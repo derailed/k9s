@@ -29,12 +29,12 @@ type synchronizer interface {
 
 // Configurator represents an application configuration.
 type Configurator struct {
-	Config            *config.Config
-	Styles            *config.Styles
-	customView        *config.CustomView
-	customNavigations *config.CustomNavigations
-	BenchFile         string
-	skinFile          string
+	Config      *config.Config
+	Styles      *config.Styles
+	customView  *config.CustomView
+	customJumps *config.CustomJumps
+	BenchFile   string
+	skinFile    string
 }
 
 func (c *Configurator) CustomView() *config.CustomView {
@@ -45,13 +45,13 @@ func (c *Configurator) CustomView() *config.CustomView {
 	return c.customView
 }
 
-// CustomNavigations returns the custom navigations configuration.
-func (c *Configurator) CustomNavigations() *config.CustomNavigations {
-	if c.customNavigations == nil {
-		c.customNavigations = config.NewCustomNavigations()
+// CustomJumps returns the custom jumps configuration.
+func (c *Configurator) CustomJumps() *config.CustomJumps {
+	if c.customJumps == nil {
+		c.customJumps = config.NewCustomJumps()
 	}
 
-	return c.customNavigations
+	return c.customJumps
 }
 
 // HasSkin returns true if a skin file was located.
@@ -105,8 +105,8 @@ func (c *Configurator) RefreshCustomViews() error {
 	return c.CustomView().Load(config.AppViewsFile)
 }
 
-// CustomNavigationsWatcher watches for navigation config file changes.
-func (c *Configurator) CustomNavigationsWatcher(ctx context.Context, s synchronizer) error {
+// CustomJumpsWatcher watches for jump config file changes.
+func (c *Configurator) CustomJumpsWatcher(ctx context.Context, s synchronizer) error {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -116,10 +116,10 @@ func (c *Configurator) CustomNavigationsWatcher(ctx context.Context, s synchroni
 		for {
 			select {
 			case evt := <-w.Events:
-				if evt.Name == config.AppNavigationsFile && evt.Op != fsnotify.Chmod {
+				if evt.Name == config.AppJumpsFile && evt.Op != fsnotify.Chmod {
 					s.QueueUpdateDraw(func() {
-						if err := c.RefreshCustomNavigations(); err != nil {
-							slog.Warn("Custom navigations refresh failed", slogs.Error, err)
+						if err := c.RefreshCustomJumps(); err != nil {
+							slog.Warn("Custom jumps refresh failed", slogs.Error, err)
 						}
 					})
 				}
@@ -127,7 +127,7 @@ func (c *Configurator) CustomNavigationsWatcher(ctx context.Context, s synchroni
 				slog.Warn("CustomNavigations watcher failed", slogs.Error, err)
 				return
 			case <-ctx.Done():
-				slog.Debug("CustomNavigationsWatcher canceled", slogs.FileName, config.AppNavigationsFile)
+				slog.Debug("CustomNavigationsWatcher canceled", slogs.FileName, config.AppJumpsFile)
 				if err := w.Close(); err != nil {
 					slog.Error("Closing CustomNavigations watcher", slogs.Error, err)
 				}
@@ -136,19 +136,19 @@ func (c *Configurator) CustomNavigationsWatcher(ctx context.Context, s synchroni
 		}
 	}()
 
-	if err := w.Add(config.AppNavigationsFile); err != nil {
+	if err := w.Add(config.AppJumpsFile); err != nil {
 		return err
 	}
-	slog.Debug("Loading custom navigations", slogs.FileName, config.AppNavigationsFile)
+	slog.Debug("Loading custom jumps", slogs.FileName, config.AppJumpsFile)
 
-	return c.RefreshCustomNavigations()
+	return c.RefreshCustomJumps()
 }
 
-// RefreshCustomNavigations load navigation configuration changes.
-func (c *Configurator) RefreshCustomNavigations() error {
-	c.CustomNavigations().Reset()
+// RefreshCustomJumps load jump configuration changes.
+func (c *Configurator) RefreshCustomJumps() error {
+	c.CustomJumps().Reset()
 
-	return c.CustomNavigations().Load(config.AppNavigationsFile)
+	return c.CustomJumps().Load(config.AppJumpsFile)
 }
 
 // SkinsDirWatcher watches for skin directory file changes.
