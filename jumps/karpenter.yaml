@@ -1,6 +1,5 @@
-k9s:
-  navigations:
-    "karpenter.sh/v1/nodepools":
-      targetGVR: "v1/nodes"
-      labelSelector: "karpenter.sh/nodepool={{.metadata.name}}"
-      targetNamespace: "all"  # Nodes are cluster-scoped
+jumps:
+  "karpenter.sh/v1/nodepools":
+    targetGVR: "v1/nodes"
+    labelSelector: "karpenter.sh/nodepool={{.metadata.name}}"
+    targetNamespace: "all"  # Nodes are cluster-scoped
