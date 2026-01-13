@@ -71,13 +71,13 @@ func (n *CustomJumps) Load(path string) error {
 		)
 	}
 	var in struct {
-		K9s *CustomJumps `yaml:"k9s"`
+		Jumps map[string]JumpRule `yaml:"jumps"`
 	}
 	if err := yaml.Unmarshal(bb, &in); err != nil {
 		return err
 	}
-	if in.K9s != nil {
-		n.Jumps = in.K9s.Jumps
+	if in.Jumps != nil {
+		n.Jumps = in.Jumps
 	}
 
 	return nil
