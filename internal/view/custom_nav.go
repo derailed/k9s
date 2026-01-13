@@ -20,8 +20,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// customNavigate handles custom navigation between CRDs based on user configuration.
-func customNavigate(app *App, sourceGVR *client.GVR, sourcePath string, rule *config.NavigationRule) error {
+// customJump handles custom jumps between CRDs based on user configuration.
+func customJump(app *App, sourceGVR *client.GVR, sourcePath string, rule *config.JumpRule) error {
 	// Get the source resource to extract metadata for templating
 	sourceObj, err := fetchResourceObject(app, sourceGVR, sourcePath)
 	if err != nil {
@@ -53,6 +53,11 @@ func customNavigate(app *App, sourceGVR *client.GVR, sourcePath string, rule *co
 		}
 	}
 
+	// Set label selector if we have one
+	if labelSel != nil {
+		v.SetLabelSelector(labelSel, true)
+	}
+
 	// Build field selector if specified
 	var fieldSel string
 	if rule.FieldSelector != "" {
@@ -63,7 +68,7 @@ func customNavigate(app *App, sourceGVR *client.GVR, sourcePath string, rule *co
 		}
 	}
 
-	// Set up the context for the navigation
+	// Set up the context for the jump
 	v.SetContextFn(func(ctx context.Context) context.Context {
 		if fieldSel != "" {
 			ctx = context.WithValue(ctx, internal.KeyFields, fieldSel)
@@ -71,15 +76,10 @@ func customNavigate(app *App, sourceGVR *client.GVR, sourcePath string, rule *co
 		return ctx
 	})
 
-	// Set label selector if we have one
-	if labelSel != nil {
-		v.SetLabelSelector(labelSel, true)
-	}
-
-	// Navigate to the target namespace if needed
+	// Jump to the target namespace if needed
 	if targetNS != "" && targetNS != client.NamespaceAll {
 		if err := app.Config.SetActiveNamespace(targetNS); err != nil {
-			slog.Error("Unable to set active namespace during custom navigation", slogs.Error, err)
+			slog.Error("Unable to set active namespace during custom jump", slogs.Error, err)
 		}
 	}
 
@@ -116,7 +116,12 @@ func determineTargetNamespace(sourcePath, targetNSConfig string, sourceObj map[s
 	sourceNS, _ := client.Namespaced(sourcePath)
 
 	switch targetNSConfig {
-	case "", "same":
+	case "":
+		// Default: use the source resource's namespace
+		// If source is cluster-scoped, default to all namespaces
+		if client.IsClusterScoped(sourceNS) {
+			return client.NamespaceAll, nil
+		}
 		return sourceNS, nil
 	case "all":
 		return client.NamespaceAll, nil

@@ -1,0 +1,6 @@
+k9s:
+  navigations:    
+    "cert-manager.io/v1/certificates":
+      targetGVR: "v1/secrets"
+      fieldSelector: "metadata.name={{.metadata.name}}"
+      targetNamespace: "{{.metadata.namespace}}"

@@ -805,11 +805,11 @@ views:
 
 ---
 
-## Custom Resource Navigations
+## Resource Jumps
 
-K9s allows you to define custom navigation shortcuts between Custom Resource Definitions (CRDs) and related resources. This is particularly useful for operators and custom controllers where you want to quickly navigate from one CRD to its related resources.
+K9s allows you to define custom jump shortcuts between Custom Resource Definitions (CRDs) and their related resources. This feature enables you to quickly jump from one CRD to its dependent or associated resources, similar to the built-in "jump to owner" behavior.
 
-By default, K9s provides built-in navigation for standard Kubernetes resources (e.g., Deployment → Pods, Node → Pods). With custom navigations, you can extend this behavior to your own CRDs without modifying k9s source code.
+By default, K9s provides built-in jumps for standard Kubernetes resources (e.g., Deployment → Pods, Node → Pods). With custom jumps, you can extend this behavior to your own CRDs without modifying k9s source code.
 
 To use this feature, create a configuration file at `$XDG_CONFIG_HOME/k9s/navigations.yaml`.
 
@@ -819,23 +819,22 @@ To use this feature, create a configuration file at `$XDG_CONFIG_HOME/k9s/naviga
 # $XDG_CONFIG_HOME/k9s/navigations.yaml
 k9s:
   navigations:
-    # Define navigation from source GVR to target GVR
+    # Define jump from source GVR to target GVR
     "myoperator.io/v1/patchplans":
       targetGVR: "myoperator.io/v1/patchjobs"
       fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
-      targetNamespace: "same"
 ```
 
 ### Configuration Fields
 
 * **Source GVR** (map key): The Group/Version/Resource of the source CRD in format `group/version/resource` or `version/resource` for core resources
-* **targetGVR**: The target resource to navigate to when pressing Enter
+* **targetGVR**: The target resource to jump to
 * **labelSelector** (optional): Kubernetes label selector to filter target resources. Supports Go template syntax
 * **fieldSelector** (optional): Kubernetes field selector to filter target resources. Supports Go template syntax
 * **targetNamespace** (optional): Controls namespace behavior:
-  * `same` (default): Use the same namespace as the source resource
+  * Empty (default): Use the source resource's namespace (or "all" if source is cluster-scoped)
   * `all`: View resources across all namespaces
-  * `<namespace-name>`: Navigate to a specific namespace
+  * `<namespace-name>`: Jump to a specific namespace
   * `{{.spec.field}}`: Use template expression to extract namespace from source resource
 
 ### Template Syntax
@@ -850,25 +849,17 @@ Both `labelSelector` and `fieldSelector` support Go template syntax to dynamical
 
 ### Examples
 
-#### Navigate between custom operator resources
+#### Jump between custom operator resources
 
 ```yaml
 k9s:
   navigations:
-    # PatchPlan → PatchJobs
     "myoperator.io/v1/patchplans":
       targetGVR: "myoperator.io/v1/patchjobs"
       fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
-      targetNamespace: "same"
-
-    # PatchJob → PatchPlan
-    "myoperator.io/v1/patchjobs":
-      targetGVR: "myoperator.io/v1/patchplans"
-      fieldSelector: "metadata.name={{.spec.patchPlanRef}}"
-      targetNamespace: "same"
 ```
 
-#### Navigate from ArgoCD Application to Deployments
+#### Jump from ArgoCD Application to Deployments
 
 ```yaml
 k9s:
@@ -876,10 +867,9 @@ k9s:
     "argoproj.io/v1alpha1/applications":
       targetGVR: "apps/v1/deployments"
       labelSelector: "app.kubernetes.io/instance={{.metadata.name}}"
-      targetNamespace: "same"
 ```
 
-#### Navigate from Karpenter NodePool to Nodes
+#### Jump from Karpenter NodePool to Nodes
 
 ```yaml
 k9s:
@@ -890,28 +880,16 @@ k9s:
       targetNamespace: "all"  # Nodes are cluster-scoped
 ```
 
-#### Using regex patterns for multiple resource versions
-
-```yaml
-k9s:
-  navigations:
-    # Match any version of the CRD
-    "mygroup.io/.*/customresources":
-      targetGVR: "v1/configmaps"
-      labelSelector: "app={{.metadata.name}}"
-      targetNamespace: "same"
-```
-
 ### How It Works
 
-1. When viewing a resource that has a custom navigation rule defined
+1. When viewing a resource that has a custom jump rule defined
 2. Pressing `Enter` on a selected item will:
    - Apply the template expressions using the selected resource's data
-   - Navigate to the target resource view
-   - Automatically apply the label/field selectors to filter results
+   - Jump to the target resource view with filters applied
+   - Automatically apply the label/field selectors to show only related resources
    - Adjust the namespace context as configured
 
-3. If no custom navigation is defined, the default behavior applies (describe view or built-in navigation)
+3. If no custom jump is defined, the default behavior applies (describe view or built-in jump)
 
 ---
 
