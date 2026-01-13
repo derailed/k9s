@@ -811,18 +811,17 @@ K9s allows you to define custom jump shortcuts between Custom Resource Definitio
 
 By default, K9s provides built-in jumps for standard Kubernetes resources (e.g., Deployment → Pods, Node → Pods). With custom jumps, you can extend this behavior to your own CRDs without modifying k9s source code.
 
-To use this feature, create a configuration file at `$XDG_CONFIG_HOME/k9s/navigations.yaml`.
+To use this feature, create a configuration file at `$XDG_CONFIG_HOME/k9s/jumps.yaml`.
 
 ### Configuration Format
 
 ```yaml
-# $XDG_CONFIG_HOME/k9s/navigations.yaml
-k9s:
-  navigations:
-    # Define jump from source GVR to target GVR
-    "myoperator.io/v1/patchplans":
-      targetGVR: "myoperator.io/v1/patchjobs"
-      fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
+# $XDG_CONFIG_HOME/k9s/jumps.yaml
+jumps:
+  # Define jump from source GVR to target GVR
+  "myoperator.io/v1/patchplans":
+    targetGVR: "myoperator.io/v1/patchjobs"
+    fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
 ```
 
 ### Configuration Fields
@@ -852,32 +851,29 @@ Both `labelSelector` and `fieldSelector` support Go template syntax to dynamical
 #### Jump between custom operator resources
 
 ```yaml
-k9s:
-  navigations:
-    "myoperator.io/v1/patchplans":
-      targetGVR: "myoperator.io/v1/patchjobs"
-      fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
+jumps:
+  "myoperator.io/v1/patchplans":
+    targetGVR: "myoperator.io/v1/patchjobs"
+    fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
 ```
 
 #### Jump from ArgoCD Application to Deployments
 
 ```yaml
-k9s:
-  navigations:
-    "argoproj.io/v1alpha1/applications":
-      targetGVR: "apps/v1/deployments"
-      labelSelector: "app.kubernetes.io/instance={{.metadata.name}}"
+jumps:
+  "argoproj.io/v1alpha1/applications":
+    targetGVR: "apps/v1/deployments"
+    labelSelector: "app.kubernetes.io/instance={{.metadata.name}}"
 ```
 
 #### Jump from Karpenter NodePool to Nodes
 
 ```yaml
-k9s:
-  navigations:
-    "karpenter.sh/v1/nodepools":
-      targetGVR: "v1/nodes"
-      labelSelector: "karpenter.sh/nodepool={{.metadata.name}}"
-      targetNamespace: "all"  # Nodes are cluster-scoped
+jumps:
+  "karpenter.sh/v1/nodepools":
+    targetGVR: "v1/nodes"
+    labelSelector: "karpenter.sh/nodepool={{.metadata.name}}"
+    targetNamespace: "all"  # Nodes are cluster-scoped
 ```
 
 ### How It Works
