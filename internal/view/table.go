@@ -56,8 +56,8 @@ func (t *Table) Init(ctx context.Context) (err error) {
 			slog.Warn("CustomViews load failed", slogs.Error, err)
 			t.app.Logo().Warn("Views load failed!")
 		}
-		if err := t.app.RefreshCustomNavigations(); err != nil {
-			slog.Warn("CustomNavigations load failed", slogs.Error, err)
+		if err := t.app.RefreshCustomJumps(); err != nil {
+			slog.Warn("CustomJumps load failed", slogs.Error, err)
 		}
 	}
 	t.SetInputCapture(t.keyboard)
