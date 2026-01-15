@@ -6,7 +6,6 @@ package dao
 import (
 	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
@@ -420,7 +419,7 @@ func (c *ContainerFs) DownloadDirectory(ctx context.Context, podPath, container,
 	}
 
 	// Build exec request to tar the directory
-	// Use tar czf - to create gzipped tar and output to stdout
+	// Use tar cf - to create tar and output to stdout (no gzip for compatibility)
 	// -C changes to parent directory, then tar just the directory name
 	parentDir := filepath.Dir(remotePath)
 	dirName := filepath.Base(remotePath)
@@ -432,7 +431,7 @@ func (c *ContainerFs) DownloadDirectory(ctx context.Context, podPath, container,
 		SubResource("exec").
 		VersionedParams(&v1.PodExecOptions{
 			Container: container,
-			Command:   []string{"tar", "czf", "-", "-C", parentDir, dirName},
+			Command:   []string{"tar", "cf", "-", "-C", parentDir, dirName},
 			Stdin:     false,
 			Stdout:    true,
 			Stderr:    true,
@@ -466,7 +465,7 @@ func (c *ContainerFs) DownloadDirectory(ctx context.Context, podPath, container,
 	}()
 
 	// Extract tar to local directory
-	if err := extractTarGz(pipeReader, localPath); err != nil {
+	if err := extractTar(pipeReader, localPath); err != nil {
 		return fmt.Errorf("failed to extract tar: %w", err)
 	}
 
@@ -478,17 +477,10 @@ func (c *ContainerFs) DownloadDirectory(ctx context.Context, podPath, container,
 	return nil
 }
 
-// extractTarGz extracts a gzipped tar archive to the specified directory.
-func extractTarGz(r io.Reader, destDir string) error {
-	// Create gzip reader
-	gzr, err := gzip.NewReader(r)
-	if err != nil {
-		return fmt.Errorf("failed to create gzip reader: %w", err)
-	}
-	defer gzr.Close()
-
+// extractTar extracts a tar archive to the specified directory.
+func extractTar(r io.Reader, destDir string) error {
 	// Create tar reader
-	tr := tar.NewReader(gzr)
+	tr := tar.NewReader(r)
 
 	// Extract files
 	for {
