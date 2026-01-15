@@ -18,7 +18,12 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 )
 
 var _ Accessor = (*ContainerFs)(nil)
@@ -175,8 +180,68 @@ func storeInCache(cacheKey string, entries []render.ContainerFsRes) {
 	}
 }
 
-// execInContainer executes a command in a container and returns the output.
+// execInContainer executes a command in a container and returns the output using the Kubernetes API.
 func (c *ContainerFs) execInContainer(ctx context.Context, podPath, container, dir string) ([]render.ContainerFsRes, error) {
+	// Parse namespace and pod name
+	ns, po := client.Namespaced(podPath)
+
+	// Get REST config
+	cfg, err := c.Client().RestConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get REST config: %w", err)
+	}
+
+	// Set up for core v1 API
+	cfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
+	cfg.APIPath = "/api"
+	cfg.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+
+	// Create REST client
+	restClient, err := rest.RESTClientFor(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create REST client: %w", err)
+	}
+
+	// Build exec request
+	req := restClient.Post().
+		Resource("pods").
+		Name(po).
+		Namespace(ns).
+		SubResource("exec").
+		VersionedParams(&v1.PodExecOptions{
+			Container: container,
+			Command:   []string{"ls", "-la", dir},
+			Stdin:     false,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       false,
+		}, scheme.ParameterCodec)
+
+	// Create executor
+	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create executor: %w", err)
+	}
+
+	// Execute command and capture output
+	var stdout, stderr bytes.Buffer
+	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Tty:    false,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("exec failed: %w (stderr: %s)", err, stderr.String())
+	}
+
+	// Parse the output
+	return parseLsOutput(dir, stdout.String())
+}
+
+// execInContainerKubectl executes a command using kubectl (old implementation, kept for reference).
+func (c *ContainerFs) execInContainerKubectl(ctx context.Context, podPath, container, dir string) ([]render.ContainerFsRes, error) {
 	// Get kubectl binary
 	bin, err := exec.LookPath("kubectl")
 	if errors.Is(err, exec.ErrDot) {
