@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -21,6 +22,20 @@ import (
 )
 
 var _ Accessor = (*ContainerFs)(nil)
+
+// dirCacheEntry represents a cached directory listing.
+type dirCacheEntry struct {
+	entries   []render.ContainerFsRes
+	timestamp time.Time
+}
+
+// dirCache stores cached directory listings per container.
+var (
+	dirCache     = make(map[string]dirCacheEntry)
+	cacheMutex   sync.RWMutex
+	cacheTTL     = 30 * time.Second // Cache entries for 30 seconds
+	maxCacheSize = 500              // Maximum number of cache entries
+)
 
 // ContainerFs provides access to container filesystem resources.
 type ContainerFs struct {
@@ -52,19 +67,36 @@ func (c *ContainerFs) List(ctx context.Context, _ string) ([]runtime.Object, err
 		currentDir = "/" // Default to root
 	}
 
-	// Execute ls command in container and get real data
+	cacheKey := makeCacheKey(podPath, container, currentDir)
+
+	// Check cache first
+	cacheMutex.RLock()
+	if entry, found := dirCache[cacheKey]; found {
+		age := time.Since(entry.timestamp)
+		if age < cacheTTL {
+			// Cache hit - return immediately
+			cacheMutex.RUnlock()
+
+			// Launch background refresh if cache is getting old (>10 seconds)
+			if age > 10*time.Second {
+				go c.refreshCache(ctx, podPath, container, currentDir, cacheKey)
+			}
+
+			return convertToRuntimeObjects(entry.entries), nil
+		}
+	}
+	cacheMutex.RUnlock()
+
+	// Cache miss or expired - fetch fresh data
 	entries, err := c.execInContainer(ctx, podPath, container, currentDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list directory %s: %w", currentDir, err)
 	}
 
-	// Convert to runtime.Object slice
-	oo := make([]runtime.Object, 0, len(entries))
-	for _, e := range entries {
-		oo = append(oo, e)
-	}
+	// Store in cache
+	storeInCache(cacheKey, entries)
 
-	return oo, nil
+	return convertToRuntimeObjects(entries), nil
 }
 
 // IsDirectory checks if the given path is a directory.
@@ -86,6 +118,61 @@ func (c *ContainerFs) IsDirectory(path string) bool {
 // Get fetches a specific resource.
 func (*ContainerFs) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, errors.New("get not implemented for container filesystem")
+}
+
+// makeCacheKey generates a cache key for a directory listing.
+func makeCacheKey(podPath, container, dir string) string {
+	return fmt.Sprintf("%s:%s:%s", podPath, container, dir)
+}
+
+// convertToRuntimeObjects converts filesystem entries to runtime.Object slice.
+func convertToRuntimeObjects(entries []render.ContainerFsRes) []runtime.Object {
+	oo := make([]runtime.Object, 0, len(entries))
+	for _, e := range entries {
+		oo = append(oo, e)
+	}
+	return oo
+}
+
+// refreshCache refreshes the cache in the background.
+func (c *ContainerFs) refreshCache(ctx context.Context, podPath, container, dir, cacheKey string) {
+	entries, err := c.execInContainer(ctx, podPath, container, dir)
+	if err != nil {
+		// Silently fail - we still have cached data
+		return
+	}
+
+	storeInCache(cacheKey, entries)
+}
+
+// storeInCache stores entries in the cache, evicting old entries if cache is full.
+func storeInCache(cacheKey string, entries []render.ContainerFsRes) {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	// If cache is full, remove oldest entry
+	if len(dirCache) >= maxCacheSize {
+		var oldestKey string
+		var oldestTime time.Time
+		first := true
+
+		for key, entry := range dirCache {
+			if first || entry.timestamp.Before(oldestTime) {
+				oldestKey = key
+				oldestTime = entry.timestamp
+				first = false
+			}
+		}
+
+		if oldestKey != "" {
+			delete(dirCache, oldestKey)
+		}
+	}
+
+	dirCache[cacheKey] = dirCacheEntry{
+		entries:   entries,
+		timestamp: time.Now(),
+	}
 }
 
 // execInContainer executes a command in a container and returns the output.
