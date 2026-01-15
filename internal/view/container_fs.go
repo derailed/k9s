@@ -131,21 +131,15 @@ func (cf *ContainerFs) downloadCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 	}
 
-	// For now, only support files
-	if isDir {
-		cf.App().Flash().Warn("Directory download not yet implemented. Use 'd' on individual files.")
-		return nil
-	}
-
 	// Prompt for local save path
 	defaultPath := "./" + fileName
-	cf.showDownloadPrompt(sel, fileName, defaultPath)
+	cf.showDownloadPrompt(sel, fileName, defaultPath, isDir)
 
 	return nil
 }
 
 // showDownloadPrompt shows a simple input dialog for download path.
-func (cf *ContainerFs) showDownloadPrompt(remotePath, fileName, defaultPath string) {
+func (cf *ContainerFs) showDownloadPrompt(remotePath, fileName, defaultPath string, isDir bool) {
 	styles := cf.App().Styles.Dialog()
 	pages := cf.App().Content.Pages
 
@@ -169,10 +163,17 @@ func (cf *ContainerFs) showDownloadPrompt(remotePath, fileName, defaultPath stri
 			return
 		}
 
-		// Download the file in background
+		// Download in background
 		go func() {
 			cf.App().Flash().Infof("Downloading %s to %s...", remotePath, savePath)
-			if err := cf.downloadFile(remotePath, savePath); err != nil {
+			var err error
+			if isDir {
+				err = cf.downloadDirectory(remotePath, savePath)
+			} else {
+				err = cf.downloadFile(remotePath, savePath)
+			}
+
+			if err != nil {
 				cf.App().QueueUpdateDraw(func() {
 					cf.App().Flash().Errf("Download failed: %s", err)
 				})
@@ -196,8 +197,15 @@ func (cf *ContainerFs) showDownloadPrompt(remotePath, fileName, defaultPath stri
 		}
 	}
 
-	modal := tview.NewModalForm("<Download File>", f)
-	modal.SetText(fmt.Sprintf("Download: %s", fileName))
+	title := "<Download File>"
+	itemType := "file"
+	if isDir {
+		title = "<Download Directory>"
+		itemType = "directory"
+	}
+
+	modal := tview.NewModalForm(title, f)
+	modal.SetText(fmt.Sprintf("Download %s: %s", itemType, fileName))
 	modal.SetTextColor(styles.FgColor.Color())
 	modal.SetDoneFunc(func(int, string) {
 		pages.RemovePage("download-prompt")
@@ -216,4 +224,15 @@ func (cf *ContainerFs) downloadFile(remotePath, localPath string) error {
 	// Download the file
 	ctx := context.Background()
 	return cfs.DownloadFile(ctx, cf.podPath, cf.containerName, remotePath, localPath)
+}
+
+// downloadDirectory downloads a directory from the container.
+func (cf *ContainerFs) downloadDirectory(remotePath, localPath string) error {
+	// Get DAO
+	var cfs dao.ContainerFs
+	cfs.Init(cf.App().factory, client.CfsGVR)
+
+	// Download the directory
+	ctx := context.Background()
+	return cfs.DownloadDirectory(ctx, cf.podPath, cf.containerName, remotePath, localPath)
 }
