@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -325,4 +326,70 @@ func parseModTime(month, day, timeOrYear string) time.Time {
 
 	// Fallback to current time if parsing fails
 	return now
+}
+
+// DownloadFile downloads a file from the container to a local path using cat.
+func (c *ContainerFs) DownloadFile(ctx context.Context, podPath, container, remotePath, localPath string) error {
+	// Parse namespace and pod name
+	ns, po := client.Namespaced(podPath)
+
+	// Get REST config
+	cfg, err := c.Client().RestConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get REST config: %w", err)
+	}
+
+	// Set up for core v1 API
+	cfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
+	cfg.APIPath = "/api"
+	cfg.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+
+	// Create REST client
+	restClient, err := rest.RESTClientFor(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create REST client: %w", err)
+	}
+
+	// Build exec request to cat the file
+	req := restClient.Post().
+		Resource("pods").
+		Name(po).
+		Namespace(ns).
+		SubResource("exec").
+		VersionedParams(&v1.PodExecOptions{
+			Container: container,
+			Command:   []string{"cat", remotePath},
+			Stdin:     false,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       false,
+		}, scheme.ParameterCodec)
+
+	// Create executor
+	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
+	if err != nil {
+		return fmt.Errorf("failed to create executor: %w", err)
+	}
+
+	// Create local file
+	file, err := os.Create(localPath)
+	if err != nil {
+		return fmt.Errorf("failed to create local file: %w", err)
+	}
+	defer file.Close()
+
+	// Execute cat command and write directly to file
+	var stderr bytes.Buffer
+	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: file,
+		Stderr: &stderr,
+		Tty:    false,
+	})
+
+	if err != nil {
+		return fmt.Errorf("download failed: %w (stderr: %s)", err, stderr.String())
+	}
+
+	return nil
 }

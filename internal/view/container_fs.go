@@ -10,8 +10,10 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
+	"github.com/derailed/tview"
 )
 
 const containerFsTitle = "Container FS"
@@ -75,6 +77,7 @@ func (cf *ContainerFs) bindKeys(aa *ui.KeyActions) {
 
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", cf.gotoCmd, true),
+		ui.KeyD:        ui.NewKeyAction("Download", cf.downloadCmd, true),
 	})
 	// Note: Esc goes back by popping from the stack (built-in behavior)
 }
@@ -105,4 +108,112 @@ func (cf *ContainerFs) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return evt
+}
+
+// downloadCmd downloads a file or directory from the container.
+func (cf *ContainerFs) downloadCmd(evt *tcell.EventKey) *tcell.EventKey {
+	sel := cf.GetTable().GetSelectedItem()
+	if sel == "" {
+		return evt
+	}
+
+	// Check if it's a directory
+	row := cf.GetTable().GetSelectedRow(sel)
+	isDir := false
+	var fileName string
+	if row != nil && len(row.Fields) > 0 {
+		name := row.Fields[0] // NAME column is first
+		if strings.HasPrefix(name, "📁 ") {
+			isDir = true
+			fileName = strings.TrimPrefix(name, "📁 ")
+		} else {
+			fileName = strings.TrimPrefix(name, "📄 ")
+		}
+	}
+
+	// For now, only support files
+	if isDir {
+		cf.App().Flash().Warn("Directory download not yet implemented. Use 'd' on individual files.")
+		return nil
+	}
+
+	// Prompt for local save path
+	defaultPath := "./" + fileName
+	cf.showDownloadPrompt(sel, fileName, defaultPath)
+
+	return nil
+}
+
+// showDownloadPrompt shows a simple input dialog for download path.
+func (cf *ContainerFs) showDownloadPrompt(remotePath, fileName, defaultPath string) {
+	styles := cf.App().Styles.Dialog()
+	pages := cf.App().Content.Pages
+
+	f := tview.NewForm()
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
+
+	var savePath string = defaultPath
+	f.AddInputField("Save to:", defaultPath, 50, nil, func(text string) {
+		savePath = text
+	})
+
+	f.AddButton("OK", func() {
+		pages.RemovePage("download-prompt")
+		if savePath == "" {
+			cf.App().Flash().Warn("Download cancelled")
+			return
+		}
+
+		// Download the file in background
+		go func() {
+			cf.App().Flash().Infof("Downloading %s to %s...", remotePath, savePath)
+			if err := cf.downloadFile(remotePath, savePath); err != nil {
+				cf.App().QueueUpdateDraw(func() {
+					cf.App().Flash().Errf("Download failed: %s", err)
+				})
+			} else {
+				cf.App().QueueUpdateDraw(func() {
+					cf.App().Flash().Infof("Downloaded %s successfully!", fileName)
+				})
+			}
+		}()
+	})
+
+	f.AddButton("Cancel", func() {
+		pages.RemovePage("download-prompt")
+	})
+
+	for i := range 2 {
+		b := f.GetButton(i)
+		if b != nil {
+			b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+			b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+		}
+	}
+
+	modal := tview.NewModalForm("<Download File>", f)
+	modal.SetText(fmt.Sprintf("Download: %s", fileName))
+	modal.SetTextColor(styles.FgColor.Color())
+	modal.SetDoneFunc(func(int, string) {
+		pages.RemovePage("download-prompt")
+	})
+
+	pages.AddPage("download-prompt", modal, false, false)
+	pages.ShowPage("download-prompt")
+}
+
+// downloadFile downloads a file from the container.
+func (cf *ContainerFs) downloadFile(remotePath, localPath string) error {
+	// Get DAO
+	var cfs dao.ContainerFs
+	cfs.Init(cf.App().factory, client.CfsGVR)
+
+	// Download the file
+	ctx := context.Background()
+	return cfs.DownloadFile(ctx, cf.podPath, cf.containerName, remotePath, localPath)
 }
