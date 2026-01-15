@@ -374,7 +374,6 @@ K9s uses aliases to navigate most K8s resources.
 | Filter resource view by labels                                                  | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                                            | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                                           | `<esc>`                       |                                                                        |
-| Key mapping to describe, view, edit, view logs,...                              | `d`,`v`, `e`, `l`,...         |                                                                        |
 | To view and switch to another Kubernetes context (Pod view)                     | `:`ctx⏎                       |                                                                        |
 | To view and switch directly to another Kubernetes context (Last used view)      | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace                              | `:`ns⏎                        |                                                                        |
