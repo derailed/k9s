@@ -187,6 +187,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare(client.AliGVR, "alias", "a")
 	a.declare(client.HmGVR, "charts", "chart", "hm")
 	a.declare(client.DirGVR, "dir", "d")
+	a.declare(client.CfsGVR, "containerfs", "cfs")
 	a.declare(client.CtGVR, "context", "ctx")
 	a.declare(client.UsrGVR, "user", "usr")
 	a.declare(client.GrpGVR, "group", "grp")

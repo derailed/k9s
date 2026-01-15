@@ -131,6 +131,7 @@ func (p *Pod) bindKeys(aa *ui.KeyActions) {
 
 	aa.Bulk(ui.KeyMap{
 		ui.KeyO: ui.NewKeyAction("Show Node", p.showNode, true),
+		ui.KeyB: ui.NewKeyAction("Browse Files", p.browseFilesCmd, true),
 	})
 }
 
@@ -179,6 +180,51 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 	no := NewNode(client.NodeGVR)
 	no.SetInstance(pod.Spec.NodeName)
 	if err := p.App().inject(no, false); err != nil {
+		p.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (p *Pod) browseFilesCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	// Fetch pod to get containers
+	pod, err := fetchPod(p.App().factory, path)
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+
+	// Get list of containers
+	cc := fetchContainers(&pod.ObjectMeta, &pod.Spec, false)
+	if len(cc) == 0 {
+		p.App().Flash().Errf("No containers found")
+		return nil
+	}
+
+	// If single container, open directly
+	if len(cc) == 1 {
+		cf := NewContainerFs(path, cc[0], "/")
+		if err := p.App().inject(cf, false); err != nil {
+			p.App().Flash().Err(err)
+		}
+		return nil
+	}
+
+	// Multiple containers - show picker
+	picker := NewPicker()
+	picker.populate(cc)
+	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
+		cf := NewContainerFs(path, co, "/")
+		if err := p.App().inject(cf, false); err != nil {
+			p.App().Flash().Err(err)
+		}
+	})
+	if err := p.App().inject(picker, false); err != nil {
 		p.App().Flash().Err(err)
 	}
 

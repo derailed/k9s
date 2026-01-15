@@ -27,6 +27,10 @@ var Registry = map[*client.GVR]ResourceMeta{
 		DAO:      new(dao.Dir),
 		Renderer: new(render.Dir),
 	},
+	client.CfsGVR: {
+		DAO:      new(dao.ContainerFs),
+		Renderer: new(render.ContainerFs),
+	},
 	client.PuGVR: {
 		DAO: new(dao.Pulse),
 	},
