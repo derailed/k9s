@@ -78,6 +78,12 @@ func (*ContainerFs) List(ctx context.Context, _ string) ([]runtime.Object, error
 	return oo, nil
 }
 
+// IsDirectory checks if the given path is a directory in the mock filesystem.
+func (*ContainerFs) IsDirectory(path string) bool {
+	_, exists := mockFilesystem[path]
+	return exists
+}
+
 // Get fetches a specific resource.
 func (*ContainerFs) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, errors.New("get not implemented for container filesystem")
