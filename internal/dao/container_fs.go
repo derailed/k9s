@@ -4,10 +4,14 @@
 package dao
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -31,7 +35,7 @@ func NewContainerFs(f Factory) *ContainerFs {
 }
 
 // List returns a collection of container filesystem entries.
-func (*ContainerFs) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+func (c *ContainerFs) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	// Extract context values
 	podPath, ok := ctx.Value(internal.KeyPath).(string)
 	if !ok {
@@ -48,45 +52,192 @@ func (*ContainerFs) List(ctx context.Context, _ string) ([]runtime.Object, error
 		currentDir = "/" // Default to root
 	}
 
-	// Get mock entries for current directory
-	entries, exists := mockFilesystem[currentDir]
-	if !exists {
-		return nil, fmt.Errorf("directory not found: %s", currentDir)
+	// Execute ls command in container and get real data
+	entries, err := c.execInContainer(ctx, podPath, container, currentDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list directory %s: %w", currentDir, err)
 	}
-
-	// Prevent unused variable warnings
-	_, _ = podPath, container
 
 	// Convert to runtime.Object slice
 	oo := make([]runtime.Object, 0, len(entries))
 	for _, e := range entries {
-		fullPath := filepath.Join(currentDir, e.name)
-		if currentDir == "/" {
-			fullPath = "/" + e.name
-		}
-
-		oo = append(oo, render.ContainerFsRes{
-			Path:       fullPath,
-			Name:       e.name,
-			IsDir:      e.isDir,
-			Size:       e.size,
-			ModTime:    time.Now().Add(e.mod),
-			Permission: e.perm,
-		})
+		oo = append(oo, e)
 	}
 
 	return oo, nil
 }
 
-// IsDirectory checks if the given path is a directory in the mock filesystem.
-func (*ContainerFs) IsDirectory(path string) bool {
-	_, exists := mockFilesystem[path]
-	return exists
+// IsDirectory checks if the given path is a directory.
+// Note: This is a simplified implementation that relies on the path structure.
+// A more robust implementation would execute a test command in the container.
+func (c *ContainerFs) IsDirectory(path string) bool {
+	// For now, we'll use a simple heuristic: check if the path from the table
+	// is marked as a directory. Since this is called from the view after getting
+	// the selection from the table, and the table was populated by List(), which
+	// includes the IsDir information, we can rely on the fact that directories
+	// will be listed in the output.
+
+	// However, since we don't have access to the previous List results here,
+	// we'll need to execute a command to check. We can use `test -d` for this.
+	// For now, return true to allow navigation (we'll handle errors in the List call).
+	return true
 }
 
 // Get fetches a specific resource.
 func (*ContainerFs) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, errors.New("get not implemented for container filesystem")
+}
+
+// execInContainer executes a command in a container and returns the output.
+func (c *ContainerFs) execInContainer(ctx context.Context, podPath, container, dir string) ([]render.ContainerFsRes, error) {
+	// Get kubectl binary
+	bin, err := exec.LookPath("kubectl")
+	if errors.Is(err, exec.ErrDot) {
+		return nil, fmt.Errorf("kubectl command must not be in the current working directory: %w", err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("kubectl command is not in your path: %w", err)
+	}
+
+	// Parse namespace and pod name
+	ns, po := client.Namespaced(podPath)
+
+	// Build kubectl exec command
+	args := []string{"exec"}
+	if ns != client.BlankNamespace {
+		args = append(args, "-n", ns)
+	}
+	args = append(args, po)
+	if container != "" {
+		args = append(args, "-c", container)
+	}
+
+	// Add context and kubeconfig from Factory
+	cfg := c.Client().Config()
+	if cfg != nil {
+		ctxName := cfg.Flags().Context
+		if ctxName != nil && *ctxName != "" {
+			args = append(args, "--context", *ctxName)
+		}
+		kubeConfig := cfg.Flags().KubeConfig
+		if kubeConfig != nil && *kubeConfig != "" {
+			args = append(args, "--kubeconfig", *kubeConfig)
+		}
+	}
+
+	// Add the command to execute: ls -la <dir>
+	args = append(args, "--", "ls", "-la", dir)
+
+	// Execute command
+	cmd := exec.CommandContext(ctx, bin, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("kubectl exec failed: %w (stderr: %s)", err, stderr.String())
+	}
+
+	// Parse the output
+	return parseLsOutput(dir, stdout.String())
+}
+
+// parseLsOutput parses the output of 'ls -la' command.
+func parseLsOutput(dir, output string) ([]render.ContainerFsRes, error) {
+	lines := strings.Split(output, "\n")
+	var results []render.ContainerFsRes
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Parse ls -la output format:
+		// -rw-r--r-- 1 root root 1234 Jan 15 12:34 file.txt
+		// drwxr-xr-x 2 root root 4096 Jan 15 12:34 directory
+		fields := strings.Fields(line)
+		if len(fields) < 9 {
+			continue // Skip malformed lines
+		}
+
+		// Skip total line
+		if fields[0] == "total" {
+			continue
+		}
+
+		perm := fields[0]
+		sizeStr := fields[4]
+
+		// Name is everything from field 8 onwards (to handle spaces in filenames)
+		name := strings.Join(fields[8:], " ")
+
+		// Skip . and ..
+		if name == "." || name == ".." {
+			continue
+		}
+
+		// Parse size
+		size, err := strconv.ParseInt(sizeStr, 10, 64)
+		if err != nil {
+			size = 0
+		}
+
+		// Determine if it's a directory
+		isDir := strings.HasPrefix(perm, "d")
+
+		// Parse modification time
+		// Format can be: "Jan 15 12:34" or "Jan 15 2023"
+		month := fields[5]
+		day := fields[6]
+		timeOrYear := fields[7]
+
+		modTime := parseModTime(month, day, timeOrYear)
+
+		// Build full path
+		fullPath := filepath.Join(dir, name)
+		if dir == "/" {
+			fullPath = "/" + name
+		}
+
+		results = append(results, render.ContainerFsRes{
+			Path:       fullPath,
+			Name:       name,
+			IsDir:      isDir,
+			Size:       size,
+			ModTime:    modTime,
+			Permission: perm,
+		})
+	}
+
+	return results, nil
+}
+
+// parseModTime attempts to parse the modification time from ls output.
+func parseModTime(month, day, timeOrYear string) time.Time {
+	now := time.Now()
+
+	// Try to parse as time (HH:MM)
+	if strings.Contains(timeOrYear, ":") {
+		// Recent file: "Jan 15 12:34"
+		timeStr := fmt.Sprintf("%s %s %d %s", month, day, now.Year(), timeOrYear)
+		if t, err := time.Parse("Jan 2 2006 15:04", timeStr); err == nil {
+			// If the parsed time is in the future, it must be from last year
+			if t.After(now) {
+				t = t.AddDate(-1, 0, 0)
+			}
+			return t
+		}
+	} else {
+		// Old file: "Jan 15 2023"
+		timeStr := fmt.Sprintf("%s %s %s", month, day, timeOrYear)
+		if t, err := time.Parse("Jan 2 2006", timeStr); err == nil {
+			return t
+		}
+	}
+
+	// Fallback to current time if parsing fails
+	return now
 }
 
 // ----------------------------------------------------------------------------

@@ -6,10 +6,10 @@ package view
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 )
@@ -86,12 +86,16 @@ func (cf *ContainerFs) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	// Check if it's a directory
-	cfsDAO := &dao.ContainerFs{}
-	if !cfsDAO.IsDirectory(sel) {
-		// It's a file, show message for now (file viewing not implemented yet)
-		cf.App().Flash().Infof("File viewing not yet implemented: %s", sel)
-		return nil
+	// Check if it's a directory by looking at the NAME field icon
+	// The render layer adds 📁 for directories and 📄 for files
+	row := cf.GetTable().GetSelectedRow(sel)
+	if row != nil && len(row.Fields) > 0 {
+		name := row.Fields[0] // NAME column is first
+		if !strings.HasPrefix(name, "📁 ") {
+			// It's a file, show message for now (file viewing not implemented yet)
+			cf.App().Flash().Infof("File viewing not yet implemented: %s", sel)
+			return nil
+		}
 	}
 
 	// Create new view for the selected directory and inject it
