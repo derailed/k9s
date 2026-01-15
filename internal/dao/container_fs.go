@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -105,18 +104,8 @@ func (c *ContainerFs) List(ctx context.Context, _ string) ([]runtime.Object, err
 }
 
 // IsDirectory checks if the given path is a directory.
-// Note: This is a simplified implementation that relies on the path structure.
-// A more robust implementation would execute a test command in the container.
+// Returns true to allow navigation; errors will be handled in List().
 func (c *ContainerFs) IsDirectory(path string) bool {
-	// For now, we'll use a simple heuristic: check if the path from the table
-	// is marked as a directory. Since this is called from the view after getting
-	// the selection from the table, and the table was populated by List(), which
-	// includes the IsDir information, we can rely on the fact that directories
-	// will be listed in the output.
-
-	// However, since we don't have access to the previous List results here,
-	// we'll need to execute a command to check. We can use `test -d` for this.
-	// For now, return true to allow navigation (we'll handle errors in the List call).
 	return true
 }
 
@@ -240,60 +229,6 @@ func (c *ContainerFs) execInContainer(ctx context.Context, podPath, container, d
 	return parseLsOutput(dir, stdout.String())
 }
 
-// execInContainerKubectl executes a command using kubectl (old implementation, kept for reference).
-func (c *ContainerFs) execInContainerKubectl(ctx context.Context, podPath, container, dir string) ([]render.ContainerFsRes, error) {
-	// Get kubectl binary
-	bin, err := exec.LookPath("kubectl")
-	if errors.Is(err, exec.ErrDot) {
-		return nil, fmt.Errorf("kubectl command must not be in the current working directory: %w", err)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("kubectl command is not in your path: %w", err)
-	}
-
-	// Parse namespace and pod name
-	ns, po := client.Namespaced(podPath)
-
-	// Build kubectl exec command
-	args := []string{"exec"}
-	if ns != client.BlankNamespace {
-		args = append(args, "-n", ns)
-	}
-	args = append(args, po)
-	if container != "" {
-		args = append(args, "-c", container)
-	}
-
-	// Add context and kubeconfig from Factory
-	cfg := c.Client().Config()
-	if cfg != nil {
-		ctxName := cfg.Flags().Context
-		if ctxName != nil && *ctxName != "" {
-			args = append(args, "--context", *ctxName)
-		}
-		kubeConfig := cfg.Flags().KubeConfig
-		if kubeConfig != nil && *kubeConfig != "" {
-			args = append(args, "--kubeconfig", *kubeConfig)
-		}
-	}
-
-	// Add the command to execute: ls -la <dir>
-	args = append(args, "--", "ls", "-la", dir)
-
-	// Execute command
-	cmd := exec.CommandContext(ctx, bin, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("kubectl exec failed: %w (stderr: %s)", err, stderr.String())
-	}
-
-	// Parse the output
-	return parseLsOutput(dir, stdout.String())
-}
-
 // parseLsOutput parses the output of 'ls -la' command.
 func parseLsOutput(dir, output string) ([]render.ContainerFsRes, error) {
 	lines := strings.Split(output, "\n")
@@ -390,132 +325,4 @@ func parseModTime(month, day, timeOrYear string) time.Time {
 
 	// Fallback to current time if parsing fails
 	return now
-}
-
-// ----------------------------------------------------------------------------
-// Mock filesystem data...
-
-type mockEntry struct {
-	name  string
-	isDir bool
-	size  int64
-	perm  string
-	mod   time.Duration // Relative to now
-}
-
-var mockFilesystem = map[string][]mockEntry{
-	"/": {
-		{name: "bin", isDir: true, perm: "drwxr-xr-x", mod: -24 * time.Hour},
-		{name: "etc", isDir: true, perm: "drwxr-xr-x", mod: -24 * time.Hour},
-		{name: "home", isDir: true, perm: "drwxr-xr-x", mod: -24 * time.Hour},
-		{name: "opt", isDir: true, perm: "drwxr-xr-x", mod: -24 * time.Hour},
-		{name: "tmp", isDir: true, perm: "drwxrwxrwt", mod: -24 * time.Hour},
-		{name: "usr", isDir: true, perm: "drwxr-xr-x", mod: -24 * time.Hour},
-		{name: "var", isDir: true, perm: "drwxr-xr-x", mod: -24 * time.Hour},
-	},
-	"/bin": {
-		{name: "bash", isDir: false, size: 1234567, perm: "-rwxr-xr-x", mod: -48 * time.Hour},
-		{name: "sh", isDir: false, size: 128000, perm: "-rwxr-xr-x", mod: -48 * time.Hour},
-		{name: "ls", isDir: false, size: 138208, perm: "-rwxr-xr-x", mod: -48 * time.Hour},
-		{name: "cat", isDir: false, size: 35064, perm: "-rwxr-xr-x", mod: -48 * time.Hour},
-	},
-	"/etc": {
-		{name: "hosts", isDir: false, size: 256, perm: "-rw-r--r--", mod: -2 * time.Hour},
-		{name: "hostname", isDir: false, size: 64, perm: "-rw-r--r--", mod: -2 * time.Hour},
-		{name: "resolv.conf", isDir: false, size: 128, perm: "-rw-r--r--", mod: -1 * time.Hour},
-		{name: "passwd", isDir: false, size: 1024, perm: "-rw-r--r--", mod: -24 * time.Hour},
-		{name: "group", isDir: false, size: 512, perm: "-rw-r--r--", mod: -24 * time.Hour},
-		{name: "nginx", isDir: true, perm: "drwxr-xr-x", mod: -5 * time.Hour},
-		{name: "ssl", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-	},
-	"/etc/nginx": {
-		{name: "nginx.conf", isDir: false, size: 2048, perm: "-rw-r--r--", mod: -30 * time.Minute},
-		{name: "mime.types", isDir: false, size: 5349, perm: "-rw-r--r--", mod: -48 * time.Hour},
-		{name: "conf.d", isDir: true, perm: "drwxr-xr-x", mod: -30 * time.Minute},
-		{name: "sites-available", isDir: true, perm: "drwxr-xr-x", mod: -30 * time.Minute},
-		{name: "sites-enabled", isDir: true, perm: "drwxr-xr-x", mod: -30 * time.Minute},
-	},
-	"/etc/nginx/conf.d": {
-		{name: "default.conf", isDir: false, size: 1024, perm: "-rw-r--r--", mod: -30 * time.Minute},
-	},
-	"/etc/nginx/sites-available": {
-		{name: "default", isDir: false, size: 2084, perm: "-rw-r--r--", mod: -48 * time.Hour},
-	},
-	"/etc/nginx/sites-enabled": {
-		{name: "default", isDir: false, size: 2084, perm: "-rw-r--r--", mod: -48 * time.Hour},
-	},
-	"/etc/ssl": {
-		{name: "certs", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-		{name: "private", isDir: true, perm: "drwx------", mod: -48 * time.Hour},
-	},
-	"/etc/ssl/certs": {
-		{name: "ca-certificates.crt", isDir: false, size: 214856, perm: "-rw-r--r--", mod: -48 * time.Hour},
-	},
-	"/etc/ssl/private": {},
-	"/home": {
-		{name: "app", isDir: true, perm: "drwxr-xr-x", mod: -12 * time.Hour},
-	},
-	"/home/app": {
-		{name: "package.json", isDir: false, size: 512, perm: "-rw-r--r--", mod: -12 * time.Hour},
-		{name: "app.js", isDir: false, size: 4096, perm: "-rw-r--r--", mod: -30 * time.Minute},
-		{name: "node_modules", isDir: true, perm: "drwxr-xr-x", mod: -12 * time.Hour},
-		{name: "public", isDir: true, perm: "drwxr-xr-x", mod: -12 * time.Hour},
-	},
-	"/home/app/node_modules": {
-		{name: "express", isDir: true, perm: "drwxr-xr-x", mod: -12 * time.Hour},
-		{name: "dotenv", isDir: true, perm: "drwxr-xr-x", mod: -12 * time.Hour},
-	},
-	"/home/app/public": {
-		{name: "index.html", isDir: false, size: 1024, perm: "-rw-r--r--", mod: -6 * time.Hour},
-		{name: "styles.css", isDir: false, size: 2048, perm: "-rw-r--r--", mod: -6 * time.Hour},
-	},
-	"/opt": {},
-	"/tmp": {
-		{name: "test.txt", isDir: false, size: 42, perm: "-rw-r--r--", mod: -15 * time.Minute},
-	},
-	"/usr": {
-		{name: "bin", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-		{name: "lib", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-		{name: "local", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-		{name: "share", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-	},
-	"/usr/bin": {
-		{name: "curl", isDir: false, size: 225792, perm: "-rwxr-xr-x", mod: -48 * time.Hour},
-		{name: "wget", isDir: false, size: 519808, perm: "-rwxr-xr-x", mod: -48 * time.Hour},
-		{name: "node", isDir: false, size: 36521984, perm: "-rwxr-xr-x", mod: -12 * time.Hour},
-		{name: "npm", isDir: false, size: 4096, perm: "-rwxr-xr-x", mod: -12 * time.Hour},
-	},
-	"/usr/lib": {},
-	"/usr/local": {
-		{name: "bin", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-		{name: "lib", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-	},
-	"/usr/local/bin": {},
-	"/usr/local/lib": {},
-	"/usr/share": {
-		{name: "doc", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-		{name: "man", isDir: true, perm: "drwxr-xr-x", mod: -48 * time.Hour},
-	},
-	"/usr/share/doc": {},
-	"/usr/share/man": {},
-	"/var": {
-		{name: "log", isDir: true, perm: "drwxr-xr-x", mod: -10 * time.Minute},
-		{name: "lib", isDir: true, perm: "drwxr-xr-x", mod: -24 * time.Hour},
-		{name: "cache", isDir: true, perm: "drwxr-xr-x", mod: -24 * time.Hour},
-		{name: "run", isDir: true, perm: "drwxr-xr-x", mod: -5 * time.Minute},
-	},
-	"/var/log": {
-		{name: "access.log", isDir: false, size: 1048576, perm: "-rw-r--r--", mod: -5 * time.Minute},
-		{name: "error.log", isDir: false, size: 4096, perm: "-rw-r--r--", mod: -1 * time.Hour},
-		{name: "nginx", isDir: true, perm: "drwxr-xr-x", mod: -5 * time.Minute},
-	},
-	"/var/log/nginx": {
-		{name: "access.log", isDir: false, size: 2097152, perm: "-rw-r--r--", mod: -5 * time.Minute},
-		{name: "error.log", isDir: false, size: 8192, perm: "-rw-r--r--", mod: -1 * time.Hour},
-	},
-	"/var/lib": {},
-	"/var/cache": {},
-	"/var/run": {
-		{name: "nginx.pid", isDir: false, size: 6, perm: "-rw-r--r--", mod: -5 * time.Minute},
-	},
 }
