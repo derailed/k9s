@@ -77,12 +77,19 @@ func (cf *ContainerFs) bindKeys(aa *ui.KeyActions) {
 
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", cf.gotoCmd, true),
+		ui.KeyG:        ui.NewSharedKeyAction("Goto Path", cf.activatePathCmd, false),
 		ui.KeyD:        ui.NewKeyAction("Download", cf.downloadCmd, true),
 	})
 	// Note: Esc goes back by popping from the stack (built-in behavior)
 }
 
-// gotoCmd navigates into a directory or shows a file (mimics Dir view).
+// activatePathCmd shows a dialog for path navigation.
+func (cf *ContainerFs) activatePathCmd(evt *tcell.EventKey) *tcell.EventKey {
+	cf.showGotoPrompt()
+	return nil
+}
+
+// gotoCmd navigates into a directory when Enter is pressed on selected item.
 func (cf *ContainerFs) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := cf.GetTable().GetSelectedItem()
 	if sel == "" {
@@ -108,6 +115,78 @@ func (cf *ContainerFs) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return evt
+}
+
+// showGotoPrompt shows a dialog for entering a path to navigate to.
+func (cf *ContainerFs) showGotoPrompt() {
+	styles := cf.App().Styles.Dialog()
+	pages := cf.App().Content.Pages
+
+	f := tview.NewForm()
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
+
+	var pathInput string
+	f.AddInputField("Path:", "", 50, nil, func(text string) {
+		pathInput = text
+	})
+
+	f.AddButton("Go", func() {
+		pages.RemovePage("goto-prompt")
+		if pathInput == "" {
+			return
+		}
+
+		// Resolve the path (absolute or relative)
+		targetPath := cf.resolvePath(pathInput)
+
+		// Navigate to the target path
+		v := NewContainerFs(cf.podPath, cf.containerName, targetPath)
+		if err := cf.App().inject(v, false); err != nil {
+			cf.App().Flash().Err(err)
+		}
+	})
+
+	f.AddButton("Cancel", func() {
+		pages.RemovePage("goto-prompt")
+	})
+
+	for i := range 2 {
+		b := f.GetButton(i)
+		if b != nil {
+			b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+			b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+		}
+	}
+
+	modal := tview.NewModalForm("<Go to Path>", f)
+	modal.SetText(fmt.Sprintf("Current: %s\nEnter absolute (/path) or relative (path) path:", cf.currentDir))
+	modal.SetTextColor(styles.FgColor.Color())
+	modal.SetDoneFunc(func(int, string) {
+		pages.RemovePage("goto-prompt")
+	})
+
+	pages.AddPage("goto-prompt", modal, false, false)
+	pages.ShowPage("goto-prompt")
+}
+
+// resolvePath resolves a path (absolute or relative to currentDir).
+func (cf *ContainerFs) resolvePath(input string) string {
+	// If it starts with /, it's absolute
+	if strings.HasPrefix(input, "/") {
+		return input
+	}
+
+	// Otherwise, it's relative to currentDir
+	// Clean up path separators
+	if cf.currentDir == "/" {
+		return "/" + input
+	}
+	return cf.currentDir + "/" + input
 }
 
 // downloadCmd downloads a file or directory from the container.
