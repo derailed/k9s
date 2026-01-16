@@ -215,9 +215,10 @@ type (
 
 	// TableHeader tracks table header styles.
 	TableHeader struct {
-		FgColor     Color `json:"fgColor" yaml:"fgColor"`
-		BgColor     Color `json:"bgColor" yaml:"bgColor"`
-		SorterColor Color `json:"sorterColor" yaml:"sorterColor"`
+		FgColor       Color `json:"fgColor" yaml:"fgColor"`
+		BgColor       Color `json:"bgColor" yaml:"bgColor"`
+		SorterColor   Color `json:"sorterColor" yaml:"sorterColor"`
+		SelectedColor Color `json:"selectedColor" yaml:"selectedColor"`
 	}
 
 	// Xray tracks xray styles.
@@ -435,9 +436,10 @@ func newTable() Table {
 
 func newTableHeader() TableHeader {
 	return TableHeader{
-		FgColor:     "white",
-		BgColor:     "black",
-		SorterColor: "aqua",
+		FgColor:       "white",
+		BgColor:       "black",
+		SorterColor:   "aqua",
+		SelectedColor: "lightskyblue",
 	}
 }
 
@@ -713,6 +715,7 @@ func (t *TableHeader) Invert() {
 	t.FgColor = t.FgColor.InvertColor()
 	t.BgColor = t.BgColor.InvertColor()
 	t.SorterColor = t.SorterColor.InvertColor()
+	t.SelectedColor = t.SelectedColor.InvertColor()
 }
 
 // Invert inverts all colors in Xray.

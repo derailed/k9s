@@ -66,6 +66,7 @@ k9s:
         fgColor: white
         bgColor: black
         sorterColor: aqua
+        selectedColor: lightskyblue
     xray:
       fgColor: aqua
       bgColor: black
