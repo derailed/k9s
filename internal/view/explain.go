@@ -253,7 +253,7 @@ func (e *Explain) loadExplain(path string) {
 
 	result, err := explainDAO.Explain(ctx, path)
 	if err != nil {
-		slog.Error("Explain failed", slog.Any(slogs.Error, err), slog.String("path", path))
+		slog.Error("Explain failed", slogs.Error, err, "path", path)
 		return
 	}
 
