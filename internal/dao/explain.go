@@ -45,12 +45,12 @@ type ExplainResult struct {
 }
 
 // List returns a collection of explain results.
-func (e *Explain) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+func (*Explain) List(_ context.Context, _ string) ([]runtime.Object, error) {
 	return nil, fmt.Errorf("list not supported for explain")
 }
 
 // Get returns a kubectl explain result for a given path.
-func (e *Explain) Get(ctx context.Context, path string) (runtime.Object, error) {
+func (*Explain) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, fmt.Errorf("get not supported for explain")
 }
 
@@ -65,7 +65,7 @@ func (e *Explain) ExplainRecursive(ctx context.Context, resourcePath string) (*E
 }
 
 // explainWithOptions executes kubectl explain with optional --recursive flag.
-func (e *Explain) explainWithOptions(ctx context.Context, resourcePath string, recursive bool) (*ExplainResult, error) {
+func (*Explain) explainWithOptions(ctx context.Context, resourcePath string, recursive bool) (*ExplainResult, error) {
 	factory, ok := ctx.Value(internal.KeyFactory).(Factory)
 	if !ok || factory == nil {
 		return nil, fmt.Errorf("no factory found in context")

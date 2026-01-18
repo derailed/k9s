@@ -41,7 +41,6 @@ type Explain struct {
 
 // Stop stops the view.
 func (e *Explain) Stop() {
-	slog.Info("Explain Stop called", "path", e.currentPath)
 	e.GetTable().Stop()
 	e.GetTable().CmdBuff().RemoveListener(e)
 }
@@ -93,10 +92,8 @@ func (e *Explain) Start() {
 
 	// Load the explain content if a path was set
 	if e.currentPath != "" {
-		slog.Info("Explain Start: loading explain", "path", e.currentPath)
 		e.loadExplain(e.currentPath)
 	} else {
-		slog.Info("Explain Start: no path set, showing help message")
 		if e.app != nil {
 			e.app.Flash().Info("Use :explain <resource> to explore Kubernetes resources (e.g., :explain pod, :explain deployment.spec)")
 		}
@@ -107,7 +104,6 @@ func (e *Explain) Start() {
 
 // SetInstance sets the current resource path to explain.
 func (e *Explain) SetInstance(path string) {
-	slog.Info("Explain SetInstance called", "path", path)
 	e.currentPath = path
 	e.pathHistory = []string{}
 	e.fields = []string{}
@@ -182,14 +178,14 @@ func (e *Explain) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 // refreshCmd refreshes the current view.
-func (e *Explain) refreshCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (e *Explain) refreshCmd(_ *tcell.EventKey) *tcell.EventKey {
 	e.loadExplain(e.currentPath)
 	e.app.Flash().Info("Refreshed")
 	return nil
 }
 
 // viewFullCmd shows the full recursive kubectl explain output for the selected field.
-func (e *Explain) viewFullCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (e *Explain) viewFullCmd(_ *tcell.EventKey) *tcell.EventKey {
 	if e.currentPath == "" {
 		return nil
 	}
@@ -257,12 +253,9 @@ func (e *Explain) loadExplain(path string) {
 
 	result, err := explainDAO.Explain(ctx, path)
 	if err != nil {
-		e.app.Flash().Errf("Failed to explain %s: %v", path, err)
 		slog.Error("Explain failed", slogs.Error, err, "path", path)
 		return
 	}
-
-	slog.Info("Explain result received", "path", path, "fields_count", len(result.Fields), "content_length", len(result.Content), "is_leaf", result.IsLeaf)
 
 	// Update fields, types, tree, kind, version, leaf info, and description
 	e.fields = result.Fields
@@ -274,8 +267,6 @@ func (e *Explain) loadExplain(path string) {
 	e.leafType = result.LeafType
 	e.description = result.Description
 	e.isLeaf = result.IsLeaf
-
-	slog.Info("About to update display", "fields", e.fields, "is_leaf", e.isLeaf)
 
 	// For leaf nodes, show the full kubectl explain output as text
 	if e.isLeaf {
@@ -290,8 +281,6 @@ func (e *Explain) loadExplain(path string) {
 // updateTable updates the table with current fields.
 func (e *Explain) updateTable() {
 	table := e.GetTable()
-
-	slog.Info("updateTable called", "fields_count", len(e.fields), "fields", e.fields)
 
 	// Update title with current path
 	if e.currentPath != "" {
@@ -311,7 +300,6 @@ func (e *Explain) updateTable() {
 	// Build row events
 	rowEvents := model1.NewRowEvents(len(e.fields))
 	if len(e.fields) == 0 {
-		slog.Info("No fields found (leaf node), showing single row with all details")
 
 		// For leaf nodes, show everything in a single row
 		fieldName := e.leafField
@@ -346,13 +334,12 @@ func (e *Explain) updateTable() {
 	} else {
 		// Use the recursive field tree if available
 		if len(e.fieldTree) > 0 {
-			slog.Info("Adding recursive field tree rows", "count", len(e.fieldTree))
 			for i, fieldInfo := range e.fieldTree {
 				// Build the tree representation with proper branch tracking
 				var prefix strings.Builder
 
 				// For each depth level, determine if we need | or space
-				for d := 0; d < fieldInfo.Depth; d++ {
+				for d := range fieldInfo.Depth {
 					// Check if there are more items at this depth level after current item
 					hasMoreAtDepth := false
 					for j := i + 1; j < len(e.fieldTree); j++ {
@@ -419,7 +406,6 @@ func (e *Explain) updateTable() {
 			}
 		} else {
 			// Simple field list (non-recursive)
-			slog.Info("Adding simple field rows", "count", len(e.fields))
 			for i, field := range e.fields {
 				// Get the type for this field
 				fieldType := e.fieldTypes[field]
@@ -459,8 +445,6 @@ func (e *Explain) updateTable() {
 		rowEvents,
 	)
 
-	slog.Info("Calling table.Update", "row_count", rowEvents.Len())
-
 	// Update the table - must be done in QueueUpdateDraw for UI to render
 	cdata := table.Update(tableData, false)
 	e.app.QueueUpdateDraw(func() {
@@ -471,10 +455,8 @@ func (e *Explain) updateTable() {
 			table.Select(1, 0)
 		}
 
-		slog.Info("updateTable UI updated")
 	})
 
-	slog.Info("updateTable completed")
 }
 
 // showLeafContent displays the full kubectl explain output for leaf nodes.
@@ -489,72 +471,8 @@ func (e *Explain) showLeafContent(content string) {
 	}
 }
 
-// getTreePrefix returns the tree prefix for a field at the given index.
-func (e *Explain) getTreePrefix(index, total int) string {
-	if e.currentPath == "" {
-		// Root level - no nesting
-		if index == total-1 {
-			return "└─ "
-		}
-		return "├─ "
-	}
-
-	// Split the path to determine depth
-	parts := strings.Split(e.currentPath, ".")
-	depth := len(parts)
-
-	// Build the prefix based on depth
-	var prefix strings.Builder
-
-	// Add indentation for each level
-	for i := 0; i < depth; i++ {
-		if i < depth-1 {
-			prefix.WriteString("│  ")
-		} else {
-			// Last level - add tree branch
-			if index == total-1 {
-				prefix.WriteString("└─ ")
-			} else {
-				prefix.WriteString("├─ ")
-			}
-		}
-	}
-
-	return prefix.String()
-}
-
-// getTreePath returns a visual tree representation of the current path (for leaf nodes).
-func (e *Explain) getTreePath() string {
-	if e.currentPath == "" {
-		return ""
-	}
-
-	// Split the path into parts
-	parts := strings.Split(e.currentPath, ".")
-	if len(parts) == 0 {
-		return ""
-	}
-
-	// Build tree visualization showing the full path
-	var result strings.Builder
-	for i, part := range parts {
-		if i > 0 {
-			result.WriteString("\n")
-			result.WriteString(strings.Repeat("│  ", i-1))
-			if i == len(parts)-1 {
-				result.WriteString("└─ ")
-			} else {
-				result.WriteString("├─ ")
-			}
-		}
-		result.WriteString(part)
-	}
-
-	return result.String()
-}
-
 // Name returns the view name.
-func (e *Explain) Name() string {
+func (*Explain) Name() string {
 	return explainTitle
 }
 
