@@ -73,7 +73,9 @@ func InitConnection(config *Config, log *slog.Logger) (*APIClient, error) {
 	}
 	err := a.supportsMetricsResources()
 	if err != nil {
-		slog.Warn("Fail to locate metrics-server", slogs.Error, err)
+		if ctx, _ := config.CurrentContextName(); ctx != "" {
+			slog.Warn("Fail to locate metrics-server", slogs.Error, err)
+		}
 	}
 	if err == nil || errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
 		return &a, nil
@@ -618,7 +620,9 @@ func (a *APIClient) supportsMetricsResources() error {
 
 	dial, err := a.Dial()
 	if err != nil {
-		slog.Warn("Unable to dial API client for metrics", slogs.Error, err)
+		if ctx, _ := a.config.CurrentContextName(); ctx != "" {
+			slog.Warn("Unable to dial API client for metrics", slogs.Error, err)
+		}
 		return err
 	}
 	apiGroups, err := dial.Discovery().ServerGroups()

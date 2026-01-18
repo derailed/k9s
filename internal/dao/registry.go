@@ -317,7 +317,10 @@ func loadRBAC(m ResourceMetas) {
 
 func loadPreferred(f Factory, m ResourceMetas) error {
 	if f == nil || f.Client() == nil || !f.Client().ConnectionOK() {
-		slog.Error("Load cluster resources - No API server connection")
+		// Only log as error if we have a context configured
+		if f != nil && f.Client() != nil && f.Client().ActiveContext() != "" {
+			slog.Error("Load cluster resources - No API server connection")
+		}
 		return nil
 	}
 
