@@ -217,7 +217,7 @@ func (e *Explain) viewFullCmd(evt *tcell.EventKey) *tcell.EventKey {
 	// Get recursive output for the selected field
 	result, err := explainDAO.ExplainRecursive(ctx, targetPath)
 	if err != nil {
-		e.app.Flash().Errf("Failed to get recursive explain output: %w", err)
+		e.app.Flash().Errf("Failed to get recursive explain output: %v", err)
 		return nil
 	}
 
@@ -257,7 +257,7 @@ func (e *Explain) loadExplain(path string) {
 
 	result, err := explainDAO.Explain(ctx, path)
 	if err != nil {
-		e.app.Flash().Errf("Failed to explain %s: %w", path, err)
+		e.app.Flash().Errf("Failed to explain %s: %v", path, err)
 		slog.Error("Explain failed", slogs.Error, err, "path", path)
 		return
 	}
