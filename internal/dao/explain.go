@@ -26,7 +26,7 @@ type FieldInfo struct {
 	Type       string
 	Required   bool
 	Depth      int // Indentation level
-	EnumValues []string
+	EnumValues string
 }
 
 // ExplainResult represents the result of a kubectl explain command.
@@ -103,7 +103,11 @@ func (e *Explain) explainWithOptions(ctx context.Context, resourcePath string, r
 	}
 
 	// Parse the output to extract fields and metadata
-	result.parseOutput()
+	if recursive {
+		result.parseRecursiveTree()
+	} else {
+		result.parseOutput()
+	}
 
 	return result, nil
 }
@@ -165,7 +169,7 @@ func (r *ExplainResult) parseOutput() {
 		}
 
 		// Parse field names - they start with exactly 2 spaces and contain a tab
-		if inFieldsSection && strings.HasPrefix(line, "   ") && !strings.HasPrefix(line, "    ") {
+		if inFieldsSection && strings.HasPrefix(line, "  ") && !strings.HasPrefix(line, "    ") {
 			// Field lines look like: "   fieldName\t<type>"
 			// Split on tab to get field name and type
 			if strings.Contains(line, "\t") {
@@ -190,6 +194,81 @@ func (r *ExplainResult) parseOutput() {
 	// Store the description
 	if len(descriptionLines) > 0 {
 		r.Description = strings.Join(descriptionLines, " ")
+	}
+}
+
+// parseRecursiveTree parses the recursive kubectl explain output to build a complete field tree.
+func (r *ExplainResult) parseRecursiveTree() {
+	lines := strings.Split(r.Content, "\n")
+	inFieldsSection := false
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// Check if we're in the FIELDS section
+		if strings.HasPrefix(trimmed, "FIELDS:") {
+			inFieldsSection = true
+			continue
+		}
+
+		// Skip non-field lines
+		if !inFieldsSection || trimmed == "" {
+			continue
+		}
+
+		// Count leading spaces to determine depth
+		// Each level is indented by 2 spaces
+		leadingSpaces := len(line) - len(strings.TrimLeft(line, " "))
+		if leadingSpaces < 2 {
+			continue
+		}
+
+		depth := leadingSpaces / 2
+
+		// Parse field line: "  fieldName\t<type> -required-"
+		if strings.Contains(line, "\t") {
+			parts := strings.Split(strings.TrimSpace(line), "\t")
+			if len(parts) == 0 || parts[0] == "" {
+				continue
+			}
+
+			fieldName := strings.TrimSpace(parts[0])
+			fieldType := ""
+			required := false
+			enumValues := ""
+
+			// Parse type and flags
+			if len(parts) > 1 {
+				typeInfo := strings.TrimSpace(parts[1])
+
+				// Check for -required- flag
+				if strings.Contains(typeInfo, "-required-") {
+					required = true
+					typeInfo = strings.ReplaceAll(typeInfo, "-required-", "")
+					typeInfo = strings.TrimSpace(typeInfo)
+				}
+
+				fieldType = typeInfo
+			}
+
+			// Check next line for enum values
+			// (enum values appear on the next line after "enum:")
+			if i+1 < len(lines) {
+				nextLine := strings.TrimSpace(lines[i+1])
+				if strings.HasPrefix(nextLine, "enum:") {
+					enumValues = strings.TrimPrefix(nextLine, "enum:")
+					enumValues = strings.TrimSpace(enumValues)
+				}
+			}
+
+			r.FieldTree = append(r.FieldTree, FieldInfo{
+				Name:       fieldName,
+				Type:       fieldType,
+				Required:   required,
+				EnumValues: enumValues,
+				Depth:      depth - 1, // Adjust depth (first level is 2 spaces = depth 0)
+			})
+		}
 	}
 }
 

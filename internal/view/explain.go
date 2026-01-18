@@ -142,7 +142,7 @@ func (e *Explain) drillDownCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	row, _ := e.GetTable().GetSelection()
-	if row < 0 || row > len(e.fields) {
+	if row <= 0 || row > len(e.fields) {
 		return nil
 	}
 
@@ -196,7 +196,7 @@ func (e *Explain) viewFullCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	// Get the selected field (one level deeper)
 	row, _ := e.GetTable().GetSelection()
-	if row < 0 || row > len(e.fields) {
+	if row <= 0 || row > len(e.fields) {
 		e.app.Flash().Warn("No field selected")
 		return nil
 	}
@@ -366,9 +366,9 @@ func (e *Explain) updateTable() {
 					}
 
 					if hasMoreAtDepth {
-						prefix.WriteString("│ ")
+						prefix.WriteString("│  ")
 					} else {
-						prefix.WriteString("  ")
+						prefix.WriteString("   ")
 					}
 				}
 
@@ -397,9 +397,9 @@ func (e *Explain) updateTable() {
 					typeStr += " -required-"
 				}
 
-				if fieldInfo.EnumValues != nil {
+				if fieldInfo.EnumValues != "" {
 					// Add enum on same line, truncated if too long
-					enumStr := strings.Join(fieldInfo.EnumValues, ", ")
+					enumStr := fieldInfo.EnumValues
 					if len(enumStr) > 40 {
 						enumStr = enumStr[:37] + "..."
 					}
@@ -487,6 +487,70 @@ func (e *Explain) showLeafContent(content string) {
 	if err := e.app.inject(details, false); err != nil {
 		e.app.Flash().Err(err)
 	}
+}
+
+// getTreePrefix returns the tree prefix for a field at the given index.
+func (e *Explain) getTreePrefix(index, total int) string {
+	if e.currentPath == "" {
+		// Root level - no nesting
+		if index == total-1 {
+			return "└─ "
+		}
+		return "├─ "
+	}
+
+	// Split the path to determine depth
+	parts := strings.Split(e.currentPath, ".")
+	depth := len(parts)
+
+	// Build the prefix based on depth
+	var prefix strings.Builder
+
+	// Add indentation for each level
+	for i := 0; i < depth; i++ {
+		if i < depth-1 {
+			prefix.WriteString("│  ")
+		} else {
+			// Last level - add tree branch
+			if index == total-1 {
+				prefix.WriteString("└─ ")
+			} else {
+				prefix.WriteString("├─ ")
+			}
+		}
+	}
+
+	return prefix.String()
+}
+
+// getTreePath returns a visual tree representation of the current path (for leaf nodes).
+func (e *Explain) getTreePath() string {
+	if e.currentPath == "" {
+		return ""
+	}
+
+	// Split the path into parts
+	parts := strings.Split(e.currentPath, ".")
+	if len(parts) == 0 {
+		return ""
+	}
+
+	// Build tree visualization showing the full path
+	var result strings.Builder
+	for i, part := range parts {
+		if i > 0 {
+			result.WriteString("\n")
+			result.WriteString(strings.Repeat("│  ", i-1))
+			if i == len(parts)-1 {
+				result.WriteString("└─ ")
+			} else {
+				result.WriteString("├─ ")
+			}
+		}
+		result.WriteString(part)
+	}
+
+	return result.String()
 }
 
 // Name returns the view name.
