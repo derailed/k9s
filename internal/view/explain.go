@@ -253,7 +253,7 @@ func (e *Explain) loadExplain(path string) {
 
 	result, err := explainDAO.Explain(ctx, path)
 	if err != nil {
-		slog.Error("Explain failed", slogs.Error, err, "path", path)
+		slog.Error("Explain failed", slog.Any(slogs.Error, err), slog.String("path", path))
 		return
 	}
 
@@ -300,7 +300,6 @@ func (e *Explain) updateTable() {
 	// Build row events
 	rowEvents := model1.NewRowEvents(len(e.fields))
 	if len(e.fields) == 0 {
-
 		// For leaf nodes, show everything in a single row
 		fieldName := e.leafField
 		if fieldName == "" {
@@ -454,9 +453,7 @@ func (e *Explain) updateTable() {
 		if len(e.fields) > 0 {
 			table.Select(1, 0)
 		}
-
 	})
-
 }
 
 // showLeafContent displays the full kubectl explain output for leaf nodes.
