@@ -307,7 +307,11 @@ func (k *K9s) Reload() error {
 	if k.getContextSwitch() {
 		return nil
 	}
-	ct, err := k.ks.GetContext(k.getActiveContextName())
+	ctxName := k.getActiveContextName()
+	if ctxName == "" {
+		return errors.New("no active context available")
+	}
+	ct, err := k.ks.GetContext(ctxName)
 	if err != nil {
 		return err
 	}
