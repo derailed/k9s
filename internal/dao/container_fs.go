@@ -192,7 +192,7 @@ func (c *ContainerFs) createRESTClient() (*rest.RESTClient, *rest.Config, error)
 }
 
 // executeInPod executes a command in a pod and captures stdout/stderr.
-func (c *ContainerFs) executeInPod(ctx context.Context, podPath, container string, execOpts *v1.PodExecOptions, stdout, stderr io.Writer) error {
+func (c *ContainerFs) executeInPod(ctx context.Context, podPath, container string, command []string, stdout, stderr io.Writer) error {
 	ns, po := client.Namespaced(podPath)
 
 	restClient, cfg, err := c.createRESTClient()
@@ -205,7 +205,14 @@ func (c *ContainerFs) executeInPod(ctx context.Context, podPath, container strin
 		Name(po).
 		Namespace(ns).
 		SubResource("exec").
-		VersionedParams(execOpts, scheme.ParameterCodec)
+		VersionedParams(&v1.PodExecOptions{
+			Container: container,
+			Command:   command,
+			Stdin:     false,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       false,
+		}, scheme.ParameterCodec)
 
 	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
 	if err != nil {
@@ -225,14 +232,7 @@ func (c *ContainerFs) execInContainer(ctx context.Context, podPath, container, d
 	shellCmd := fmt.Sprintf(`cd "%s" 2>/dev/null && ls -la`, dir)
 
 	var stdout, stderr bytes.Buffer
-	err := c.executeInPod(ctx, podPath, container, &v1.PodExecOptions{
-		Container: container,
-		Command:   []string{"sh", "-c", shellCmd},
-		Stdin:     false,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       false,
-	}, &stdout, &stderr)
+	err := c.executeInPod(ctx, podPath, container, []string{"sh", "-c", shellCmd}, &stdout, &stderr)
 
 	if err != nil {
 		return nil, fmt.Errorf("exec failed: %w (stderr: %s)", err, stderr.String())
@@ -342,14 +342,7 @@ func parseModTime(month, day, timeOrYear string) time.Time {
 // ReadFile reads the contents of a file from the container.
 func (c *ContainerFs) ReadFile(ctx context.Context, podPath, container, remotePath string) (string, error) {
 	var stdout, stderr bytes.Buffer
-	err := c.executeInPod(ctx, podPath, container, &v1.PodExecOptions{
-		Container: container,
-		Command:   []string{"cat", remotePath},
-		Stdin:     false,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       false,
-	}, &stdout, &stderr)
+	err := c.executeInPod(ctx, podPath, container, []string{"cat", remotePath}, &stdout, &stderr)
 
 	if err != nil {
 		return "", fmt.Errorf("read failed: %w (stderr: %s)", err, stderr.String())
@@ -367,14 +360,7 @@ func (c *ContainerFs) DownloadFile(ctx context.Context, podPath, container, remo
 	defer file.Close()
 
 	var stderr bytes.Buffer
-	err = c.executeInPod(ctx, podPath, container, &v1.PodExecOptions{
-		Container: container,
-		Command:   []string{"cat", remotePath},
-		Stdin:     false,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       false,
-	}, file, &stderr)
+	err = c.executeInPod(ctx, podPath, container, []string{"cat", remotePath}, file, &stderr)
 
 	if err != nil {
 		return fmt.Errorf("download failed: %w (stderr: %s)", err, stderr.String())
@@ -394,14 +380,7 @@ func (c *ContainerFs) DownloadDirectory(ctx context.Context, podPath, container,
 	errChan := make(chan error, 1)
 	go func() {
 		defer pipeWriter.Close()
-		err := c.executeInPod(ctx, podPath, container, &v1.PodExecOptions{
-			Container: container,
-			Command:   []string{"tar", "cf", "-", "-C", parentDir, dirName},
-			Stdin:     false,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, pipeWriter, &stderr)
+		err := c.executeInPod(ctx, podPath, container, []string{"tar", "cf", "-", "-C", parentDir, dirName}, pipeWriter, &stderr)
 		if err != nil {
 			errChan <- fmt.Errorf("tar failed: %w (stderr: %s)", err, stderr.String())
 		}
