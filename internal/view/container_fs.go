@@ -21,7 +21,7 @@ import (
 	"github.com/derailed/tview"
 )
 
-const containerFsTitle = "Container FS"
+const containerFsTitle = "cfs"
 
 // ContainerFs represents a container filesystem browser view.
 type ContainerFs struct {
