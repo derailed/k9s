@@ -96,6 +96,7 @@ func (cf *ContainerFs) bindKeys(aa *ui.KeyActions) {
 		tcell.KeyRight: ui.NewKeyAction("Goto", cf.gotoCmd, true),
 		tcell.KeyLeft:  ui.NewKeyAction("Back", cf.App().PrevCmd, true),
 		ui.KeyN:        ui.NewKeyAction("Navigate", cf.activatePathCmd, false),
+		ui.KeyV:        ui.NewKeyAction("View", cf.viewFileCmd, true),
 		ui.KeyD:        ui.NewKeyAction("Download", cf.downloadCmd, true),
 	})
 	// Note: Esc goes back by popping from the stack (built-in behavior)
@@ -110,7 +111,7 @@ func (cf *ContainerFs) activatePathCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// gotoCmd navigates into a directory when Enter is pressed on selected item.
+// gotoCmd navigates into a directory or views a file when Enter is pressed on selected item.
 func (cf *ContainerFs) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := cf.GetTable().GetSelectedItem()
 	if sel == "" {
@@ -123,8 +124,8 @@ func (cf *ContainerFs) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if row != nil && len(row.Fields) > 0 {
 		name := row.Fields[0] // NAME column is first
 		if !strings.HasPrefix(name, "📁 ") {
-			// It's a file, show message for now (file viewing not implemented yet)
-			cf.App().Flash().Infof("File viewing not yet implemented: %s", sel)
+			// It's a file, view it
+			cf.viewFile(sel)
 			return nil
 		}
 	}
@@ -287,6 +288,59 @@ func (cf *ContainerFs) BufferCompleted(text, suggestion string) {
 // BufferActive is called when buffer activation state changes.
 func (cf *ContainerFs) BufferActive(state bool, k model.BufferKind) {
 	cf.App().BufferActive(state, k)
+}
+
+// viewFileCmd handles the 'v' key to view a file.
+func (cf *ContainerFs) viewFileCmd(evt *tcell.EventKey) *tcell.EventKey {
+	sel := cf.GetTable().GetSelectedItem()
+	if sel == "" {
+		return evt
+	}
+
+	// Check if it's a file
+	row := cf.GetTable().GetSelectedRow(sel)
+	if row != nil && len(row.Fields) > 0 {
+		name := row.Fields[0] // NAME column is first
+		if strings.HasPrefix(name, "📁 ") {
+			cf.App().Flash().Warn("Cannot view directory, use Enter to navigate")
+			return nil
+		}
+	}
+
+	cf.viewFile(sel)
+	return nil
+}
+
+// viewFile opens a file viewer for the given file path.
+func (cf *ContainerFs) viewFile(filePath string) {
+	// Show loading message
+	cf.App().Flash().Infof("Loading file: %s", filePath)
+
+	// Fetch file contents in background
+	go func() {
+		var cfs dao.ContainerFs
+		cfs.Init(cf.App().factory, client.CfsGVR)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		content, err := cfs.ReadFile(ctx, cf.podPath, cf.containerName, filePath)
+		if err != nil {
+			cf.App().QueueUpdateDraw(func() {
+				cf.App().Flash().Errf("Failed to read file: %s", err)
+			})
+			return
+		}
+
+		// Create and show file viewer
+		cf.App().QueueUpdateDraw(func() {
+			displayPath := fmt.Sprintf("%s:%s:%s", cf.podPath, cf.containerName, filePath)
+			details := NewDetails(cf.App(), "File Viewer", displayPath, "text", true).Update(content)
+			if err := cf.App().inject(details, false); err != nil {
+				cf.App().Flash().Err(err)
+			}
+		})
+	}()
 }
 
 // downloadCmd downloads a file or directory from the container.
