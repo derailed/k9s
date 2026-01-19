@@ -26,10 +26,10 @@ const containerFsTitle = "Container FS"
 // ContainerFs represents a container filesystem browser view.
 type ContainerFs struct {
 	ResourceViewer
-	podPath       string           // e.g., "default/nginx-pod"
-	containerName string           // e.g., "nginx"
-	currentDir    string           // Current directory path
-	pathBuff      *model.FishBuff  // Buffer for interactive path navigation
+	podPath       string          // e.g., "default/nginx-pod"
+	containerName string          // e.g., "nginx"
+	currentDir    string          // Current directory path
+	pathBuff      *model.FishBuff // Buffer for interactive path navigation
 }
 
 // NewContainerFs returns a new container filesystem browser.
@@ -93,7 +93,9 @@ func (cf *ContainerFs) bindKeys(aa *ui.KeyActions) {
 
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", cf.gotoCmd, true),
-		ui.KeyN: ui.NewKeyAction("Navigate", cf.activatePathCmd, false),
+		tcell.KeyRight: ui.NewKeyAction("Goto", cf.gotoCmd, true),
+		tcell.KeyLeft:  ui.NewKeyAction("Back", cf.App().PrevCmd, true),
+		ui.KeyN:        ui.NewKeyAction("Navigate", cf.activatePathCmd, false),
 		ui.KeyD:        ui.NewKeyAction("Download", cf.downloadCmd, true),
 	})
 	// Note: Esc goes back by popping from the stack (built-in behavior)
