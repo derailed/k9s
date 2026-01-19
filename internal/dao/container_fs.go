@@ -59,7 +59,7 @@ func NewContainerFs(f Factory) *ContainerFs {
 // List returns a collection of container filesystem entries.
 func (c *ContainerFs) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	// Extract context values
-	podPath, ok := ctx.Value(internal.KeyPath).(string)
+	podPath, ok := ctx.Value(internal.KeyFQN).(string)
 	if !ok {
 		return nil, errors.New("no pod path in context")
 	}

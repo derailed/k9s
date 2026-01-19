@@ -77,7 +77,11 @@ func (cf *ContainerFs) Name() string {
 }
 
 func (cf *ContainerFs) fsContext(ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, internal.KeyPath, cf.podPath)
+	// KeyFQN stores the pod path for internal use (e.g., "default/nginx-pod")
+	ctx = context.WithValue(ctx, internal.KeyFQN, cf.podPath)
+	// KeyPath stores the descriptive display path (e.g., "default/nginx-pod:nginx:/var/log")
+	displayPath := fmt.Sprintf("%s:%s:%s", cf.podPath, cf.containerName, cf.currentDir)
+	ctx = context.WithValue(ctx, internal.KeyPath, displayPath)
 	ctx = context.WithValue(ctx, internal.KeyContainers, cf.containerName)
 	return context.WithValue(ctx, internal.KeyCurrentDir, cf.currentDir)
 }
@@ -222,7 +226,7 @@ func (cf *ContainerFs) listSubdirectories(path string) ([]string, error) {
 	defer cancel()
 
 	// Set context with pod, container, and directory
-	ctx = context.WithValue(ctx, internal.KeyPath, cf.podPath)
+	ctx = context.WithValue(ctx, internal.KeyFQN, cf.podPath)
 	ctx = context.WithValue(ctx, internal.KeyContainers, cf.containerName)
 	ctx = context.WithValue(ctx, internal.KeyCurrentDir, path)
 
