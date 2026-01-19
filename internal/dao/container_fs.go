@@ -4,13 +4,13 @@
 package dao
 
 import (
-	"archive/tar"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -374,93 +374,45 @@ func (c *ContainerFs) DownloadDirectory(ctx context.Context, podPath, container,
 	parentDir := filepath.Dir(remotePath)
 	dirName := filepath.Base(remotePath)
 
+	// Ensure local directory exists
+	if err := os.MkdirAll(localPath, 0755); err != nil {
+		return fmt.Errorf("failed to create local directory: %w", err)
+	}
+
 	pipeReader, pipeWriter := io.Pipe()
 
-	var stderr bytes.Buffer
-	errChan := make(chan error, 1)
+	var execStderr bytes.Buffer
+	execErrChan := make(chan error, 1)
 	go func() {
 		defer pipeWriter.Close()
-		err := c.executeInPod(ctx, podPath, container, []string{"tar", "cf", "-", "-C", parentDir, dirName}, pipeWriter, &stderr)
+		err := c.executeInPod(ctx, podPath, container, []string{"tar", "cf", "-", "-C", parentDir, dirName}, pipeWriter, &execStderr)
 		if err != nil {
-			errChan <- fmt.Errorf("tar failed: %w (stderr: %s)", err, stderr.String())
+			execErrChan <- fmt.Errorf("tar failed: %w (stderr: %s)", err, execStderr.String())
 		}
-		close(errChan)
+		close(execErrChan)
 	}()
 
-	if err := extractTar(pipeReader, localPath); err != nil {
+	if err := extractTar(ctx, pipeReader, localPath); err != nil {
 		return fmt.Errorf("failed to extract tar: %w", err)
 	}
 
-	if err := <-errChan; err != nil {
+	if err := <-execErrChan; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// extractTar extracts a tar archive to the specified directory.
-func extractTar(r io.Reader, destDir string) error {
-	// Create tar reader
-	tr := tar.NewReader(r)
+// extractTar extracts a tar archive to the specified directory using the system tar command.
+func extractTar(ctx context.Context, r io.Reader, destDir string) error {
+	cmd := exec.CommandContext(ctx, "tar", "-xf", "-", "-C", destDir)
+	cmd.Stdin = r
 
-	// Extract files
-	for {
-		header, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("failed to read tar header: %w", err)
-		}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 
-		// Build target path
-		target := filepath.Join(destDir, header.Name)
-
-		// Check for directory traversal
-		if !strings.HasPrefix(target, filepath.Clean(destDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("illegal file path in tar: %s", header.Name)
-		}
-
-		switch header.Typeflag {
-		case tar.TypeDir:
-			// Create directory
-			if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", target, err)
-			}
-
-		case tar.TypeReg:
-			// Create parent directories
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
-				return fmt.Errorf("failed to create parent directory for %s: %w", target, err)
-			}
-
-			// Create file
-			file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(header.Mode))
-			if err != nil {
-				return fmt.Errorf("failed to create file %s: %w", target, err)
-			}
-
-			// Copy file content
-			if _, err := io.Copy(file, tr); err != nil {
-				file.Close()
-				return fmt.Errorf("failed to write file %s: %w", target, err)
-			}
-			file.Close()
-
-		case tar.TypeSymlink:
-			// Create parent directories
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
-				return fmt.Errorf("failed to create parent directory for symlink %s: %w", target, err)
-			}
-
-			// Create symlink
-			if err := os.Symlink(header.Linkname, target); err != nil {
-				// Ignore if symlink already exists
-				if !os.IsExist(err) {
-					return fmt.Errorf("failed to create symlink %s: %w", target, err)
-				}
-			}
-		}
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("tar extraction failed: %w (stderr: %s)", err, stderr.String())
 	}
 
 	return nil
