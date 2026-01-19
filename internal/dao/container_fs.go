@@ -172,63 +172,72 @@ func storeInCache(cacheKey string, entries []render.ContainerFsRes) {
 	}
 }
 
-// execInContainer executes a command in a container and returns the output using the Kubernetes API.
-func (c *ContainerFs) execInContainer(ctx context.Context, podPath, container, dir string) ([]render.ContainerFsRes, error) {
-	// Parse namespace and pod name
-	ns, po := client.Namespaced(podPath)
-
-	// Get REST config
+// createRESTClient creates a REST client configured for pod exec operations.
+func (c *ContainerFs) createRESTClient() (*rest.RESTClient, *rest.Config, error) {
 	cfg, err := c.Client().RestConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get REST config: %w", err)
+		return nil, nil, fmt.Errorf("failed to get REST config: %w", err)
 	}
 
-	// Set up for core v1 API
 	cfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
 	cfg.APIPath = "/api"
 	cfg.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 
-	// Create REST client
 	restClient, err := rest.RESTClientFor(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create REST client: %w", err)
+		return nil, nil, fmt.Errorf("failed to create REST client: %w", err)
 	}
 
-	// Build exec request
+	return restClient, cfg, nil
+}
+
+// executeInPod executes a command in a pod and captures stdout/stderr.
+func (c *ContainerFs) executeInPod(ctx context.Context, podPath, container string, execOpts *v1.PodExecOptions, stdout, stderr io.Writer) error {
+	ns, po := client.Namespaced(podPath)
+
+	restClient, cfg, err := c.createRESTClient()
+	if err != nil {
+		return err
+	}
+
 	req := restClient.Post().
 		Resource("pods").
 		Name(po).
 		Namespace(ns).
 		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
-			Container: container,
-			Command:   []string{"ls", "-la", dir},
-			Stdin:     false,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, scheme.ParameterCodec)
+		VersionedParams(execOpts, scheme.ParameterCodec)
 
-	// Create executor
 	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
 	if err != nil {
-		return nil, fmt.Errorf("failed to create executor: %w", err)
+		return fmt.Errorf("failed to create executor: %w", err)
 	}
 
-	// Execute command and capture output
-	var stdout, stderr bytes.Buffer
-	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+	return exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  nil,
-		Stdout: &stdout,
-		Stderr: &stderr,
+		Stdout: stdout,
+		Stderr: stderr,
 		Tty:    false,
 	})
+}
+
+// execInContainer executes a command in a container and returns the output using the Kubernetes API.
+func (c *ContainerFs) execInContainer(ctx context.Context, podPath, container, dir string) ([]render.ContainerFsRes, error) {
+	shellCmd := fmt.Sprintf(`cd "%s" 2>/dev/null && ls -la`, dir)
+
+	var stdout, stderr bytes.Buffer
+	err := c.executeInPod(ctx, podPath, container, &v1.PodExecOptions{
+		Container: container,
+		Command:   []string{"sh", "-c", shellCmd},
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+	}, &stdout, &stderr)
 
 	if err != nil {
 		return nil, fmt.Errorf("exec failed: %w (stderr: %s)", err, stderr.String())
 	}
 
-	// Parse the output
 	return parseLsOutput(dir, stdout.String())
 }
 
@@ -332,55 +341,15 @@ func parseModTime(month, day, timeOrYear string) time.Time {
 
 // ReadFile reads the contents of a file from the container.
 func (c *ContainerFs) ReadFile(ctx context.Context, podPath, container, remotePath string) (string, error) {
-	// Parse namespace and pod name
-	ns, po := client.Namespaced(podPath)
-
-	// Get REST config
-	cfg, err := c.Client().RestConfig()
-	if err != nil {
-		return "", fmt.Errorf("failed to get REST config: %w", err)
-	}
-
-	// Set up for core v1 API
-	cfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
-	cfg.APIPath = "/api"
-	cfg.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
-
-	// Create REST client
-	restClient, err := rest.RESTClientFor(cfg)
-	if err != nil {
-		return "", fmt.Errorf("failed to create REST client: %w", err)
-	}
-
-	// Build exec request to cat the file
-	req := restClient.Post().
-		Resource("pods").
-		Name(po).
-		Namespace(ns).
-		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
-			Container: container,
-			Command:   []string{"cat", remotePath},
-			Stdin:     false,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, scheme.ParameterCodec)
-
-	// Create executor
-	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
-	if err != nil {
-		return "", fmt.Errorf("failed to create executor: %w", err)
-	}
-
-	// Execute cat command and capture output
 	var stdout, stderr bytes.Buffer
-	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdin:  nil,
-		Stdout: &stdout,
-		Stderr: &stderr,
-		Tty:    false,
-	})
+	err := c.executeInPod(ctx, podPath, container, &v1.PodExecOptions{
+		Container: container,
+		Command:   []string{"cat", remotePath},
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+	}, &stdout, &stderr)
 
 	if err != nil {
 		return "", fmt.Errorf("read failed: %w (stderr: %s)", err, stderr.String())
@@ -391,62 +360,21 @@ func (c *ContainerFs) ReadFile(ctx context.Context, podPath, container, remotePa
 
 // DownloadFile downloads a file from the container to a local path using cat.
 func (c *ContainerFs) DownloadFile(ctx context.Context, podPath, container, remotePath, localPath string) error {
-	// Parse namespace and pod name
-	ns, po := client.Namespaced(podPath)
-
-	// Get REST config
-	cfg, err := c.Client().RestConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get REST config: %w", err)
-	}
-
-	// Set up for core v1 API
-	cfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
-	cfg.APIPath = "/api"
-	cfg.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
-
-	// Create REST client
-	restClient, err := rest.RESTClientFor(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to create REST client: %w", err)
-	}
-
-	// Build exec request to cat the file
-	req := restClient.Post().
-		Resource("pods").
-		Name(po).
-		Namespace(ns).
-		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
-			Container: container,
-			Command:   []string{"cat", remotePath},
-			Stdin:     false,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, scheme.ParameterCodec)
-
-	// Create executor
-	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
-	if err != nil {
-		return fmt.Errorf("failed to create executor: %w", err)
-	}
-
-	// Create local file
 	file, err := os.Create(localPath)
 	if err != nil {
 		return fmt.Errorf("failed to create local file: %w", err)
 	}
 	defer file.Close()
 
-	// Execute cat command and write directly to file
 	var stderr bytes.Buffer
-	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdin:  nil,
-		Stdout: file,
-		Stderr: &stderr,
-		Tty:    false,
-	})
+	err = c.executeInPod(ctx, podPath, container, &v1.PodExecOptions{
+		Container: container,
+		Command:   []string{"cat", remotePath},
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+	}, file, &stderr)
 
 	if err != nil {
 		return fmt.Errorf("download failed: %w (stderr: %s)", err, stderr.String())
@@ -457,78 +385,33 @@ func (c *ContainerFs) DownloadFile(ctx context.Context, podPath, container, remo
 
 // DownloadDirectory downloads a directory from the container to a local path using tar.
 func (c *ContainerFs) DownloadDirectory(ctx context.Context, podPath, container, remotePath, localPath string) error {
-	// Parse namespace and pod name
-	ns, po := client.Namespaced(podPath)
-
-	// Get REST config
-	cfg, err := c.Client().RestConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get REST config: %w", err)
-	}
-
-	// Set up for core v1 API
-	cfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
-	cfg.APIPath = "/api"
-	cfg.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
-
-	// Create REST client
-	restClient, err := rest.RESTClientFor(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to create REST client: %w", err)
-	}
-
-	// Build exec request to tar the directory
-	// Use tar cf - to create tar and output to stdout (no gzip for compatibility)
-	// -C changes to parent directory, then tar just the directory name
 	parentDir := filepath.Dir(remotePath)
 	dirName := filepath.Base(remotePath)
 
-	req := restClient.Post().
-		Resource("pods").
-		Name(po).
-		Namespace(ns).
-		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
+	pipeReader, pipeWriter := io.Pipe()
+
+	var stderr bytes.Buffer
+	errChan := make(chan error, 1)
+	go func() {
+		defer pipeWriter.Close()
+		err := c.executeInPod(ctx, podPath, container, &v1.PodExecOptions{
 			Container: container,
 			Command:   []string{"tar", "cf", "-", "-C", parentDir, dirName},
 			Stdin:     false,
 			Stdout:    true,
 			Stderr:    true,
 			TTY:       false,
-		}, scheme.ParameterCodec)
-
-	// Create executor
-	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
-	if err != nil {
-		return fmt.Errorf("failed to create executor: %w", err)
-	}
-
-	// Create a pipe to stream tar data
-	pipeReader, pipeWriter := io.Pipe()
-
-	// Execute tar command in goroutine
-	var stderr bytes.Buffer
-	errChan := make(chan error, 1)
-	go func() {
-		defer pipeWriter.Close()
-		err := exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-			Stdin:  nil,
-			Stdout: pipeWriter,
-			Stderr: &stderr,
-			Tty:    false,
-		})
+		}, pipeWriter, &stderr)
 		if err != nil {
 			errChan <- fmt.Errorf("tar failed: %w (stderr: %s)", err, stderr.String())
 		}
 		close(errChan)
 	}()
 
-	// Extract tar to local directory
 	if err := extractTar(pipeReader, localPath); err != nil {
 		return fmt.Errorf("failed to extract tar: %w", err)
 	}
 
-	// Check for exec errors
 	if err := <-errChan; err != nil {
 		return err
 	}
