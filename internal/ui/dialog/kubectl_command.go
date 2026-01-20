@@ -5,6 +5,7 @@ package dialog
 
 import (
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 )
@@ -14,7 +15,7 @@ const kubectlDialogKey = "kubectl-command"
 type copyFunc func(string) error
 
 // ShowKubectlCommand displays a dialog with the kubectl command and copy functionality.
-func ShowKubectlCommand(styles *config.Dialog, pages *ui.Pages, command string, onCopy copyFunc) {
+func ShowKubectlCommand(styles *config.Dialog, pages *ui.Pages, command string, onCopy copyFunc, flash *model.Flash) {
 	f := tview.NewForm().
 		SetItemPadding(0).
 		SetButtonsAlign(tview.AlignCenter).
@@ -31,28 +32,15 @@ func ShowKubectlCommand(styles *config.Dialog, pages *ui.Pages, command string, 
 		field.SetFieldBackgroundColor(styles.BgColor.Color())
 	}
 
-	// Try to detect if clipboard is available
-	clipboardAvailable := true
-	if onCopy != nil {
-		// Test clipboard availability with empty string
-		if err := onCopy(""); err != nil {
-			clipboardAvailable = false
+	// Always add Copy button (best-effort approach like other dialogs)
+	f.AddButton("Copy to Clipboard", func() {
+		if err := onCopy(command); err != nil {
+			flash.Err(err)
+			return
 		}
-	} else {
-		clipboardAvailable = false
-	}
-
-	// Add Copy button only if clipboard is available
-	if clipboardAvailable && onCopy != nil {
-		f.AddButton("Copy to Clipboard", func() {
-			if err := onCopy(command); err != nil {
-				// If copy fails, just dismiss
-				dismissKubectl(pages)
-				return
-			}
-			dismissKubectl(pages)
-		})
-	}
+		flash.Info("Command copied to clipboard...")
+		dismissKubectl(pages)
+	})
 
 	// Always add Close button
 	f.AddButton("Close", func() {
@@ -60,11 +48,7 @@ func ShowKubectlCommand(styles *config.Dialog, pages *ui.Pages, command string, 
 	})
 
 	// Style buttons
-	buttonCount := 1
-	if clipboardAvailable && onCopy != nil {
-		buttonCount = 2
-	}
-	for i := range buttonCount {
+	for i := range 2 {
 		if b := f.GetButton(i); b != nil {
 			b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
 			b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())

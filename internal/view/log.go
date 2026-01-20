@@ -564,18 +564,8 @@ func (l *Log) showKubectlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		&styles,
 		l.app.Content.Pages,
 		command,
-		func(text string) error {
-			if text == "" {
-				// Test call to check clipboard availability
-				return nil
-			}
-			// Actual copy
-			if err := clipboardWrite(text); err != nil {
-				return err
-			}
-			l.app.Flash().Info("Command copied to clipboard...")
-			return nil
-		},
+		clipboardWrite,
+		l.app.Flash(),
 	)
 
 	return nil
