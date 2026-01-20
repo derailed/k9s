@@ -5,6 +5,7 @@ package dao
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -137,4 +138,66 @@ func (*LogOptions) ToErrLogItem(err error) *LogItem {
 	item := NewLogItem([]byte(fmt.Sprintf("%s [orange::b]%s[::-]\n", t, err)))
 	item.IsError = true
 	return item
+}
+
+// ToKubectlCommand generates the equivalent kubectl command for these log options.
+func (o *LogOptions) ToKubectlCommand() string {
+	ns, pod := client.Namespaced(o.Path)
+
+	var parts []string
+	parts = append(parts, "kubectl", "logs")
+
+	// Add namespace if present
+	if ns != "" {
+		parts = append(parts, "-n", ns)
+	}
+
+	// Add pod name
+	parts = append(parts, pod)
+
+	// Add container flag
+	if o.AllContainers {
+		parts = append(parts, "--all-containers=true")
+	} else if o.Container != "" {
+		parts = append(parts, "-c", o.Container)
+	}
+
+	// Add previous flag
+	if o.Previous {
+		parts = append(parts, "--previous")
+	}
+
+	// Handle head mode (limit bytes)
+	if o.Head {
+		parts = append(parts, "--limit-bytes=5000")
+	} else {
+		// Add tail lines
+		if o.Lines > 0 {
+			parts = append(parts, fmt.Sprintf("--tail=%d", o.Lines))
+		}
+
+		// Add since time or since seconds
+		if o.SinceSeconds > 0 {
+			// Convert seconds to human-readable format
+			if o.SinceSeconds < 60 {
+				parts = append(parts, fmt.Sprintf("--since=%ds", o.SinceSeconds))
+			} else if o.SinceSeconds < 3600 {
+				parts = append(parts, fmt.Sprintf("--since=%dm", o.SinceSeconds/60))
+			} else {
+				parts = append(parts, fmt.Sprintf("--since=%dh", o.SinceSeconds/3600))
+			}
+		} else if o.SinceTime != "" {
+			parts = append(parts, fmt.Sprintf("--since-time=%s", o.SinceTime))
+		}
+
+		// Add follow flag (k9s always follows)
+		parts = append(parts, "-f")
+	}
+
+	// Add timestamps flag
+	if o.ShowTimestamp {
+		parts = append(parts, "--timestamps")
+	}
+
+	return strings.Join(parts, " ")
 }
