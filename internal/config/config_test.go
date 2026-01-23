@@ -367,6 +367,7 @@ func TestConfigCurrentContext(t *testing.T) {
 	var (
 		cfgFile = "testdata/kubes/test.yaml"
 		ct2     = "ct-1-2"
+		ctNoNS  = "ct-no-ns"
 	)
 
 	uu := map[string]struct {
@@ -391,6 +392,15 @@ func TestConfigCurrentContext(t *testing.T) {
 			},
 			cluster:   "cl-1",
 			context:   "ct-1-1",
+			namespace: "ns-1",
+		},
+		"context-no-namespace-fallback-to-default": {
+			flags: &genericclioptions.ConfigFlags{
+				KubeConfig: &cfgFile,
+				Context:    &ctNoNS,
+			},
+			cluster:   "cl-1",
+			context:   "ct-no-ns",
 			namespace: client.DefaultNamespace,
 		},
 	}
@@ -415,6 +425,7 @@ func TestConfigRefine(t *testing.T) {
 		cfgFile       = "testdata/kubes/test.yaml"
 		cl1           = "cl-1"
 		ct2           = "ct-1-2"
+		ctNoNS        = "ct-no-ns"
 		ns1, ns2, nsx = "ns-1", "ns-2", "ns-x"
 		trueVal       = true
 	)
@@ -437,7 +448,7 @@ func TestConfigRefine(t *testing.T) {
 			},
 			cluster:   "cl-1",
 			context:   "ct-1-1",
-			namespace: client.DefaultNamespace,
+			namespace: "ns-1",
 		},
 		"override-cluster-context": {
 			flags: &genericclioptions.ConfigFlags{
@@ -456,7 +467,7 @@ func TestConfigRefine(t *testing.T) {
 			},
 			cluster:   "cl-1",
 			context:   "ct-1-1",
-			namespace: client.DefaultNamespace,
+			namespace: "ns-1",
 		},
 		"override-ns": {
 			flags: &genericclioptions.ConfigFlags{
@@ -511,6 +522,15 @@ func TestConfigRefine(t *testing.T) {
 			},
 			cluster:   "cl-1",
 			context:   "ct-1-1",
+			namespace: "ns-1",
+		},
+		"kubeconfig-no-namespace-fallback-to-default": {
+			flags: &genericclioptions.ConfigFlags{
+				KubeConfig: &cfgFile,
+				Context:    &ctNoNS,
+			},
+			cluster:   "cl-1",
+			context:   "ct-no-ns",
 			namespace: client.DefaultNamespace,
 		},
 	}
