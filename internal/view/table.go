@@ -330,3 +330,10 @@ func (t *Table) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	return evt
 }
+
+func (*Table) ExtraHints() map[string]string {
+	return map[string]string{
+		"Select Previous Column": "<shift-left>",
+		"Select Next Column":     "<shift-right>",
+	}
+}
