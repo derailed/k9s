@@ -298,6 +298,14 @@ func (*Help) showGeneral() model.MenuHints {
 			Mnemonic:    "Ctrl-s",
 			Description: "Save",
 		},
+		{
+			Mnemonic:    "shift-left",
+			Description: "Select Previous Column",
+		},
+		{
+			Mnemonic:    "shift-right",
+			Description: "Select Next Column",
+		},
 	}
 }
 
