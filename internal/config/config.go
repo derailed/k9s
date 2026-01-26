@@ -123,11 +123,19 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		ns = *flags.Namespace
 		c.ResetActiveView()
 	default:
-		nss, err := c.K9s.ActiveContextNamespace()
-		if err != nil {
-			return err
+		// Try to get namespace from kubeconfig context first
+		kubeconfigNS, err := cfg.CurrentContextNamespace()
+		// If kubeconfig has a namespace, use it
+		if err == nil && kubeconfigNS != "" && kubeconfigNS != client.BlankNamespace {
+			ns = kubeconfigNS
+		} else {
+			// Fall back to k9s cached config
+			nss, err := c.K9s.ActiveContextNamespace()
+			if err != nil {
+				return err
+			}
+			ns = nss
 		}
-		ns = nss
 	}
 	if ns == "" {
 		ns = client.DefaultNamespace

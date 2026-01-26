@@ -84,6 +84,10 @@ func NewMockKubeSettings(f *genericclioptions.ConfigFlags) mockKubeSettings {
 				Cluster:   "arn:aws:eks:eu-central-1:xxx:cluster/fred-blee",
 				Namespace: client.DefaultNamespace,
 			},
+			"ct-no-ns": {
+				Cluster:   "cl-1",
+				Namespace: "",
+			},
 		},
 	}
 }
