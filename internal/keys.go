@@ -19,6 +19,7 @@ const (
 	KeyFQN           ContextKey = "fqn"
 	KeyForwards      ContextKey = "forwards"
 	KeyContainers    ContextKey = "containers"
+	KeyCurrentDir    ContextKey = "currentdir"
 	KeyBenchCfg      ContextKey = "benchcfg"
 	KeyAliases       ContextKey = "aliases"
 	KeyUID           ContextKey = "uid"
