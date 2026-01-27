@@ -374,7 +374,6 @@ K9s uses aliases to navigate most K8s resources.
 | Filter resource view by labels                                                  | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                                            | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                                           | `<esc>`                       |                                                                        |
-| Key mapping to describe, view, edit, view logs,...                              | `d`,`v`, `e`, `l`,...         |                                                                        |
 | To view and switch to another Kubernetes context (Pod view)                     | `:`ctx⏎                       |                                                                        |
 | To view and switch directly to another Kubernetes context (Last used view)      | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace                              | `:`ns⏎                        |                                                                        |
@@ -384,8 +383,49 @@ K9s uses aliases to navigate most K8s resources.
 | To delete a resource (TAB and ENTER to confirm)                                 | `ctrl-d`                      |                                                                        |
 | To kill a resource (no confirmation dialog, equivalent to kubectl delete --now) | `ctrl-k`                      |                                                                        |
 | Launch pulses view                                                              | `:`pulses or pu⏎              |                                                                        |
-| Launch XRay view                                                                | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
-| Launch Popeye view                                                              | `:`popeye or pop⏎             | See [popeye](#popeye)                                                  |
+| Launch XRay view                                                                | `:`xray RESOURCE [NAMESPACE]⏎  | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
+| Launch Popeye view                                                              | `:`popeye or pop⏎              | See [popeye](#popeye)                                                  |
+| Mark resource                                                                   | `space`                        |                                                                        |
+| Mark range of resources                                                         | `ctrl-space`                   |                                                                        |
+| Clear all marks                                                                 | `ctrl-\`                       |                                                                        |
+| Save resources to file                                                          | `ctrl-s`                       |                                                                        |
+| Toggle faults/error display                                                     | `ctrl-z`                       |                                                                        |
+| Toggle wide columns                                                             | `ctrl-w`                       |                                                                        |
+| Toggle header                                                                   | `ctrl-e`                       |                                                                        |
+| Toggle breadcrumbs                                                              | `ctrl-g`                       |                                                                        |
+| Move selected column left                                                       | `shift-left arrow`             |                                                                        |
+| Move selected column right                                                      | `shift-right arrow`            |                                                                        |
+| Sort by selected column                                                         | `shift-o`                      |                                                                        |
+| Sort by Name                                                                    | `shift-n`                      |                                                                        |
+| Sort by Age                                                                     | `shift-a`                      |                                                                        |
+| Sort by Namespace                                                               | `shift-p`                      | Only when viewing all namespaces                                       |
+| Sort by Status                                                                  | `shift-s`                      |                                                                        |
+| Copy resource name                                                              | `c`                            |                                                                        |
+| Copy namespace                                                                  | `n`                            |                                                                        |
+| View YAML                                                                       | `y`                            |                                                                        |
+| View logs                                                                       | `l`                            | Resource specific                                                      |
+| View previous logs                                                              | `p`                            | Resource specific                                                      |
+| Shell into container                                                            | `s`                            | Pods only                                                              |
+| Attach to container                                                             | `a`                            | Pods only                                                              |
+| Describe resource                                                               | `d`                            |                                                                        |
+| Edit resource                                                                   | `e`                            | Not available in read-only mode                                        |
+| Show port-forwards                                                              | `f`                            | Pods/Services/Containers                                               |
+| Port forward                                                                    | `shift-f`                      | Pods/Services/Containers                                               |
+| Warp to namespace                                                               | `w`                            | When namespace column is available                                     |
+| Jump to owner                                                                   | `shift-j`                      | When resource has an owner                                             |
+| Use/switch namespace                                                            | `u`                            | Namespace view                                                         |
+| UsedBy (show resources using this)                                              | `u`                            | ServiceAccounts/PVCs/Secrets/ConfigMaps                                |
+| Benchmark (run/stop)                                                            | `b`                            | Services/Port-forwards                                                 |
+| Toggle text wrap                                                                | `w`                            | Log view                                                               |
+| Toggle timestamp                                                                | `t`                            | Log view                                                               |
+| Toggle fullscreen                                                               | `f`                            | Log/YAML/Details view                                                  |
+| Refresh/reload view                                                             | `ctrl-r`                       |                                                                        |
+| Trigger (CronJob)                                                               | `t`                            | CronJob view                                                           |
+| Cordon/Uncordon node                                                            | `u`                            | Node view                                                              |
+| Drain node                                                                      | `r`                            | Node view                                                              |
+| Restart resource                                                                | `r`                            | Deployments/DaemonSets/StatefulSets                                    |
+| Rollback resource                                                               | `ctrl-l`                       | ReplicaSets                                                            |
+| View ReplicaSets                                                                | `z`                            | Deployment view                                                        |
 
 ---
 
