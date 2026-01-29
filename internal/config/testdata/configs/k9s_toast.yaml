@@ -12,10 +12,11 @@ k9s:
     crumbsless: false
     splashless: false
     noIcons: false
+    invert: false
   skipLatestRevCheck: yes
   disablePodCounts: false
   shellPods:
-    image: busybox:1.35.0
+    image: busybox:1.37.0
     namespace: default
     limits:
       cpu: 100m
@@ -31,6 +32,7 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     disableAutoscroll: false
+    columnLock: false
     showTime: false
   thresholds:
     cpu:

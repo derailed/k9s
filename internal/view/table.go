@@ -95,6 +95,19 @@ func (t *Table) SendKey(evt *tcell.EventKey) {
 
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
+
+	// Handle Shift+Left/Right for column selection
+	if evt.Modifiers()&tcell.ModShift != 0 {
+		if key == tcell.KeyLeft {
+			t.Table.SelectPrevColumn()
+			return nil
+		}
+		if key == tcell.KeyRight {
+			t.Table.SelectNextColumn()
+			return nil
+		}
+	}
+
 	if key == tcell.KeyUp || key == tcell.KeyDown {
 		return evt
 	}
@@ -214,6 +227,8 @@ func (t *Table) bindKeys() {
 		tcell.KeyCtrlW:         ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
 		ui.KeyShiftN:           ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
 		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
+		ui.KeyShiftS:           ui.NewKeyAction("Sort Status", t.SortColCmd(statusCol, true), false),
+		ui.KeyShiftO:           ui.NewKeyAction("Sort Selected Column", t.sortSelectedColumnCmd, false),
 	})
 }
 
@@ -227,32 +242,61 @@ func (t *Table) toggleWideCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (t *Table) sortSelectedColumnCmd(*tcell.EventKey) *tcell.EventKey {
+	t.Table.SortSelectedColumn()
+	return nil
+}
+
 func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := t.GetSelectedItem()
-	if path == "" {
+	paths := t.GetSelectedItems()
+	if len(paths) == 0 {
 		return evt
 	}
-	_, n := client.Namespaced(path)
-	if err := clipboardWrite(n); err != nil {
+
+	names := make([]string, 0, len(paths))
+	for _, path := range paths {
+		_, n := client.Namespaced(path)
+		names = append(names, n)
+	}
+
+	text := strings.Join(names, "\n")
+	if err := clipboardWrite(text); err != nil {
 		t.app.Flash().Err(err)
 		return nil
 	}
-	t.app.Flash().Info("Resource name copied to clipboard...")
+
+	if len(names) > 1 {
+		t.app.Flash().Infof("%d resource names copied to clipboard...", len(names))
+	} else {
+		t.app.Flash().Info("Resource name copied to clipboard...")
+	}
 
 	return nil
 }
 
 func (t *Table) cpNsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := t.GetSelectedItem()
-	if path == "" {
+	paths := t.GetSelectedItems()
+	if len(paths) == 0 {
 		return evt
 	}
-	ns, _ := client.Namespaced(path)
-	if err := clipboardWrite(ns); err != nil {
+
+	namespaces := make([]string, 0, len(paths))
+	for _, path := range paths {
+		ns, _ := client.Namespaced(path)
+		namespaces = append(namespaces, ns)
+	}
+
+	text := strings.Join(namespaces, "\n")
+	if err := clipboardWrite(text); err != nil {
 		t.app.Flash().Err(err)
 		return nil
 	}
-	t.app.Flash().Info("Resource namespace copied to clipboard...")
+
+	if len(namespaces) > 1 {
+		t.app.Flash().Infof("%d resource namespaces copied to clipboard...", len(namespaces))
+	} else {
+		t.app.Flash().Info("Resource namespace copied to clipboard...")
+	}
 
 	return nil
 }

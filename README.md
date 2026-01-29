@@ -22,8 +22,7 @@ Your donations will go a long way in keeping our servers lights on and beers in 
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/derailed/k9s?)](https://goreportcard.com/report/github.com/derailed/k9s)
 [![golangci badge](https://github.com/golangci/golangci-web/blob/master/src/assets/images/badge_a_plus_flat.svg)](https://golangci.com/r/github.com/derailed/k9s)
-[![codebeat badge](https://codebeat.co/badges/89e5a80e-dfe8-4426-acf6-6be781e0a12e)](https://codebeat.co/projects/github-com-derailed-k9s-master)
-[![Docker Repository on Quay](https://quay.io/repository/derailed/k9s/status "Docker Repository on Quay")](https://quay.io/repository/derailed/k9s)
+[![Docker Pulls](https://img.shields.io/docker/pulls/derailed/k9s.svg?maxAge=604800)](https://hub.docker.com/r/derailed/k9s/)
 [![release](https://img.shields.io/github/release-pre/derailed/k9s.svg)](https://github.com/derailed/k9s/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mum4k/termdash/blob/master/LICENSE)
 [![Releases](https://img.shields.io/github/downloads/derailed/k9s/total.svg)](https://github.com/derailed/k9s/releases)
@@ -123,6 +122,12 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb && apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
   ```
 
+* On Fedora (42+)
+
+  ```shell
+  dnf install k9s
+  ```
+
 * Via [Winget](https://github.com/microsoft/winget-cli) for Windows
 
   ```shell
@@ -201,13 +206,13 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   You can run k9s as a Docker container by mounting your `KUBECONFIG`:
 
   ```shell
-  docker run --rm -it -v $KUBECONFIG:/root/.kube/config quay.io/derailed/k9s
+  docker run --rm -it -v $KUBECONFIG:/root/.kube/config derailed/k9s
   ```
 
   For default path it would be:
 
   ```shell
-  docker run --rm -it -v ~/.kube/config:/root/.kube/config quay.io/derailed/k9s
+  docker run --rm -it -v ~/.kube/config:/root/.kube/config derailed/k9s
   ```
 
 ### Building your own Docker image
@@ -442,6 +447,8 @@ You can now override the context portForward default address configuration by se
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
       skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
+      # Convert dark skins to light, or vice versa, preserving hue. Default: false
+      invert: false
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
       # Show full resource GVR (Group/Version/Resource) vs just R. Default: false.
@@ -464,6 +471,8 @@ You can now override the context portForward default address configuration by se
       textWrap: false
       # Autoscroll in logs will be disabled. Default is false.
       disableAutoscroll: false
+      # Enable column locking when autoscroll is enabled. Default is false.
+      columnLock: false
       # Toggles log line timestamp info. Default false
       showTime: false
     # Provide shell pod customization when nodeShell feature gate is enabled!
@@ -1091,6 +1100,7 @@ k9s:
     crumbsless: false
     splashless: false
     noIcons: false
+    invert: false
     # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live  Defaults to false.
     reactive: false
     # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
@@ -1115,6 +1125,7 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     disableAutoscroll: false
+    columnLock: false
     showTime: false
   thresholds:
     cpu:
@@ -1256,4 +1267,4 @@ We always enjoy hearing from folks who benefit from our work!
 
 ---
 
-<img src="assets/imhotep_logo.png" width="32" height="auto" alt="Imhotep"/> &nbsp;© 2025 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
+<img src="assets/imhotep_logo.png" width="32" height="auto" alt="Imhotep"/> &nbsp;© 2026 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)

@@ -17,12 +17,13 @@ k9s:
     splashless: false
     reactive: false
     noIcons: false
+    invert: false
     defaultsToFullScreen: false
     useFullGVRTitle: true
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
-    image: busybox:1.35.0
+    image: busybox:1.37.0
     namespace: default
     limits:
       cpu: 100m
@@ -38,6 +39,7 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     disableAutoscroll: false
+    columnLock: false
     showTime: false
   thresholds:
     cpu:

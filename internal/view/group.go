@@ -30,7 +30,6 @@ func (g *Group) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Rules", g.policyCmd, true),
-		ui.KeyShiftK:   ui.NewKeyAction("Sort Kind", g.GetTable().SortColCmd("KIND", true), false),
 	})
 }
 
