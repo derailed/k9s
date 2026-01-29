@@ -51,6 +51,7 @@ type K9s struct {
 	Logger              Logger     `json:"logger" yaml:"logger"`
 	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
 	DefaultView         string     `json:"defaultView" yaml:"defaultView"`
+	AI                  AI         `json:"ai" yaml:"ai"`
 	manualRefreshRate   float32
 	manualReadOnly      *bool
 	manualCommand       *string
@@ -78,6 +79,7 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 		PortForwardAddress: defaultPFAddress(),
 		ShellPod:           NewShellPod(),
 		ImageScans:         NewImageScans(),
+		AI:                 NewAI(),
 		dir:                data.NewDir(AppContextsDir),
 		conn:               conn,
 		ks:                 ks,
