@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os/exec"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -496,6 +498,128 @@ func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (b *Browser) openIngressCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := b.GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	o, err := b.app.factory.Get(b.GVR(), path, true, nil)
+	if err != nil {
+		b.app.Flash().Err(err)
+		return nil
+	}
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil
+	}
+
+	url, err := b.extractIngressURL(u, path)
+	if err != nil {
+		b.app.Flash().Err(err)
+		return nil
+	}
+
+	if err := openURL(url); err != nil {
+		b.app.Flash().Errf("Failed to open URL %s: %v", url, err)
+	}
+
+	return nil
+}
+
+// extractIngressURL extracts the URL from an ingress unstructured object.
+func (b *Browser) extractIngressURL(u *unstructured.Unstructured, path string) (string, error) {
+	host, err := b.extractHostFromIngress(u, path)
+	if err != nil {
+		return "", err
+	}
+
+	protocol, err := b.determineProtocolFromIngress(u, host)
+	if err != nil {
+		return "", err
+	}
+
+	pathStr, err := b.extractPathFromIngress(u, path)
+	if err != nil {
+		return "", err
+	}
+
+	return protocol + "://" + host + pathStr, nil
+}
+
+// extractHostFromIngress extracts the host from the first rule of the ingress.
+func (b *Browser) extractHostFromIngress(u *unstructured.Unstructured, path string) (string, error) {
+	rules, found, err := unstructured.NestedSlice(u.Object, "spec", "rules")
+	if err != nil || !found || len(rules) == 0 {
+		return "", fmt.Errorf("no rules found in ingress %s", path)
+	}
+
+	firstRule, ok := rules[0].(map[string]any)
+	if !ok {
+		return "", fmt.Errorf("invalid rule format in ingress %s", path)
+	}
+
+	host, found, _ := unstructured.NestedString(firstRule, "host")
+	if !found || host == "" {
+		return "", fmt.Errorf("no host found in ingress %s", path)
+	}
+
+	return host, nil
+}
+
+// determineProtocolFromIngress determines the protocol (http or https) based on TLS configuration.
+func (b *Browser) determineProtocolFromIngress(u *unstructured.Unstructured, host string) (string, error) {
+	if tls, found, _ := unstructured.NestedSlice(u.Object, "spec", "tls"); found {
+		for _, t := range tls {
+			if tlsMap, ok := t.(map[string]any); ok {
+				if hosts, found, _ := unstructured.NestedStringSlice(tlsMap, "hosts"); found {
+					for _, h := range hosts {
+						if h == host {
+							return "https", nil
+						}
+					}
+				}
+			}
+		}
+	}
+	return "http", nil
+}
+
+// extractPathFromIngress extracts the first path from the ingress rules.
+func (b *Browser) extractPathFromIngress(u *unstructured.Unstructured, path string) (string, error) {
+	rules, found, err := unstructured.NestedSlice(u.Object, "spec", "rules")
+	if err != nil || !found || len(rules) == 0 {
+		return "", fmt.Errorf("no rules found in ingress %s", path)
+	}
+
+	firstRule, ok := rules[0].(map[string]any)
+	if !ok {
+		return "", fmt.Errorf("invalid rule format in ingress %s", path)
+	}
+
+	http, found, _ := unstructured.NestedMap(firstRule, "http")
+	if !found {
+		return "", fmt.Errorf("no http section in ingress rule for %s", path)
+	}
+
+	paths, found, _ := unstructured.NestedSlice(http, "paths")
+	if !found || len(paths) == 0 {
+		return "", fmt.Errorf("no paths found in ingress rule for %s", path)
+	}
+
+	firstPath, ok := paths[0].(map[string]any)
+	if !ok {
+		return "", fmt.Errorf("invalid path format in ingress %s", path)
+	}
+
+	pathStr, found, _ := unstructured.NestedString(firstPath, "path")
+	if !found {
+		pathStr = "/"
+	}
+
+	return pathStr, nil
+}
+
 func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
@@ -637,6 +761,9 @@ func (b *Browser) refreshActions() {
 		aa.Add(ui.KeyY, ui.NewKeyAction(yamlAction, b.viewCmd, true))
 		aa.Add(ui.KeyD, ui.NewKeyAction("Describe", b.describeCmd, true))
 	}
+	if b.GVR() == client.IngGVR {
+		aa.Add(tcell.Key('o'), ui.NewKeyAction("Open in Browser", b.openIngressCmd, true))
+	}
 	for _, f := range b.bindKeysFn {
 		f(aa)
 	}
@@ -739,4 +866,24 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 	}
 	d := b.app.Styles.Dialog()
 	dialog.ShowDelete(&d, b.app.Content.Pages, msg, okFn, func() {})
+}
+
+// openURL opens the given URL in the default browser.
+func openURL(url string) error {
+	var cmd string
+	var args []string
+	switch runtime.GOOS {
+	case "linux":
+		cmd = "xdg-open"
+		args = []string{url}
+	case "darwin":
+		cmd = "open"
+		args = []string{url}
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start", url}
+	default:
+		return fmt.Errorf("unsupported OS: %s", runtime.GOOS)
+	}
+	return exec.Command(cmd, args...).Start()
 }
