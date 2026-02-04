@@ -82,6 +82,9 @@ func (c *Interpreter) grok() {
 	if lbls != "" {
 		ff = append(ff, lbls)
 	}
+	if c.IsContextCmd() && len(ff) > 1 {
+		ff = []string{strings.Join(ff, " ")}
+	}
 	c.args = newArgs(c, ff)
 }
 

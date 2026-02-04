@@ -498,6 +498,11 @@ func TestContextCmd(t *testing.T) {
 			ok:  true,
 			ctx: "kind-fred",
 		},
+		"with-spaces": {
+			cmd: "ctx default/openshift-cluster:6443/Fistname Lastname",
+			ok:  true,
+			ctx: "default/openshift-cluster:6443/Fistname Lastname",
+		},
 	}
 
 	for k := range uu {
