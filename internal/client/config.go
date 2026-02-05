@@ -35,6 +35,9 @@ type Config struct {
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
 func NewConfig(f *genericclioptions.ConfigFlags) *Config {
+	if f == nil {
+		f = genericclioptions.NewConfigFlags(false)
+	}
 	return &Config{
 		flags: f,
 	}
@@ -151,8 +154,9 @@ func (c *Config) CurrentContextName() (string, error) {
 		return *c.flags.Context, nil
 	}
 	cfg, err := c.RawConfig()
-	if err != nil {
-		return "", fmt.Errorf("fail to load rawConfig: %w", err)
+	if err != nil || cfg.CurrentContext == "" {
+		// Dummy for offline/no kubeconfig.
+		return "offline", nil
 	}
 
 	return cfg.CurrentContext, nil
@@ -182,6 +186,13 @@ func (c *Config) CurrentContext() (*api.Context, error) {
 
 // GetContext fetch a given context or error if it does not exist.
 func (c *Config) GetContext(n string) (*api.Context, error) {
+	if n == "offline" {
+		// Dummy for offline/no kubeconfig.
+		return &api.Context{
+			Cluster:   "offline",
+			Namespace: DefaultNamespace,
+		}, nil
+	}
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return nil, err
@@ -201,8 +212,14 @@ func (c *Config) SetProxy(proxy func(*http.Request) (*url.URL, error)) {
 // Contexts fetch all available contexts.
 func (c *Config) Contexts() (map[string]*api.Context, error) {
 	cfg, err := c.RawConfig()
-	if err != nil {
-		return nil, err
+	if err != nil || len(cfg.Contexts) == 0 {
+		// Dummy for offline/no kubeconfig (ensures static ctx view works).
+		return map[string]*api.Context{
+			"offline": {
+				Cluster:   "offline",
+				Namespace: DefaultNamespace, // from client pkg
+			},
+		}, nil
 	}
 
 	return cfg.Contexts, nil

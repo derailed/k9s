@@ -636,3 +636,46 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 
 	return count, nil
 }
+
+// mockPod returns the same static pod (no dynamic data) for offline mode.
+type mockPod struct {
+	Pod
+}
+
+// List always returns one static pod.
+func (p *mockPod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	// Static pod (simplified from testdata/po.json).
+	u := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "v1",
+			"kind":       "Pod",
+			"metadata": map[string]interface{}{
+				"name":              "static-pod",
+				"namespace":         "default",
+				"creationTimestamp": "2020-01-01T00:00:00Z",
+			},
+			"spec": map[string]interface{}{
+				"containers": []interface{}{
+					map[string]interface{}{
+						"name":  "nginx",
+						"image": "nginx:alpine",
+					},
+				},
+			},
+			"status": map[string]interface{}{
+				"phase": "Running",
+				"podIP": "10.0.0.1",
+			},
+		},
+	}
+	return []runtime.Object{u}, nil
+}
+
+// Get returns the static pod.
+func (p *mockPod) Get(ctx context.Context, path string) (runtime.Object, error) {
+	oo, _ := p.List(ctx, "")
+	if len(oo) > 0 {
+		return &render.PodWithMetrics{Raw: oo[0].(*unstructured.Unstructured)}, nil
+	}
+	return nil, fmt.Errorf("no static pod")
+}

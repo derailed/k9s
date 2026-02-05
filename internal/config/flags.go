@@ -29,6 +29,7 @@ type Flags struct {
 	Splashless    *bool
 	Invert        *bool
 	ScreenDumpDir *string
+	Offline       *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -47,6 +48,7 @@ func NewFlags() *Flags {
 		Splashless:    boolPtr(false),
 		Invert:        boolPtr(false),
 		ScreenDumpDir: strPtr(AppDumpsDir),
+		Offline:       boolPtr(false),
 	}
 }
 

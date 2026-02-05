@@ -73,6 +73,10 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Selector) ([]runtime.Object, error) {
+	// Prevent informer creation/start (and crashes) in offline.
+	if f.client != nil && f.client.IsOffline() {
+		return nil, nil
+	}
 	if client.IsAllNamespace(ns) {
 		ns = client.BlankNamespace
 	}
@@ -246,6 +250,10 @@ func (f *Factory) ForResource(ns string, gvr *client.GVR) (informers.GenericInfo
 	if err != nil {
 		return nil, err
 	}
+	// Prevent nil fact.ForResource (and crash) in offline.
+	if fact == nil {
+		return nil, nil
+	}
 	inf := fact.ForResource(gvr.GVR())
 	if inf == nil {
 		slog.Error("No informer found",
@@ -263,6 +271,10 @@ func (f *Factory) ForResource(ns string, gvr *client.GVR) (informers.GenericInfo
 }
 
 func (f *Factory) ensureFactory(ns string) (di.DynamicSharedInformerFactory, error) {
+	// Prevent informer creation (and crashes) in offline.
+	if f.client != nil && f.client.IsOffline() {
+		return nil, nil
+	}
 	if client.IsClusterWide(ns) {
 		ns = client.BlankNamespace
 	}

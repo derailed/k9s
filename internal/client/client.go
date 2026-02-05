@@ -16,12 +16,16 @@ import (
 
 	"github.com/derailed/k9s/internal/slogs"
 	authorizationv1 "k8s.io/api/authorization/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/cache"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/dynamic"
+	dfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
+	kfake "k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
 	metricsapi "k8s.io/metrics/pkg/apis/metrics"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
@@ -60,6 +64,53 @@ func NewTestAPIClient() *APIClient {
 		config: NewConfig(nil),
 		cache:  cache.NewLRUExpireCache(cacheSize),
 	}
+}
+
+// FakeClient prevents real API calls (full no-op stubs + fakes for offline).
+type FakeClient struct {
+	config *Config
+	log    *slog.Logger
+}
+
+// NewMockConnection returns a stub connection (legacy).
+func NewMockConnection() Connection {
+	return &FakeClient{
+		config: NewConfig(nil),
+		log:    slog.Default(),
+	}
+}
+
+// MockProvider returns stub connections.
+type MockProvider struct{}
+
+// GetConnection returns fake client to prevent real API calls.
+func (MockProvider) GetConnection(c *Config, l *slog.Logger) (Connection, error) {
+	if c == nil {
+		c = NewConfig(nil)
+	}
+	if l == nil {
+		l = slog.Default()
+	}
+	return &FakeClient{config: c, log: l}, nil
+}
+
+// realProvider is the standard k8s provider.
+type realProvider struct{}
+
+// GetConnection creates real connection.
+func (realProvider) GetConnection(c *Config, l *slog.Logger) (Connection, error) {
+	return InitConnection(c, l)
+}
+
+// DefaultProvider is the real provider. Use MockProvider for offline.
+var DefaultProvider Provider = realProvider{}
+
+// NewConnection creates connection via provider. Intercepts for offline etc.
+func NewConnection(p Provider, cfg *Config, log *slog.Logger) (Connection, error) {
+	if p == nil {
+		p = DefaultProvider
+	}
+	return p.GetConnection(cfg, log)
 }
 
 // InitConnection initialize connection from command line args.
@@ -128,6 +179,11 @@ func (a *APIClient) IsActiveNamespace(ns string) bool {
 	}
 
 	return a.ActiveNamespace() == ns
+}
+
+// IsOffline always false for real client.
+func (a *APIClient) IsOffline() bool {
+	return false
 }
 
 // ActiveNamespace returns the current namespace.
@@ -648,4 +704,87 @@ func checkMetricsVersion(grp *metav1.APIGroup) bool {
 	}
 
 	return false
+}
+
+func (c *FakeClient) CanI(ns string, gvr *GVR, n string, verbs []string) (bool, error) {
+	return true, nil
+}
+
+func (c *FakeClient) Config() *Config {
+	return c.config
+}
+
+func (c *FakeClient) ConnectionOK() bool {
+	return false
+}
+
+// Dial returns fake k8s client (prevents real API calls).
+func (c *FakeClient) Dial() (kubernetes.Interface, error) {
+	return kfake.NewSimpleClientset(), nil
+}
+
+// DialLogs returns fake k8s client (prevents real API calls).
+func (c *FakeClient) DialLogs() (kubernetes.Interface, error) {
+	return kfake.NewSimpleClientset(), nil
+}
+
+func (c *FakeClient) SwitchContext(ctx string) error {
+	return nil
+}
+
+func (c *FakeClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
+	return nil, nil
+}
+
+func (c *FakeClient) RestConfig() (*restclient.Config, error) {
+	return nil, nil
+}
+
+func (c *FakeClient) MXDial() (*versioned.Clientset, error) {
+	return nil, nil
+}
+
+// DynDial returns fake dynamic client (prevents real API calls).
+func (c *FakeClient) DynDial() (dynamic.Interface, error) {
+	scheme := runtime.NewScheme()
+	// Minimal scheme for common types (expand as needed for offline).
+	_ = v1.AddToScheme(scheme) // core/v1
+	return dfake.NewSimpleDynamicClient(scheme), nil
+}
+
+func (c *FakeClient) HasMetrics() bool {
+	return false
+}
+
+func (c *FakeClient) ValidNamespaceNames() (NamespaceNames, error) {
+	return nil, nil
+}
+
+func (c *FakeClient) IsValidNamespace(string) bool {
+	return true
+}
+
+func (c *FakeClient) ServerVersion() (*version.Info, error) {
+	return &version.Info{Major: "1", Minor: "0"}, nil
+}
+
+func (c *FakeClient) CheckConnectivity() bool {
+	return false
+}
+
+func (c *FakeClient) ActiveContext() string {
+	return "offline"
+}
+
+func (c *FakeClient) ActiveNamespace() string {
+	return BlankNamespace
+}
+
+func (c *FakeClient) IsActiveNamespace(ns string) bool {
+	return true
+}
+
+// IsOffline true for fake.
+func (c *FakeClient) IsOffline() bool {
+	return true
 }

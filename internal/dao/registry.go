@@ -317,6 +317,18 @@ func loadRBAC(m ResourceMetas) {
 
 func loadPreferred(f Factory, m ResourceMetas) error {
 	if f == nil || f.Client() == nil || !f.Client().ConnectionOK() {
+		if f != nil && f.Client() != nil && f.Client().IsOffline() {
+			// GVR stub for offline (enables pod/others commands/aliases).
+			m[client.PodGVR] = &metav1.APIResource{
+				Name:         client.PodGVR.String(),
+				Kind:         "Pod",
+				SingularName: "pod",
+				Namespaced:   true,
+				ShortNames:   []string{"po", "pods"},
+				Verbs:        []string{"list", "get"},
+			}
+			// Add other common GVRs here as needed for offline UI.
+		}
 		slog.Error("Load cluster resources - No API server connection")
 		return nil
 	}

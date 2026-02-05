@@ -4,6 +4,8 @@
 package client
 
 import (
+	"log/slog"
+
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/dynamic"
@@ -140,6 +142,15 @@ type Connection interface {
 
 	// IsActiveNamespace checks if given ns is active.
 	IsActiveNamespace(string) bool
+
+	// IsOffline returns true if in offline mode (uses stubs).
+	IsOffline() bool
+}
+
+// Provider creates k8s connections.
+type Provider interface {
+	// GetConnection returns a connection.
+	GetConnection(*Config, *slog.Logger) (Connection, error)
 }
 
 // CurrentMetrics tracks current cpu/mem.

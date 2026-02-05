@@ -45,6 +45,13 @@ type Accessors map[*client.GVR]Accessor
 // Otherwise it returns a generic accessor.
 // Customize here for non resource types or types with metrics or logs.
 func AccessorFor(f Factory, gvr *client.GVR) (Accessor, error) {
+	// Default to mocked pod DAO in offline (static pod only).
+	if f != nil && f.Client() != nil && f.Client().IsOffline() && gvr == client.PodGVR {
+		r := new(mockPod)
+		r.Init(f, gvr)
+		return r, nil
+	}
+
 	r, ok := accessors[gvr]
 	if !ok {
 		r = new(Scaler)

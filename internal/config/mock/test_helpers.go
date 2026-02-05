@@ -182,3 +182,8 @@ func (mockConnection) ActiveNamespace() string {
 func (mockConnection) IsActiveNamespace(string) bool {
 	return false
 }
+
+// IsOffline false for test mock.
+func (mockConnection) IsOffline() bool {
+	return false
+}

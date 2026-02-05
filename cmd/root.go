@@ -134,7 +134,11 @@ func loadConfiguration() (*config.Config, error) {
 	k9sCfg := config.NewConfig(k8sCfg)
 	var errs error
 
-	conn, err := client.InitConnection(k8sCfg, slog.Default())
+	prov := client.DefaultProvider
+	if *k9sFlags.Offline {
+		prov = client.MockProvider{}
+	}
+	conn, err := client.NewConnection(prov, k8sCfg, slog.Default())
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
@@ -149,15 +153,18 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 
-	// Try to access server version if that fail. Connectivity issue?
-	if !conn.CheckConnectivity() {
-		errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
-	}
-	if !conn.ConnectionOK() {
-		slog.Warn("💣 Kubernetes connectivity toast!")
-		errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
+	if *k9sFlags.Offline {
+		slog.Info("🌐 Offline mode enabled")
 	} else {
-		slog.Info("✅ Kubernetes connectivity OK")
+		if !conn.CheckConnectivity() {
+			errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
+		}
+		if !conn.ConnectionOK() {
+			slog.Warn("💣 Kubernetes connectivity toast!")
+			errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
+		} else {
+			slog.Info("✅ Kubernetes connectivity OK")
+		}
 	}
 
 	if err := k9sCfg.Save(false); err != nil {
@@ -230,6 +237,12 @@ func initK9sFlags() {
 		"invert",
 		false,
 		"Invert skin (dark to light, light to dark), preserving colors",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Offline,
+		"offline",
+		false,
+		"Run in offline mode",
 	)
 	rootCmd.Flags().BoolVarP(
 		k9sFlags.AllNamespaces,
@@ -388,7 +401,7 @@ func initK8sFlagCompletion() {
 
 	_ = rootCmd.RegisterFlagCompletionFunc("namespace", func(_ *cobra.Command, _ []string, s string) ([]string, cobra.ShellCompDirective) {
 		conn := client.NewConfig(k8sFlags)
-		if c, err := client.InitConnection(conn, slog.Default()); err == nil {
+		if c, err := client.NewConnection(client.DefaultProvider, conn, slog.Default()); err == nil {
 			if nss, err := c.ValidNamespaceNames(); err == nil {
 				return filterFlagCompletions(nss, s)
 			}
