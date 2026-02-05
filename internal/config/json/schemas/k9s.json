@@ -144,6 +144,17 @@
               }
             }
           }
+        },
+        "ai": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "apiKey": {"type": "string"},
+            "apiKeyEnv": {"type": "string"},
+            "model": {"type": "string"},
+            "maxTokens": {"type": "integer"}
+          }
         }
       }
     }

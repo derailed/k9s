@@ -313,3 +313,20 @@ func (c *Interpreter) HasContext() (string, bool) {
 func (c *Interpreter) LabelsSelector() (labels.Selector, error) {
 	return labels.Parse(c.args[labelKey])
 }
+
+// IsClaudeCmd returns true if claude cmd is detected.
+func (c *Interpreter) IsClaudeCmd() bool {
+	return claudeCmd.Has(c.cmd)
+}
+
+// ClaudeArgs returns the claude command arguments.
+func (c *Interpreter) ClaudeArgs() []string {
+	if !c.IsClaudeCmd() {
+		return nil
+	}
+	args := c.Args()
+	if args == "" {
+		return nil
+	}
+	return strings.Fields(args)
+}

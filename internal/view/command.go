@@ -305,6 +305,8 @@ func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 		} else if err := c.app.dirCmd(a, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
+	case p.IsClaudeCmd():
+		c.claudeCmd(p)
 	default:
 		return false
 	}
@@ -384,4 +386,29 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	slog.Debug("History (exec)", slogs.Stack, strings.Join(c.app.cmdHistory.List(), "|"))
 
 	return
+}
+
+func (c *Command) claudeCmd(p *cmd.Interpreter) {
+	args := p.ClaudeArgs()
+	if len(args) >= 2 && args[0] == "set-key" {
+		// Save API key to config
+		c.app.Config.K9s.AI.APIKey = args[1]
+		c.app.Config.K9s.AI.Enabled = true
+		if err := c.app.Config.Save(true); err != nil {
+			c.app.Flash().Errf("Failed to save API key: %v", err)
+		} else {
+			c.app.Flash().Info("Claude API key saved")
+		}
+		return
+	}
+
+	// Otherwise treat as question or open Claude view
+	question := ""
+	if len(args) > 0 {
+		question = strings.Join(args, " ")
+	}
+
+	if err := c.app.inject(NewClaude(c.app, question), true); err != nil {
+		c.app.Flash().Err(err)
+	}
 }
