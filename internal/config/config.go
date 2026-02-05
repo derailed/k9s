@@ -40,6 +40,11 @@ func (c *Config) IsReadOnly() bool {
 	return c.K9s.IsReadOnly()
 }
 
+// IsSanitizeConfirmationAckDisabled returns true if the sanitize confirmation acknowledgement is disabled.
+func (c *Config) IsSanitizeConfirmationAckDisabled() bool {
+	return c.K9s.IsSanitizeConfirmationAckDisabled()
+}
+
 // ActiveClusterName returns the corresponding cluster name.
 func (c *Config) ActiveClusterName(contextName string) (string, error) {
 	ct, err := c.settings.GetContext(contextName)
