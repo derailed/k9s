@@ -829,6 +829,7 @@ A plugin is defined as follows:
 * Args specifies the various arguments that should apply to the command above
 * OverwriteOutput boolean option allows plugin developers to provide custom messages on plugin stdout execution. See example in [#2644](https://github.com/derailed/k9s/pull/2644)
 * Dangerous boolean option enables disabling the plugin when read-only mode is set. See [#2604](https://github.com/derailed/k9s/issues/2604)
+- ForwardInterrupt is a boolean option that (when enabled) allows plugin developers to forward interrupt signals (CTRL+C, SIGINT) to the plugin instead of having `k9s` terminate the plugin. See [#3568](https://github.com/derailed/k9s/pull/3568)
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
