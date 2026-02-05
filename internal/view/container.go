@@ -90,6 +90,7 @@ func (c *Container) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
+		ui.KeyB:      ui.NewKeyAction("Browse Files", c.browseFilesCmd, true),
 	})
 }
 
@@ -259,4 +260,18 @@ func (c *Container) listForwardable(path string) (port.ContainerPortSpecs, map[s
 	}
 
 	return port.FromContainerPorts(path, co.Ports), po.Annotations, true
+}
+
+func (c *Container) browseFilesCmd(evt *tcell.EventKey) *tcell.EventKey {
+	container := c.GetTable().GetSelectedItem()
+	if container == "" {
+		return evt
+	}
+
+	cf := NewContainerFs(c.GetTable().Path, container, "/")
+	if err := c.App().inject(cf, false); err != nil {
+		c.App().Flash().Err(err)
+	}
+
+	return nil
 }

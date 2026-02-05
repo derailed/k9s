@@ -59,6 +59,7 @@ var (
 	PuGVR  = NewGVR("pulses")
 	ScnGVR = NewGVR("scans")
 	DirGVR = NewGVR("dirs")
+	CfsGVR = NewGVR("containerfs")
 	PfGVR  = NewGVR("portforwards")
 	SdGVR  = NewGVR("screendumps")
 	BeGVR  = NewGVR("benchmarks")
@@ -92,6 +93,7 @@ var reservedGVRs = sets.New(
 	PuGVR,
 	ScnGVR,
 	DirGVR,
+	CfsGVR,
 	PfGVR,
 	SdGVR,
 	BeGVR,
