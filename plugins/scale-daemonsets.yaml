@@ -1,0 +1,38 @@
+plugins:
+# Toggles a DaemonSet "scale to zero" behavior by adding or removing the nodeSelector
+# ("scaled-down=true"), that does not match any nodes.
+#
+# Since DaemonSets cannot be scaled directly using replicas (unlike Deployments or StatefulSets),
+# and the number of Pods created by a DaemonSet is always derived from the number of eligible nodes,
+# adding a artificial nodeSelector key to the template will have a scaling similiar effect, because no nodes
+# are expected to have this label, leading to the DaemonSet controller to terminate all existing Pods.
+#
+# Removing the selector restores normal scheduling behavior.
+# Author: github.com/kiliandargel
+  toggleDaemonSetScale:
+    shortCut: Shift-S
+    confirm: true
+    dangerous: true
+    scopes:
+      - ds
+    description: Toggle DaemonSet scale to 0 by adding/removing artificial nodeSelector "scaled-down"
+    command: sh
+    background: true
+    args:
+      - -c
+      - |
+        set -e
+
+        # Check if "scaled-down" nodeSelector exists
+        if kubectl -n "$NAMESPACE" --context "$CONTEXT" \
+          get ds "$NAME" -o jsonpath='{.spec.template.spec.nodeSelector.scaled-down}' 2>/dev/null | grep -q .; then
+
+          # Remove "scaled-down" nodeSelector using merge patch
+          kubectl -n "$NAMESPACE" --context "$CONTEXT" \
+            patch ds "$NAME" --type=merge -p '{"spec":{"template":{"spec":{"nodeSelector":{"scaled-down":null}}}}}'
+
+        else
+          # Add "scaled-down" nodeSelector using merge patch
+          kubectl -n "$NAMESPACE" --context "$CONTEXT" \
+            patch ds "$NAME" --type=merge -p '{"spec":{"template":{"spec":{"nodeSelector":{"scaled-down":"true"}}}}}'
+        fi
