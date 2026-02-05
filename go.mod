@@ -23,13 +23,13 @@ require (
 	github.com/mattn/go-runewidth v0.0.19
 	github.com/olekukonko/tablewriter v1.1.2
 	github.com/petergtz/pegomock v2.9.0+incompatible
-	github.com/rakyll/hey v0.1.4
+	github.com/rakyll/hey v0.1.5
 	github.com/sahilm/fuzzy v0.1.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc
-	golang.org/x/text v0.32.0
+	golang.org/x/text v0.33.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.19.2
 	k8s.io/api v0.35.0
