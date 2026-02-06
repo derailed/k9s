@@ -163,3 +163,11 @@ func (l *Logger) saveCmd(*tcell.EventKey) *tcell.EventKey {
 
 	return nil
 }
+
+func (l *Logger) Write(p []byte) (n int, err error) {
+	n, err = l.TextView.Write(p)
+	if n > len(p) {
+		return len(p), err
+	}
+	return n, err
+}
