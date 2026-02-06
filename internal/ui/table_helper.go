@@ -88,7 +88,7 @@ func columnIndicator(sort, selected, asc bool, style *config.Table, name string)
 	// Build the column name with selection indicator
 	var displayName string
 	if selected {
-		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.SelectedColor, name)
+		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.SelectedSortColumnColor, name)
 	} else {
 		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.FgColor, name)
 	}
