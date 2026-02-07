@@ -638,21 +638,27 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 }
 
 // mockPod returns the same static pod (no dynamic data) for offline mode.
+// Returns unstructured (fake DAO) to avoid render dep.
 type mockPod struct {
 	Pod
 }
 
 // List always returns one static pod.
 func (p *mockPod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	// Static pod (simplified from testdata/po.json).
+	// Static pod (ns-aware; from testdata/po.json).
+	if client.IsAllNamespace(ns) || ns == "" || ns == client.BlankNamespace {
+		ns = "default" // default for all-ns
+	}
 	u := &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "v1",
 			"kind":       "Pod",
 			"metadata": map[string]interface{}{
 				"name":              "static-pod",
-				"namespace":         "default",
+				"namespace":         ns,
 				"creationTimestamp": "2020-01-01T00:00:00Z",
+				"resourceVersion":   "1",
+				"uid":               "static-uid",
 			},
 			"spec": map[string]interface{}{
 				"containers": []interface{}{
@@ -661,12 +667,43 @@ func (p *mockPod) List(ctx context.Context, ns string) ([]runtime.Object, error)
 						"image": "nginx:alpine",
 					},
 				},
+				"restartPolicy": "Always",
 			},
 			"status": map[string]interface{}{
 				"phase": "Running",
 				"podIP": "10.0.0.1",
 			},
 		},
+	}
+	// Add 2nd for kube-system if all-ns (to demo switch).
+	if client.IsAllNamespace(ns) || ns == client.BlankNamespace {
+		u2 := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "v1",
+				"kind":       "Pod",
+				"metadata": map[string]interface{}{
+					"name":              "static-pod",
+					"namespace":         "kube-system",
+					"creationTimestamp": "2020-01-01T00:00:00Z",
+					"resourceVersion":   "1",
+					"uid":               "static-uid2",
+				},
+				"spec": map[string]interface{}{
+					"containers": []interface{}{
+						map[string]interface{}{
+							"name":  "coredns",
+							"image": "coredns/coredns",
+						},
+					},
+					"restartPolicy": "Always",
+				},
+				"status": map[string]interface{}{
+					"phase": "Running",
+					"podIP": "10.0.0.2",
+				},
+			},
+		}
+		return []runtime.Object{u, u2}, nil
 	}
 	return []runtime.Object{u}, nil
 }
@@ -675,7 +712,7 @@ func (p *mockPod) List(ctx context.Context, ns string) ([]runtime.Object, error)
 func (p *mockPod) Get(ctx context.Context, path string) (runtime.Object, error) {
 	oo, _ := p.List(ctx, "")
 	if len(oo) > 0 {
-		return &render.PodWithMetrics{Raw: oo[0].(*unstructured.Unstructured)}, nil
+		return oo[0], nil
 	}
 	return nil, fmt.Errorf("no static pod")
 }

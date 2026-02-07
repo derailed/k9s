@@ -24,7 +24,12 @@ func getMeta(ctx context.Context, gvr *client.GVR) (ResourceMeta, error) {
 	if !ok {
 		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
-	meta.DAO.Init(factory, gvr)
+	// AccessorFor for offline (e.g. pod mocks).
+	dao, err := dao.AccessorFor(factory, gvr)
+	if err != nil {
+		return ResourceMeta{}, err
+	}
+	meta.DAO = dao
 
 	return meta, nil
 }

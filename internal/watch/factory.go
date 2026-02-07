@@ -74,7 +74,115 @@ func (f *Factory) Terminate() {
 // List returns a resource collection.
 func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Selector) ([]runtime.Object, error) {
 	// Prevent informer creation/start (and crashes) in offline.
+	// Fake unstructured DAO for pods/ns (minimal for offline arch).
 	if f.client != nil && f.client.IsOffline() {
+		if gvr == client.PodGVR {
+			// Static pods (ns-aware; one per common ns from dao/pod mock).
+			oo := []runtime.Object{}
+			// Default pod.
+			oo = append(oo, &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "v1",
+					"kind":       "Pod",
+					"metadata": map[string]interface{}{
+						"name":              "static-pod",
+						"namespace":         "default",
+						"creationTimestamp": "2020-01-01T00:00:00Z",
+						"resourceVersion":   "1",
+						"uid":               "static-uid",
+					},
+					"spec": map[string]interface{}{
+						"containers": []interface{}{
+							map[string]interface{}{
+								"name":  "nginx",
+								"image": "nginx:alpine",
+							},
+						},
+						"restartPolicy": "Always",
+					},
+					"status": map[string]interface{}{
+						"phase": "Running",
+						"podIP": "10.0.0.1",
+					},
+				},
+			})
+			// Kube-system pod.
+			oo = append(oo, &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "v1",
+					"kind":       "Pod",
+					"metadata": map[string]interface{}{
+						"name":              "static-pod",
+						"namespace":         "kube-system",
+						"creationTimestamp": "2020-01-01T00:00:00Z",
+						"resourceVersion":   "1",
+						"uid":               "static-uid2",
+					},
+					"spec": map[string]interface{}{
+						"containers": []interface{}{
+							map[string]interface{}{
+								"name":  "coredns",
+								"image": "coredns/coredns",
+							},
+						},
+						"restartPolicy": "Always",
+					},
+					"status": map[string]interface{}{
+						"phase": "Running",
+						"podIP": "10.0.0.2",
+					},
+				},
+			})
+			// Filter by ns if specified (mimics real List).
+			if !client.IsAllNamespace(ns) && ns != "" && ns != client.BlankNamespace {
+				filtered := []runtime.Object{}
+				for _, o := range oo {
+					u := o.(*unstructured.Unstructured)
+					if meta, ok := u.Object["metadata"].(map[string]interface{}); ok {
+						if meta["namespace"] == ns {
+							filtered = append(filtered, u)
+						}
+					}
+				}
+				oo = filtered
+			}
+			return oo, nil
+		}
+		if gvr == client.NsGVR {
+			// Static namespaces (from dao/ns mock).
+			return []runtime.Object{
+				&unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "v1",
+						"kind":       "Namespace",
+						"metadata": map[string]interface{}{
+							"name":              "default",
+							"creationTimestamp": "2020-01-01T00:00:00Z",
+							"resourceVersion":   "1",
+							"uid":               "ns-uid",
+						},
+						"status": map[string]interface{}{
+							"phase": "Active",
+						},
+					},
+				},
+				&unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "v1",
+						"kind":       "Namespace",
+						"metadata": map[string]interface{}{
+							"name":              "kube-system",
+							"creationTimestamp": "2020-01-01T00:00:00Z",
+							"resourceVersion":   "1",
+							"uid":               "ns-uid2",
+						},
+						"status": map[string]interface{}{
+							"phase": "Active",
+						},
+					},
+				},
+			}, nil
+		}
 		return nil, nil
 	}
 	if client.IsAllNamespace(ns) {
@@ -104,6 +212,10 @@ func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Select
 
 // HasSynced checks if given informer is up to date.
 func (f *Factory) HasSynced(gvr *client.GVR, ns string) (bool, error) {
+	// Prevent in offline.
+	if f.client != nil && f.client.IsOffline() {
+		return false, nil
+	}
 	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
 	if err != nil {
 		return false, err
@@ -114,6 +226,68 @@ func (f *Factory) HasSynced(gvr *client.GVR, ns string) (bool, error) {
 
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr *client.GVR, fqn string, wait bool, _ labels.Selector) (runtime.Object, error) {
+	// Prevent informer (and crashes) in offline.
+	// Fake unstructured DAO for pods/ns (minimal for offline arch).
+	if f.client != nil && f.client.IsOffline() {
+		if gvr == client.PodGVR {
+			// Static pod (ns from path; from dao/pod mock).
+			ns, _ := namespaced(fqn)
+			if ns == "" || ns == client.BlankNamespace {
+				ns = "default"
+			}
+			name := "static-pod"
+			if ns == "kube-system" {
+				name = "static-pod" // same name ok, diff ns
+			}
+			u := &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "v1",
+					"kind":       "Pod",
+					"metadata": map[string]interface{}{
+						"name":              name,
+						"namespace":         ns,
+						"creationTimestamp": "2020-01-01T00:00:00Z",
+						"resourceVersion":   "1",
+						"uid":               "static-uid",
+					},
+					"spec": map[string]interface{}{
+						"containers": []interface{}{
+							map[string]interface{}{
+								"name":  "nginx",
+								"image": "nginx:alpine",
+							},
+						},
+						"restartPolicy": "Always",
+					},
+					"status": map[string]interface{}{
+						"phase": "Running",
+						"podIP": "10.0.0.1",
+					},
+				},
+			}
+			return u, nil
+		}
+		if gvr == client.NsGVR {
+			// Static namespace (from dao/ns mock; use default).
+			u := &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "v1",
+					"kind":       "Namespace",
+					"metadata": map[string]interface{}{
+						"name":              "default",
+						"creationTimestamp": "2020-01-01T00:00:00Z",
+						"resourceVersion":   "1",
+						"uid":               "ns-uid",
+					},
+					"status": map[string]interface{}{
+						"phase": "Active",
+					},
+				},
+			}
+			return u, nil
+		}
+		return nil, nil
+	}
 	ns, n := namespaced(fqn)
 	if client.IsAllNamespace(ns) {
 		ns = client.BlankNamespace
