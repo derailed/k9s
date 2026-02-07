@@ -22,6 +22,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -265,6 +266,7 @@ func (l *Log) bindKeys() {
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
+		tcell.KeyCtrlK:  ui.NewKeyAction("Kubectl Command", l.showKubectlCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
 	})
 	if l.model.HasDefaultContainer() {
@@ -546,6 +548,27 @@ func (l *Log) toggleFullScreen() {
 	} else {
 		l.logs.SetBorderPadding(0, 0, 1, 1)
 	}
+}
+
+func (l *Log) showKubectlCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+
+	// Get the kubectl command from log options
+	command := l.model.LogOptions().ToKubectlCommand()
+
+	// Show the dialog with copy functionality
+	styles := l.app.Styles.Dialog()
+	dialog.ShowKubectlCommand(
+		&styles,
+		l.app.Content.Pages,
+		command,
+		clipboardWrite,
+		l.app.Flash(),
+	)
+
+	return nil
 }
 
 func (l *Log) isContainerLogView() bool {
