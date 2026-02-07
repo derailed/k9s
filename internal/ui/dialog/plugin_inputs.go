@@ -1,0 +1,155 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
+package dialog
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tview"
+)
+
+const pluginInputsKey = "pluginInputs"
+
+// PluginInputValues holds the collected input values from the dialog.
+type PluginInputValues map[string]string
+
+// PluginInputsOkFunc is called when the user confirms the plugin inputs.
+type PluginInputsOkFunc func(values PluginInputValues)
+
+// ShowPluginInputs pops a dialog to collect plugin input values.
+func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inputs []config.PluginInput, ok PluginInputsOkFunc, cancel cancelFunc) {
+	if len(inputs) == 0 {
+		ok(make(PluginInputValues))
+		return
+	}
+
+	values := make(PluginInputValues)
+
+	f := tview.NewForm()
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
+
+	// Add input fields based on type
+	for _, input := range inputs {
+		label := input.Name
+		if input.Description != "" {
+			label = input.Description
+		}
+		if input.Required {
+			label += " *"
+		}
+		label += ":"
+
+		switch input.Type {
+		case config.InputTypeString:
+			values[input.Name] = ""
+			inputName := input.Name // capture for closure
+			f.AddInputField(label, "", 40, nil, func(text string) {
+				values[inputName] = text
+			})
+
+		case config.InputTypeInt:
+			values[input.Name] = ""
+			inputName := input.Name // capture for closure
+			f.AddInputField(label, "", 20, func(text string, lastChar rune) bool {
+				// Allow empty, negative sign at start, or digits
+				if text == "" || text == "-" {
+					return true
+				}
+				_, err := strconv.Atoi(text)
+				return err == nil
+			}, func(text string) {
+				values[inputName] = text
+			})
+
+		case config.InputTypeBool:
+			values[input.Name] = "false"
+			inputName := input.Name // capture for closure
+			f.AddCheckbox(label, false, func(_ string, checked bool) {
+				values[inputName] = fmt.Sprintf("%t", checked)
+			})
+
+		case config.InputTypeDropdown:
+			if len(input.Options) > 0 {
+				values[input.Name] = input.Options[0]
+				inputName := input.Name  // capture for closure
+				options := input.Options // capture for closure
+				f.AddDropDown(label, options, 0, func(_ string, optionIndex int) {
+					if optionIndex >= 0 && optionIndex < len(options) {
+						values[inputName] = options[optionIndex]
+					}
+				})
+				// Style the dropdown
+				if dropDown := f.GetFormItemByLabel(label); dropDown != nil {
+					if dd, ok := dropDown.(*tview.DropDown); ok {
+						dd.SetListStyles(
+							styles.FgColor.Color(), styles.BgColor.Color(),
+							styles.ButtonFocusFgColor.Color(), styles.ButtonFocusBgColor.Color(),
+						)
+					}
+				}
+			}
+		}
+	}
+
+	// Add Cancel button
+	f.AddButton("Cancel", func() {
+		dismissPluginInputs(pages)
+		cancel()
+	})
+
+	// Add OK button with validation
+	f.AddButton("OK", func() {
+		// Validate required fields
+		var missing []string
+		for _, input := range inputs {
+			if input.Required {
+				val := values[input.Name]
+				if val == "" || (input.Type == config.InputTypeBool && val == "false") {
+					missing = append(missing, input.Name)
+				}
+			}
+		}
+		if len(missing) > 0 {
+			// TODO: Show error message for missing required fields
+			return
+		}
+
+		ok(values)
+		dismissPluginInputs(pages)
+		cancel()
+	})
+
+	// Style buttons
+	buttonCount := f.GetButtonCount()
+	for i := range buttonCount {
+		if b := f.GetButton(i); b != nil {
+			b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+			b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+		}
+	}
+
+	f.SetFocus(0)
+
+	modal := tview.NewModalForm("<"+title+">", f)
+	modal.SetTextColor(styles.FgColor.Color())
+	modal.SetDoneFunc(func(int, string) {
+		dismissPluginInputs(pages)
+		cancel()
+	})
+
+	pages.AddPage(pluginInputsKey, modal, false, false)
+	pages.ShowPage(pluginInputsKey)
+}
+
+func dismissPluginInputs(pages *ui.Pages) {
+	pages.RemovePage(pluginInputsKey)
+}
