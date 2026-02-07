@@ -25,6 +25,10 @@ contexts:
       user: user2
       namespace: ns-2
     name: ct-2-1
+  - context:
+      cluster: cl-1
+      user: user1
+    name: ct-no-ns
 current-context: ct-1-1
 preferences: {}
 users:
