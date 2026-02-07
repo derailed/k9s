@@ -59,7 +59,7 @@ func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inpu
 		case config.InputTypeInt:
 			values[input.Name] = ""
 			inputName := input.Name // capture for closure
-			f.AddInputField(label, "", 20, func(text string, lastChar rune) bool {
+			f.AddInputField(label, "", 20, func(text string, _ rune) bool {
 				// Allow empty, negative sign at start, or digits
 				if text == "" || text == "-" {
 					return true
