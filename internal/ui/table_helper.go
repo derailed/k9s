@@ -86,10 +86,11 @@ func SkinTitle(fmat string, style *config.Frame) string {
 
 func columnIndicator(sort, selected, asc bool, style *config.Table, name string) string {
 	// Build the column name with selection indicator
-	displayName := name
+	var displayName string
 	if selected {
-		// Make selected column bold
-		displayName = fmt.Sprintf("[::b]%s[::-]", name)
+		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.SelectedSortColumnColor, name)
+	} else {
+		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.FgColor, name)
 	}
 
 	// Add sort indicator if this column is sorted
