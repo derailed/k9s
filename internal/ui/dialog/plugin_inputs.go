@@ -51,14 +51,14 @@ func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inpu
 		switch input.Type {
 		case config.InputTypeString:
 			values[input.Name] = ""
-			inputName := input.Name // capture for closure
+			inputName := input.Name
 			f.AddInputField(label, "", 40, nil, func(text string) {
 				values[inputName] = text
 			})
 
 		case config.InputTypeInt:
 			values[input.Name] = ""
-			inputName := input.Name // capture for closure
+			inputName := input.Name
 			f.AddInputField(label, "", 20, func(text string, _ rune) bool {
 				// Allow empty, negative sign at start, or digits
 				if text == "" || text == "-" {
@@ -72,16 +72,17 @@ func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inpu
 
 		case config.InputTypeBool:
 			values[input.Name] = "false"
-			inputName := input.Name // capture for closure
+			inputName := input.Name
 			f.AddCheckbox(label, false, func(_ string, checked bool) {
 				values[inputName] = fmt.Sprintf("%t", checked)
 			})
 
 		case config.InputTypeDropdown:
 			if len(input.Options) > 0 {
-				values[input.Name] = input.Options[0]
-				inputName := input.Name  // capture for closure
-				options := input.Options // capture for closure
+				values[input.Name] = ""
+				inputName := input.Name
+				// Prepend empty option so dropdown starts unselected
+				options := append([]string{""}, input.Options...)
 				f.AddDropDown(label, options, 0, func(_ string, optionIndex int) {
 					if optionIndex >= 0 && optionIndex < len(options) {
 						values[inputName] = options[optionIndex]
