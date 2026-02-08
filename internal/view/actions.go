@@ -187,6 +187,9 @@ func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 		if len(p.Inputs) > 0 {
 			d := r.App().Styles.Dialog()
 			dialog.ShowPluginInputs(&d, r.App().Content.Pages, "Plugin Inputs", p.Inputs,
+				func(msg string) {
+					r.App().Flash().Warn(msg)
+				},
 				func(inputValues dialog.PluginInputValues) {
 					executePlugin(r, p, inputValues)
 				},

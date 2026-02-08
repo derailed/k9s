@@ -32,13 +32,9 @@ type Plugins struct {
 type PluginInputType string
 
 const (
-	// InputTypeString represents a text input field.
-	InputTypeString PluginInputType = "string"
-	// InputTypeInt represents a numeric input field.
-	InputTypeInt PluginInputType = "int"
-	// InputTypeBool represents a boolean checkbox input.
-	InputTypeBool PluginInputType = "bool"
-	// InputTypeDropdown represents a dropdown selection input.
+	InputTypeString   PluginInputType = "string"
+	InputTypeInt      PluginInputType = "int"
+	InputTypeBool     PluginInputType = "bool"
 	InputTypeDropdown PluginInputType = "dropdown"
 )
 
@@ -48,7 +44,7 @@ type PluginInput struct {
 	Description string          `yaml:"description"`
 	Type        PluginInputType `yaml:"type"`
 	Required    bool            `yaml:"required"`
-	Options     []string        `yaml:"options"` // For dropdown type
+	Options     []string        `yaml:"options"`
 }
 
 // Plugin describes a K9s plugin.
