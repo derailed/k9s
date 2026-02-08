@@ -4,6 +4,7 @@
 package view
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
@@ -25,6 +27,7 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	runewidth "github.com/mattn/go-runewidth"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -34,6 +37,10 @@ const (
 	logFmt              = "([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	logCoFmt            = "([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	defaultFlushTimeout = 50 * time.Millisecond
+	// fallbackScrollAmount is used when view width cannot be determined
+	fallbackScrollAmount = 16
+	// scrollFraction determines how much of the visible width to scroll (2/3 like less)
+	scrollFraction = 2.0 / 3.0
 )
 
 // Log represents a generic log viewer.
@@ -51,6 +58,7 @@ type Log struct {
 	follow            bool
 	columnLock        bool
 	requestOneRefresh bool
+	maxLineWidth      int
 }
 
 var _ model.Component = (*Log)(nil)
@@ -96,6 +104,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor.String(), l.app.Styles.Views().Log.BgColor.String())
 	l.AddItem(l.logs, 0, 1, true)
 	l.bindKeys()
+	l.logs.SetMouseCapture(l.mouseHandler)
 
 	l.StylesChanged(l.app.Styles)
 	l.toggleFullScreen()
@@ -143,6 +152,7 @@ func (l *Log) LogResume() {
 func (l *Log) LogCleared() {
 	l.app.QueueUpdateDraw(func() {
 		l.logs.Clear()
+		l.maxLineWidth = 0
 	})
 }
 
@@ -165,6 +175,7 @@ func (l *Log) LogChanged(lines [][]byte) {
 		if l.logs.GetText(true) == logMessage {
 			l.logs.Clear()
 		}
+		l.updateMaxLineWidth(lines)
 		l.Flush(lines)
 	})
 }
@@ -266,6 +277,8 @@ func (l *Log) bindKeys() {
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
+		tcell.KeyLeft:   ui.NewKeyAction("Scroll Left", l.scrollLeftCmd, false),
+		tcell.KeyRight:  ui.NewKeyAction("Scroll Right", l.scrollRightCmd, false),
 	})
 	if l.model.HasDefaultContainer() {
 		l.logs.Actions().Add(ui.KeyA, ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true))
@@ -467,6 +480,7 @@ func saveData(dir, fqn, logs string) (string, error) {
 
 func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 	l.model.Clear()
+	l.maxLineWidth = 0
 	return nil
 }
 
@@ -550,4 +564,147 @@ func (l *Log) toggleFullScreen() {
 
 func (l *Log) isContainerLogView() bool {
 	return l.model.HasDefaultContainer()
+}
+
+// canScrollHorizontally checks if horizontal scrolling is allowed.
+func (l *Log) canScrollHorizontally() bool {
+	return !l.app.InCmdMode() && !l.indicator.TextWrap()
+}
+
+// getScrollAmount calculates the scroll amount based on visible width.
+// Uses 2/3 of the visible width (similar to less command) for better UX.
+func (l *Log) getScrollAmount() int {
+	_, _, width, _ := l.logs.GetInnerRect()
+	if width <= 0 {
+		return fallbackScrollAmount
+	}
+	amount := int(float64(width) * scrollFraction)
+	if amount < 1 {
+		return 1
+	}
+	return amount
+}
+
+// scrollHorizontal scrolls the log view horizontally by the given delta.
+// Positive delta scrolls right, negative scrolls left.
+// Returns true if scrolling was performed.
+func (l *Log) scrollHorizontal(delta int) bool {
+	if !l.canScrollHorizontally() {
+		return false
+	}
+
+	r, c := l.logs.GetScrollOffset()
+	c += delta
+	if c < 0 {
+		c = 0
+	}
+	if l.maxLineWidth > 0 {
+		if maxCol := l.maxScrollColumn(); c > maxCol {
+			c = maxCol
+		}
+	}
+	l.logs.ScrollTo(r, c)
+	return true
+}
+
+func (l *Log) scrollLeftCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	if !l.canScrollHorizontally() {
+		return evt
+	}
+	l.scrollHorizontal(-l.getScrollAmount())
+	return nil
+}
+
+func (l *Log) scrollRightCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	if !l.canScrollHorizontally() {
+		return evt
+	}
+	l.scrollHorizontal(l.getScrollAmount())
+	return nil
+}
+
+func (l *Log) mouseHandler(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	if !l.canScrollHorizontally() {
+		return action, event
+	}
+
+	switch action {
+	case tview.MouseScrollLeft:
+		l.scrollHorizontal(-l.getScrollAmount())
+		return action, nil
+	case tview.MouseScrollRight:
+		l.scrollHorizontal(l.getScrollAmount())
+		return action, nil
+	case tview.MouseScrollUp:
+		if event.Modifiers()&tcell.ModShift != 0 {
+			l.scrollHorizontal(-l.getScrollAmount())
+			return action, nil
+		}
+	case tview.MouseScrollDown:
+		if event.Modifiers()&tcell.ModShift != 0 {
+			l.scrollHorizontal(l.getScrollAmount())
+			return action, nil
+		}
+	}
+
+	return action, event
+}
+
+func (l *Log) maxScrollColumn() int {
+	if l.maxLineWidth <= 0 {
+		return 0
+	}
+	_, _, width, _ := l.logs.GetInnerRect()
+	if width <= 0 {
+		return l.maxLineWidth
+	}
+	maxCol := l.maxLineWidth - width
+	if maxCol < 0 {
+		return 0
+	}
+	return maxCol
+}
+
+func (l *Log) updateMaxLineWidth(lines [][]byte) {
+	for _, line := range lines {
+		for _, seg := range bytes.Split(line, EOL) {
+			if w := visibleWidth(seg); w > l.maxLineWidth {
+				l.maxLineWidth = w
+			}
+		}
+	}
+}
+
+func visibleWidth(line []byte) int {
+	clean := make([]rune, 0, len(line))
+	for i := 0; i < len(line); {
+		if line[i] == 0x1b && i+1 < len(line) && line[i+1] == '[' {
+			i += 2
+			for i < len(line) && (line[i] < 0x40 || line[i] > 0x7e) {
+				i++
+			}
+			if i < len(line) {
+				i++
+			}
+			continue
+		}
+		if line[i] == '\r' {
+			i++
+			continue
+		}
+		r, size := utf8.DecodeRune(line[i:])
+		if r == utf8.RuneError && size == 1 {
+			i++
+			continue
+		}
+		clean = append(clean, r)
+		i += size
+	}
+	return runewidth.StringWidth(string(clean))
 }
