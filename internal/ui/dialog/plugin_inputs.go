@@ -20,8 +20,11 @@ type PluginInputValues map[string]string
 // PluginInputsOkFunc is called when the user confirms the plugin inputs.
 type PluginInputsOkFunc func(values PluginInputValues)
 
+// PluginInputsFlashFunc is called to display flash messages.
+type PluginInputsFlashFunc func(msg string)
+
 // ShowPluginInputs pops a dialog to collect plugin input values.
-func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inputs []config.PluginInput, ok PluginInputsOkFunc, cancel cancelFunc) {
+func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inputs []config.PluginInput, flash PluginInputsFlashFunc, ok PluginInputsOkFunc, cancel cancelFunc) {
 	if len(inputs) == 0 {
 		ok(make(PluginInputValues))
 		return
@@ -88,7 +91,7 @@ func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inpu
 						values[inputName] = options[optionIndex]
 					}
 				})
-				// Style the dropdown
+
 				if dropDown := f.GetFormItemByLabel(label); dropDown != nil {
 					if dd, ok := dropDown.(*tview.DropDown); ok {
 						dd.SetListStyles(
@@ -106,7 +109,6 @@ func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inpu
 		dismissPluginInputs(pages)
 		cancel()
 	})
-
 	// Add OK button with validation
 	f.AddButton("OK", func() {
 		// Validate required fields
@@ -120,7 +122,9 @@ func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inpu
 			}
 		}
 		if len(missing) > 0 {
-			// TODO: Show error message for missing required fields
+			if flash != nil {
+				flash("Required fields are missing")
+			}
 			return
 		}
 
