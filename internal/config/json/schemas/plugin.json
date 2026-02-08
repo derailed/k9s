@@ -19,6 +19,23 @@
       "args": {
         "type": "array",
         "items": { "type": ["string", "number"] }
+      },
+      "inputs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "type": { "type": "string", "enum": ["string", "int", "bool", "dropdown"] },
+            "required": { "type": "boolean" },
+            "options": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "required": ["name", "type"]
+        }
       }
   },
   "required": ["shortCut", "description", "scopes", "command"]

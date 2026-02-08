@@ -28,19 +28,39 @@ type Plugins struct {
 	Plugins plugins `yaml:"plugins"`
 }
 
+// PluginInputType represents the type of input field.
+type PluginInputType string
+
+const (
+	InputTypeString   PluginInputType = "string"
+	InputTypeInt      PluginInputType = "int"
+	InputTypeBool     PluginInputType = "bool"
+	InputTypeDropdown PluginInputType = "dropdown"
+)
+
+// PluginInput describes an input field for a plugin.
+type PluginInput struct {
+	Name        string          `yaml:"name"`
+	Description string          `yaml:"description"`
+	Type        PluginInputType `yaml:"type"`
+	Required    bool            `yaml:"required"`
+	Options     []string        `yaml:"options"`
+}
+
 // Plugin describes a K9s plugin.
 type Plugin struct {
-	Scopes          []string `yaml:"scopes"`
-	Args            []string `yaml:"args"`
-	ShortCut        string   `yaml:"shortCut"`
-	Override        bool     `yaml:"override"`
-	Pipes           []string `yaml:"pipes"`
-	Description     string   `yaml:"description"`
-	Command         string   `yaml:"command"`
-	Confirm         bool     `yaml:"confirm"`
-	Background      bool     `yaml:"background"`
-	Dangerous       bool     `yaml:"dangerous"`
-	OverwriteOutput bool     `yaml:"overwriteOutput"`
+	Scopes          []string      `yaml:"scopes"`
+	Args            []string      `yaml:"args"`
+	ShortCut        string        `yaml:"shortCut"`
+	Override        bool          `yaml:"override"`
+	Pipes           []string      `yaml:"pipes"`
+	Description     string        `yaml:"description"`
+	Command         string        `yaml:"command"`
+	Confirm         bool          `yaml:"confirm"`
+	Background      bool          `yaml:"background"`
+	Dangerous       bool          `yaml:"dangerous"`
+	OverwriteOutput bool          `yaml:"overwriteOutput"`
+	Inputs          []PluginInput `yaml:"inputs"`
 }
 
 func (p Plugin) String() string {
