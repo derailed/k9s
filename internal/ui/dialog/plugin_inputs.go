@@ -24,7 +24,15 @@ type PluginInputsOkFunc func(values PluginInputValues)
 type PluginInputsFlashFunc func(msg string)
 
 // ShowPluginInputs pops a dialog to collect plugin input values.
-func ShowPluginInputs(styles *config.Dialog, pages *ui.Pages, title string, inputs []config.PluginInput, flash PluginInputsFlashFunc, ok PluginInputsOkFunc, cancel cancelFunc) {
+func ShowPluginInputs(
+	styles *config.Dialog,
+	pages *ui.Pages,
+	title string,
+	inputs []config.PluginInput,
+	flash PluginInputsFlashFunc,
+	ok PluginInputsOkFunc,
+	cancel cancelFunc,
+) {
 	if len(inputs) == 0 {
 		ok(make(PluginInputValues))
 		return
