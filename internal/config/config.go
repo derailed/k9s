@@ -107,12 +107,19 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		if err != nil {
 			return fmt.Errorf("unable to retrieve kubeconfig current context %q: %w", n, err)
 		}
-		_, err = c.K9s.ActivateContext(n)
-		if err != nil {
-			return fmt.Errorf("unable to activate context %q: %w", n, err)
+
+		if n != "" {
+			_, err = c.K9s.ActivateContext(n)
+			if err != nil {
+				return fmt.Errorf("unable to activate context %q: %w", n, err)
+			}
+		} else {
+			slog.Debug("No context set, skipping context activation")
 		}
 	}
-	slog.Debug("Using active context", slogs.Context, c.K9s.ActiveContextName())
+	if c.K9s.ActiveContextName() != "" {
+		slog.Debug("Using active context", slogs.Context, c.K9s.ActiveContextName())
+	}
 
 	var ns string
 	switch {
@@ -185,6 +192,11 @@ func (c *Config) FavNamespaces() []string {
 func (c *Config) SetActiveNamespace(ns string) error {
 	if ns == client.NotNamespaced {
 		slog.Debug("No namespace given. skipping!", slogs.Namespace, ns)
+		return nil
+	}
+	// If no context is configured, skip setting active namespace
+	if c.K9s.ActiveContextName() == "" {
+		slog.Debug("No context configured, skipping set active namespace")
 		return nil
 	}
 	ct, err := c.K9s.ActiveContext()
@@ -283,6 +295,11 @@ func (c *Config) Load(path string, force bool) error {
 // Save configuration to disk.
 func (c *Config) Save(force bool) error {
 	contextName := c.K9s.ActiveContextName()
+	// Skip saving if no context is configured
+	if contextName == "" {
+		slog.Debug("No context configured, skipping config save")
+		return nil
+	}
 	clusterName, err := c.ActiveClusterName(contextName)
 	if err != nil {
 		return fmt.Errorf("unable to locate associated cluster for context %q: %w", contextName, err)

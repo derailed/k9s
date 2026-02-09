@@ -278,7 +278,7 @@ func TestContextPluginsPath(t *testing.T) {
 		err   error
 	}{
 		"empty": {
-			err: errors.New(`no context found for: ""`),
+			err: errors.New(`no active context available`),
 		},
 		"happy": {
 			ct: "ct-1-1",

@@ -107,7 +107,10 @@ func run(*cobra.Command, []string) error {
 
 	cfg, err := loadConfiguration()
 	if err != nil {
-		slog.Warn("Fail to load global/context configuration", slogs.Error, err)
+		// Only warn if there's an actual context configured
+		if cfg != nil && cfg.K9s.ActiveContextName() != "" {
+			slog.Warn("Fail to load global/context configuration", slogs.Error, err)
+		}
 	}
 	app := view.NewApp(cfg)
 	if app.Config.K9s.DefaultView != "" {
@@ -150,14 +153,20 @@ func loadConfiguration() (*config.Config, error) {
 	}
 
 	// Try to access server version if that fail. Connectivity issue?
-	if !conn.CheckConnectivity() {
-		errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
-	}
-	if !conn.ConnectionOK() {
-		slog.Warn("💣 Kubernetes connectivity toast!")
-		errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
+	// Skip connectivity checks if no context is configured
+	if k9sCfg.K9s.ActiveContextName() != "" {
+		if !conn.CheckConnectivity() {
+			ctx := k9sCfg.K9s.ActiveContextName()
+			errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", ctx))
+		}
+		if !conn.ConnectionOK() {
+			slog.Warn("💣 Kubernetes connectivity toast!")
+			errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
+		} else {
+			slog.Info("✅ Kubernetes connectivity OK")
+		}
 	} else {
-		slog.Info("✅ Kubernetes connectivity OK")
+		slog.Info("No context configured")
 	}
 
 	if err := k9sCfg.Save(false); err != nil {
