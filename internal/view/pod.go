@@ -41,6 +41,7 @@ const (
 	pfIndicator      = "[orange::b]Ⓕ"
 	defaultTxRetries = 999
 	magicPrompt      = "Yes Please!"
+	sanitizeMessage  = "Sanitize deletes all pods in completed/error state"
 )
 
 // Pod represents a pod viewer.
@@ -268,8 +269,7 @@ func (p *Pod) sanitizeCmd(*tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", magicPrompt)
-	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, func() {
+	sanitizeFunc := func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*p.App().Conn().Config().CallTimeout())
 		defer cancel()
 		total, err := s.Sanitize(ctx, p.GetTable().GetModel().GetNamespace())
@@ -279,7 +279,16 @@ func (p *Pod) sanitizeCmd(*tcell.EventKey) *tcell.EventKey {
 		}
 		p.App().Flash().Infof("Sanitized %d %s", total, p.GVR())
 		p.Refresh()
-	}, func() {})
+	}
+
+	if p.App().Config.IsSanitizeConfirmationAckDisabled() {
+		d := p.App().Styles.Dialog()
+
+		dialog.ShowConfirm(&d, p.App().Content.Pages, "Sanitize", sanitizeMessage, sanitizeFunc, func() {})
+	} else {
+		msg := fmt.Sprintf("%s\nPlease enter [orange::b]%s[-::-] to proceed.", sanitizeMessage, magicPrompt)
+		dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, sanitizeFunc, func() {})
+	}
 
 	return nil
 }

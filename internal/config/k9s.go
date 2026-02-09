@@ -34,35 +34,36 @@ var defaultGPUVendors = gpuVendors{
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
-	GPUVendors          gpuVendors `json:"gpuVendors" yaml:"gpuVendors"`
-	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
-	RefreshRate         float32    `json:"refreshRate" yaml:"refreshRate"`
-	APIServerTimeout    string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
-	MaxConnRetry        int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
-	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
-	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
-	PortForwardAddress  string     `yaml:"portForwardAddress"`
-	UI                  UI         `json:"ui" yaml:"ui"`
-	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
-	DisablePodCounting  bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
-	ShellPod            *ShellPod  `json:"shellPod" yaml:"shellPod"`
-	ImageScans          ImageScans `json:"imageScans" yaml:"imageScans"`
-	Logger              Logger     `json:"logger" yaml:"logger"`
-	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
-	DefaultView         string     `json:"defaultView" yaml:"defaultView"`
-	manualRefreshRate   float32
-	manualReadOnly      *bool
-	manualCommand       *string
-	manualScreenDumpDir *string
-	refreshRateWarned   bool
-	dir                 *data.Dir
-	activeContextName   string
-	activeConfig        *data.Config
-	conn                client.Connection
-	ks                  data.KubeSettings
-	mx                  sync.RWMutex
-	contextSwitch       bool
+	LiveViewAutoRefresh            bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
+	GPUVendors                     gpuVendors `json:"gpuVendors" yaml:"gpuVendors"`
+	ScreenDumpDir                  string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
+	RefreshRate                    float32    `json:"refreshRate" yaml:"refreshRate"`
+	APIServerTimeout               string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
+	MaxConnRetry                   int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
+	ReadOnly                       bool       `json:"readOnly" yaml:"readOnly"`
+	NoExitOnCtrlC                  bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	PortForwardAddress             string     `yaml:"portForwardAddress"`
+	UI                             UI         `json:"ui" yaml:"ui"`
+	SkipLatestRevCheck             bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
+	DisablePodCounting             bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
+	ShellPod                       *ShellPod  `json:"shellPod" yaml:"shellPod"`
+	ImageScans                     ImageScans `json:"imageScans" yaml:"imageScans"`
+	Logger                         Logger     `json:"logger" yaml:"logger"`
+	Thresholds                     Threshold  `json:"thresholds" yaml:"thresholds"`
+	DefaultView                    string     `json:"defaultView" yaml:"defaultView"`
+	DisableSanitizeConfirmationAck bool       `json:"disableSanitizeConfirmation" yaml:"disableSanitizeConfirmationAck"`
+	manualRefreshRate              float32
+	manualReadOnly                 *bool
+	manualCommand                  *string
+	manualScreenDumpDir            *string
+	refreshRateWarned              bool
+	dir                            *data.Dir
+	activeContextName              string
+	activeConfig                   *data.Config
+	conn                           client.Connection
+	ks                             data.KubeSettings
+	mx                             sync.RWMutex
+	contextSwitch                  bool
 }
 
 // NewK9s create a new K9s configuration.
@@ -150,6 +151,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.ShellPod = k1.ShellPod
 	k.Logger = k1.Logger
 	k.ImageScans = k1.ImageScans
+	k.DisableSanitizeConfirmationAck = k1.DisableSanitizeConfirmationAck
 	if k1.Thresholds != nil {
 		k.Thresholds = k1.Thresholds
 	}
@@ -418,6 +420,15 @@ func (k *K9s) IsReadOnly() bool {
 	}
 
 	return ro
+}
+
+// IsSanitizeConfirmationAckDisabled returns the sanitize confirmation setting.
+func (k *K9s) IsSanitizeConfirmationAckDisabled() bool {
+	if cfg := k.getActiveConfig(); cfg != nil && cfg.Context.DisableSanitizeConfirmationAck != nil {
+		return *cfg.Context.DisableSanitizeConfirmationAck
+	}
+
+	return k.DisableSanitizeConfirmationAck
 }
 
 // Validate the current configuration.
