@@ -16,6 +16,7 @@ var accessors = Accessors{
 	client.BeGVR:  new(Benchmark),
 	client.PfGVR:  new(PortForward),
 	client.DirGVR: new(Dir),
+	client.CfsGVR: new(ContainerFs),
 
 	client.SvcGVR:  new(Service),
 	client.PodGVR:  new(Pod),

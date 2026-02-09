@@ -205,6 +205,13 @@ func loadK9s(m ResourceMetas) {
 		SingularName: "dir",
 		Categories:   []string{k9sCat},
 	}
+	m[client.CfsGVR] = &metav1.APIResource{
+		Name:         "cfs",
+		Kind:         "ContainerFS",
+		SingularName: "cfs",
+		ShortNames:   []string{"cfs"},
+		Categories:   []string{k9sCat},
+	}
 	m[client.XGVR] = &metav1.APIResource{
 		Name:         "xrays",
 		Kind:         "XRays",
