@@ -1,6 +1,7 @@
 # $XDG_CONFIG_HOME/k9s/plugins.yaml
 plugins:
   # liveMigration plugin config by rabin-io
+  # liveMigrationPod by zviratko
   #
   # Trigger virtual machine live migration, for VM's running on k8s cluster using kubevirt
   #  or Openshift with CNV (OpenShift Virtualization) installed.
@@ -33,3 +34,21 @@ plugins:
     - $NAMESPACE
     - --context
     - $CONTEXT
+  liveMigrationPods:
+    # Can be triggered from the POD (Pods) view, with shortcut `m`
+    shortCut: m
+    # Description to show in K9s menu
+    description: Live Migrate moves VM to another compute node
+    # Enable confirmation dialog
+    confirm: true
+    dangerous: true
+    # Collections of views that support this shortcut. (You can use `all`)
+    scopes:
+    - pods
+    # Whether or not to run the command in background mode
+    background: false
+    # The command to run upon invocation.
+    command: bash
+    args:
+      - -c
+      - 'VM=$NAME; VM=${VM%-*} ; VM=${VM#virt-launcher-} ; virtctl --context $CONTEXT -n $NAMESPACE migrate $VM'
