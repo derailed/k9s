@@ -183,59 +183,83 @@ func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 			return nil
 		}
 
-		args := make([]string, len(p.Args))
-		for i, a := range p.Args {
-			arg, err := r.EnvFn()().Substitute(a)
-			if err != nil {
-				slog.Error("Plugin Args match failed", slogs.Error, err)
-				return nil
-			}
-			args[i] = arg
+		// Collect inputs if defined, then execute plugin
+		if len(p.Inputs) > 0 {
+			d := r.App().Styles.Dialog()
+			dialog.ShowPluginInputs(&d, r.App().Content.Pages, "Plugin Inputs", p.Inputs,
+				func(msg string) {
+					r.App().Flash().Warn(msg)
+				},
+				func(inputValues dialog.PluginInputValues) {
+					executePlugin(r, p, inputValues)
+				},
+				func() {},
+			)
+			return nil
 		}
 
-		cb := func() {
-			opts := shellOpts{
-				binary:     p.Command,
-				background: p.Background,
-				pipes:      p.Pipes,
-				args:       args,
-			}
-			suspend, errChan, statusChan := run(r.App(), &opts)
-			if !suspend {
-				r.App().Flash().Infof("Plugin command failed: %q", p.Description)
+		executePlugin(r, p, nil)
+		return nil
+	}
+}
+
+func executePlugin(r Runner, p *config.Plugin, inputValues dialog.PluginInputValues) {
+	// Get base environment and add input values with INPUT_ prefix
+	env := r.EnvFn()()
+	for name, value := range inputValues {
+		env["INPUT_"+strings.ToUpper(name)] = value
+	}
+
+	args := make([]string, len(p.Args))
+	for i, a := range p.Args {
+		arg, err := env.Substitute(a)
+		if err != nil {
+			slog.Error("Plugin Args match failed", slogs.Error, err)
+			return
+		}
+		args[i] = arg
+	}
+
+	cb := func() {
+		opts := shellOpts{
+			binary:     p.Command,
+			background: p.Background,
+			pipes:      p.Pipes,
+			args:       args,
+		}
+		suspend, errChan, statusChan := run(r.App(), &opts)
+		if !suspend {
+			r.App().Flash().Infof("Plugin command failed: %q", p.Description)
+			return
+		}
+		var errs error
+		for e := range errChan {
+			errs = errors.Join(errs, e)
+		}
+		if errs != nil {
+			if !strings.Contains(errs.Error(), "signal: interrupt") {
+				slog.Error("Plugin command failed", slogs.Error, errs)
+				r.App().cowCmd(errs.Error())
 				return
 			}
-			var errs error
-			for e := range errChan {
-				errs = errors.Join(errs, e)
-			}
-			if errs != nil {
-				if !strings.Contains(errs.Error(), "signal: interrupt") {
-					slog.Error("Plugin command failed", slogs.Error, errs)
-					r.App().cowCmd(errs.Error())
+		}
+		go func() {
+			for st := range statusChan {
+				if !p.OverwriteOutput {
+					r.App().Flash().Infof("Plugin command launched successfully: %q", st)
+				} else if strings.Contains(st, outputPrefix) {
+					infoMsg := strings.TrimPrefix(st, outputPrefix)
+					r.App().Flash().Info(strings.TrimSpace(infoMsg))
 					return
 				}
 			}
-			go func() {
-				for st := range statusChan {
-					if !p.OverwriteOutput {
-						r.App().Flash().Infof("Plugin command launched successfully: %q", st)
-					} else if strings.Contains(st, outputPrefix) {
-						infoMsg := strings.TrimPrefix(st, outputPrefix)
-						r.App().Flash().Info(strings.TrimSpace(infoMsg))
-						return
-					}
-				}
-			}()
-		}
-		if p.Confirm {
-			msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
-			d := r.App().Styles.Dialog()
-			dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
-			return nil
-		}
-		cb()
-
-		return nil
+		}()
 	}
+	if p.Confirm {
+		msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
+		d := r.App().Styles.Dialog()
+		dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
+		return
+	}
+	cb()
 }
