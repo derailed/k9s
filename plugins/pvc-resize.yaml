@@ -1,0 +1,24 @@
+plugins:
+  resize-pvc:
+    shortCut: r
+    description: Resize PVC
+    scopes:
+      - pvc
+    command: kubectl
+    confirm: true
+    dangerous: true
+    args:
+      - patch
+      - pvc
+      - $NAME
+      - -n
+      - $NAMESPACE
+      - --context
+      - $CONTEXT
+      - -p
+      - '{"spec":{"resources":{"requests":{"storage":"$INPUT_SIZE"}}}}'
+    inputs:
+      - name: size
+        description: New size (e.g. 10Gi)
+        type: string
+        required: true
