@@ -21,6 +21,7 @@ k9s:
     useFullGVRTitle: false
   skipLatestRevCheck: false
   disablePodCounting: false
+  disablePodKillCmd: false
   shellPod:
     image: busybox:1.37.0
     namespace: default
