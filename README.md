@@ -1241,6 +1241,7 @@ k9s:
         fgColor: white
         bgColor: darkblue
         sorterColor: orange
+        selectedSortColumnColor: lightskyblue
     # YAML info styles.
     yaml:
       keyColor: steelblue
