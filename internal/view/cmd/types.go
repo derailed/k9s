@@ -74,4 +74,8 @@ var (
 		"xr",
 		"xray",
 	)
+	claudeCmd = sets.New(
+		"claude",
+		"ai",
+	)
 )
