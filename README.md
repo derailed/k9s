@@ -839,7 +839,7 @@ Each input has the following properties:
 
 * `name` (required) -- the input identifier used to reference the value in args as `$INPUT_<NAME>` (uppercase)
 * `description` -- the label shown to the user in the input dialog
-* `type` (required) -- the input type: `string`, `int`, `bool`, or `dropdown`
+* `type` (required) -- the input type: `string`, `number`, `bool`, or `dropdown`
 * `required` -- when true, the user must provide a value before the plugin can execute
 * `options` -- for `dropdown` type only, defines the list of available choices
 
@@ -850,7 +850,7 @@ Input values are available in plugin args using the format `$INPUT_<NAME>` where
 | Type | Description | UI Element |
 |------|-------------|------------|
 | `string` | Free-form text input | Text field |
-| `int` | Numeric input (integers only) | Text field with numeric validation |
+| `number` | Numeric input (integers and floats) | Text field with numeric validation |
 | `bool` | Boolean toggle | Checkbox |
 | `dropdown` | Selection from predefined options | Dropdown menu |
 
@@ -888,7 +888,7 @@ plugins:
         required: true
       - name: count
         description: Enter a number
-        type: int
+        type: number
         required: true
       - name: enabled
         description: Enable feature

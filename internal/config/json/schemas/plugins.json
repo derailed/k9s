@@ -31,7 +31,7 @@
               "properties": {
                 "name": { "type": "string" },
                 "description": { "type": "string" },
-                "type": { "type": "string", "enum": ["string", "int", "bool", "dropdown"] },
+                "type": { "type": "string", "enum": ["string", "number", "bool", "dropdown"] },
                 "required": { "type": "boolean" },
                 "options": {
                   "type": "array",

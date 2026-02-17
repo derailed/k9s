@@ -67,15 +67,15 @@ func ShowPluginInputs(
 				values[inputName] = text
 			})
 
-		case config.InputTypeInt:
+		case config.InputTypeNumber:
 			values[input.Name] = ""
 			inputName := input.Name
 			f.AddInputField(label, "", 20, func(text string, _ rune) bool {
-				// Allow empty, negative sign at start, or digits
-				if text == "" || text == "-" {
+				// Allow empty, negative sign, dot for decimals, or valid numbers
+				if text == "" || text == "-" || text == "." || text == "-." {
 					return true
 				}
-				_, err := strconv.Atoi(text)
+				_, err := strconv.ParseFloat(text, 64)
 				return err == nil
 			}, func(text string) {
 				values[inputName] = text

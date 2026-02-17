@@ -33,7 +33,7 @@ type PluginInputType string
 
 const (
 	InputTypeString   PluginInputType = "string"
-	InputTypeInt      PluginInputType = "int"
+	InputTypeNumber   PluginInputType = "number"
 	InputTypeBool     PluginInputType = "bool"
 	InputTypeDropdown PluginInputType = "dropdown"
 )
