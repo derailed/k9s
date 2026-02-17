@@ -67,6 +67,19 @@ func (p Plugin) String() string {
 	return fmt.Sprintf("[%s] %s(%s)", p.ShortCut, p.Command, strings.Join(p.Args, " "))
 }
 
+// Validate checks the plugin configuration for errors.
+func (p Plugin) Validate() error {
+	seen := make(map[string]struct{}, len(p.Inputs))
+	for _, input := range p.Inputs {
+		if _, ok := seen[input.Name]; ok {
+			return fmt.Errorf("duplicate input name %q", input.Name)
+		}
+		seen[input.Name] = struct{}{}
+	}
+
+	return nil
+}
+
 // NewPlugins returns a new plugin.
 func NewPlugins() Plugins {
 	return Plugins{
@@ -129,6 +142,9 @@ func (p *Plugins) load(path string) error {
 		if err := yaml.Unmarshal(bb, &o); err != nil {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
+		if err := o.Validate(); err != nil {
+			return fmt.Errorf("plugin validation failed for %s: %w", path, err)
+		}
 		p.Plugins[strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))] = o
 	case json.PluginsSchema:
 		var oo Plugins
@@ -136,6 +152,9 @@ func (p *Plugins) load(path string) error {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
 		for k := range oo.Plugins {
+			if err := oo.Plugins[k].Validate(); err != nil {
+				return fmt.Errorf("plugin %q validation failed for %s: %w", k, path, err)
+			}
 			p.Plugins[k] = oo.Plugins[k]
 		}
 	case json.PluginMultiSchema:
@@ -144,6 +163,9 @@ func (p *Plugins) load(path string) error {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
 		for k := range oo {
+			if err := oo[k].Validate(); err != nil {
+				return fmt.Errorf("plugin %q validation failed for %s: %w", k, path, err)
+			}
 			p.Plugins[k] = oo[k]
 		}
 	}

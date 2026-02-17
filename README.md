@@ -875,10 +875,10 @@ plugins:
         echo "Context: $CONTEXT" &&
         echo "" &&
         echo "=== Your inputs ===" &&
-        echo "Message: $INPUT_MESSAGE" &&
-        echo "Count: $INPUT_COUNT" &&
-        echo "Enabled: $INPUT_ENABLED" &&
-        echo "Environment: $INPUT_ENVIRONMENT" &&
+        if [ -n "$INPUT_MESSAGE" ]; then echo "Message: $INPUT_MESSAGE (set)"; else echo "Message: (not set)"; fi &&
+        if [ -n "$INPUT_COUNT" ]; then echo "Count: $INPUT_COUNT (set)"; else echo "Count: (not set)"; fi &&
+        if [ -n "$INPUT_ENABLED" ]; then echo "Enabled: $INPUT_ENABLED (set)"; else echo "Enabled: (not set)"; fi &&
+        if [ -n "$INPUT_ENVIRONMENT" ]; then echo "Environment: $INPUT_ENVIRONMENT (set)"; else echo "Environment: (not set)"; fi &&
         echo "" &&
         read -p "Press Enter to return to k9s..."
     inputs:
