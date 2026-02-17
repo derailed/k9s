@@ -51,8 +51,8 @@ func ShowPluginInputs(
 	// Add input fields based on type
 	for _, input := range inputs {
 		label := input.Name
-		if input.Description != "" {
-			label = input.Description
+		if input.Label != "" {
+			label = input.Label
 		}
 		if input.Required {
 			label += " *"

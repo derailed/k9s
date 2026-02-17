@@ -40,11 +40,11 @@ const (
 
 // PluginInput describes an input field for a plugin.
 type PluginInput struct {
-	Name        string          `yaml:"name"`
-	Description string          `yaml:"description"`
-	Type        PluginInputType `yaml:"type"`
-	Required    bool            `yaml:"required"`
-	Options     []string        `yaml:"options"`
+	Name     string          `yaml:"name"`
+	Label    string          `yaml:"label"`
+	Type     PluginInputType `yaml:"type"`
+	Required bool            `yaml:"required"`
+	Options  []string        `yaml:"options"`
 }
 
 // Plugin describes a K9s plugin.

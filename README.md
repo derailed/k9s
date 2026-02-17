@@ -838,7 +838,7 @@ Plugins can define input fields that prompt users for values before execution. T
 Each input has the following properties:
 
 * `name` (required) -- the input identifier used to reference the value in args as `$INPUT_<NAME>` (uppercase)
-* `description` -- the label shown to the user in the input dialog
+* `label` -- the label shown to the user in the input dialog
 * `type` (required) -- the input type: `string`, `number`, `bool`, or `dropdown`
 * `required` -- when true, the user must provide a value before the plugin can execute
 * `options` -- for `dropdown` type only, defines the list of available choices
@@ -883,19 +883,19 @@ plugins:
         read -p "Press Enter to return to k9s..."
     inputs:
       - name: message
-        description: Enter a message
+        label: Enter a message
         type: string
         required: true
       - name: count
-        description: Enter a number
+        label: Enter a number
         type: number
         required: true
       - name: enabled
-        description: Enable feature
+        label: Enable feature
         type: bool
         required: false
       - name: environment
-        description: Select environment
+        label: Select environment
         type: dropdown
         required: true
         options:
