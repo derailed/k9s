@@ -124,7 +124,8 @@ func ShowPluginInputs(
 		for _, input := range inputs {
 			if input.Required {
 				val := values[input.Name]
-				if val == "" || (input.Type == config.InputTypeBool && val == "false") {
+				// Bools always have a value (true/false), so skip validation for them
+				if input.Type != config.InputTypeBool && val == "" {
 					missing = append(missing, input.Name)
 				}
 			}
@@ -134,6 +135,13 @@ func ShowPluginInputs(
 				flash("Required fields are missing")
 			}
 			return
+		}
+
+		// Remove optional fields with zero values
+		for _, input := range inputs {
+			if !input.Required && input.Type != config.InputTypeBool && values[input.Name] == "" {
+				delete(values, input.Name)
+			}
 		}
 
 		ok(values)
