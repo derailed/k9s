@@ -68,7 +68,7 @@ func (p Plugin) String() string {
 }
 
 // Validate checks the plugin configuration for errors.
-func (p Plugin) Validate() error {
+func (p *Plugin) Validate() error {
 	seen := make(map[string]struct{}, len(p.Inputs))
 	for _, input := range p.Inputs {
 		if _, ok := seen[input.Name]; ok {
@@ -152,10 +152,11 @@ func (p *Plugins) load(path string) error {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
 		for k := range oo.Plugins {
-			if err := oo.Plugins[k].Validate(); err != nil {
+			plug := oo.Plugins[k]
+			if err := plug.Validate(); err != nil {
 				return fmt.Errorf("plugin %q validation failed for %s: %w", k, path, err)
 			}
-			p.Plugins[k] = oo.Plugins[k]
+			p.Plugins[k] = plug
 		}
 	case json.PluginMultiSchema:
 		var oo plugins
@@ -163,10 +164,11 @@ func (p *Plugins) load(path string) error {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
 		for k := range oo {
-			if err := oo[k].Validate(); err != nil {
+			plug := oo[k]
+			if err := plug.Validate(); err != nil {
 				return fmt.Errorf("plugin %q validation failed for %s: %w", k, path, err)
 			}
-			p.Plugins[k] = oo[k]
+			p.Plugins[k] = plug
 		}
 	}
 
