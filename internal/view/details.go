@@ -31,6 +31,7 @@ type Details struct {
 
 	text                      *tview.TextView
 	actions                   *ui.KeyActions
+	editFn                    func() error
 	app                       *App
 	title, subject            string
 	cmdBuff                   *model.FishBuff
@@ -147,6 +148,12 @@ func (d *Details) bindKeys() {
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", d.activateCmd, false),
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", d.eraseCmd, false),
 	})
+	if !d.app.Config.IsReadOnly() && d.editFn != nil {
+		d.actions.Add(ui.KeyE, ui.NewKeyActionWithOpts("Edit", d.editCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}))
+	}
 
 	if !d.searchable {
 		d.actions.Delete(ui.KeyN, ui.KeyShiftN)
@@ -172,6 +179,13 @@ func (d *Details) StylesChanged(s *config.Styles) {
 // Update updates the view content.
 func (d *Details) Update(buff string) *Details {
 	d.model.SetText(buff)
+
+	return d
+}
+
+// SetEditFn configures an optional edit action for the details view.
+func (d *Details) SetEditFn(fn func() error) *Details {
+	d.editFn = fn
 
 	return d
 }
@@ -208,6 +222,17 @@ func (d *Details) Hints() model.MenuHints {
 
 // ExtraHints returns additional hints.
 func (*Details) ExtraHints() map[string]string {
+	return nil
+}
+
+func (d *Details) editCmd(*tcell.EventKey) *tcell.EventKey {
+	if d.editFn == nil {
+		return nil
+	}
+	if err := d.editFn(); err != nil {
+		d.app.Flash().Err(err)
+	}
+
 	return nil
 }
 
