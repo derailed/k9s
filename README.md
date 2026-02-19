@@ -833,7 +833,7 @@ A plugin is defined as follows:
 
 #### Plugin Inputs
 
-Plugins can define input fields that prompt users for values before execution. This is useful when you need dynamic values like replica counts, environment variables, or profile selections.
+Plugins can define input fields that prompt users for values before execution. This is useful when you need dynamic values like replica counts, environment variables, or profile selections. A maximum of 5 inputs per plugin is allowed.
 
 Each input has the following properties:
 
