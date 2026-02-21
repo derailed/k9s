@@ -36,8 +36,6 @@ const (
 	InputTypeNumber   PluginInputType = "number"
 	InputTypeBool     PluginInputType = "bool"
 	InputTypeDropdown PluginInputType = "dropdown"
-
-	MaxPluginInputs = 5
 )
 
 // PluginInput describes an input field for a plugin.
@@ -71,10 +69,6 @@ func (p Plugin) String() string {
 
 // Validate checks the plugin configuration for errors.
 func (p *Plugin) Validate() error {
-	if len(p.Inputs) > MaxPluginInputs {
-		return fmt.Errorf("too many inputs: %d (max %d)", len(p.Inputs), MaxPluginInputs)
-	}
-
 	seen := make(map[string]struct{}, len(p.Inputs))
 	for _, input := range p.Inputs {
 		if _, ok := seen[input.Name]; ok {
@@ -82,7 +76,6 @@ func (p *Plugin) Validate() error {
 		}
 		seen[input.Name] = struct{}{}
 	}
-
 	return nil
 }
 
