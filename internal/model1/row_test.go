@@ -509,6 +509,22 @@ func TestLess(t *testing.T) {
 			v2:         "1Ti",
 			e:          true,
 		},
+		"rfc3339-newer-first": {
+			isDuration: true,
+			id1:        "id1",
+			id2:        "id2",
+			v1:         time.Now().Add(-3 * time.Minute).Format(time.RFC3339),
+			v2:         time.Now().Add(-10 * time.Minute).Format(time.RFC3339),
+			e:          true,
+		},
+		"rfc3339-older-first": {
+			isDuration: true,
+			id1:        "id1",
+			id2:        "id2",
+			v1:         time.Now().Add(-10 * time.Minute).Format(time.RFC3339),
+			v2:         time.Now().Add(-3 * time.Minute).Format(time.RFC3339),
+			e:          false,
+		},
 	}
 
 	for k := range uu {

@@ -184,13 +184,14 @@ func boolToStr(b bool) string {
 	}
 }
 
-// ToAge converts time to human duration.
+// ToAge returns a resource's age as an timestamp string.
+// Humanization for display is deferred to the column decorator
 func ToAge(t metav1.Time) string {
 	if t.IsZero() {
 		return UnknownValue
 	}
 
-	return duration.HumanDuration(time.Since(t.Time))
+	return t.Time.Format(time.RFC3339)
 }
 
 func toAgeHuman(s string) string {
@@ -200,7 +201,8 @@ func toAgeHuman(s string) string {
 
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return NAValue
+		// Already humanized or another format, return as-is.
+		return s
 	}
 
 	return duration.HumanDuration(time.Since(t))

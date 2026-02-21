@@ -10,6 +10,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/fvbommel/sortorder"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -175,6 +176,14 @@ func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 }
 
 func lessDuration(s1, s2 string) bool {
+	// Try timestamps first for full-precision comparison.
+	t1, e1 := time.Parse(time.RFC3339, s1)
+	t2, e2 := time.Parse(time.RFC3339, s2)
+	if e1 == nil && e2 == nil {
+		return !t1.Before(t2)
+	}
+
+	// Fall back to humanized duration parsing.
 	d1, d2 := durationToSeconds(s1), durationToSeconds(s2)
 	return d1 <= d2
 }

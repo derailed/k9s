@@ -45,7 +45,7 @@ func (Chart) Header(_ string) model1.Header {
 		model1.HeaderColumn{Name: "CHART"},
 		model1.HeaderColumn{Name: "APP VERSION"},
 		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true, Decorator: model1.DecoratorFunc(render.AgeDecorator)}},
 	}
 }
 

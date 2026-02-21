@@ -83,7 +83,15 @@ func TestGenericRender(t *testing.T) {
 			var r model1.Row
 			re.SetTable(u.ns, u.table)
 
-			assert.Equal(t, u.eHeader, re.Header(u.ns))
+			hh := re.Header(u.ns)
+
+			for i := range hh {
+				if hh[i].Time {
+					assert.NotNil(t, hh[i].Decorator, "expected decorator on time column %q", hh[i].Name)
+					hh[i].Decorator = nil
+				}
+			}
+			assert.Equal(t, u.eHeader, hh)
 			require.NoError(t, re.Render(u.table.Rows[0], u.ns, &r))
 			assert.Equal(t, u.eID, r.ID)
 			assert.Equal(t, u.eFields, r.Fields)

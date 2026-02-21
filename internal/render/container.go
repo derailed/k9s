@@ -72,8 +72,8 @@ func (Container) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Container) Header(_ string) model1.Header {
-	return defaultCOHeader
+func (c Container) Header(_ string) model1.Header {
+	return c.doHeader(defaultCOHeader)
 }
 
 // Header returns a header row.

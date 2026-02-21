@@ -47,9 +47,9 @@ func (Workload) ColorerFunc() model1.ColorerFunc {
 	}
 }
 
-// Header returns a header rbw.
-func (Workload) Header(string) model1.Header {
-	return defaultWKHeader
+// Header returns a header row.
+func (w Workload) Header(string) model1.Header {
+	return w.doHeader(defaultWKHeader)
 }
 
 // Render renders a K8s resource to screen.
