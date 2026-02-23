@@ -99,7 +99,6 @@ func run(*cobra.Command, []string) error {
 			fmt.Printf("%v.\n", err)
 		}
 	}()
-
 	slog.SetDefault(slog.New(tint.NewHandler(logFile, &tint.Options{
 		Level:      parseLevel(*k9sFlags.LogLevel),
 		TimeFormat: time.RFC3339,
@@ -123,23 +122,19 @@ func run(*cobra.Command, []string) error {
 	if view.ExitStatus != "" {
 		return fmt.Errorf("view exit status %s", view.ExitStatus)
 	}
-
 	return nil
 }
 
 func loadConfiguration() (*config.Config, error) {
 	slog.Info("🐶 K9s starting up...")
-
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
 	var errs error
-
 	conn, err := client.InitConnection(k8sCfg, slog.Default())
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
 	k9sCfg.SetConnection(conn)
-
 	if err := k9sCfg.Load(config.AppConfigFile, false); err != nil {
 		errs = errors.Join(errs, err)
 	}
@@ -149,17 +144,12 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 
-	// Try to access server version if that fail. Connectivity issue?
-	if !conn.CheckConnectivity() {
-		errs = errors.Join(errs, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName()))
-	}
 	if !conn.ConnectionOK() {
 		slog.Warn("💣 Kubernetes connectivity toast!")
 		errs = errors.Join(errs, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName()))
 	} else {
 		slog.Info("✅ Kubernetes connectivity OK")
 	}
-
 	if err := k9sCfg.Save(false); err != nil {
 		slog.Error("K9s config save failed", slogs.Error, err)
 		errs = errors.Join(errs, err)

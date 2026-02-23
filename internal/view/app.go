@@ -117,8 +117,12 @@ func (a *App) Init(version string, _ int) error {
 		a.clusterModel.AddListener(a.clusterInfo())
 		a.clusterModel.AddListener(a.statusIndicator())
 		if a.Conn().ConnectionOK() {
-			a.clusterModel.Refresh()
-			a.clusterInfo().Init()
+			go func() {
+				a.clusterModel.Refresh()
+				a.QueueUpdateDraw(func() {
+					a.clusterInfo().Init()
+				})
+			}()
 		}
 	}
 
@@ -457,7 +461,6 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 	if (!ok || a.Config.ActiveContextName() == contextName) && !force {
 		return nil
 	}
-
 	a.Halt()
 	defer a.Resume()
 	{
@@ -469,25 +472,16 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		if cns, ok := ci.NSArg(); ok {
 			ct.Namespace.Active = cns
 		}
-
 		p := cmd.NewInterpreter(a.Config.ActiveView())
 		p.ResetContextArg()
 		if p.IsContextCmd() {
 			a.Config.SetActiveView(client.PodGVR.String())
 		}
 		ns := a.Config.ActiveNamespace()
-		if !a.Conn().IsValidNamespace(ns) {
-			slog.Warn("Unable to validate namespace", slogs.Namespace, ns)
-			if err := a.Config.SetActiveNamespace(ns); err != nil {
-				return err
-			}
-		}
 		a.Flash().Infof("Using %q namespace", ns)
-
 		if err := a.Config.Save(true); err != nil {
 			slog.Error("Fail to save config to disk", slogs.Subsys, "config", slogs.Error, err)
 		}
-
 		if a.factory == nil && a.Conn() != nil {
 			a.factory = watch.NewFactory(a.Conn())
 			a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s)
@@ -498,11 +492,9 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		if a.factory != nil {
 			a.initFactory(ns)
 		}
-
 		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
 			return err
 		}
-
 		slog.Debug("Switching Context",
 			slogs.Context, contextName,
 			slogs.Namespace, ns,
@@ -511,9 +503,8 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
-
 		if a.clusterModel != nil {
-			a.clusterModel.Reset(a.factory)
+			go a.clusterModel.Reset(a.factory)
 		}
 	}
 
