@@ -124,27 +124,7 @@ func extractContextArg(line string) (string, string) {
 	if ctx, rest, ok := extractQuotedContext(line, contextQuotedDoubleRX); ok {
 		return ctx, rest
 	}
-
-	// Allow unquoted contexts with spaces when @ is last.
-	at := strings.LastIndex(line, "@")
-	if at == -1 {
-		return "", line
-	}
-	if at > 0 && !isWhitespace(line[at-1]) {
-		return "", line
-	}
-	tail := strings.TrimSpace(line[at+1:])
-	if tail == "" || !strings.Contains(tail, " ") {
-		return "", line
-	}
-	if strings.ContainsAny(tail, "'\"") || strings.Contains(tail, filterFlag) || isLabelArg(tail) {
-		return "", line
-	}
-	if len(strings.Fields(tail)) < 3 {
-		return "", line
-	}
-
-	return tail, strings.TrimSpace(line[:at])
+	return "", line
 }
 
 func extractQuotedContext(line string, rx *regexp.Regexp) (string, string, bool) {

@@ -64,7 +64,7 @@ func ShouldAddSuggest(command, suggest string) (string, bool) {
 // SuggestSubCommand suggests namespaces or contexts based on current command.
 func SuggestSubCommand(command string, namespaces client.NamespaceNames, contexts []string) []string {
 	if ctx, quote, ok := quotedContextPrefix(command); ok {
-		suggests := completeCtx(command+" ", ctx, contexts)
+		suggests := completeCtx(command+" ", ctx, contexts, true)
 		qq := string(quote)
 		if quote != 0 {
 			for i, s := range suggests {
@@ -96,11 +96,11 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 		if !ok {
 			return nil
 		}
-		suggests = completeCtx(command, n, contexts)
+		suggests = completeCtx(command, n, contexts, true)
 
 	case p.HasNS():
 		if n, ok := p.HasContext(); ok {
-			suggests = completeCtx(command, n, contexts)
+			suggests = completeCtx(command, n, contexts, false)
 		}
 		if len(suggests) > 0 {
 			break
@@ -114,7 +114,7 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 
 	default:
 		if n, ok := p.HasContext(); ok {
-			suggests = completeCtx(command, n, contexts)
+			suggests = completeCtx(command, n, contexts, false)
 		}
 	}
 	slices.Sort(suggests)
@@ -170,9 +170,21 @@ func completeNS(s string, nn client.NamespaceNames) []string {
 	return suggests
 }
 
-func completeCtx(command, s string, contexts []string) []string {
+func completeCtx(command, s string, contexts []string, allowSpaces bool) []string {
 	var suggests []string
+	seen := make(map[string]struct{}, len(contexts))
 	for _, ctxName := range contexts {
+		if !allowSpaces {
+			ff := strings.Fields(ctxName)
+			if len(ff) == 0 {
+				continue
+			}
+			ctxName = ff[0]
+		}
+		if _, ok := seen[ctxName]; ok {
+			continue
+		}
+		seen[ctxName] = struct{}{}
 		if suggest, ok := ShouldAddSuggest(s, ctxName); ok {
 			if s == "" && !strings.HasSuffix(command, " ") {
 				suggests = append(suggests, " "+suggest)
