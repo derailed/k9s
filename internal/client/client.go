@@ -504,7 +504,7 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current cluster name: %w", err)
 	}
-	discCacheDir := filepath.Join(baseCacheDir, "discovery", toHostDir(cfg.Host), toHostDir(clusterName))
+	discCacheDir := buildDiscoveryCacheDir(baseCacheDir, cfg.Host, clusterName)
 
 	c, err := disk.NewCachedDiscoveryClientForConfig(cfg, discCacheDir, httpCacheDir, cacheExpiry)
 	if err != nil {

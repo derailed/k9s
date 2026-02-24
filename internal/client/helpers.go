@@ -104,3 +104,9 @@ func toHostDir(host string) string {
 	)
 	return toFileName.ReplaceAllString(h, "_")
 }
+
+// buildDiscoveryCacheDir constructs the discovery cache directory path.
+// Exported for testing.
+func buildDiscoveryCacheDir(baseCacheDir, serverURL, clusterName string) string {
+	return path.Join(baseCacheDir, "discovery", toHostDir(serverURL), toHostDir(clusterName))
+}

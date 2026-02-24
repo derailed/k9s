@@ -201,25 +201,56 @@ func TestCachedDiscoveryPathIncludesClusterName(t *testing.T) {
 	// to prevent cache pollution when multiple clusters share the same proxy URL
 	// Issue: #3828
 
-	// Test case: Two clusters with same server URL but different cluster names
-	// should have different cache paths
-	sameServerURL := "https://teleport.example.com"
-	prodCluster := "prod-cluster"
-	stagingCluster := "staging-cluster"
+	baseCacheDir := "/home/user/.kube/cache"
 
-	// Construct what would be the cache paths
-	// The actual implementation in CachedDiscovery() uses:
-	// filepath.Join(baseCacheDir, "discovery", toHostDir(cfg.Host), toHostDir(clusterName))
-	// Since toHostDir is not exported, we verify the concept
+	tests := []struct {
+		name        string
+		serverURL   string
+		clusterName string
+	}{
+		{
+			name:        "teleport proxy with prod cluster",
+			serverURL:   "https://teleport.example.com",
+			clusterName: "prod-cluster",
+		},
+		{
+			name:        "teleport proxy with staging cluster",
+			serverURL:   "https://teleport.example.com",
+			clusterName: "staging-cluster",
+		},
+		{
+			name:        "direct API server",
+			serverURL:   "https://192.168.49.2:8443",
+			clusterName: "minikube",
+		},
+	}
 
-	prodPath := sameServerURL + "/" + prodCluster
-	stagingPath := sameServerURL + "/" + stagingCluster
+	// First, verify that different clusters with same server URL get different paths
+	// This is the key fix for issue #3828
+	prodPath := buildDiscoveryCacheDir(baseCacheDir, "https://teleport.example.com", "prod-cluster")
+	stagingPath := buildDiscoveryCacheDir(baseCacheDir, "https://teleport.example.com", "staging-cluster")
 
-	// Verify different clusters get different paths
 	assert.NotEqual(t, prodPath, stagingPath,
 		"clusters with same server URL but different names must have different cache paths")
 
-	// Verify cluster name is in the path
-	assert.Contains(t, prodPath, prodCluster, "prod cluster name should be in path")
-	assert.Contains(t, stagingPath, stagingCluster, "staging cluster name should be in path")
+	// Verify the path structure contains expected components
+	assert.Contains(t, prodPath, "discovery", "path should contain 'discovery'")
+	assert.Contains(t, prodPath, "teleport.example.com", "path should contain sanitized server URL")
+	assert.Contains(t, stagingPath, "staging", "path should contain sanitized cluster name")
+
+	// Verify all test cases
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := buildDiscoveryCacheDir(baseCacheDir, tt.serverURL, tt.clusterName)
+
+			// Verify discovery directory is in the path
+			assert.Contains(t, result, "discovery",
+				"cache path should contain 'discovery' directory")
+
+			// Verify path is deterministic (same inputs = same output)
+			result2 := buildDiscoveryCacheDir(baseCacheDir, tt.serverURL, tt.clusterName)
+			assert.Equal(t, result, result2,
+				"cache path should be deterministic for same inputs")
+		})
+	}
 }
