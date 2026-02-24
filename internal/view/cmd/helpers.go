@@ -63,6 +63,21 @@ func ShouldAddSuggest(command, suggest string) (string, bool) {
 
 // SuggestSubCommand suggests namespaces or contexts based on current command.
 func SuggestSubCommand(command string, namespaces client.NamespaceNames, contexts []string) []string {
+	if ctx, quote, ok := quotedContextPrefix(command); ok {
+		suggests := completeCtx(command+" ", ctx, contexts)
+		qq := string(quote)
+		if quote != 0 {
+			for i, s := range suggests {
+				suggests[i] = s + qq
+			}
+			if ctx != "" && isExactContext(ctx, contexts) && !slices.Contains(suggests, qq) {
+				suggests = append(suggests, qq)
+			}
+		}
+		slices.Sort(suggests)
+		return suggests
+	}
+
 	p := NewInterpreter(command)
 	var suggests []string
 	switch {
@@ -105,6 +120,39 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 	slices.Sort(suggests)
 
 	return suggests
+}
+
+func isExactContext(ctx string, contexts []string) bool {
+	for _, ctxName := range contexts {
+		if ctxName == ctx {
+			return true
+		}
+	}
+	return false
+}
+
+func quotedContextPrefix(command string) (string, byte, bool) {
+	at := strings.LastIndex(command, "@")
+	if at == -1 {
+		return "", 0, false
+	}
+	if at > 0 && !isWhitespace(command[at-1]) {
+		return "", 0, false
+	}
+	tail := command[at+1:]
+	if tail == "" {
+		return "", 0, false
+	}
+	quote := tail[0]
+	if quote != '"' && quote != '\'' {
+		return "", 0, false
+	}
+	rest := tail[1:]
+	if strings.IndexByte(rest, quote) != -1 {
+		return "", 0, false
+	}
+
+	return rest, quote, true
 }
 
 func completeNS(s string, nn client.NamespaceNames) []string {
