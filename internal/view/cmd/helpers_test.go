@@ -65,7 +65,7 @@ func TestSuggestSubCommand(t *testing.T) {
 		"default":       {},
 		"nginx-ingress": {},
 	}
-	contextNames := []string{"develop", "test", "pre", "prod", "ns/server:6443/Firstname Secondname"}
+	contextNames := []string{"develop", "test", "pre", "prod", "ns/server:6443/Firstname Middlename Secondname"}
 
 	tests := []struct {
 		Command     string
@@ -77,14 +77,16 @@ func TestSuggestSubCommand(t *testing.T) {
 		{Command: "ctx p", Suggestions: []string{"re", "rod"}},
 		{Command: "ctx   p", Suggestions: []string{"re", "rod"}},
 		{Command: "ctx pr", Suggestions: []string{"e", "od"}},
-		{Command: "ctx", Suggestions: []string{" develop", " ns/server:6443/Firstname Secondname", " pre", " prod", " test"}},
-		{Command: "ctx ", Suggestions: []string{"develop", "ns/server:6443/Firstname Secondname", "pre", "prod", "test"}},
+		{Command: "ctx", Suggestions: []string{" develop", " ns/server:6443/Firstname Middlename Secondname", " pre", " prod", " test"}},
+		{Command: "ctx ", Suggestions: []string{"develop", "ns/server:6443/Firstname Middlename Secondname", "pre", "prod", "test"}},
 		{Command: "context   d", Suggestions: []string{"evelop"}},
 		{Command: "contexts   t", Suggestions: []string{"est"}},
+		{Command: "ctx ns/server:6443/Firstname S", Suggestions: []string{"econdname"}},
 		{Command: "po @\"d", Suggestions: []string{"evelop\""}},
 		{Command: "po @\"pre", Suggestions: []string{"\""}},
 		{Command: "po @'t", Suggestions: []string{"est'"}},
-		{Command: "po @\"n", Suggestions: []string{"s/server:6443/Firstname Secondname\""}},
+		{Command: "po @\"n", Suggestions: []string{"s/server:6443/Firstname Middlename Secondname\""}},
+		{Command: "po @n", Suggestions: []string{"s/server:6443/Firstname"}},
 		{Command: "po ", Suggestions: nil},
 		{Command: "po  x", Suggestions: nil},
 		{Command: "po k", Suggestions: []string{"ube-public", "ube-system"}},
