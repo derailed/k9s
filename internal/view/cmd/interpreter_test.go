@@ -650,6 +650,31 @@ func TestArgs(t *testing.T) {
 			ok:  true,
 			ctx: "fred",
 		},
+		"with-space-context-unquoted-last": {
+			cmd: "po @context with space",
+			ok:  true,
+			ctx: "context",
+		},
+		"with-space-context-unquoted-with-slashes": {
+			cmd: "po @default/server:6443/Firstname Middlename Lastname",
+			ok:  true,
+			ctx: "default/server:6443/Firstname",
+		},
+		"with-space-context-quoted": {
+			cmd: "po @'context with space'",
+			ok:  true,
+			ctx: "context with space",
+		},
+		"with-space-context-quoted-then-namespace": {
+			cmd: "po @'context with space' fred",
+			ok:  true,
+			ctx: "context with space",
+		},
+		"with-space-context-quoted-double-then-namespace": {
+			cmd: "po @\"context with space\" fred",
+			ok:  true,
+			ctx: "context with space",
+		},
 	}
 
 	for k := range uu {
