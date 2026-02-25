@@ -132,19 +132,14 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 
 // Get returns a node resource.
 func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
-	oo, err := n.Resource.List(ctx, "")
+	o, err := n.Resource.Get(ctx, client.FQN(client.ClusterScope, path))
 	if err != nil {
 		return nil, err
 	}
 
-	var raw *unstructured.Unstructured
-	for _, o := range oo {
-		if u, ok := o.(*unstructured.Unstructured); ok && u.GetName() == path {
-			raw = u
-		}
-	}
-	if raw == nil {
-		return nil, fmt.Errorf("unable to locate node %s", path)
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got %T", o)
 	}
 
 	var nmx *mv1beta1.NodeMetrics
@@ -152,76 +147,118 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
-	return &render.NodeWithMetrics{Raw: raw, MX: nmx}, nil
+	r := &render.NodeWithMetrics{Raw: u, MX: nmx, PodCount: -1}
+
+	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)
+	if !shouldCountPods {
+		return r, nil
+	}
+
+	//todo: investigate if custom-columns mechanic can return only pods on this node instead of listing all pods
+	pods, err := n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
+	if err != nil {
+		slog.Error("Unable to list pods during node get", slogs.Error, err)
+		return r, nil
+	}
+
+	podCounts, err := n.CountPodsByNode(pods)
+	if err != nil {
+		slog.Error("Unable to count pods during node get", slogs.ResName, u.GetName(), slogs.Error, err)
+		return r, nil
+	}
+
+	r.PodCount = podCounts[u.GetName()]
+
+	return r, nil
 }
 
 // List returns a collection of node resources.
 func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo, err := n.Resource.List(ctx, ns)
 	if err != nil {
-		return oo, err
+		return nil, err
 	}
 
 	var nmx client.NodesMetricsMap
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
 	}
 
 	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)
+
 	var pods []runtime.Object
 	if shouldCountPods {
 		pods, err = n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
 		if err != nil {
-			slog.Error("Unable to list pods", slogs.Error, err)
+			slog.Error("Unable to list pods during node list", slogs.Error, err)
+			shouldCountPods = false
 		}
 	}
+
+	var podCounts map[string]int
+	if shouldCountPods {
+		podCounts, err = n.CountPodsByNode(pods)
+		if err != nil {
+			slog.Error("Unable to count pods during node list", slogs.Error, err)
+			shouldCountPods = false
+		}
+	}
+
 	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
-			return res, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+			return nil, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 		}
 
-		fqn := extractFQN(o)
-		_, name := client.Namespaced(fqn)
-		podCount := -1
-		if shouldCountPods {
-			podCount, err = n.CountPods(pods, name)
-			if err != nil {
-				slog.Error("Unable to get pods count",
-					slogs.ResName, name,
-					slogs.Error, err,
-				)
-			}
-		}
-		res = append(res, &render.NodeWithMetrics{
+		r := &render.NodeWithMetrics{
 			Raw:      u,
-			MX:       nmx[name],
-			PodCount: podCount,
-		})
+			MX:       nmx[u.GetName()],
+			PodCount: -1,
+		}
+
+		if shouldCountPods {
+			r.PodCount = podCounts[u.GetName()]
+		}
+
+		res = append(res, r)
 	}
 
 	return res, nil
 }
 
-// CountPods counts the pods scheduled on a given node.
-func (*Node) CountPods(oo []runtime.Object, nodeName string) (int, error) {
-	var count int
+// CountPodsByNode returns map[nodeName]podCount.
+func (*Node) CountPodsByNode(oo []runtime.Object) (map[string]int, error) {
+	if len(oo) == 0 {
+		return map[string]int{}, nil
+	}
+
+	podCounts := make(map[string]int, 100)
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
-			return count, fmt.Errorf("expecting *Unstructured but got `%T", o)
+			return podCounts, fmt.Errorf("expecting *Unstructured but got `%T", o)
 		}
+
 		spec, ok := u.Object["spec"].(map[string]any)
 		if !ok {
-			return count, fmt.Errorf("expecting spec interface map but got `%T", o)
+			return podCounts, fmt.Errorf("expecting spec interface map but got `%T", u.Object["spec"])
 		}
-		if node, ok := spec["nodeName"]; ok && node == nodeName {
-			count++
+
+		nn, ok := spec["nodeName"]
+		if !ok {
+			continue
 		}
+
+		nodeName, ok := nn.(string)
+		if !ok || nodeName == "" {
+			continue
+		}
+
+		podCounts[nodeName]++
 	}
 
-	return count, nil
+	return podCounts, nil
 }
 
 // GetPods returns all pods running on given node.
