@@ -97,6 +97,9 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 			return nil
 		}
 		suggests = completeCtx(command, n, contexts, true)
+		if len(suggests) == 0 {
+			suggests = completeCtxToken(n, contexts)
+		}
 
 	case p.HasNS():
 		if n, ok := p.HasContext(); ok {
@@ -173,13 +176,13 @@ func completeNS(s string, nn client.NamespaceNames) []string {
 func completeCtx(command, s string, contexts []string, allowSpaces bool) []string {
 	var suggests []string
 	seen := make(map[string]struct{}, len(contexts))
+	disallowedMatch := false
 	for _, ctxName := range contexts {
-		if !allowSpaces {
-			ff := strings.Fields(ctxName)
-			if len(ff) == 0 {
-				continue
+		if !allowSpaces && strings.IndexAny(ctxName, " \t") != -1 {
+			if strings.HasPrefix(ctxName, s) {
+				disallowedMatch = true
 			}
-			ctxName = ff[0]
+			continue
 		}
 		if _, ok := seen[ctxName]; ok {
 			continue
@@ -191,6 +194,47 @@ func completeCtx(command, s string, contexts []string, allowSpaces bool) []strin
 				continue
 			}
 			suggests = append(suggests, suggest)
+		}
+	}
+
+	if len(suggests) == 0 && disallowedMatch {
+		return []string{""}
+	}
+
+	return suggests
+}
+
+func completeCtxToken(needle string, contexts []string) []string {
+	idx := strings.LastIndexAny(needle, " \t")
+	if idx == -1 {
+		return nil
+	}
+	prefix := strings.TrimSpace(needle[:idx])
+	tail := strings.TrimSpace(needle[idx+1:])
+	if prefix == "" || tail == "" {
+		return nil
+	}
+	var suggests []string
+	seen := make(map[string]struct{}, len(contexts))
+	for _, ctxName := range contexts {
+		if !strings.HasPrefix(ctxName, prefix) {
+			continue
+		}
+		if len(ctxName) <= len(prefix) || !isWhitespace(ctxName[len(prefix)]) {
+			continue
+		}
+		for _, token := range strings.Fields(ctxName[len(prefix):]) {
+			if strings.HasPrefix(token, tail) {
+				remain := strings.TrimPrefix(token, tail)
+				if remain == "" {
+					continue
+				}
+				if _, ok := seen[remain]; ok {
+					continue
+				}
+				seen[remain] = struct{}{}
+				suggests = append(suggests, remain)
+			}
 		}
 	}
 

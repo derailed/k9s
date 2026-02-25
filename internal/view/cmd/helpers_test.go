@@ -86,7 +86,7 @@ func TestSuggestSubCommand(t *testing.T) {
 		{Command: "po @\"pre", Suggestions: []string{"\""}},
 		{Command: "po @'t", Suggestions: []string{"est'"}},
 		{Command: "po @\"n", Suggestions: []string{"s/server:6443/Firstname Middlename Secondname\""}},
-		{Command: "po @n", Suggestions: []string{"s/server:6443/Firstname"}},
+		{Command: "po @n", Suggestions: []string{""}},
 		{Command: "po ", Suggestions: nil},
 		{Command: "po  x", Suggestions: nil},
 		{Command: "po k", Suggestions: []string{"ube-public", "ube-system"}},
