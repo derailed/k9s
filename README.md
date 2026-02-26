@@ -909,6 +909,8 @@ plugins:
           - production
 ```
 
+For a real-world example of plugin inputs, see [pvc-resize.yaml](plugins/pvc-resize.yaml) which prompts the user for a new PVC size before resizing.
+
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
 * `$RESOURCE_GROUP` -- the selected resource group
