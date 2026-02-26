@@ -590,7 +590,8 @@ func Test_podLimits(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m, g := cosLimits(u.cc)
+			spec := &v1.PodSpec{}
+			c, m, g := cosLimits(u.cc, spec)
 			assert.True(t, c.Equal(*u.l.Cpu()))
 			assert.True(t, m.Equal(*u.l.Memory()))
 			assert.True(t, g.Equal(*extractGPU(u.l)))
@@ -622,7 +623,8 @@ func Test_podRequests(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m, g := cosRequests(u.cc)
+			spec := &v1.PodSpec{}
+			c, m, g := cosRequests(u.cc, spec)
 			assert.True(t, c.Equal(*u.e.Cpu()))
 			assert.True(t, m.Equal(*u.e.Memory()))
 			assert.True(t, g.Equal(*extractGPU(u.e)))
