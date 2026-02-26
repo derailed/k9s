@@ -534,3 +534,117 @@ func TestLess(t *testing.T) {
 		})
 	}
 }
+
+func TestRowCloneWithTimestamps(t *testing.T) {
+	now := time.Now()
+	r := model1.Row{
+		ID:     "a",
+		Fields: model1.Fields{"f1", "5m"},
+		Timestamps: map[string]time.Time{
+			"AGE": now,
+		},
+	}
+	c := r.Clone()
+	assert.Equal(t, r.ID, c.ID)
+	assert.Equal(t, r.Fields, c.Fields)
+	assert.Equal(t, r.Timestamps, c.Timestamps)
+
+	// Mutating the clone must not affect the original.
+	c.Timestamps["AGE"] = now.Add(-time.Hour)
+	assert.NotEqual(t, r.Timestamps["AGE"], c.Timestamps["AGE"])
+}
+
+func TestRowCustomizeWithTimestamps(t *testing.T) {
+	now := time.Now()
+	r := model1.Row{
+		ID:     "a",
+		Fields: model1.Fields{"f0", "f1", "5m"},
+		Timestamps: map[string]time.Time{
+			"AGE": now,
+		},
+	}
+	// Keep columns 0 and 2 (dropping 1).
+	out := r.Customize([]int{0, 2})
+	assert.Equal(t, "a", out.ID)
+	assert.Equal(t, model1.Fields{"f0", "5m"}, out.Fields)
+	// Timestamps keyed by name are unaffected by column reordering.
+	assert.Equal(t, now, out.Timestamps["AGE"])
+}
+
+func TestLessTimestamp(t *testing.T) {
+	now := time.Now()
+	uu := map[string]struct {
+		r1, r2  model1.Row
+		colName string
+		e       bool
+	}{
+		"newer-is-less": {
+			r1: model1.Row{
+				ID:         "a",
+				Fields:     model1.Fields{"3m"},
+				Timestamps: map[string]time.Time{"AGE": now.Add(-3 * time.Minute)},
+			},
+			r2: model1.Row{
+				ID:         "b",
+				Fields:     model1.Fields{"10m"},
+				Timestamps: map[string]time.Time{"AGE": now.Add(-10 * time.Minute)},
+			},
+			colName: "AGE",
+			e:       true,
+		},
+		"older-is-more": {
+			r1: model1.Row{
+				ID:         "a",
+				Fields:     model1.Fields{"10m"},
+				Timestamps: map[string]time.Time{"AGE": now.Add(-10 * time.Minute)},
+			},
+			r2: model1.Row{
+				ID:         "b",
+				Fields:     model1.Fields{"3m"},
+				Timestamps: map[string]time.Time{"AGE": now.Add(-3 * time.Minute)},
+			},
+			colName: "AGE",
+			e:       false,
+		},
+		"equal-timestamps-fall-to-id": {
+			r1: model1.Row{
+				ID:         "a",
+				Fields:     model1.Fields{"5m"},
+				Timestamps: map[string]time.Time{"AGE": now},
+			},
+			r2: model1.Row{
+				ID:         "b",
+				Fields:     model1.Fields{"5m"},
+				Timestamps: map[string]time.Time{"AGE": now},
+			},
+			colName: "AGE",
+			e:       true,
+		},
+		"no-stash-falls-back": {
+			r1: model1.Row{
+				ID:     "a",
+				Fields: model1.Fields{"5m"},
+			},
+			r2: model1.Row{
+				ID:     "b",
+				Fields: model1.Fields{"10m"},
+			},
+			colName: "AGE",
+			e:       true,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			s := model1.RowSorter{
+				Rows:       model1.Rows{u.r1, u.r2},
+				Index:      0,
+				ColName:    u.colName,
+				IsDuration: true,
+				Asc:        true,
+			}
+			assert.Equal(t, u.e, s.Less(0, 1))
+		})
+	}
+}

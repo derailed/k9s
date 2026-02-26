@@ -188,6 +188,11 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 		}
 	}
 
+	// Stash the creation timestamp for stable age sorting.
+	if ageIdx > 0 && !creationTS.IsZero() {
+		StashAge(r, "AGE", creationTS)
+	}
+
 	return nil
 }
 

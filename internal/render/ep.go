@@ -68,6 +68,7 @@ func (e Endpoints) defaultRow(o any, ns string, r *model1.Row) error {
 		missing(toEPs(ep.Subsets)),
 		ToAge(ep.GetCreationTimestamp()),
 	}
+	StashAge(r, "AGE", ep.GetCreationTimestamp())
 
 	return nil
 }

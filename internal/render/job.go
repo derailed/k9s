@@ -84,6 +84,7 @@ func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 		AsStatus(j.diagnose(ready, &job.Status)),
 		ToAge(job.GetCreationTimestamp()),
 	}
+	StashAge(r, "AGE", job.GetCreationTimestamp())
 
 	return nil
 }

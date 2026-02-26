@@ -112,6 +112,7 @@ func (t *TableData) Sort(sc SortColumn) {
 	t.rowEvents.Sort(
 		t.GetNamespace(),
 		idx,
+		sc.Name,
 		col.Time,
 		col.MX,
 		col.Capacity,

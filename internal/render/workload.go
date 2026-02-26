@@ -69,6 +69,7 @@ func (Workload) Render(o any, _ string, r *model1.Row) error {
 		res.Row.Cells[5].(string),
 		ToAge(res.Row.Cells[6].(metav1.Time)),
 	}
+	StashAge(r, "AGE", res.Row.Cells[6].(metav1.Time))
 
 	return nil
 }

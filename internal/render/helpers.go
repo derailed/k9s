@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
@@ -192,6 +193,18 @@ func ToAge(t metav1.Time) string {
 	}
 
 	return t.Time.Format(time.RFC3339)
+}
+
+// StashAge stashes a timestamp on the row keyed by column name
+// for full-precision age sorting.
+func StashAge(r *model1.Row, colName string, t metav1.Time) {
+	if t.IsZero() {
+		return
+	}
+	if r.Timestamps == nil {
+		r.Timestamps = make(map[string]time.Time, 1)
+	}
+	r.Timestamps[colName] = t.Time
 }
 
 func toAgeHuman(s string) string {

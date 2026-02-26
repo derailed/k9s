@@ -79,6 +79,7 @@ func (b Benchmark) Render(o any, ns string, r *model1.Row) error {
 	}
 	b.augmentRow(r.Fields, data)
 	r.Fields[8] = AsStatus(b.diagnose(ns, r.Fields))
+	StashAge(r, "AGE", metav1.Time{Time: bench.File.ModTime()})
 
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -51,6 +52,7 @@ func (ScreenDump) Render(o any, _ string, r *model1.Row) error {
 		"",
 		timeToAge(f.File.ModTime()),
 	}
+	StashAge(r, "AGE", metav1.Time{Time: f.File.ModTime()})
 
 	return nil
 }

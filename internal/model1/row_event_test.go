@@ -495,7 +495,7 @@ func TestRowEventsSort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, u.duration, u.num, u.capacity, u.asc)
+			u.re.Sort("", u.col, "", u.duration, u.num, u.capacity, u.asc)
 			assert.Equal(t, u.e, u.re)
 		})
 	}
@@ -528,6 +528,78 @@ func TestRowEventsClone(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRowEventsSortTimestampStability(t *testing.T) {
+	now := time.Now()
+	// Six pods all showing "12m" as humanized age, but with different actual creation times.
+	mkRow := func(id string, createdAgo time.Duration) model1.Row {
+		return model1.Row{
+			ID:         id,
+			Fields:     model1.Fields{id, "Running", "12m"},
+			Timestamps: map[string]time.Time{"AGE": now.Add(-createdAgo)},
+		}
+	}
+
+	events := model1.NewRowEventsWithEvts(
+		model1.NewRowEvent(model1.EventAdd, mkRow("ns/f", 12*time.Minute+50*time.Second)),
+		model1.NewRowEvent(model1.EventAdd, mkRow("ns/a", 12*time.Minute+10*time.Second)),
+		model1.NewRowEvent(model1.EventAdd, mkRow("ns/d", 12*time.Minute+40*time.Second)),
+		model1.NewRowEvent(model1.EventAdd, mkRow("ns/b", 12*time.Minute+20*time.Second)),
+		model1.NewRowEvent(model1.EventAdd, mkRow("ns/e", 12*time.Minute+45*time.Second)),
+		model1.NewRowEvent(model1.EventAdd, mkRow("ns/c", 12*time.Minute+30*time.Second)),
+	)
+
+	// Sort ascending by column 2 (AGE) — a duration/time column.
+	events.Sort("", 2, "AGE", true, false, false, true)
+
+	// Expected ascending order: newest (smallest age) first.
+	// ns/a (12m10s) < ns/b (12m20s) < ns/c (12m30s) < ns/d (12m40s) < ns/e (12m45s) < ns/f (12m50s)
+	expectedIDs := []string{"ns/a", "ns/b", "ns/c", "ns/d", "ns/e", "ns/f"}
+	gotIDs := make([]string, events.Len())
+	events.Range(func(i int, re model1.RowEvent) bool {
+		gotIDs[i] = re.Row.ID
+		return true
+	})
+	assert.Equal(t, expectedIDs, gotIDs, "ascending timestamp sort")
+
+	// Sort again (simulates refresh) — order must not change.
+	events.Sort("", 2, "AGE", true, false, false, true)
+	gotIDs2 := make([]string, events.Len())
+	events.Range(func(i int, re model1.RowEvent) bool {
+		gotIDs2[i] = re.Row.ID
+		return true
+	})
+	assert.Equal(t, expectedIDs, gotIDs2, "repeated ascending sort must be stable")
+
+	// Sort descending — oldest (largest age) first.
+	events.Sort("", 2, "AGE", true, false, false, false)
+	expectedDesc := []string{"ns/f", "ns/e", "ns/d", "ns/c", "ns/b", "ns/a"}
+	gotDesc := make([]string, events.Len())
+	events.Range(func(i int, re model1.RowEvent) bool {
+		gotDesc[i] = re.Row.ID
+		return true
+	})
+	assert.Equal(t, expectedDesc, gotDesc, "descending timestamp sort")
+}
+
+func TestRowEventsSortTimestampFallback(t *testing.T) {
+	// Rows WITHOUT stashed timestamps — must fall back to string-based sort.
+	events := model1.NewRowEventsWithEvts(
+		model1.NewRowEvent(model1.EventAdd, model1.Row{ID: "ns/c", Fields: model1.Fields{"c", "Running", "12m"}}),
+		model1.NewRowEvent(model1.EventAdd, model1.Row{ID: "ns/a", Fields: model1.Fields{"a", "Running", "12m"}}),
+		model1.NewRowEvent(model1.EventAdd, model1.Row{ID: "ns/b", Fields: model1.Fields{"b", "Running", "12m"}}),
+	)
+
+	events.Sort("", 2, "AGE", true, false, false, true)
+
+	// All have the same duration string "12m", so fallback sorts by ID.
+	got := make([]string, events.Len())
+	events.Range(func(i int, re model1.RowEvent) bool {
+		got[i] = re.Row.ID
+		return true
+	})
+	assert.Equal(t, []string{"ns/a", "ns/b", "ns/c"}, got, "fallback sort by ID when ages equal")
 }
 
 // Helpers...

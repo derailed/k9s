@@ -67,6 +67,7 @@ func (c Chart) Render(o any, _ string, r *model1.Row) error {
 		render.AsStatus(c.diagnose(h.Release.Info.Status.String())),
 		render.ToAge(metav1.Time{Time: h.Release.Info.LastDeployed.Time}),
 	}
+	render.StashAge(r, "AGE", metav1.Time{Time: h.Release.Info.LastDeployed.Time})
 
 	return nil
 }

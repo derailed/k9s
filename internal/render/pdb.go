@@ -83,6 +83,7 @@ func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model
 		AsStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
 		ToAge(pdb.GetCreationTimestamp()),
 	}
+	StashAge(r, "AGE", pdb.GetCreationTimestamp())
 
 	return nil
 }
