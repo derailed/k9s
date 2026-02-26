@@ -181,11 +181,21 @@ func (d *Describe) describe(ctx context.Context, gvr *client.GVR, path string) (
 	if !ok {
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
 	}
-	if desc, ok := meta.DAO.(*dao.Secret); ok {
-		desc.SetDecodeData(d.decode)
+	if sec, ok := meta.DAO.(*dao.Secret); ok {
+		sec.SetDecodeData(d.decode)
 	}
 
-	return desc.Describe(path)
+	s, err := desc.Describe(path)
+	if err != nil {
+		return "", err
+	}
+	if d.decode {
+		if factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory); ok {
+			s = dao.ResolveEnvVars(factory, s, path)
+		}
+	}
+
+	return s, nil
 }
 
 // AddListener adds a new model listener.

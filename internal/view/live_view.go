@@ -42,6 +42,7 @@ type LiveView struct {
 	fullScreen                bool
 	managedField              bool
 	autoRefresh               bool
+	decode                    bool
 }
 
 // NewLiveView returns a live viewer.
@@ -175,7 +176,16 @@ func (v *LiveView) toggleEncodedDecodedCmd(evt *tcell.EventKey) *tcell.EventKey 
 	}
 
 	m.Toggle()
+	v.decode = !v.decode
+	if v.cancel != nil {
+		v.cancel()
+	}
 	v.Start()
+	if v.decode {
+		v.app.Flash().Info("Decoding is enabled")
+	} else {
+		v.app.Flash().Info("Decoding is disabled")
+	}
 	return nil
 }
 
