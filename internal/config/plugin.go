@@ -11,6 +11,8 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/adrg/xdg"
@@ -44,6 +46,7 @@ type PluginInput struct {
 	Label    string          `yaml:"label"`
 	Type     PluginInputType `yaml:"type"`
 	Required bool            `yaml:"required"`
+	Default  string          `yaml:"default"`
 	Options  []string        `yaml:"options"`
 }
 
@@ -75,7 +78,29 @@ func (p *Plugin) Validate() error {
 			return fmt.Errorf("duplicate input name %q", input.Name)
 		}
 		seen[input.Name] = struct{}{}
+
+		// Validate default value for dropdown must be one of the options
+		if input.Default != "" && input.Type == InputTypeDropdown {
+			if !slices.Contains(input.Options, input.Default) {
+				return fmt.Errorf("default value %q for input %q is not a valid option", input.Default, input.Name)
+			}
+		}
+
+		// Validate default value for bool must be "true" or "false"
+		if input.Default != "" && input.Type == InputTypeBool {
+			if input.Default != "true" && input.Default != "false" {
+				return fmt.Errorf("default value %q for bool input %q must be \"true\" or \"false\"", input.Default, input.Name)
+			}
+		}
+
+		// Validate default value for number must be a valid number
+		if input.Default != "" && input.Type == InputTypeNumber {
+			if _, err := strconv.ParseFloat(input.Default, 64); err != nil {
+				return fmt.Errorf("default value %q for number input %q is not a valid number", input.Default, input.Name)
+			}
+		}
 	}
+
 	return nil
 }
 

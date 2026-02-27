@@ -841,6 +841,7 @@ Each input has the following properties:
 * `label` -- the label shown to the user in the input dialog
 * `type` (required) -- the input type: `string`, `number`, `bool`, or `dropdown`
 * `required` -- when true, the user must provide a value before the plugin can execute
+* `default` -- a default value pre-filled in the input field (must be a valid option for `dropdown`, `"true"`/`"false"` for `bool`, or a valid number for `number`)
 * `options` -- for `dropdown` type only, defines the list of available choices
 
 Input values are available in plugin args using the format `$INPUT_<NAME>` where `<NAME>` is the uppercase version of the input name.
@@ -886,18 +887,22 @@ plugins:
         label: Enter a message
         type: string
         required: true
+        default: hello world
       - name: count
         label: Enter a number
         type: number
         required: true
+        default: 3
       - name: enabled
         label: Enable feature
         type: bool
         required: false
+        default: true
       - name: environment
         label: Select environment
         type: dropdown
         required: true
+        default: staging
         options:
           - development
           - staging

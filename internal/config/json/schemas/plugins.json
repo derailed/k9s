@@ -34,6 +34,7 @@
                 "label": { "type": "string" },
                 "type": { "type": "string", "enum": ["string", "number", "bool", "dropdown"] },
                 "required": { "type": "boolean" },
+                "default": { "type": ["string", "number", "boolean"] },
                 "options": {
                   "type": "array",
                   "items": { "type": "string" }
