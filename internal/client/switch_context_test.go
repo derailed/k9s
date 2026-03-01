@@ -20,40 +20,40 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// newFakeK8sServer creates a minimal fake Kubernetes API server
-// that responds to version and discovery endpoints.
-// Returns the server and a counter for /version calls.
+const (
+	testContext1 = "context1"
+	testContext2 = "context2"
+)
+
 func newFakeK8sServer(t *testing.T) (*httptest.Server, *atomic.Int32) {
 	t.Helper()
 
 	versionCalls := &atomic.Int32{}
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {
 		versionCalls.Add(1)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(version.Info{
+		_ = json.NewEncoder(w).Encode(version.Info{
 			Major:      "1",
 			Minor:      "28",
 			GitVersion: "v1.28.0",
 		})
 	})
 
-	mux.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"kind":"APIVersions","versions":["v1"]}`))
+		_, _ = w.Write([]byte(`{"kind":"APIVersions","versions":["v1"]}`))
 	})
 
-	mux.HandleFunc("/apis", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/apis", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"kind":"APIGroupList","apiVersion":"v1","groups":[]}`))
+		_, _ = w.Write([]byte(`{"kind":"APIGroupList","apiVersion":"v1","groups":[]}`))
 	})
 
 	return httptest.NewServer(mux), versionCalls
 }
 
-// writeSwitchTestKubeconfig creates a temporary kubeconfig with two contexts
-// pointing to the given server URLs.
 func writeSwitchTestKubeconfig(t *testing.T, server1URL, server2URL string) string {
 	t.Helper()
 
@@ -85,53 +85,50 @@ users:
   user:
     token: test-token
 `
-	require.NoError(t, os.WriteFile(kubeconfig, []byte(content), 0644))
+	require.NoError(t, os.WriteFile(kubeconfig, []byte(content), 0600))
+
 	return kubeconfig
 }
 
-// newSwitchTestClient creates an APIClient configured for context-switch
-// testing with the given kubeconfig and initial context.
-func newSwitchTestClient(t *testing.T, kubeconfig, ctx string) *APIClient {
+func setupSwitchTest(t *testing.T) (*httptest.Server, *atomic.Int32, *APIClient) {
 	t.Helper()
 
+	srv, versionCalls := newFakeK8sServer(t)
+	t.Cleanup(srv.Close)
+	t.Setenv("HOME", t.TempDir())
+
+	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
 	flags := genericclioptions.NewConfigFlags(false)
 	flags.KubeConfig = &kubeconfig
+	ctx := testContext1
 	flags.Context = &ctx
 
-	return &APIClient{
+	a := &APIClient{
 		config: NewConfig(flags),
 		cache:  cache.NewLRUExpireCache(cacheSize),
 		connOK: true,
 		log:    slog.Default(),
 	}
+
+	return srv, versionCalls, a
 }
 
 func TestSwitchContextSuccess(t *testing.T) {
-	srv, _ := newFakeK8sServer(t)
-	defer srv.Close()
-	t.Setenv("HOME", t.TempDir())
+	_, _, a := setupSwitchTest(t)
 
-	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
-	a := newSwitchTestClient(t, kubeconfig, "context1")
-
-	err := a.SwitchContext("context2")
+	err := a.SwitchContext(testContext2)
 	require.NoError(t, err)
 
 	ctx, err := a.config.CurrentContextName()
 	require.NoError(t, err)
-	assert.Equal(t, "context2", ctx)
+	assert.Equal(t, testContext2, ctx)
 	assert.True(t, a.getConnOK())
 }
 
 func TestSwitchContextReusesConnectivityClient(t *testing.T) {
-	srv, _ := newFakeK8sServer(t)
-	defer srv.Close()
-	t.Setenv("HOME", t.TempDir())
+	_, _, a := setupSwitchTest(t)
 
-	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
-	a := newSwitchTestClient(t, kubeconfig, "context1")
-
-	err := a.SwitchContext("context2")
+	err := a.SwitchContext(testContext2)
 	require.NoError(t, err)
 
 	assert.NotNil(t, a.getClient(),
@@ -139,14 +136,9 @@ func TestSwitchContextReusesConnectivityClient(t *testing.T) {
 }
 
 func TestSwitchContextPreWarmsDynDial(t *testing.T) {
-	srv, _ := newFakeK8sServer(t)
-	defer srv.Close()
-	t.Setenv("HOME", t.TempDir())
+	_, _, a := setupSwitchTest(t)
 
-	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
-	a := newSwitchTestClient(t, kubeconfig, "context1")
-
-	err := a.SwitchContext("context2")
+	err := a.SwitchContext(testContext2)
 	require.NoError(t, err)
 
 	assert.NotNil(t, a.getDClient(),
@@ -154,14 +146,9 @@ func TestSwitchContextPreWarmsDynDial(t *testing.T) {
 }
 
 func TestSwitchContextDialAfterSwitch(t *testing.T) {
-	srv, _ := newFakeK8sServer(t)
-	defer srv.Close()
-	t.Setenv("HOME", t.TempDir())
+	_, _, a := setupSwitchTest(t)
 
-	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
-	a := newSwitchTestClient(t, kubeconfig, "context1")
-
-	err := a.SwitchContext("context2")
+	err := a.SwitchContext(testContext2)
 	require.NoError(t, err)
 
 	storedClient := a.getClient()
@@ -174,14 +161,9 @@ func TestSwitchContextDialAfterSwitch(t *testing.T) {
 }
 
 func TestSwitchContextMinimalVersionCalls(t *testing.T) {
-	srv, versionCalls := newFakeK8sServer(t)
-	defer srv.Close()
-	t.Setenv("HOME", t.TempDir())
+	_, versionCalls, a := setupSwitchTest(t)
 
-	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
-	a := newSwitchTestClient(t, kubeconfig, "context1")
-
-	err := a.SwitchContext("context2")
+	err := a.SwitchContext(testContext2)
 	require.NoError(t, err)
 
 	assert.Equal(t, int32(1), versionCalls.Load(),
@@ -189,48 +171,37 @@ func TestSwitchContextMinimalVersionCalls(t *testing.T) {
 }
 
 func TestSwitchContextInvalidContext(t *testing.T) {
-	srv, _ := newFakeK8sServer(t)
-	defer srv.Close()
-
-	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
-	a := newSwitchTestClient(t, kubeconfig, "context1")
+	_, _, a := setupSwitchTest(t)
 
 	err := a.SwitchContext("nonexistent")
 	assert.Error(t, err)
 }
 
-
 func TestInitConnectionMetricsUnsupported(t *testing.T) {
-	srv, _ := newFakeK8sServer(t)
-	defer srv.Close()
-	t.Setenv("HOME", t.TempDir())
+	srv, _, _ := setupSwitchTest(t)
 
 	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
 	flags := genericclioptions.NewConfigFlags(false)
 	flags.KubeConfig = &kubeconfig
-	ctx := "context1"
+	ctx := testContext1
 	flags.Context = &ctx
-	cfg := NewConfig(flags)
 
-	a, err := InitConnection(cfg, slog.Default())
+	a, err := InitConnection(NewConfig(flags), slog.Default())
 	require.NoError(t, err)
 	assert.True(t, a.ConnectionOK(),
 		"InitConnection should succeed when metrics-server is absent")
 }
 
 func TestInitConnectionStoresDialClient(t *testing.T) {
-	srv, _ := newFakeK8sServer(t)
-	defer srv.Close()
-	t.Setenv("HOME", t.TempDir())
+	srv, _, _ := setupSwitchTest(t)
 
 	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
 	flags := genericclioptions.NewConfigFlags(false)
 	flags.KubeConfig = &kubeconfig
-	ctx := "context1"
+	ctx := testContext1
 	flags.Context = &ctx
-	cfg := NewConfig(flags)
 
-	a, err := InitConnection(cfg, slog.Default())
+	a, err := InitConnection(NewConfig(flags), slog.Default())
 	require.NoError(t, err)
 
 	assert.NotNil(t, a.getClient(),

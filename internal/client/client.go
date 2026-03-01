@@ -574,12 +574,7 @@ func (a *APIClient) SwitchContext(name string) error {
 	if _, err := a.DynDial(); err != nil {
 		slog.Warn("SwitchContext: DynDial pre-warm failed", slogs.Error, err)
 	}
-	go func() {
-		if err := a.invalidateCache(); err != nil {
-			slog.Warn("SwitchContext: cache invalidation failed", slogs.Error, err)
-		}
-	}()
-	return nil
+	return a.invalidateCache()
 }
 
 func (a *APIClient) reset() {
