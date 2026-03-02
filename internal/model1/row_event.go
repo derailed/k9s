@@ -39,7 +39,7 @@ func NewRowEventWithDeltas(row Row, delta DeltaRow) RowEvent {
 }
 
 // Clone returns a row event deep copy.
-func (r RowEvent) Clone() RowEvent {
+func (r *RowEvent) Clone() RowEvent {
 	return RowEvent{
 		Kind:   r.Kind,
 		Row:    r.Row.Clone(),
@@ -48,7 +48,7 @@ func (r RowEvent) Clone() RowEvent {
 }
 
 // Customize returns a new subset based on the given column indices.
-func (r RowEvent) Customize(cols []int) RowEvent {
+func (r *RowEvent) Customize(cols []int) RowEvent {
 	delta := r.Deltas
 	if !r.Deltas.IsBlank() {
 		delta = make(DeltaRow, len(cols))
@@ -63,7 +63,7 @@ func (r RowEvent) Customize(cols []int) RowEvent {
 }
 
 // ExtractHeaderLabels extract collection of fields into header.
-func (r RowEvent) ExtractHeaderLabels(labelCol int) []string {
+func (r *RowEvent) ExtractHeaderLabels(labelCol int) []string {
 	hh, _ := sortLabels(labelize(r.Row.Fields[labelCol]))
 	return hh
 }
@@ -107,8 +107,8 @@ func NewRowEvents(size int) *RowEvents {
 
 func NewRowEventsWithEvts(ee ...RowEvent) *RowEvents {
 	re := NewRowEvents(len(ee))
-	for _, e := range ee {
-		re.Add(e)
+	for i := range ee {
+		re.Add(&ee[i])
 	}
 
 	return re
@@ -128,13 +128,13 @@ func (r *RowEvents) At(i int) (RowEvent, bool) {
 	return r.events[i], true
 }
 
-func (r *RowEvents) Set(i int, re RowEvent) {
-	r.events[i] = re
+func (r *RowEvents) Set(i int, re *RowEvent) {
+	r.events[i] = *re
 	r.index[re.Row.ID] = i
 }
 
-func (r *RowEvents) Add(re RowEvent) {
-	r.events = append(r.events, re)
+func (r *RowEvents) Add(re *RowEvent) {
+	r.events = append(r.events, *re)
 	r.index[re.Row.ID] = len(r.events) - 1
 }
 
@@ -193,9 +193,9 @@ func (r *RowEvents) Clone() *RowEvents {
 }
 
 // Upsert add or update a row if it exists.
-func (r *RowEvents) Upsert(re RowEvent) {
+func (r *RowEvents) Upsert(re *RowEvent) {
 	if idx, ok := r.FindIndex(re.Row.ID); ok {
-		r.events[idx] = re
+		r.events[idx] = *re
 	} else {
 		r.Add(re)
 	}

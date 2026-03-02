@@ -191,7 +191,7 @@ func lessDuration(s1, s2 string) bool {
 // lessTimestamp compares two rows by stashed timestamps for the given column name.
 // Returns (less, true) if both rows have a stashed timestamp, or (false, false) to
 // signal the caller to fall back to string-based comparison.
-func lessTimestamp(r1, r2 Row, colName string, id1, id2 string) (bool, bool) {
+func lessTimestamp(r1, r2 Row, colName, id1, id2 string) (bool, bool) {
 	t1, ok1 := r1.Timestamps[colName]
 	t2, ok2 := r2.Timestamps[colName]
 	if !ok1 || !ok2 {
