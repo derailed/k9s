@@ -79,22 +79,20 @@ func (p *Plugin) Validate() error {
 		}
 		seen[input.Name] = struct{}{}
 
-		// Validate default value for dropdown must be one of the options
-		if input.Default != "" && input.Type == InputTypeDropdown {
+		if input.Default == "" {
+			continue
+		}
+
+		switch input.Type {
+		case InputTypeDropdown:
 			if !slices.Contains(input.Options, input.Default) {
 				return fmt.Errorf("default value %q for input %q is not a valid option", input.Default, input.Name)
 			}
-		}
-
-		// Validate default value for bool must be "true" or "false"
-		if input.Default != "" && input.Type == InputTypeBool {
+		case InputTypeBool:
 			if input.Default != "true" && input.Default != "false" {
 				return fmt.Errorf("default value %q for bool input %q must be \"true\" or \"false\"", input.Default, input.Name)
 			}
-		}
-
-		// Validate default value for number must be a valid number
-		if input.Default != "" && input.Type == InputTypeNumber {
+		case InputTypeNumber:
 			if _, err := strconv.ParseFloat(input.Default, 64); err != nil {
 				return fmt.Errorf("default value %q for number input %q is not a valid number", input.Default, input.Name)
 			}

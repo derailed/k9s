@@ -5,7 +5,9 @@ package dialog
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
@@ -64,6 +66,9 @@ func ShowPluginInputs(
 			values[input.Name] = input.Default
 			inputName := input.Name
 			f.AddInputField(label, input.Default, 40, nil, func(text string) {
+				if strings.Contains(text, " ") {
+					text = fmt.Sprintf("%q", text)
+				}
 				values[inputName] = text
 			})
 
@@ -83,7 +88,7 @@ func ShowPluginInputs(
 
 		case config.InputTypeBool:
 			defaultChecked := input.Default == "true"
-			values[input.Name] = fmt.Sprintf("%t", defaultChecked)
+			values[input.Name] = input.Default
 			inputName := input.Name
 			f.AddCheckbox(label, defaultChecked, func(_ string, checked bool) {
 				values[inputName] = fmt.Sprintf("%t", checked)
@@ -94,15 +99,7 @@ func ShowPluginInputs(
 				inputName := input.Name
 				// Prepend empty option so dropdown starts unselected
 				options := append([]string{""}, input.Options...)
-				defaultIndex := 0
-				if input.Default != "" {
-					for i, opt := range options {
-						if opt == input.Default {
-							defaultIndex = i
-							break
-						}
-					}
-				}
+				defaultIndex := max(0, slices.Index(options, input.Default))
 				values[input.Name] = options[defaultIndex]
 				f.AddDropDown(label, options, defaultIndex, func(_ string, optionIndex int) {
 					if optionIndex >= 0 && optionIndex < len(options) {
