@@ -168,10 +168,10 @@ func (x *Xray) refreshActions() {
 		return
 	}
 
-	if client.Can(x.meta.Verbs, "edit") {
+	if !x.app.Config.IsReadOnly() && client.Can(x.meta.Verbs, "edit") {
 		aa.Add(ui.KeyE, ui.NewKeyAction("Edit", x.editCmd, true))
 	}
-	if client.Can(x.meta.Verbs, "delete") {
+	if !x.app.Config.IsReadOnly() && client.Can(x.meta.Verbs, "delete") {
 		aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", x.deleteCmd, true))
 	}
 	if !dao.IsK9sMeta(x.meta) {
@@ -187,17 +187,23 @@ func (x *Xray) refreshActions() {
 	case client.CoGVR:
 		x.Actions().Delete(tcell.KeyEnter)
 		aa.Bulk(ui.KeyMap{
-			ui.KeyS: ui.NewKeyAction("Shell", x.shellCmd, true),
 			ui.KeyL: ui.NewKeyAction("Logs", x.logsCmd(false), true),
 			ui.KeyP: ui.NewKeyAction("Logs Previous", x.logsCmd(true), true),
 		})
+		if !x.app.Config.IsReadOnly() {
+			aa.Add(ui.KeyS, ui.NewKeyAction("Shell", x.shellCmd, true))
+		}
 	case client.PodGVR:
 		aa.Bulk(ui.KeyMap{
-			ui.KeyS: ui.NewKeyAction("Shell", x.shellCmd, true),
-			ui.KeyA: ui.NewKeyAction("Attach", x.attachCmd, true),
 			ui.KeyL: ui.NewKeyAction("Logs", x.logsCmd(false), true),
 			ui.KeyP: ui.NewKeyAction("Logs Previous", x.logsCmd(true), true),
 		})
+		if !x.app.Config.IsReadOnly() {
+			aa.Bulk(ui.KeyMap{
+			ui.KeyS: ui.NewKeyAction("Shell", x.shellCmd, true),
+			ui.KeyA: ui.NewKeyAction("Attach", x.attachCmd, t：rue),
+		})
+		}
 	}
 	x.Actions().Merge(aa)
 }
