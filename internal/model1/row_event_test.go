@@ -173,7 +173,7 @@ func TestRowEventDiff(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.re1.Diff(u.re2, -1))
+			assert.Equal(t, u.e, u.re1.Diff(&u.re2, -1))
 		})
 	}
 }

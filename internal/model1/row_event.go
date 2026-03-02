@@ -69,7 +69,7 @@ func (r *RowEvent) ExtractHeaderLabels(labelCol int) []string {
 }
 
 // Labelize returns a new row event based on labels.
-func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
+func (r *RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
 	return RowEvent{
 		Kind:   r.Kind,
 		Deltas: r.Deltas.Labelize(cols, labelCol),
@@ -78,7 +78,7 @@ func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
 }
 
 // Diff returns true if the row changed.
-func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
+func (r *RowEvent) Diff(re *RowEvent, ageCol int) bool {
 	if r.Kind != re.Kind {
 		return true
 	}
@@ -152,7 +152,7 @@ func (r *RowEvents) ExtractHeaderLabels(labelCol int) []string {
 func (r *RowEvents) Labelize(cols []int, labelCol int, labels []string) *RowEvents {
 	out := make([]RowEvent, 0, len(r.events))
 	for _, re := range r.events {
-		out = append(out, re.Labelize(cols, labelCol, labels))
+		out = append(out, (&re).Labelize(cols, labelCol, labels))
 	}
 
 	return NewRowEventsWithEvts(out...)
@@ -174,7 +174,7 @@ func (r *RowEvents) Diff(re *RowEvents, ageCol int) bool {
 		return true
 	}
 	for i := range r.events {
-		if r.events[i].Diff(re.events[i], ageCol) {
+		if (&r.events[i]).Diff(&re.events[i], ageCol) {
 			return true
 		}
 	}

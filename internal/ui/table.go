@@ -494,7 +494,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 			slog.Error("Unable to find original row event", slogs.RowID, re.Row.ID)
 			return true
 		}
-		t.buildRow(row+1, re, ore, cdata.Header(), pads)
+		t.buildRow(row+1, &re, &ore, cdata.Header(), pads)
 
 		return true
 	})
@@ -503,7 +503,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.UpdateTitle()
 }
 
-func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad) {
+func (t *Table) buildRow(r int, re, ore *model1.RowEvent, h model1.Header, pads MaxyPad) {
 	color := model1.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn
@@ -546,7 +546,7 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 		cell := tview.NewTableCell(field)
 		cell.SetExpansion(1)
 		cell.SetAlign(h[c].Align)
-		fgColor := color(ns, h, &re)
+		fgColor := color(ns, h, re)
 		cell.SetTextColor(fgColor)
 		if marked {
 			cell.SetTextColor(t.styles.Table().MarkColor.Color())
