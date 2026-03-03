@@ -36,6 +36,7 @@ plugins:
       - name: share_processes
         label: Share processes
         type: bool
+        required: true
         default: true
     args:
       - -c
