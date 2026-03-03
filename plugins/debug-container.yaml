@@ -9,7 +9,7 @@ plugins:
       - containers
     command: bash
     background: false
-    confirm: false
+    confirm: true
     inputs:
       - name: image
         label: Debug image
