@@ -5,7 +5,9 @@ package dialog
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
@@ -61,16 +63,19 @@ func ShowPluginInputs(
 
 		switch input.Type {
 		case config.InputTypeString:
-			values[input.Name] = ""
+			values[input.Name] = input.Default
 			inputName := input.Name
-			f.AddInputField(label, "", 40, nil, func(text string) {
+			f.AddInputField(label, input.Default, 40, nil, func(text string) {
+				if strings.Contains(text, " ") {
+					text = fmt.Sprintf("%q", text)
+				}
 				values[inputName] = text
 			})
 
 		case config.InputTypeNumber:
-			values[input.Name] = ""
+			values[input.Name] = input.Default
 			inputName := input.Name
-			f.AddInputField(label, "", 20, func(text string, _ rune) bool {
+			f.AddInputField(label, input.Default, 20, func(text string, _ rune) bool {
 				// Allow empty, negative sign, dot for decimals, or valid numbers
 				if text == "" || text == "-" || text == "." || text == "-." {
 					return true
@@ -82,19 +87,21 @@ func ShowPluginInputs(
 			})
 
 		case config.InputTypeBool:
-			values[input.Name] = "false"
+			defaultChecked := input.Default == "true"
+			values[input.Name] = input.Default
 			inputName := input.Name
-			f.AddCheckbox(label, false, func(_ string, checked bool) {
+			f.AddCheckbox(label, defaultChecked, func(_ string, checked bool) {
 				values[inputName] = fmt.Sprintf("%t", checked)
 			})
 
 		case config.InputTypeDropdown:
 			if len(input.Options) > 0 {
-				values[input.Name] = ""
 				inputName := input.Name
 				// Prepend empty option so dropdown starts unselected
 				options := append([]string{""}, input.Options...)
-				f.AddDropDown(label, options, 0, func(_ string, optionIndex int) {
+				defaultIndex := max(0, slices.Index(options, input.Default))
+				values[input.Name] = options[defaultIndex]
+				f.AddDropDown(label, options, defaultIndex, func(_ string, optionIndex int) {
 					if optionIndex >= 0 && optionIndex < len(options) {
 						values[inputName] = options[optionIndex]
 					}
