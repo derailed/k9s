@@ -130,10 +130,10 @@ func TestCapacityToNumber(t *testing.T) {
 		s string
 		e int64
 	}{
-		"empty":     {s: "", e: 0},
-		"blank":     {s: "  ", e: 0},
-		"1Gi":       {s: "1Gi", e: 1073741824},
-		"10Mi":      {s: "10Mi", e: 10485760},
+		"empty": {s: "", e: 0},
+		"blank": {s: "  ", e: 0},
+		"1Gi":   {s: "1Gi", e: 1073741824},
+		"10Mi":  {s: "10Mi", e: 10485760},
 	}
 
 	for k := range uu {
