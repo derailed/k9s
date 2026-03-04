@@ -125,6 +125,25 @@ func TestDurationToSecond(t *testing.T) {
 	}
 }
 
+func TestCapacityToNumber(t *testing.T) {
+	uu := map[string]struct {
+		s string
+		e int64
+	}{
+		"empty":     {s: "", e: 0},
+		"blank":     {s: "  ", e: 0},
+		"1Gi":       {s: "1Gi", e: 1073741824},
+		"10Mi":      {s: "10Mi", e: 10485760},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, capacityToNumber(u.s))
+		})
+	}
+}
+
 func BenchmarkDurationToSecond(b *testing.B) {
 	t := "2d22h3m50s"
 
