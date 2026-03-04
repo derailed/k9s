@@ -134,7 +134,6 @@ func (b *Browser) suggestFilter() model.SuggestionFunc {
 			return b.App().filterHistory.List()
 		}
 
-		s = strings.ToLower(s)
 		for _, h := range b.App().filterHistory.List() {
 			if s == h {
 				continue

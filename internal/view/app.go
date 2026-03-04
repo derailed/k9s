@@ -63,7 +63,7 @@ func NewApp(cfg *config.Config) *App {
 	a := App{
 		App:           ui.NewApp(cfg, cfg.K9s.ActiveContextName()),
 		cmdHistory:    model.NewHistory(model.MaxHistory),
-		filterHistory: model.NewHistory(model.MaxHistory),
+		filterHistory: model.NewCaseSensitiveHistory(model.MaxHistory),
 		Content:       NewPageStack(),
 	}
 	a.ReloadStyles()

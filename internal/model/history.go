@@ -16,9 +16,10 @@ const MaxHistory = 20
 
 // History represents a command history.
 type History struct {
-	commands   []string
-	limit      int
-	currentIdx int
+	commands      []string
+	limit         int
+	currentIdx    int
+	caseSensitive bool
 }
 
 // NewHistory returns a new instance.
@@ -26,6 +27,15 @@ func NewHistory(limit int) *History {
 	return &History{
 		limit:      limit,
 		currentIdx: -1,
+	}
+}
+
+// NewCaseSensitiveHistory returns a new instance that preserves entry casing.
+func NewCaseSensitiveHistory(limit int) *History {
+	return &History{
+		limit:         limit,
+		currentIdx:    -1,
+		caseSensitive: true,
 	}
 }
 
@@ -116,14 +126,20 @@ func (h *History) Push(c string) {
 	if c == "" || len(h.commands) >= h.limit {
 		return
 	}
-	if t, ok := h.Top(); ok && t == c {
+
+	nc := c
+	if !h.caseSensitive {
+		nc = strings.ToLower(c)
+	}
+
+	if t, ok := h.Top(); ok && t == nc {
 		return
 	}
 
 	if h.currentIdx < len(h.commands)-1 {
 		h.commands = h.commands[:h.currentIdx+1]
 	}
-	h.commands = append(h.commands, strings.ToLower(c))
+	h.commands = append(h.commands, nc)
 	h.currentIdx = len(h.commands) - 1
 }
 
