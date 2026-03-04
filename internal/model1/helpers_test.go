@@ -136,8 +136,7 @@ func TestCapacityToNumber(t *testing.T) {
 		"10Mi":  {s: "10Mi", e: 10485760},
 	}
 
-	for k := range uu {
-		u := uu[k]
+	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, capacityToNumber(u.s))
 		})
