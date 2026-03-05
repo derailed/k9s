@@ -138,6 +138,6 @@ func TestEditYAML_NonExistentSecret(t *testing.T) {
 	s.Init(makeFactory(), client.SecGVR)
 
 	_, err := s.EditYAML("default/does-not-exist")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
