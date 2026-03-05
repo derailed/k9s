@@ -120,6 +120,21 @@ func (x *Xray) ExtraHints() map[string]string {
 // SetInstance sets specific resource instance.
 func (*Xray) SetInstance(string) {}
 
+func (x *Xray) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyE: ui.NewKeyActionWithOpts("Edit", x.editCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		tcell.KeyCtrlD: ui.NewKeyActionWithOpts("Delete", x.deleteCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+	})
+}
+
 func (x *Xray) bindKeys() {
 	x.Actions().Bulk(ui.KeyMap{
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", x.activateCmd, false),
@@ -168,11 +183,8 @@ func (x *Xray) refreshActions() {
 		return
 	}
 
-	if !x.app.Config.IsReadOnly() && client.Can(x.meta.Verbs, "edit") {
-		aa.Add(ui.KeyE, ui.NewKeyAction("Edit", x.editCmd, true))
-	}
-	if !x.app.Config.IsReadOnly() && client.Can(x.meta.Verbs, "delete") {
-		aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", x.deleteCmd, true))
+	if !x.app.Config.IsReadOnly() {
+		x.bindDangerousKeys(aa)
 	}
 	if !dao.IsK9sMeta(x.meta) {
 		aa.Bulk(ui.KeyMap{
@@ -191,7 +203,11 @@ func (x *Xray) refreshActions() {
 			ui.KeyP: ui.NewKeyAction("Logs Previous", x.logsCmd(true), true),
 		})
 		if !x.app.Config.IsReadOnly() {
-			aa.Add(ui.KeyS, ui.NewKeyAction("Shell", x.shellCmd, true))
+			aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Shell", x.shellCmd,
+				ui.ActionOpts{
+					Visible:   true,
+					Dangerous: true,
+				}))
 		}
 	case client.PodGVR:
 		aa.Bulk(ui.KeyMap{
@@ -200,9 +216,17 @@ func (x *Xray) refreshActions() {
 		})
 		if !x.app.Config.IsReadOnly() {
 			aa.Bulk(ui.KeyMap{
-			ui.KeyS: ui.NewKeyAction("Shell", x.shellCmd, true),
-			ui.KeyA: ui.NewKeyAction("Attach", x.attachCmd, t：rue),
-		})
+				ui.KeyS: ui.NewKeyActionWithOpts("Shell", x.shellCmd,
+					ui.ActionOpts{
+						Visible:   true,
+						Dangerous: true,
+					}),
+				ui.KeyA: ui.NewKeyActionWithOpts("Attach", x.attachCmd,
+					ui.ActionOpts{
+						Visible:   true,
+						Dangerous: true,
+					}),
+			})
 		}
 	}
 	x.Actions().Merge(aa)
