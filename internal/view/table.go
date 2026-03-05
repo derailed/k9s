@@ -147,6 +147,18 @@ func (t *Table) defaultEnv() Env {
 	env["RESOURCE_VERSION"] = t.GVR().V()
 	env["RESOURCE_NAME"] = t.GVR().R()
 
+	// Add list of names and namespaces in case of multiple selected items
+	paths := t.GetSelectedItems()
+	namespaces := []string{}
+	names := []string{}
+	for _, path := range paths {
+		namespace, name := client.Namespaced(path)
+		names = append(names, name)
+		namespaces = append(namespaces, namespace)
+	}
+	env["NAMES"] = strings.Join(names, ",")
+	env["NAMESPACES"] = strings.Join(namespaces, ",")
+
 	return env
 }
 
