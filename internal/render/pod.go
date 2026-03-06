@@ -427,6 +427,9 @@ func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, re
 
 func (*Pod) initContainerStats(cc []v1.Container, cos []v1.ContainerStatus) (ready, total, restart int) {
 	for i := range cos {
+		if i >= len(cc) {
+			break
+		}
 		if !isSideCarContainer(cc[i].RestartPolicy) {
 			continue
 		}
