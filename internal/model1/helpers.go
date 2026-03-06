@@ -150,7 +150,13 @@ func runesToNum(rr []rune) int64 {
 }
 
 func capacityToNumber(capacity string) int64 {
-	quantity := resource.MustParse(capacity)
+	if capacity == "" {
+		return 0
+	}
+	quantity, err := resource.ParseQuantity(capacity)
+	if err != nil {
+		return 0
+	}
 	return quantity.Value()
 }
 
