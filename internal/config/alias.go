@@ -160,14 +160,31 @@ func (a *Aliases) LoadFile(path string) error {
 	}
 
 	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	// Track existing keys before unmarshalling.
+	existing := make(map[string]bool, len(a.Alias))
+	for k := range a.Alias {
+		existing[k] = true
+	}
+
 	if err := yaml.Unmarshal(bb, a); err != nil {
 		return err
 	}
 
 	for k, v := range a.Alias {
-		a.Alias[k] = client.NewGVR(v.String())
+		gvr := client.NewGVR(v.String())
+		if existing[k] {
+			a.Alias[k] = gvr
+			continue
+		}
+		// Normalize new keys from file to lowercase.
+		lower := strings.ToLower(k)
+		if lower != k {
+			delete(a.Alias, k)
+		}
+		a.Alias[lower] = gvr
 	}
-	defer a.mx.Unlock()
 
 	return nil
 }
