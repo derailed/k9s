@@ -111,7 +111,7 @@ func (a *Aliases) Get(alias string) (*client.GVR, bool) {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
 
-	gvr, ok := a.Alias[alias]
+	gvr, ok := a.Alias[strings.ToLower(alias)]
 
 	return gvr, ok
 }
@@ -122,8 +122,9 @@ func (a *Aliases) Define(gvr *client.GVR, aliases ...string) {
 	defer a.mx.Unlock()
 
 	for _, alias := range aliases {
-		if _, ok := a.Alias[alias]; !ok && alias != "" {
-			a.Alias[alias] = gvr
+		k := strings.ToLower(alias)
+		if _, ok := a.Alias[k]; !ok && k != "" {
+			a.Alias[k] = gvr
 		}
 	}
 }

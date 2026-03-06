@@ -49,6 +49,30 @@ func TestAliasShortNames(t *testing.T) {
 	}
 }
 
+func TestAliasGetCaseInsensitive(t *testing.T) {
+	a := config.NewAliases()
+	a.Define(client.PodGVR, "pod", "po")
+
+	uu := map[string]struct {
+		alias string
+		ok    bool
+	}{
+		"lowercase":  {alias: "pod", ok: true},
+		"uppercase":  {alias: "POD", ok: true},
+		"mixed-case": {alias: "Pod", ok: true},
+		"short":      {alias: "PO", ok: true},
+		"miss":       {alias: "zorg", ok: false},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			_, ok := a.Get(u.alias)
+			assert.Equal(t, u.ok, ok)
+		})
+	}
+}
+
 func TestAliasDefine(t *testing.T) {
 	type aliasDef struct {
 		gvr     *client.GVR
