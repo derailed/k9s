@@ -168,11 +168,13 @@ func (x *Xray) refreshActions() {
 		return
 	}
 
-	if client.Can(x.meta.Verbs, "edit") {
-		aa.Add(ui.KeyE, ui.NewKeyAction("Edit", x.editCmd, true))
-	}
-	if client.Can(x.meta.Verbs, "delete") {
-		aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", x.deleteCmd, true))
+	if !x.app.Config.IsReadOnly() {
+		if client.Can(x.meta.Verbs, "edit") {
+			aa.Add(ui.KeyE, ui.NewKeyAction("Edit", x.editCmd, true))
+		}
+		if client.Can(x.meta.Verbs, "delete") {
+			aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", x.deleteCmd, true))
+		}
 	}
 	if !dao.IsK9sMeta(x.meta) {
 		aa.Bulk(ui.KeyMap{
