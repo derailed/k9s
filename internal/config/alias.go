@@ -111,7 +111,7 @@ func (a *Aliases) Get(alias string) (*client.GVR, bool) {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
 
-	gvr, ok := a.Alias[alias]
+	gvr, ok := a.Alias[strings.ToLower(alias)]
 
 	return gvr, ok
 }
@@ -122,8 +122,9 @@ func (a *Aliases) Define(gvr *client.GVR, aliases ...string) {
 	defer a.mx.Unlock()
 
 	for _, alias := range aliases {
-		if _, ok := a.Alias[alias]; !ok && alias != "" {
-			a.Alias[alias] = gvr
+		k := strings.ToLower(alias)
+		if _, ok := a.Alias[k]; !ok && k != "" {
+			a.Alias[k] = gvr
 		}
 	}
 }
@@ -159,14 +160,31 @@ func (a *Aliases) LoadFile(path string) error {
 	}
 
 	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	// Track existing keys before unmarshalling.
+	existing := make(map[string]bool, len(a.Alias))
+	for k := range a.Alias {
+		existing[k] = true
+	}
+
 	if err := yaml.Unmarshal(bb, a); err != nil {
 		return err
 	}
 
 	for k, v := range a.Alias {
-		a.Alias[k] = client.NewGVR(v.String())
+		gvr := client.NewGVR(v.String())
+		if existing[k] {
+			a.Alias[k] = gvr
+			continue
+		}
+		// Normalize new keys from file to lowercase.
+		lower := strings.ToLower(k)
+		if lower != k {
+			delete(a.Alias, k)
+		}
+		a.Alias[lower] = gvr
 	}
-	defer a.mx.Unlock()
 
 	return nil
 }

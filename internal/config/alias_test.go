@@ -49,6 +49,35 @@ func TestAliasShortNames(t *testing.T) {
 	}
 }
 
+func TestAliasGetCaseInsensitive(t *testing.T) {
+	a := config.NewAliases()
+	a.Define(client.PodGVR, "pod", "po")
+
+	uu := map[string]struct {
+		alias string
+		ok    bool
+	}{
+		"lowercase":        {alias: "pod", ok: true},
+		"uppercase":        {alias: "POD", ok: true},
+		"mixed-case":       {alias: "Pod", ok: true},
+		"short":            {alias: "PO", ok: true},
+		"miss":             {alias: "zorg", ok: false},
+		"defined-upper":    {alias: "deploy", ok: true},
+		"lookup-upper-def": {alias: "DEPLOY", ok: true},
+	}
+
+	// Define with uppercase to verify Define() normalizes keys.
+	a.Define(client.NewGVR("apps/v1/deployments"), "DEPLOY")
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			_, ok := a.Get(u.alias)
+			assert.Equal(t, u.ok, ok)
+		})
+	}
+}
+
 func TestAliasDefine(t *testing.T) {
 	type aliasDef struct {
 		gvr     *client.GVR
