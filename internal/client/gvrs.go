@@ -80,6 +80,13 @@ var (
 	CrbGVR  = NewGVR("rbac.authorization.k8s.io/v1/clusterrolebindings")
 	RoGVR   = NewGVR("rbac.authorization.k8s.io/v1/roles")
 	RobGVR  = NewGVR("rbac.authorization.k8s.io/v1/rolebindings")
+
+	// kagent - AI Agents for Kubernetes...
+	KAgentGVR       = NewGVR("kagent.dev/v1alpha2/agents")
+	KModelConfigGVR = NewGVR("kagent.dev/v1alpha2/modelconfigs")
+	KToolServerGVR  = NewGVR("kagent.dev/v1alpha1/toolservers")
+	KMemoryGVR      = NewGVR("kagent.dev/v1alpha1/memories")
+	KRemoteMCPGVR   = NewGVR("kagent.dev/v1alpha2/remotemcpservers")
 )
 
 var reservedGVRs = sets.New(

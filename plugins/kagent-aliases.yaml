@@ -1,0 +1,35 @@
+# kagent Aliases for K9s
+# Copy this file to ~/.config/k9s/aliases.yaml or merge with your existing aliases
+#
+# These aliases make it easy to navigate kagent resources quickly
+
+aliases:
+  # Agent shortcuts
+  ka: kagent.dev/v1alpha2/agents
+  kagent: kagent.dev/v1alpha2/agents
+  agents: kagent.dev/v1alpha2/agents
+  agent: kagent.dev/v1alpha2/agents
+  
+  # ModelConfig shortcuts  
+  kmc: kagent.dev/v1alpha2/modelconfigs
+  modelconfig: kagent.dev/v1alpha2/modelconfigs
+  modelconfigs: kagent.dev/v1alpha2/modelconfigs
+  mc: kagent.dev/v1alpha2/modelconfigs
+  models: kagent.dev/v1alpha2/modelconfigs
+  
+  # ToolServer shortcuts
+  kts: kagent.dev/v1alpha1/toolservers
+  toolserver: kagent.dev/v1alpha1/toolservers
+  toolservers: kagent.dev/v1alpha1/toolservers
+  ts: kagent.dev/v1alpha1/toolservers
+  tools: kagent.dev/v1alpha1/toolservers
+  mcp: kagent.dev/v1alpha1/toolservers
+  
+  # Memory shortcuts
+  kmem: kagent.dev/v1alpha1/memories
+  memories: kagent.dev/v1alpha1/memories
+  memory: kagent.dev/v1alpha1/memories
+  
+  # RemoteMCPServer shortcuts
+  krmcp: kagent.dev/v1alpha2/remotemcpservers
+  remotemcp: kagent.dev/v1alpha2/remotemcpservers

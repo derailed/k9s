@@ -1,0 +1,291 @@
+# kagent Plugins for K9s
+# Integrate AI agents into your Kubernetes workflow
+#
+# Prerequisites:
+# - kagent CLI installed: https://kagent.dev/docs/kagent/introduction/installation
+# - kagent deployed to your cluster with agents configured
+#
+# Usage:
+# - Navigate to any resource in k9s
+# - Use the shortcuts below to interact with kagent agents
+
+plugins:
+  # Invoke the K8s debugging agent to investigate a resource
+  kagent-investigate:
+    shortCut: Shift-K
+    description: Ask kagent to investigate
+    scopes:
+      - pods
+      - deployments
+      - services
+      - daemonsets
+      - statefulsets
+      - replicasets
+      - jobs
+      - cronjobs
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        echo "🤖 Invoking kagent to investigate $RESOURCE_NAME/$NAME in namespace $NAMESPACE..."
+        echo ""
+        
+        # Check if kagent CLI is available
+        if ! command -v kagent &> /dev/null; then
+            echo "❌ kagent CLI not found. Install from: https://kagent.dev"
+            echo ""
+            echo "Press any key to exit..."
+            read -n 1
+            exit 1
+        fi
+        
+        # Try to invoke the k8s agent
+        AGENT_NAME="${KAGENT_K8S_AGENT:-k8s-agent}"
+        
+        kagent invoke --agent "$AGENT_NAME" \
+          --task "Investigate the $RESOURCE_NAME named '$NAME' in namespace '$NAMESPACE'. Check its status, events, logs if applicable, and identify any issues."
+        
+        echo ""
+        echo "Press 'q' to exit"
+        while : ; do
+          read -n 1 k <&1
+          if [[ $k = q ]] ; then
+            break
+          fi
+        done
+
+  # Interactive chat with a kagent agent
+  kagent-chat:
+    shortCut: Shift-C
+    description: Chat with kagent
+    scopes:
+      - all
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        echo "🤖 Starting kagent chat session..."
+        echo "Context: Viewing $RESOURCE_NAME in namespace $NAMESPACE"
+        echo ""
+        
+        if ! command -v kagent &> /dev/null; then
+            echo "❌ kagent CLI not found. Install from: https://kagent.dev"
+            echo ""
+            echo "Press any key to exit..."
+            read -n 1
+            exit 1
+        fi
+        
+        # Default to k8s-agent if KAGENT_AGENT not set
+        AGENT_NAME="${KAGENT_AGENT:-k8s-agent}"
+        
+        kagent dashboard --agent "$AGENT_NAME"
+
+  # Custom question to kagent about current resource
+  kagent-ask:
+    shortCut: Shift-A
+    description: Ask kagent a custom question
+    scopes:
+      - all
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        echo "🤖 kagent - Ask anything about $RESOURCE_NAME/$NAME"
+        echo ""
+        
+        if ! command -v kagent &> /dev/null; then
+            echo "❌ kagent CLI not found. Install from: https://kagent.dev"
+            echo ""
+            echo "Press any key to exit..."
+            read -n 1
+            exit 1
+        fi
+        
+        INSTRUCTIONS="# Enter your question below. Lines starting with '#' will be ignored."
+        DEFAULT_QUESTION="What is the current state of $NAME and are there any issues?"
+        
+        QUESTION_FILE=$(mktemp)
+        
+        echo "$INSTRUCTIONS" > "$QUESTION_FILE"
+        echo "" >> "$QUESTION_FILE"
+        echo "$DEFAULT_QUESTION" >> "$QUESTION_FILE"
+        
+        # Open in editor
+        ${EDITOR:-nano} "$QUESTION_FILE"
+        
+        # Read the question, ignoring comments
+        QUESTION=$(grep -v '^#' "$QUESTION_FILE" | tr '\n' ' ')
+        
+        if [ -z "$QUESTION" ]; then
+            echo "No question provided. Exiting."
+            rm "$QUESTION_FILE"
+            exit 0
+        fi
+        
+        AGENT_NAME="${KAGENT_K8S_AGENT:-k8s-agent}"
+        
+        echo "Asking: $QUESTION"
+        echo ""
+        
+        kagent invoke --agent "$AGENT_NAME" --task "$QUESTION"
+        
+        rm "$QUESTION_FILE"
+        
+        echo ""
+        echo "Press 'q' to exit"
+        while : ; do
+          read -n 1 k <&1
+          if [[ $k = q ]] ; then
+            break
+          fi
+        done
+
+  # Get logs analysis from kagent
+  kagent-analyze-logs:
+    shortCut: Shift-L
+    description: Analyze logs with kagent
+    scopes:
+      - pods
+      - deployments
+      - daemonsets
+      - statefulsets
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        echo "🤖 Analyzing logs for $NAME with kagent..."
+        echo ""
+        
+        if ! command -v kagent &> /dev/null; then
+            echo "❌ kagent CLI not found. Install from: https://kagent.dev"
+            echo ""
+            echo "Press any key to exit..."
+            read -n 1
+            exit 1
+        fi
+        
+        # Capture recent logs
+        LOGS=$(kubectl logs --tail=100 -n "$NAMESPACE" "$NAME" 2>/dev/null || echo "Could not fetch logs directly")
+        
+        AGENT_NAME="${KAGENT_K8S_AGENT:-k8s-agent}"
+        
+        kagent invoke --agent "$AGENT_NAME" \
+          --task "Analyze the recent logs for $RESOURCE_NAME '$NAME' in namespace '$NAMESPACE'. Look for errors, warnings, and any patterns that might indicate issues. Here are the recent logs:
+        
+        $LOGS"
+        
+        echo ""
+        echo "Press 'q' to exit"
+        while : ; do
+          read -n 1 k <&1
+          if [[ $k = q ]] ; then
+            break
+          fi
+        done
+
+  # Explain a Kubernetes resource with kagent
+  kagent-explain:
+    shortCut: Shift-E
+    description: Explain resource with kagent
+    scopes:
+      - all
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        echo "🤖 Getting kagent to explain $RESOURCE_NAME/$NAME..."
+        echo ""
+        
+        if ! command -v kagent &> /dev/null; then
+            echo "❌ kagent CLI not found. Install from: https://kagent.dev"
+            echo ""
+            echo "Press any key to exit..."
+            read -n 1
+            exit 1
+        fi
+        
+        # Get the resource YAML
+        YAML=$(kubectl get "$RESOURCE_NAME" "$NAME" -n "$NAMESPACE" -o yaml 2>/dev/null || echo "Could not fetch resource")
+        
+        AGENT_NAME="${KAGENT_K8S_AGENT:-k8s-agent}"
+        
+        kagent invoke --agent "$AGENT_NAME" \
+          --task "Explain this Kubernetes $RESOURCE_NAME resource in detail. Describe what it does, its current configuration, and any important settings:
+        
+        $YAML"
+        
+        echo ""
+        echo "Press 'q' to exit"
+        while : ; do
+          read -n 1 k <&1
+          if [[ $k = q ]] ; then
+            break
+          fi
+        done
+
+  # Suggest fixes for unhealthy resources
+  kagent-fix:
+    shortCut: Shift-F
+    description: Suggest fixes with kagent
+    scopes:
+      - pods
+      - deployments
+      - services
+      - daemonsets
+      - statefulsets
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        echo "🤖 Getting kagent to suggest fixes for $RESOURCE_NAME/$NAME..."
+        echo ""
+        
+        if ! command -v kagent &> /dev/null; then
+            echo "❌ kagent CLI not found. Install from: https://kagent.dev"
+            echo ""
+            echo "Press any key to exit..."
+            read -n 1
+            exit 1
+        fi
+        
+        # Get resource details and events
+        RESOURCE=$(kubectl get "$RESOURCE_NAME" "$NAME" -n "$NAMESPACE" -o yaml 2>/dev/null)
+        EVENTS=$(kubectl get events -n "$NAMESPACE" --field-selector "involvedObject.name=$NAME" --sort-by='.lastTimestamp' 2>/dev/null | tail -20)
+        
+        AGENT_NAME="${KAGENT_K8S_AGENT:-k8s-agent}"
+        
+        kagent invoke --agent "$AGENT_NAME" \
+          --task "Analyze this $RESOURCE_NAME and suggest fixes for any issues:
+        
+        Resource YAML:
+        $RESOURCE
+        
+        Recent Events:
+        $EVENTS
+        
+        Please:
+        1. Identify any problems
+        2. Explain the root cause
+        3. Provide specific kubectl commands or YAML patches to fix the issues"
+        
+        echo ""
+        echo "Press 'q' to exit"
+        while : ; do
+          read -n 1 k <&1
+          if [[ $k = q ]] ; then
+            break
+          fi
+        done
