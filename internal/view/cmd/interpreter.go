@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"log/slog"
+	"regexp"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -66,8 +67,9 @@ func (c *Interpreter) grok() {
 	}
 	c.cmd = strings.ToLower(ff[0])
 
-	var lbls string
 	line := strings.TrimSpace(strings.Replace(c.line, ff[0], "", 1))
+	ctx, line := extractContextArg(line)
+	var lbls string
 	if strings.Contains(line, "'") {
 		start, end, ok := quoteIndicies(line)
 		if ok {
@@ -82,7 +84,13 @@ func (c *Interpreter) grok() {
 	if lbls != "" {
 		ff = append(ff, lbls)
 	}
+	if c.IsContextCmd() && len(ff) > 1 {
+		ff = []string{strings.Join(ff, " ")}
+	}
 	c.args = newArgs(c, ff)
+	if ctx != "" {
+		c.args[contextKey] = ctx
+	}
 }
 
 func quoteIndicies(s string) (start, end int, ok bool) {
@@ -99,6 +107,38 @@ func quoteIndicies(s string) (start, end int, ok bool) {
 	}
 	ok = start != -1 && end != -1
 	return
+}
+
+var (
+	contextQuotedSingleRX = regexp.MustCompile(`(^|\s)@'([^']+)'`)
+	contextQuotedDoubleRX = regexp.MustCompile(`(^|\s)@"([^"]+)"`)
+)
+
+func extractContextArg(line string) (string, string) {
+	if line == "" {
+		return "", line
+	}
+	if ctx, rest, ok := extractQuotedContext(line, contextQuotedSingleRX); ok {
+		return ctx, rest
+	}
+	if ctx, rest, ok := extractQuotedContext(line, contextQuotedDoubleRX); ok {
+		return ctx, rest
+	}
+	return "", line
+}
+
+func extractQuotedContext(line string, rx *regexp.Regexp) (string, string, bool) {
+	loc := rx.FindStringSubmatchIndex(line)
+	if loc == nil {
+		return "", line, false
+	}
+	ctx := line[loc[4]:loc[5]]
+	rest := strings.TrimSpace(line[:loc[0]] + line[loc[1]:])
+	return ctx, rest, true
+}
+
+func isWhitespace(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }
 
 // HasNS returns true if ns is present in prompt.
