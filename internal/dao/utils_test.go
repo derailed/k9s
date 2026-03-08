@@ -27,9 +27,8 @@ func makeFactory() dao.Factory {
 	return &testFactory{
 		inventory: map[string]map[*client.GVR][]runtime.Object{
 			"kube-system": {
-				client.SecGVR: {
-					load("secret"),
-				},
+				client.SecGVR: {load("secret"), load("secret_pem")},
+				client.CmGVR:  {load("configmap")},
 			},
 		},
 	}
@@ -50,7 +49,7 @@ func (f *testFactory) Get(gvr *client.GVR, fqn string, _ bool, _ labels.Selector
 		}
 	}
 
-	return nil, nil
+	return nil, fmt.Errorf("resource %s not found", fqn)
 }
 func (f *testFactory) List(gvr *client.GVR, ns string, _ bool, _ labels.Selector) ([]runtime.Object, error) {
 	return f.inventory[ns][gvr], nil
