@@ -47,9 +47,9 @@ func (Workload) ColorerFunc() model1.ColorerFunc {
 	}
 }
 
-// Header returns a header rbw.
-func (Workload) Header(string) model1.Header {
-	return defaultWKHeader
+// Header returns a header row.
+func (w Workload) Header(string) model1.Header {
+	return w.doHeader(defaultWKHeader)
 }
 
 // Render renders a K8s resource to screen.
@@ -69,6 +69,7 @@ func (Workload) Render(o any, _ string, r *model1.Row) error {
 		res.Row.Cells[5].(string),
 		ToAge(res.Row.Cells[6].(metav1.Time)),
 	}
+	StashAge(r, "AGE", res.Row.Cells[6].(metav1.Time))
 
 	return nil
 }

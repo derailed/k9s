@@ -50,8 +50,8 @@ func (PortForward) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (PortForward) Header(string) model1.Header {
-	return model1.Header{
+func (p PortForward) Header(string) model1.Header {
+	return p.doHeader(model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "CONTAINER"},
@@ -61,7 +61,7 @@ func (PortForward) Header(string) model1.Header {
 		model1.HeaderColumn{Name: "N"},
 		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	})
 }
 
 // Render renders a K8s resource to screen.
@@ -86,6 +86,7 @@ func (PortForward) Render(o any, _ string, r *model1.Row) error {
 		"",
 		ToAge(metav1.Time{Time: pf.Age()}),
 	}
+	StashAge(r, "AGE", metav1.Time{Time: pf.Age()})
 
 	return nil
 }

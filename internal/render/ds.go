@@ -82,6 +82,7 @@ func (d DaemonSet) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 		AsStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
 		ToAge(ds.GetCreationTimestamp()),
 	}
+	StashAge(r, "AGE", ds.GetCreationTimestamp())
 
 	return nil
 }

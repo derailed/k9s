@@ -6,6 +6,7 @@ package model1
 import (
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -368,4 +369,97 @@ func TestTableDataDelete(t *testing.T) {
 			assert.Equal(t, u.e, table.GetRowEvents())
 		})
 	}
+}
+
+func TestTableDataTimestampSortPipeline(t *testing.T) {
+	now := time.Now()
+	gvr := client.NewGVR("v1/pods")
+	header := Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "AGE", Attrs: Attrs{Time: true}},
+	}
+
+	// Simulate initial Hydrate: rows with timestamps (like renderers produce).
+	rows := Rows{
+		{
+			ID:         "ns/pod-c",
+			Fields:     Fields{"ns", "pod-c", "Running", "12m"},
+			Timestamps: map[string]time.Time{"AGE": now.Add(-12*time.Minute - 30*time.Second)},
+		},
+		{
+			ID:         "ns/pod-a",
+			Fields:     Fields{"ns", "pod-a", "Running", "12m"},
+			Timestamps: map[string]time.Time{"AGE": now.Add(-12*time.Minute - 10*time.Second)},
+		},
+		{
+			ID:         "ns/pod-b",
+			Fields:     Fields{"ns", "pod-b", "Running", "12m"},
+			Timestamps: map[string]time.Time{"AGE": now.Add(-12*time.Minute - 20*time.Second)},
+		},
+	}
+
+	// Step 1: TableData.Update (initial load).
+	td := NewTableData(gvr)
+	td.SetHeader("ns", header)
+	td.Update(rows)
+
+	// Step 2: Peek (clone).
+	cloned := td.Clone()
+
+	// Step 3: Sort by AGE ascending.
+	cloned.Sort(SortColumn{Name: "AGE", ASC: true})
+
+	// Verify: newest (smallest age) first.
+	gotIDs := make([]string, 0, 3)
+	cloned.RowsRange(func(_ int, re RowEvent) bool {
+		gotIDs = append(gotIDs, re.Row.ID)
+		return true
+	})
+	assert.Equal(t, []string{"ns/pod-a", "ns/pod-b", "ns/pod-c"}, gotIDs,
+		"first sort: newest first ascending")
+
+	// Step 4: Simulate refresh — same humanized age, exact same rows.
+	td.Update(rows)
+	cloned2 := td.Clone()
+	cloned2.Sort(SortColumn{Name: "AGE", ASC: true})
+
+	gotIDs2 := make([]string, 0, 3)
+	cloned2.RowsRange(func(_ int, re RowEvent) bool {
+		gotIDs2 = append(gotIDs2, re.Row.ID)
+		return true
+	})
+	assert.Equal(t, gotIDs, gotIDs2, "second sort after refresh: order must be identical")
+
+	// Step 5: Simulate age boundary crossing — pod-a goes to "13m".
+	updatedRows := Rows{
+		{
+			ID:         "ns/pod-c",
+			Fields:     Fields{"ns", "pod-c", "Running", "12m"},
+			Timestamps: map[string]time.Time{"AGE": now.Add(-12*time.Minute - 30*time.Second)},
+		},
+		{
+			ID:         "ns/pod-a",
+			Fields:     Fields{"ns", "pod-a", "Running", "13m"},
+			Timestamps: map[string]time.Time{"AGE": now.Add(-12*time.Minute - 10*time.Second)},
+		},
+		{
+			ID:         "ns/pod-b",
+			Fields:     Fields{"ns", "pod-b", "Running", "12m"},
+			Timestamps: map[string]time.Time{"AGE": now.Add(-12*time.Minute - 20*time.Second)},
+		},
+	}
+	td.Update(updatedRows)
+	cloned3 := td.Clone()
+	cloned3.Sort(SortColumn{Name: "AGE", ASC: true})
+
+	gotIDs3 := make([]string, 0, 3)
+	cloned3.RowsRange(func(_ int, re RowEvent) bool {
+		gotIDs3 = append(gotIDs3, re.Row.ID)
+		return true
+	})
+	// Despite pod-a's display changing to "13m", its ACTUAL timestamp is still newest.
+	assert.Equal(t, []string{"ns/pod-a", "ns/pod-b", "ns/pod-c"}, gotIDs3,
+		"after age boundary crossing: timestamp sort still correct")
 }

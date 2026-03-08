@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
@@ -184,13 +185,26 @@ func boolToStr(b bool) string {
 	}
 }
 
-// ToAge converts time to human duration.
+// ToAge returns a resource's age as an timestamp string.
+// Humanization for display is deferred to the column decorator
 func ToAge(t metav1.Time) string {
 	if t.IsZero() {
 		return UnknownValue
 	}
 
-	return duration.HumanDuration(time.Since(t.Time))
+	return t.Time.Format(time.RFC3339)
+}
+
+// StashAge stashes a timestamp on the row keyed by column name
+// for full-precision age sorting.
+func StashAge(r *model1.Row, colName string, t metav1.Time) {
+	if t.IsZero() {
+		return
+	}
+	if r.Timestamps == nil {
+		r.Timestamps = make(map[string]time.Time, 1)
+	}
+	r.Timestamps[colName] = t.Time
 }
 
 func toAgeHuman(s string) string {
@@ -200,7 +214,8 @@ func toAgeHuman(s string) string {
 
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return NAValue
+		// Already humanized or another format, return as-is.
+		return s
 	}
 
 	return duration.HumanDuration(time.Since(t))

@@ -76,6 +76,7 @@ func (RoleBinding) defaultRow(raw *unstructured.Unstructured, row *model1.Row) e
 		"",
 		ToAge(rb.GetCreationTimestamp()),
 	}
+	StashAge(row, "AGE", rb.GetCreationTimestamp())
 
 	return nil
 }

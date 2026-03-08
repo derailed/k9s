@@ -70,6 +70,7 @@ func (ConfigMap) defaultRow(o any, r *model1.Row) error {
 		"",
 		ToAge(cm.GetCreationTimestamp()),
 	}
+	StashAge(r, "AGE", cm.GetCreationTimestamp())
 
 	return nil
 }

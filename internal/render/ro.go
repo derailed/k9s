@@ -67,6 +67,7 @@ func (Role) defaultRow(raw *unstructured.Unstructured, row *model1.Row) error {
 		"",
 		ToAge(ro.GetCreationTimestamp()),
 	}
+	StashAge(row, "AGE", ro.GetCreationTimestamp())
 
 	return nil
 }
