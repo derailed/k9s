@@ -40,6 +40,11 @@ func (c *Config) IsReadOnly() bool {
 	return c.K9s.IsReadOnly()
 }
 
+// IsPodKillDisabled returns true if the pod kill command (Ctrl+K) is disabled.
+func (c *Config) IsPodKillDisabled() bool {
+	return c.K9s.DisablePodKillCmd
+}
+
 // ActiveClusterName returns the corresponding cluster name.
 func (c *Config) ActiveClusterName(contextName string) (string, error) {
 	ct, err := c.settings.GetContext(contextName)

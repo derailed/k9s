@@ -84,15 +84,8 @@ func (p *Pod) portForwardIndicator(data *model1.TableData) {
 	})
 }
 
-func (p *Pod) bindDangerousKeys(aa *ui.KeyActions) {
-	aa.Bulk(ui.KeyMap{
-		tcell.KeyCtrlK: ui.NewKeyActionWithOpts(
-			"Kill",
-			p.killCmd,
-			ui.ActionOpts{
-				Visible:   true,
-				Dangerous: true,
-			}),
+func (p *Pod) bindDangerousKeys(aa *ui.KeyActions, disableKill bool) {
+	km := ui.KeyMap{
 		ui.KeyS: ui.NewKeyActionWithOpts(
 			"Shell",
 			p.shellCmd,
@@ -121,12 +114,22 @@ func (p *Pod) bindDangerousKeys(aa *ui.KeyActions) {
 				Visible:   true,
 				Dangerous: true,
 			}),
-	})
+	}
+	if !disableKill {
+		km[tcell.KeyCtrlK] = ui.NewKeyActionWithOpts(
+			"Kill",
+			p.killCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			})
+	}
+	aa.Bulk(km)
 }
 
 func (p *Pod) bindKeys(aa *ui.KeyActions) {
 	if !p.App().Config.IsReadOnly() {
-		p.bindDangerousKeys(aa)
+		p.bindDangerousKeys(aa, p.App().Config.IsPodKillDisabled())
 	}
 
 	aa.Bulk(ui.KeyMap{
