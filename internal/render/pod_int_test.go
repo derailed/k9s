@@ -17,6 +17,119 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+func Test_initContainerStats(t *testing.T) {
+	uu := map[string]struct {
+		cc                     []v1.Container
+		cos                    []v1.ContainerStatus
+		ready, total, restarts int
+	}{
+		"empty": {},
+
+		"matching": {
+			cc: []v1.Container{
+				{
+					Name: "ic1",
+					RestartPolicy: func() *v1.ContainerRestartPolicy {
+						rp := v1.ContainerRestartPolicyAlways
+						return &rp
+					}(),
+				},
+				{
+					Name: "ic2",
+					RestartPolicy: func() *v1.ContainerRestartPolicy {
+						rp := v1.ContainerRestartPolicyAlways
+						return &rp
+					}(),
+				},
+			},
+			cos: []v1.ContainerStatus{
+				{
+					Name:         "ic1",
+					Ready:        true,
+					RestartCount: 1,
+				},
+				{
+					Name: "ic2",
+					State: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{},
+					},
+					RestartCount: 2,
+				},
+			},
+			ready:    1,
+			total:    2,
+			restarts: 3,
+		},
+
+		"matching-sidecar": {
+			cc: []v1.Container{
+				{
+					Name: "ic1",
+				},
+				{
+					Name: "ic2",
+					RestartPolicy: func() *v1.ContainerRestartPolicy {
+						rp := v1.ContainerRestartPolicyAlways
+						return &rp
+					}(),
+				},
+			},
+			cos: []v1.ContainerStatus{
+				{
+					Name:         "ic1",
+					Ready:        true,
+					RestartCount: 1,
+				},
+				{
+					Name: "ic2",
+					State: v1.ContainerState{
+						Terminated: &v1.ContainerStateTerminated{},
+					},
+					RestartCount: 2,
+				},
+			},
+			ready:    0,
+			total:    1,
+			restarts: 2,
+		},
+
+		"non-matching": {
+			cc: []v1.Container{
+				{
+					Name: "ic1",
+					RestartPolicy: func() *v1.ContainerRestartPolicy {
+						rp := v1.ContainerRestartPolicyAlways
+						return &rp
+					}(),
+				},
+				{
+					Name: "ic2",
+					RestartPolicy: func() *v1.ContainerRestartPolicy {
+						rp := v1.ContainerRestartPolicyAlways
+						return &rp
+					}(),
+				},
+			},
+			cos: []v1.ContainerStatus{
+				{Name: "ic1", Ready: true, RestartCount: 1},
+			},
+			ready:    1,
+			total:    1,
+			restarts: 1,
+		},
+	}
+
+	p := NewPod()
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			ready, total, restarts := p.initContainerStats(u.cc, u.cos)
+			assert.Equal(t, u.ready, ready)
+			assert.Equal(t, u.total, total)
+			assert.Equal(t, u.restarts, restarts)
+		})
+	}
+}
+
 func Test_checkInitContainerStatus(t *testing.T) {
 	trueVal := true
 	uu := map[string]struct {
