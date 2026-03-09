@@ -59,7 +59,7 @@ type Plugin struct {
 	Pipes           []string      `yaml:"pipes"`
 	Description     string        `yaml:"description"`
 	Command         string        `yaml:"command"`
-	Confirm         bool          `yaml:"confirm"`
+	Confirm         *bool         `yaml:"confirm"`
 	Background      bool          `yaml:"background"`
 	Dangerous       bool          `yaml:"dangerous"`
 	OverwriteOutput bool          `yaml:"overwriteOutput"`
@@ -68,6 +68,15 @@ type Plugin struct {
 
 func (p Plugin) String() string {
 	return fmt.Sprintf("[%s] %s(%s)", p.ShortCut, p.Command, strings.Join(p.Args, " "))
+}
+
+// ShouldConfirm returns whether the plugin should show a confirmation dialog.
+// Defaults to true when inputs are defined, false otherwise.
+func (p Plugin) ShouldConfirm() bool {
+	if p.Confirm != nil {
+		return *p.Confirm
+	}
+	return len(p.Inputs) > 0
 }
 
 // Validate checks the plugin configuration for errors.
