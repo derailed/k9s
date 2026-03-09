@@ -45,6 +45,7 @@ type Xray struct {
 	model    model.TreeModel
 	cancelFn context.CancelFunc
 	envFn    EnvFunc
+	title    string
 }
 
 // NewXray returns a new view.
@@ -53,6 +54,7 @@ func NewXray(gvr *client.GVR) ResourceViewer {
 		gvr:   gvr,
 		Tree:  ui.NewTree(),
 		model: model.NewTree(gvr),
+		title: xrayTitle,
 	}
 }
 
@@ -62,6 +64,7 @@ func NewOwnerXray(gvr *client.GVR) ResourceViewer {
 		gvr:   gvr,
 		Tree:  ui.NewTree(),
 		model: model.NewOwnerTree(gvr),
+		title: "Owners",
 	}
 }
 
@@ -93,7 +96,7 @@ func (x *Xray) Init(ctx context.Context) error {
 	x.SetBorderColor(x.app.Styles.Xray().FgColor.Color())
 	x.SetBorderFocusColor(x.app.Styles.Frame().Border.FocusColor.Color())
 	x.SetGraphicsColor(x.app.Styles.Xray().GraphicColor.Color())
-	x.SetTitle(fmt.Sprintf(" %s-%s ", xrayTitle, cases.Title(language.Und, cases.NoLower).String(x.gvr.R())))
+	x.SetTitle(fmt.Sprintf(" %s-%s ", x.title, cases.Title(language.Und, cases.NoLower).String(x.gvr.R())))
 
 	x.model.SetRefreshRate(x.app.Config.K9s.RefreshDuration())
 	x.model.SetNamespace(client.CleanseNamespace(x.app.Config.ActiveNamespace()))
@@ -678,7 +681,7 @@ func (x *Xray) UpdateTitle() {
 }
 
 func (x *Xray) styleTitle() string {
-	base := fmt.Sprintf("%s-%s", xrayTitle, cases.Title(language.Und, cases.NoLower).String(x.gvr.R()))
+	base := fmt.Sprintf("%s-%s", x.title, cases.Title(language.Und, cases.NoLower).String(x.gvr.R()))
 	ns := x.model.GetNamespace()
 	if client.IsAllNamespaces(ns) {
 		ns = client.NamespaceAll
