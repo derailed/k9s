@@ -50,22 +50,23 @@ var (
 	PmxGVR = NewGVR("metrics.k8s.io/v1beta1/pods")
 
 	// K9s...
-	CpuGVR = NewGVR("cpu")
-	MemGVR = NewGVR("memory")
-	WkGVR  = NewGVR("workloads")
-	CoGVR  = NewGVR("containers")
-	CtGVR  = NewGVR("contexts")
-	RefGVR = NewGVR("references")
-	PuGVR  = NewGVR("pulses")
-	ScnGVR = NewGVR("scans")
-	DirGVR = NewGVR("dirs")
-	PfGVR  = NewGVR("portforwards")
-	SdGVR  = NewGVR("screendumps")
-	BeGVR  = NewGVR("benchmarks")
-	AliGVR = NewGVR("aliases")
-	XGVR   = NewGVR("xrays")
-	HlpGVR = NewGVR("help")
-	QGVR   = NewGVR("quit")
+	CpuGVR    = NewGVR("cpu")
+	MemGVR    = NewGVR("memory")
+	WkGVR     = NewGVR("workloads")
+	CoGVR     = NewGVR("containers")
+	CtGVR     = NewGVR("contexts")
+	RefGVR    = NewGVR("references")
+	PuGVR     = NewGVR("pulses")
+	ScnGVR    = NewGVR("scans")
+	DirGVR    = NewGVR("dirs")
+	PfGVR     = NewGVR("portforwards")
+	SdGVR     = NewGVR("screendumps")
+	BeGVR     = NewGVR("benchmarks")
+	AliGVR    = NewGVR("aliases")
+	XGVR      = NewGVR("xrays")
+	OwnersGVR = NewGVR("owners")
+	HlpGVR    = NewGVR("help")
+	QGVR      = NewGVR("quit")
 
 	// Helm...
 	HmGVR  = NewGVR("helm")
@@ -97,6 +98,7 @@ var reservedGVRs = sets.New(
 	BeGVR,
 	AliGVR,
 	XGVR,
+	OwnersGVR,
 	HlpGVR,
 	QGVR,
 	HmGVR,
