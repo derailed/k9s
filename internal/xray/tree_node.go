@@ -31,6 +31,9 @@ const (
 	// InfoKey state map key.
 	InfoKey = "info"
 
+	// KindKey stores the resource Kind for display.
+	KindKey = "kind"
+
 	// OkStatus stands for all is cool.
 	OkStatus = "ok"
 
@@ -426,7 +429,10 @@ func (t TreeNode) toTitle() (title string) {
 		}
 	}()
 
-	categ := category(t.GVR)
+	categ := t.Extras[KindKey]
+	if categ == "" {
+		categ = category(t.GVR)
+	}
 	if categ == "" {
 		title = fmt.Sprintf(topTitleFmt, color, n)
 	} else {
@@ -465,7 +471,11 @@ func (t TreeNode) toEmojiTitle() (title string) {
 		}
 	}()
 
-	title = fmt.Sprintf(colorFmt, toEmoji(t.GVR), color, n)
+	if kind, ok := t.Extras[KindKey]; ok && kind != "" {
+		title = fmt.Sprintf(titleFmt, kind, color, n)
+	} else {
+		title = fmt.Sprintf(colorFmt, toEmoji(t.GVR), color, n)
+	}
 	if !t.IsLeaf() {
 		title += fmt.Sprintf("[white::d](%d[-::d])[-::-]", t.CountChildren())
 	}
