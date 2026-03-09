@@ -33,7 +33,6 @@ import (
 
 const (
 	windowsOS        = "windows"
-	powerShell       = "powershell"
 	osSelector       = "kubernetes.io/os"
 	osBetaSelector   = "beta." + osSelector
 	trUpload         = "Upload"
@@ -462,7 +461,7 @@ func attachIn(a *App, path, co string) {
 func computeShellArgs(path, co string, flags *genericclioptions.ConfigFlags, platform string) []string {
 	args := buildShellArgs("exec", path, co, flags)
 	if platform == windowsOS {
-		return append(args, "--", powerShell)
+		return append(args, "--", "cmd", "/c", winShellCheck)
 	}
 
 	return append(args, "--", "sh", "-c", shellCheck)
