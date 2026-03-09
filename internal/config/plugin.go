@@ -72,7 +72,7 @@ func (p Plugin) String() string {
 
 // ShouldConfirm returns whether the plugin should show a confirmation dialog.
 // Defaults to true when inputs are defined, false otherwise.
-func (p Plugin) ShouldConfirm() bool {
+func (p *Plugin) ShouldConfirm() bool {
 	if p.Confirm != nil {
 		return *p.Confirm
 	}
