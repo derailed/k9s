@@ -42,7 +42,7 @@ type Xray struct {
 	app      *App
 	gvr      *client.GVR
 	meta     *metav1.APIResource
-	model    *model.Tree
+	model    model.TreeModel
 	cancelFn context.CancelFunc
 	envFn    EnvFunc
 }
@@ -53,6 +53,15 @@ func NewXray(gvr *client.GVR) ResourceViewer {
 		gvr:   gvr,
 		Tree:  ui.NewTree(),
 		model: model.NewTree(gvr),
+	}
+}
+
+// NewOwnerXray returns an Xray view backed by an OwnerReference-based tree model.
+func NewOwnerXray(gvr *client.GVR) ResourceViewer {
+	return &Xray{
+		gvr:   gvr,
+		Tree:  ui.NewTree(),
+		model: model.NewOwnerTree(gvr),
 	}
 }
 
