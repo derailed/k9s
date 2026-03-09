@@ -6,9 +6,11 @@ package dao
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
@@ -79,6 +81,58 @@ func (s *Secret) decodeYAML(path string, showManaged bool) (string, error) {
 	return buff.String(), nil
 }
 
+// EditYAML returns the secret YAML with data decoded into stringData for editing.
+func (s *Secret) EditYAML(path string) (string, error) {
+	o, err := s.Get(context.Background(), path)
+	if err != nil {
+		return "", err
+	}
+	if o == nil {
+		return "", fmt.Errorf("secret not found: %s", path)
+	}
+	o = o.DeepCopyObject()
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return "", fmt.Errorf("expecting unstructured but got %T", o)
+	}
+	if u.Object == nil {
+		return "", fmt.Errorf("expecting unstructured object but got nil")
+	}
+
+	secret, err := toSecret(o)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert to secret: %w", err)
+	}
+
+	stringData := make(map[string]any)
+	binaryData := make(map[string]any)
+	for k, val := range secret.Data {
+		if utf8.Valid(val) {
+			stringData[k] = string(val)
+		} else {
+			binaryData[k] = base64.StdEncoding.EncodeToString(val)
+		}
+	}
+	if len(stringData) > 0 {
+		u.Object["stringData"] = stringData
+	}
+	if len(binaryData) > 0 {
+		u.Object["data"] = binaryData
+	} else {
+		delete(u.Object, "data")
+	}
+
+	var (
+		buff bytes.Buffer
+		p    printers.YAMLPrinter
+	)
+	if err := p.PrintObj(o, &buff); err != nil {
+		return "", err
+	}
+
+	return buff.String(), nil
+}
+
 // SetDecodeData toggles decode mode.
 func (s *Secret) SetDecodeData(b bool) {
 	s.decodeData = b
@@ -124,12 +178,7 @@ func (s *Secret) Decode(encodedDescription, path string) (string, error) {
 // the corresponding secret data values.
 // If the conversion fails, it returns an error.
 func ExtractSecrets(o runtime.Object) (map[string]string, error) {
-	u, ok := o.(*unstructured.Unstructured)
-	if !ok {
-		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got %T", o)
-	}
-	var secret v1.Secret
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret)
+	secret, err := toSecret(o)
 	if err != nil {
 		return nil, err
 	}
@@ -139,4 +188,18 @@ func ExtractSecrets(o runtime.Object) (map[string]string, error) {
 	}
 
 	return secretData, nil
+}
+
+func toSecret(o runtime.Object) (*v1.Secret, error) {
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got %T", o)
+	}
+	var secret v1.Secret
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return &secret, nil
 }

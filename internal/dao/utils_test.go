@@ -31,6 +31,14 @@ func makeFactory() dao.Factory {
 					load("secret"),
 				},
 			},
+			"default": {
+				client.SecGVR: {
+					load("secret_mixed"),
+					load("secret_binary"),
+					load("secret_empty"),
+					load("secret_special"),
+				},
+			},
 		},
 	}
 }
