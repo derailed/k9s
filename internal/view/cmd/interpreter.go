@@ -190,6 +190,11 @@ func (c *Interpreter) IsXrayCmd() bool {
 	return xrayCmd.Has(c.cmd)
 }
 
+// IsOwnersCmd returns true if owners/owner-tree cmd is detected.
+func (c *Interpreter) IsOwnersCmd() bool {
+	return ownersCmd.Has(c.cmd)
+}
+
 // IsContextCmd returns true if context cmd is detected.
 func (c *Interpreter) IsContextCmd() bool {
 	return contextCmd.Has(c.cmd)
@@ -261,6 +266,29 @@ func (c *Interpreter) RBACArgs() (subject, verb string, ok bool) {
 // XrayArgs return the gvr and ns if any.
 func (c *Interpreter) XrayArgs() (cmd, namespace string, ok bool) {
 	if !c.IsXrayCmd() {
+		return
+	}
+	gvr, ok1 := c.args[topicKey]
+	if !ok1 {
+		return
+	}
+
+	ns, ok2 := c.args[nsKey]
+	switch {
+	case ok1 && ok2:
+		cmd, namespace, ok = gvr, ns, true
+	case ok1 && !ok2:
+		cmd, namespace, ok = gvr, "", true
+	default:
+		return
+	}
+
+	return
+}
+
+// OwnersArgs returns the gvr and optional namespace for an owners command.
+func (c *Interpreter) OwnersArgs() (cmd, namespace string, ok bool) {
+	if !c.IsOwnersCmd() {
 		return
 	}
 	gvr, ok1 := c.args[topicKey]
