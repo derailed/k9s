@@ -23,6 +23,30 @@
           "args": {
             "type": "array",
             "items": { "type": ["string", "number"] }
+          },
+          "inputs": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "label": { "type": "string" },
+                "type": { "type": "string", "enum": ["string", "number", "bool", "dropdown"] },
+                "required": { "type": "boolean" },
+                "default": { "type": ["string", "number", "boolean"] },
+                "options": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "required": ["name", "type"],
+              "if": { "required": ["default"] },
+              "then": {
+                "properties": { "required": { "const": true } },
+                "required": ["required"]
+              }
+            }
           }
         },
         "required": ["shortCut", "description", "scopes", "command"]

@@ -829,6 +829,85 @@ A plugin is defined as follows:
 * Args specifies the various arguments that should apply to the command above
 * OverwriteOutput boolean option allows plugin developers to provide custom messages on plugin stdout execution. See example in [#2644](https://github.com/derailed/k9s/pull/2644)
 * Dangerous boolean option enables disabling the plugin when read-only mode is set. See [#2604](https://github.com/derailed/k9s/issues/2604)
+* Inputs defines a list of input fields to prompt the user for before executing the plugin (see below)
+
+#### Plugin Inputs
+
+Plugins can define input fields that prompt users for values before execution. This is useful when you need dynamic values like replica counts, environment variables, or profile selections. A maximum of 5 inputs per plugin is allowed.
+
+Each input has the following properties:
+
+* `name` (required) -- the input identifier used to reference the value in args as `$INPUT_<NAME>` (uppercase)
+* `label` -- the label shown to the user in the input dialog
+* `type` (required) -- the input type: `string`, `number`, `bool`, or `dropdown`
+* `required` -- when true, the user must provide a value before the plugin can execute
+* `default` -- a default value pre-filled in the input field (must be a valid option for `dropdown`, `"true"`/`"false"` for `bool`, or a valid number for `number`)
+* `options` -- for `dropdown` type only, defines the list of available choices
+
+Input values are available in plugin args using the format `$INPUT_<NAME>` where `<NAME>` is the uppercase version of the input name.
+
+**Input Types:**
+
+| Type | Description | UI Element |
+|------|-------------|------------|
+| `string` | Free-form text input | Text field |
+| `number` | Numeric input (integers and floats) | Text field with numeric validation |
+| `bool` | Boolean toggle | Checkbox |
+| `dropdown` | Selection from predefined options | Dropdown menu |
+
+**Example:**
+
+```yaml
+plugins:
+  demo-inputs:
+    shortCut: Ctrl-Y
+    description: Demo all input types
+    scopes:
+      - po
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        echo "=== Plugin input demo ===" &&
+        echo "" &&
+        echo "Pod: $NAME" &&
+        echo "Namespace: $NAMESPACE" &&
+        echo "Context: $CONTEXT" &&
+        echo "" &&
+        echo "=== Your inputs ===" &&
+        if [ -n "$INPUT_MESSAGE" ]; then echo "Message: $INPUT_MESSAGE (set)"; else echo "Message: (not set)"; fi &&
+        if [ -n "$INPUT_COUNT" ]; then echo "Count: $INPUT_COUNT (set)"; else echo "Count: (not set)"; fi &&
+        if [ -n "$INPUT_ENABLED" ]; then echo "Enabled: $INPUT_ENABLED (set)"; else echo "Enabled: (not set)"; fi &&
+        if [ -n "$INPUT_ENVIRONMENT" ]; then echo "Environment: $INPUT_ENVIRONMENT (set)"; else echo "Environment: (not set)"; fi &&
+        echo "" &&
+        read -p "Press Enter to return to k9s..."
+    inputs:
+      - name: message
+        label: Enter a message
+        type: string
+        required: true
+        default: hello world
+      - name: count
+        label: Enter a number
+        type: number
+        required: true
+        default: 3
+      - name: enabled
+        label: Enable feature
+        type: bool
+        required: false
+        default: true
+      - name: environment
+        label: Select environment
+        type: dropdown
+        required: true
+        default: staging
+        options:
+          - development
+          - staging
+          - production
+```
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
