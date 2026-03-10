@@ -71,18 +71,16 @@ func InitConnection(config *Config, log *slog.Logger) (*APIClient, error) {
 		connOK: true,
 		log:    log.With(slogs.Subsys, "client"),
 	}
-	err := a.supportsMetricsResources()
-	if err != nil {
+	if err := a.supportsMetricsResources(); err != nil {
 		if a.HasActiveContext() {
 			slog.Warn("Fail to locate metrics-server", slogs.Error, err)
 		}
+		if !errors.Is(err, noMetricServerErr) && !errors.Is(err, metricsUnsupportedErr) {
+			a.connOK = false
+			return &a, err
+		}
 	}
-	if err == nil || errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
-		return &a, nil
-	}
-	a.connOK = false
-
-	return &a, err
+	return &a, nil
 }
 
 // ConnectionOK returns connection status.
