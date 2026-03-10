@@ -29,11 +29,12 @@ type synchronizer interface {
 
 // Configurator represents an application configuration.
 type Configurator struct {
-	Config     *config.Config
-	Styles     *config.Styles
-	customView *config.CustomView
-	BenchFile  string
-	skinFile   string
+	Config      *config.Config
+	Styles      *config.Styles
+	customView  *config.CustomView
+	customJumps *config.CustomJumps
+	BenchFile   string
+	skinFile    string
 }
 
 func (c *Configurator) CustomView() *config.CustomView {
@@ -42,6 +43,15 @@ func (c *Configurator) CustomView() *config.CustomView {
 	}
 
 	return c.customView
+}
+
+// CustomJumps returns the custom jumps configuration.
+func (c *Configurator) CustomJumps() *config.CustomJumps {
+	if c.customJumps == nil {
+		c.customJumps = config.NewCustomJumps()
+	}
+
+	return c.customJumps
 }
 
 // HasSkin returns true if a skin file was located.
@@ -93,6 +103,52 @@ func (c *Configurator) RefreshCustomViews() error {
 	c.CustomView().Reset()
 
 	return c.CustomView().Load(config.AppViewsFile)
+}
+
+// CustomJumpsWatcher watches for jump config file changes.
+func (c *Configurator) CustomJumpsWatcher(ctx context.Context, s synchronizer) error {
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			select {
+			case evt := <-w.Events:
+				if evt.Name == config.AppJumpsFile && evt.Op != fsnotify.Chmod {
+					s.QueueUpdateDraw(func() {
+						if err := c.RefreshCustomJumps(); err != nil {
+							slog.Warn("Custom jumps refresh failed", slogs.Error, err)
+						}
+					})
+				}
+			case err := <-w.Errors:
+				slog.Warn("CustomNavigations watcher failed", slogs.Error, err)
+				return
+			case <-ctx.Done():
+				slog.Debug("CustomNavigationsWatcher canceled", slogs.FileName, config.AppJumpsFile)
+				if err := w.Close(); err != nil {
+					slog.Error("Closing CustomNavigations watcher", slogs.Error, err)
+				}
+				return
+			}
+		}
+	}()
+
+	if err := w.Add(config.AppJumpsFile); err != nil {
+		return err
+	}
+	slog.Debug("Loading custom jumps", slogs.FileName, config.AppJumpsFile)
+
+	return c.RefreshCustomJumps()
+}
+
+// RefreshCustomJumps load jump configuration changes.
+func (c *Configurator) RefreshCustomJumps() error {
+	c.CustomJumps().Reset()
+
+	return c.CustomJumps().Load(config.AppJumpsFile)
 }
 
 // SkinsDirWatcher watches for skin directory file changes.
