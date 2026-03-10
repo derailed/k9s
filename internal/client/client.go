@@ -328,8 +328,8 @@ func (a *APIClient) CheckConnectivity() bool {
 		return a.getConnOK()
 	}
 
-	// Check connection
 	if _, err := client.ServerVersion(); err == nil {
+		a.setClient(client)
 		if !a.getConnOK() {
 			a.reset()
 		}
@@ -572,18 +572,16 @@ func (a *APIClient) SwitchContext(name string) error {
 	if err := a.config.SwitchContext(name); err != nil {
 		return err
 	}
-
-	if !a.CheckConnectivity() {
-		slog.Debug("No connectivity, skipping cache invalidation")
-	} else if err := a.invalidateCache(); err != nil {
-		return err
-	}
 	a.reset()
 	ResetMetrics()
-
-	// Need reload to pick up any kubeconfig changes.
 	a.config = NewConfig(a.config.flags)
+	if !a.CheckConnectivity() {
+		slog.Warn("SwitchContext: connectivity check failed", slogs.Context, name)
+	}
 
+	if _, err := a.DynDial(); err != nil {
+		slog.Warn("SwitchContext: DynDial pre-warm failed", slogs.Error, err)
+	}
 	return a.invalidateCache()
 }
 

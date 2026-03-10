@@ -150,6 +150,9 @@ func runesToNum(rr []rune) int64 {
 }
 
 func capacityToNumber(capacity string) int64 {
+	if strings.TrimSpace(capacity) == "" {
+		return 0
+	}
 	quantity := resource.MustParse(capacity)
 	return quantity.Value()
 }
