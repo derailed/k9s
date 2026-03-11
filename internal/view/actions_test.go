@@ -4,6 +4,8 @@
 package view
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"testing"
 
@@ -103,6 +105,37 @@ func TestInScope(t *testing.T) {
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, inScope(u.ss, u.aa))
+		})
+	}
+}
+
+func TestFirstError(t *testing.T) {
+	uu := map[string]struct {
+		err error
+		e   string
+	}{
+		"single": {
+			err: fmt.Errorf("boom"),
+			e:   "boom",
+		},
+		"joined": {
+			err: errors.Join(
+				fmt.Errorf("first"),
+				fmt.Errorf("second"),
+				fmt.Errorf("third"),
+			),
+			e: "first",
+		},
+		"nil": {},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			if u.err == nil {
+				assert.Nil(t, firstError(u.err))
+				return
+			}
+			assert.Equal(t, u.e, firstError(u.err).Error())
 		})
 	}
 }

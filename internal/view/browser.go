@@ -648,7 +648,7 @@ func (b *Browser) refreshActions() {
 
 	if err := pluginActions(b, b.Actions()); err != nil {
 		slog.Warn("Plugins load failed", slogs.Error, err)
-		b.app.Logo().Warn("Plugins load failed!")
+		b.app.Flash().Errf("Plugins: %s", firstError(err))
 	}
 	if err := hotKeyActions(b, b.Actions()); err != nil {
 		slog.Warn("Hotkeys load failed", slogs.Error, err)
