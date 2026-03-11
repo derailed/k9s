@@ -17,6 +17,7 @@ k9s:
     splashless: false
     reactive: false
     noIcons: false
+    invert: false
     defaultsToFullScreen: false
     useFullGVRTitle: true
   skipLatestRevCheck: false
@@ -38,6 +39,7 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     disableAutoscroll: false
+    columnLock: false
     showTime: false
   thresholds:
     cpu:

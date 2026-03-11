@@ -82,6 +82,7 @@ func (h *Help) bindKeys() {
 	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS, ui.KeySlash)
 	h.Actions().Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, true),
+		ui.KeyQ:         ui.NewKeyAction("Back", h.app.PrevCmd, false),
 		ui.KeyHelp:      ui.NewKeyAction("Back", h.app.PrevCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Back", h.app.PrevCmd, false),
 	})
@@ -101,10 +102,12 @@ func (h *Help) computeMaxes(hh model.MenuHints) {
 }
 
 func (h *Help) computeExtraMaxes(ee map[string]string) {
-	h.maxDesc = 0
-	for k := range ee {
+	for k, v := range ee {
 		if len(k) > h.maxDesc {
 			h.maxDesc = len(k)
+		}
+		if len(v) > h.maxKey {
+			h.maxKey = len(v)
 		}
 	}
 }
@@ -248,6 +251,10 @@ func (*Help) showGeneral() model.MenuHints {
 			Description: "Back/Clear",
 		},
 		{
+			Mnemonic:    "q",
+			Description: "Back",
+		},
+		{
 			Mnemonic:    "tab",
 			Description: "Field Next",
 		},
@@ -290,6 +297,14 @@ func (*Help) showGeneral() model.MenuHints {
 		{
 			Mnemonic:    "Ctrl-s",
 			Description: "Save",
+		},
+		{
+			Mnemonic:    "shift-left",
+			Description: "Select Previous Column",
+		},
+		{
+			Mnemonic:    "shift-right",
+			Description: "Select Next Column",
 		},
 	}
 }

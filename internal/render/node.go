@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -28,6 +29,11 @@ import (
 const (
 	labelNodeRolePrefix = "node-role.kubernetes.io/"
 	labelNodeRoleSuffix = "kubernetes.io/role"
+)
+
+var (
+	cordonErr   = errors.New("node is cordoned")
+	notReadyErr = errors.New("node is not ready")
 )
 
 var defaultNOHeader = model1.Header{
@@ -60,6 +66,23 @@ var defaultNOHeader = model1.Header{
 // Node renders a K8s Node to screen.
 type Node struct {
 	Base
+}
+
+// ColorerFunc colors a resource row.
+func (*Node) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
+
+		idx, ok := h.IndexOf("VALID", true)
+		if !ok {
+			return c
+		}
+		if strings.TrimSpace(re.Row.Fields[idx]) == cordonErr.Error() {
+			c = model1.PendingColor
+		}
+
+		return c
+	}
 }
 
 // Header returns a header row.
@@ -174,7 +197,7 @@ func (Node) diagnose(ss []string) error {
 			continue
 		}
 		if s == "SchedulingDisabled" {
-			return errors.New("node is cordoned")
+			return cordonErr
 		}
 		if s == "Ready" {
 			ready = true
@@ -182,7 +205,7 @@ func (Node) diagnose(ss []string) error {
 	}
 
 	if !ready {
-		return errors.New("node is not ready")
+		return notReadyErr
 	}
 
 	return nil

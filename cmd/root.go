@@ -69,9 +69,7 @@ func init() {
 // Execute root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		if !errors.As(err, &flagError{}) {
-			panic(err)
-		}
+		os.Exit(1)
 	}
 }
 
@@ -226,6 +224,12 @@ func initK9sFlags() {
 		"splashless",
 		false,
 		"Turn K9s splash screen off",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Invert,
+		"invert",
+		false,
+		"Invert skin (dark to light, light to dark), preserving colors",
 	)
 	rootCmd.Flags().BoolVarP(
 		k9sFlags.AllNamespaces,

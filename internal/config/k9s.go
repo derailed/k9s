@@ -324,6 +324,7 @@ func (k *K9s) Override(k9sFlags *Flags) {
 	k.UI.manualLogoless = k9sFlags.Logoless
 	k.UI.manualCrumbsless = k9sFlags.Crumbsless
 	k.UI.manualSplashless = k9sFlags.Splashless
+	k.UI.manualInvert = k9sFlags.Invert
 	if k9sFlags.ReadOnly != nil && *k9sFlags.ReadOnly {
 		k.manualReadOnly = k9sFlags.ReadOnly
 	}
@@ -369,6 +370,15 @@ func (k *K9s) IsSplashless() bool {
 	}
 
 	return k.UI.Splashless
+}
+
+// IsInvert returns invert setting.
+func (k *K9s) IsInvert() bool {
+	if IsBoolSet(k.UI.manualInvert) {
+		return true
+	}
+
+	return k.UI.Invert
 }
 
 // GetRefreshRate returns the current refresh rate.
