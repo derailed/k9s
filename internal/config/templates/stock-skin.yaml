@@ -52,6 +52,10 @@ k9s:
       highlightColor: aqua
       killColor: mediumpurple
       completedColor: lightslategray
+    flash:
+      infoColor: navajowhite
+      warnColor: orange
+      errorColor: orangered
   info:
     sectionColor: white
     fgColor: orange

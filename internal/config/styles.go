@@ -119,6 +119,7 @@ type (
 		Menu   Menu   `json:"menu" yaml:"menu"`
 		Crumb  Crumb  `json:"crumbs" yaml:"crumbs"`
 		Status Status `json:"status" yaml:"status"`
+		Flash  Flash  `json:"flash" yaml:"flash"`
 	}
 
 	// Views tracks individual view styles.
@@ -141,6 +142,13 @@ type (
 		HighlightColor Color `json:"highlightColor" yaml:"highlightColor"`
 		KillColor      Color `json:"killColor" yaml:"killColor"`
 		CompletedColor Color `json:"completedColor" yaml:"completedColor"`
+	}
+
+	// Flash tracks flash message styles.
+	Flash struct {
+		InfoColor  Color `json:"infoColor" yaml:"infoColor"`
+		WarnColor  Color `json:"warnColor" yaml:"warnColor"`
+		ErrorColor Color `json:"errorColor" yaml:"errorColor"`
 	}
 
 	// Log tracks Log styles.
@@ -322,6 +330,7 @@ func newFrame() Frame {
 		Menu:   newMenu(),
 		Crumb:  newCrumb(),
 		Status: newStatus(),
+		Flash:  newFlash(),
 	}
 }
 
@@ -357,6 +366,14 @@ func newStatus() Status {
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",
 		CompletedColor: "lightslategray",
+	}
+}
+
+func newFlash() Flash {
+	return Flash{
+		InfoColor:  "navajowhite",
+		WarnColor:  "orange",
+		ErrorColor: "orangered",
 	}
 }
 
@@ -549,6 +566,11 @@ func (s *Styles) Title() Title {
 	return s.Frame().Title
 }
 
+// Flash returns flash styles.
+func (s *Styles) Flash() Flash {
+	return s.Frame().Flash
+}
+
 // Charts returns charts styles.
 func (s *Styles) Charts() Charts {
 	return s.K9s.Views.Charts
@@ -638,6 +660,7 @@ func (f *Frame) Invert() {
 	f.Menu.Invert()
 	f.Crumb.Invert()
 	f.Status.Invert()
+	f.Flash.Invert()
 }
 
 // Invert inverts all colors in Title.
@@ -679,6 +702,13 @@ func (s *Status) Invert() {
 	s.HighlightColor = s.HighlightColor.InvertColor()
 	s.KillColor = s.KillColor.InvertColor()
 	s.CompletedColor = s.CompletedColor.InvertColor()
+}
+
+// Invert inverts all colors in Flash.
+func (f *Flash) Invert() {
+	f.InfoColor = f.InfoColor.InvertColor()
+	f.WarnColor = f.WarnColor.InvertColor()
+	f.ErrorColor = f.ErrorColor.InvertColor()
 }
 
 // Invert inverts all colors in Info.
