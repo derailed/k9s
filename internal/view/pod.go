@@ -366,11 +366,6 @@ func containerShellIn(a *App, comp model.Component, path, co string) error {
 	if err != nil {
 		return err
 	}
-	if dco, ok := dao.GetDefaultContainer(&pod.ObjectMeta, &pod.Spec); ok {
-		resumeShellIn(a, comp, path, dco)
-		return nil
-	}
-
 	cc := fetchContainers(&pod.ObjectMeta, &pod.Spec, false)
 	if len(cc) == 1 {
 		resumeShellIn(a, comp, path, cc[0])
