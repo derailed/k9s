@@ -135,6 +135,23 @@ func TestHistoryBack(t *testing.T) {
 	}
 }
 
+func TestCaseSensitiveHistoryPush(t *testing.T) {
+	h := model.NewCaseSensitiveHistory(5)
+	h.Push("App=MyLabel")
+	h.Push("app=mylabel")
+	h.Push("Env=Prod")
+
+	assert.Equal(t, []string{"App=MyLabel", "app=mylabel", "Env=Prod"}, h.List())
+}
+
+func TestCaseSensitiveHistoryDupCheck(t *testing.T) {
+	h := model.NewCaseSensitiveHistory(5)
+	h.Push("App=MyLabel")
+	h.Push("App=MyLabel")
+
+	assert.Equal(t, []string{"App=MyLabel"}, h.List())
+}
+
 func TestHistoryForward(t *testing.T) {
 	uu := map[string]struct {
 		push []string
