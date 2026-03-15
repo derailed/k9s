@@ -121,18 +121,20 @@ func (x *Xray) ExtraHints() map[string]string {
 func (*Xray) SetInstance(string) {}
 
 func (x *Xray) bindDangerousKeys(aa *ui.KeyActions) {
-	aa.Bulk(ui.KeyMap{
-		ui.KeyE: ui.NewKeyActionWithOpts("Edit", x.editCmd,
+	if client.Can(x.meta.Verbs, "edit") {
+		aa.Add(ui.KeyE, ui.NewKeyActionWithOpts("Edit", x.editCmd,
 			ui.ActionOpts{
 				Visible:   true,
 				Dangerous: true,
-			}),
-		tcell.KeyCtrlD: ui.NewKeyActionWithOpts("Delete", x.deleteCmd,
+			}))
+	}
+	if client.Can(x.meta.Verbs, "delete") {
+		aa.Add(tcell.KeyCtrlD, ui.NewKeyActionWithOpts("Delete", x.deleteCmd,
 			ui.ActionOpts{
 				Visible:   true,
 				Dangerous: true,
-			}),
-	})
+			}))
+	}
 }
 
 func (x *Xray) bindKeys() {
