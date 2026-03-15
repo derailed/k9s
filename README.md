@@ -820,7 +820,7 @@ The plugin file content can be either a single plugin snippet, a collections of 
 A plugin is defined as follows:
 
 * Shortcut option represents the key combination a user would type to activate the plugin. Valid values are [a-z], Shift-[A-Z], Ctrl-[A-Z].
-* Override option make that the default action related to the shortcut will be overridden by the plugin
+* Override option (`override: true`) replaces the built-in action bound to the same shortcut. Without this, a plugin whose shortcut collides with a built-in binding will be skipped and an error dialog is shown
 * Confirm option (when enabled) lets you see the command that is going to be executed and gives you an option to confirm or prevent execution
 * Description will be printed next to the shortcut in the k9s menu
 * Scopes defines a collection of resources names/short-names for the views associated with the plugin. You can specify `all` to provide this shortcut for all views.
