@@ -16,6 +16,7 @@ func loadCustomViewers() MetaViewers {
 	batchViewers(m)
 	crdViewers(m)
 	helmViewers(m)
+	kagentViewers(m)
 
 	return m
 }
@@ -143,5 +144,18 @@ func batchViewers(vv MetaViewers) {
 func crdViewers(vv MetaViewers) {
 	vv[client.CrdGVR] = MetaViewer{
 		viewerFn: NewCRD,
+	}
+}
+
+// kagentViewers registers kagent AI agent resource viewers.
+func kagentViewers(vv MetaViewers) {
+	vv[client.KAgentGVR] = MetaViewer{
+		viewerFn: NewKAgent,
+	}
+	vv[client.KModelConfigGVR] = MetaViewer{
+		viewerFn: NewKModelConfig,
+	}
+	vv[client.KToolServerGVR] = MetaViewer{
+		viewerFn: NewKToolServer,
 	}
 }

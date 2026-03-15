@@ -180,6 +180,17 @@ var Registry = map[*client.GVR]ResourceMeta{
 		Renderer: &render.StorageClass{},
 	},
 
+	// kagent - AI Agents for Kubernetes...
+	client.KAgentGVR: {
+		Renderer: new(render.KAgent),
+	},
+	client.KModelConfigGVR: {
+		Renderer: new(render.KModelConfig),
+	},
+	client.KToolServerGVR: {
+		Renderer: new(render.KToolServer),
+	},
+
 	// Policy...
 	client.PdbGVR: {
 		Renderer: &render.PodDisruptionBudget{},
