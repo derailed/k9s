@@ -132,7 +132,7 @@ func TestFirstError(t *testing.T) {
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			if u.err == nil {
-				assert.Nil(t, firstError(u.err))
+				assert.NoError(t, firstError(u.err))
 				return
 			}
 			assert.Equal(t, u.e, firstError(u.err).Error())
