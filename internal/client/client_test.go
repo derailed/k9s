@@ -195,3 +195,62 @@ func TestCheckCacheBool(t *testing.T) {
 		})
 	}
 }
+
+func TestCachedDiscoveryPathIncludesClusterName(t *testing.T) {
+	// This test verifies that the discovery cache path includes the cluster name
+	// to prevent cache pollution when multiple clusters share the same proxy URL
+	// Issue: #3828
+
+	baseCacheDir := "/home/user/.kube/cache"
+
+	tests := []struct {
+		name        string
+		serverURL   string
+		clusterName string
+	}{
+		{
+			name:        "teleport proxy with prod cluster",
+			serverURL:   "https://teleport.example.com",
+			clusterName: "prod-cluster",
+		},
+		{
+			name:        "teleport proxy with staging cluster",
+			serverURL:   "https://teleport.example.com",
+			clusterName: "staging-cluster",
+		},
+		{
+			name:        "direct API server",
+			serverURL:   "https://192.168.49.2:8443",
+			clusterName: "minikube",
+		},
+	}
+
+	// First, verify that different clusters with same server URL get different paths
+	// This is the key fix for issue #3828
+	prodPath := buildDiscoveryCacheDir(baseCacheDir, "https://teleport.example.com", "prod-cluster")
+	stagingPath := buildDiscoveryCacheDir(baseCacheDir, "https://teleport.example.com", "staging-cluster")
+
+	assert.NotEqual(t, prodPath, stagingPath,
+		"clusters with same server URL but different names must have different cache paths")
+
+	// Verify the path structure contains expected components
+	assert.Contains(t, prodPath, "discovery", "path should contain 'discovery'")
+	assert.Contains(t, prodPath, "teleport.example.com", "path should contain sanitized server URL")
+	assert.Contains(t, stagingPath, "staging", "path should contain sanitized cluster name")
+
+	// Verify all test cases
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := buildDiscoveryCacheDir(baseCacheDir, tt.serverURL, tt.clusterName)
+
+			// Verify discovery directory is in the path
+			assert.Contains(t, result, "discovery",
+				"cache path should contain 'discovery' directory")
+
+			// Verify path is deterministic (same inputs = same output)
+			result2 := buildDiscoveryCacheDir(baseCacheDir, tt.serverURL, tt.clusterName)
+			assert.Equal(t, result, result2,
+				"cache path should be deterministic for same inputs")
+		})
+	}
+}
