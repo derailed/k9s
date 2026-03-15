@@ -255,7 +255,7 @@ func executePlugin(r Runner, p *config.Plugin, inputValues dialog.PluginInputVal
 			}
 		}()
 	}
-	if p.Confirm {
+	if p.ShouldConfirm() {
 		msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
 		d := r.App().Styles.Dialog()
 		dialog.ShowConfirm(&d, r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
