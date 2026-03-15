@@ -263,16 +263,3 @@ func executePlugin(r Runner, p *config.Plugin, inputValues dialog.PluginInputVal
 	}
 	cb()
 }
-
-// firstError extracts the first error from a joined error chain.
-func firstError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if me, ok := err.(interface{ Unwrap() []error }); ok {
-		if ee := me.Unwrap(); len(ee) > 0 {
-			return ee[0]
-		}
-	}
-	return err
-}
