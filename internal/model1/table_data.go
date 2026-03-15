@@ -84,11 +84,11 @@ func NewTableDataFromTable(td *TableData) *TableData {
 	return t
 }
 
-func (t *TableData) AddRow(re RowEvent) {
+func (t *TableData) AddRow(re *RowEvent) {
 	t.rowEvents.Add(re)
 }
 
-func (t *TableData) SetRow(idx int, re RowEvent) {
+func (t *TableData) SetRow(idx int, re *RowEvent) {
 	t.rowEvents.Set(idx, re)
 }
 
@@ -112,6 +112,7 @@ func (t *TableData) Sort(sc SortColumn) {
 	t.rowEvents.Sort(
 		t.GetNamespace(),
 		idx,
+		sc.Name,
 		col.Time,
 		col.MX,
 		col.Capacity,
@@ -188,7 +189,7 @@ func (t *TableData) rxFilter(q string, inverse bool) (*RowEvents, error) {
 		}
 		match := rx.MatchString(strings.Join(ff, spacer))
 		if (inverse && !match) || (!inverse && match) {
-			rr.Add(re)
+			rr.Add(&re)
 		}
 
 		return true
@@ -211,7 +212,7 @@ func (t *TableData) fuzzyFilter(q string) *RowEvents {
 		if re, ok := t.rowEvents.At(m.Index); !ok {
 			slog.Error("Unable to find event for index in fuzzfilter", slogs.Index, m.Index)
 		} else {
-			rr.Add(re)
+			rr.Add(&re)
 		}
 	}
 
@@ -226,7 +227,7 @@ func (t *TableData) filterToast() *RowEvents {
 	}
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
 		if re.Row.Fields[idx] != "" {
-			rr.Add(re)
+			rr.Add(&re)
 		}
 		return true
 	})
@@ -430,7 +431,8 @@ func (t *TableData) Update(rows Rows) {
 	for _, row := range rows {
 		kk.Insert(row.ID)
 		if empty {
-			t.rowEvents.Add(NewRowEvent(EventAdd, row))
+			ev := NewRowEvent(EventAdd, row)
+			t.rowEvents.Add(&ev)
 			continue
 		}
 		if index, ok := t.rowEvents.FindIndex(row.ID); ok {
@@ -441,13 +443,15 @@ func (t *TableData) Update(rows Rows) {
 			delta := NewDeltaRow(ev.Row, row, t.header)
 			if delta.IsBlank() {
 				ev.Kind, ev.Deltas, ev.Row = EventUnchanged, blankDelta, row
-				t.rowEvents.Set(index, ev)
+				t.rowEvents.Set(index, &ev)
 			} else {
-				t.rowEvents.Set(index, NewRowEventWithDeltas(row, delta))
+				nev := NewRowEventWithDeltas(row, delta)
+				t.rowEvents.Set(index, &nev)
 			}
 			continue
 		}
-		t.rowEvents.Add(NewRowEvent(EventAdd, row))
+		ev := NewRowEvent(EventAdd, row)
+		t.rowEvents.Add(&ev)
 	}
 	t.mx.Unlock()
 

@@ -34,6 +34,11 @@ func (*Base) IsGeneric() bool {
 }
 
 func (b *Base) doHeader(dh model1.Header) model1.Header {
+	for i := range dh {
+		if dh[i].Time && dh[i].Decorator == nil {
+			dh[i].Decorator = toAgeHuman
+		}
+	}
 	if b.specs.isEmpty() {
 		return dh
 	}

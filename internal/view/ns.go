@@ -76,7 +76,7 @@ func (n *Namespace) decorate(td *model1.TableData) {
 	}
 	// checks if all ns is in the list if not add it.
 	if _, ok := td.FindRow(client.NamespaceAll); !ok {
-		td.AddRow(model1.RowEvent{
+		td.AddRow(&model1.RowEvent{
 			Kind: model1.EventUnchanged,
 			Row: model1.Row{
 				ID:     client.NamespaceAll,
@@ -99,7 +99,7 @@ func (n *Namespace) decorate(td *model1.TableData) {
 			re.Row.Fields[0] += defaultNSIndicator
 		}
 		re.Kind = model1.EventUnchanged
-		td.SetRow(i, re)
+		td.SetRow(i, &re)
 		return true
 	})
 }

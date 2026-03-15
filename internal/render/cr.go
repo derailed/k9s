@@ -65,6 +65,7 @@ func (ClusterRole) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 		mapToStr(cr.Labels),
 		ToAge(cr.GetCreationTimestamp()),
 	}
+	StashAge(r, "AGE", cr.GetCreationTimestamp())
 
 	return nil
 }

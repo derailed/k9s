@@ -45,8 +45,8 @@ func (Benchmark) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Benchmark) Header(string) model1.Header {
-	return model1.Header{
+func (b Benchmark) Header(string) model1.Header {
+	return b.doHeader(model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "STATUS"},
@@ -57,7 +57,7 @@ func (Benchmark) Header(string) model1.Header {
 		model1.HeaderColumn{Name: "REPORT"},
 		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	})
 }
 
 // Render renders a K8s resource to screen.
@@ -79,6 +79,7 @@ func (b Benchmark) Render(o any, ns string, r *model1.Row) error {
 	}
 	b.augmentRow(r.Fields, data)
 	r.Fields[8] = AsStatus(b.diagnose(ns, r.Fields))
+	StashAge(r, "AGE", metav1.Time{Time: bench.File.ModTime()})
 
 	return nil
 }

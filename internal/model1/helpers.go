@@ -10,6 +10,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/fvbommel/sortorder"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -178,8 +179,32 @@ func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 }
 
 func lessDuration(s1, s2 string) bool {
+	// Try timestamps first for full-precision comparison.
+	t1, e1 := time.Parse(time.RFC3339, s1)
+	t2, e2 := time.Parse(time.RFC3339, s2)
+	if e1 == nil && e2 == nil {
+		return !t1.Before(t2)
+	}
+
+	// Fall back to humanized duration parsing.
 	d1, d2 := durationToSeconds(s1), durationToSeconds(s2)
 	return d1 <= d2
+}
+
+// lessTimestamp compares two rows by stashed timestamps for the given column name.
+// Returns (less, true) if both rows have a stashed timestamp, or (false, false) to
+// signal the caller to fall back to string-based comparison.
+func lessTimestamp(r1, r2 Row, colName, id1, id2 string) (less, ok bool) {
+	t1, ok1 := r1.Timestamps[colName]
+	t2, ok2 := r2.Timestamps[colName]
+	if !ok1 || !ok2 {
+		return false, false
+	}
+	if t1.Equal(t2) {
+		return sortorder.NaturalLess(id1, id2), true
+	}
+	// Newer timestamp means younger (smaller age).
+	return !t1.Before(t2), true
 }
 
 func lessCapacity(s1, s2 string) bool {

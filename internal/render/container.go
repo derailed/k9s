@@ -72,8 +72,8 @@ func (Container) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Container) Header(_ string) model1.Header {
-	return defaultCOHeader
+func (c Container) Header(_ string) model1.Header {
+	return c.doHeader(defaultCOHeader)
 }
 
 // Header returns a header row.
@@ -140,6 +140,7 @@ func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
 		AsStatus(c.diagnose(state, ready)),
 		ToAge(cr.Age),
 	}
+	StashAge(r, "AGE", cr.Age)
 
 	return nil
 }

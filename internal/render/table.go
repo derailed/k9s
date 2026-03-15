@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
@@ -112,10 +113,12 @@ func (t *Table) Render(o any, ns string, r *model1.Row) error {
 func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error {
 	th := t.header
 	ons, name := ns, UnknownValue
+	var creationTS metav1.Time
 	switch {
 	case row.Object.Object != nil:
 		if m, _ := meta.Accessor(row.Object.Object); m != nil {
 			ons, name = m.GetNamespace(), m.GetName()
+			creationTS = m.GetCreationTimestamp()
 		}
 	case row.Object.Raw != nil:
 		var pm metav1.PartialObjectMetadata
@@ -123,6 +126,7 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 			return err
 		}
 		ons, name = pm.Namespace, pm.Name
+		creationTS = pm.CreationTimestamp
 	default:
 		if idx, ok := th.IndexOf("NAME", true); ok && idx >= 0 && idx < len(row.Cells) {
 			name = row.Cells[idx].(string)
@@ -131,6 +135,19 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 			ons = row.Cells[idx].(string)
 		}
 	}
+
+	timeCols := make(map[int]string, 4)
+	for i, c := range t.table.ColumnDefinitions {
+		if c.Name == ageTableCol {
+			continue
+		}
+		if ageCols.Has(c.Name) {
+			timeCols[i] = c.Name
+		}
+	}
+
+	// Try to extract event timestamps from the raw object for Last Seen / First Seen.
+	eventTimes := extractEventTimes(row)
 
 	if client.IsClusterWide(ons) {
 		ons = client.ClusterScope
@@ -150,14 +167,70 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 			r.Fields = append(r.Fields, Blank)
 			continue
 		}
+		// For time columns, try to use an RFC3339 timestamp for stable sorting.
+		if colName, ok := timeCols[i]; ok {
+			if ts, ok := eventTimes[colName]; ok {
+				r.Fields = append(r.Fields, ts.Format(time.RFC3339))
+				continue
+			}
+		}
 		r.Fields = append(r.Fields, fmt.Sprintf("%v", c))
 	}
-	if d, ok := age.(string); ok {
-		r.Fields = append(r.Fields, d)
-	} else if ageIdx > 0 {
-		slog.Warn("No Duration detected on age field")
-		r.Fields = append(r.Fields, NAValue)
+	// For the separated Age column, prefer the creation timestamp from the raw object.
+	if ageIdx > 0 {
+		if !creationTS.IsZero() {
+			r.Fields = append(r.Fields, ToAge(creationTS))
+		} else if d, ok := age.(string); ok {
+			r.Fields = append(r.Fields, d)
+		} else {
+			slog.Warn("No Duration detected on age field")
+			r.Fields = append(r.Fields, NAValue)
+		}
+	}
+
+	// Stash the creation timestamp for stable age sorting.
+	if ageIdx > 0 && !creationTS.IsZero() {
+		StashAge(r, "AGE", creationTS)
 	}
 
 	return nil
+}
+
+// extractEventTimes tries to extract event timestamps from a table row's raw
+// object for more precise sorting of Last Seen / First Seen columns.
+func extractEventTimes(row *metav1.TableRow) map[string]time.Time {
+	times := make(map[string]time.Time, 2)
+
+	var raw []byte
+	switch {
+	case row.Object.Object != nil:
+		b, err := json.Marshal(row.Object.Object)
+		if err != nil {
+			return times
+		}
+		raw = b
+	case row.Object.Raw != nil:
+		raw = row.Object.Raw
+	default:
+		return times
+	}
+
+	var obj struct {
+		LastTimestamp  metav1.Time `json:"lastTimestamp"`
+		FirstTimestamp metav1.Time `json:"firstTimestamp"`
+		EventTime      metav1.Time `json:"eventTime"`
+	}
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return times
+	}
+	if !obj.LastTimestamp.IsZero() {
+		times["Last Seen"] = obj.LastTimestamp.Time
+	} else if !obj.EventTime.IsZero() {
+		times["Last Seen"] = obj.EventTime.Time
+	}
+	if !obj.FirstTimestamp.IsZero() {
+		times["First Seen"] = obj.FirstTimestamp.Time
+	}
+
+	return times
 }

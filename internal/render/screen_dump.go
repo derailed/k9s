@@ -11,9 +11,9 @@ import (
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 // ScreenDump renders a screendumps to screen.
@@ -29,13 +29,13 @@ func (ScreenDump) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (ScreenDump) Header(string) model1.Header {
-	return model1.Header{
+func (s ScreenDump) Header(string) model1.Header {
+	return s.doHeader(model1.Header{
 		model1.HeaderColumn{Name: "NAME"},
 		model1.HeaderColumn{Name: "DIR"},
 		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
 		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
-	}
+	})
 }
 
 // Render renders a K8s resource to screen.
@@ -52,6 +52,7 @@ func (ScreenDump) Render(o any, _ string, r *model1.Row) error {
 		"",
 		timeToAge(f.File.ModTime()),
 	}
+	StashAge(r, "AGE", metav1.Time{Time: f.File.ModTime()})
 
 	return nil
 }
@@ -60,7 +61,7 @@ func (ScreenDump) Render(o any, _ string, r *model1.Row) error {
 // Helpers...
 
 func timeToAge(timestamp time.Time) string {
-	return duration.HumanDuration(time.Since(timestamp))
+	return timestamp.Format(time.RFC3339)
 }
 
 // FileRes represents a file resource.

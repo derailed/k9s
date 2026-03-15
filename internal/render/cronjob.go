@@ -93,6 +93,10 @@ func (CronJob) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 		"",
 		ToAge(cj.GetCreationTimestamp()),
 	}
+	if cj.Status.LastScheduleTime != nil {
+		StashAge(r, "LAST_SCHEDULE", *cj.Status.LastScheduleTime)
+	}
+	StashAge(r, "AGE", cj.GetCreationTimestamp())
 
 	return nil
 }

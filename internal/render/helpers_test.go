@@ -90,6 +90,10 @@ func TestToAgeHuman(t *testing.T) {
 			t: time.Now().Add(-10 * time.Second).Format(time.RFC3339Nano),
 			e: "10s",
 		},
+		"already-humanized": {
+			t: "3d9h",
+			e: "3d9h",
+		},
 	}
 
 	for k := range uu {
