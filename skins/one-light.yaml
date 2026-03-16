@@ -1,0 +1,114 @@
+# -----------------------------------------------------------------------------
+# OneLight Skin
+# -----------------------------------------------------------------------------
+
+# Styles...
+foreground: &foreground "#383a42"
+background: &background "#fafafa"
+white: &white "#ffffff"
+blue: &blue "#4078f2"
+green: &green "#50a14f"
+grey: &grey "#a0a1a7"
+orange: &orange "#c18401"
+purple: &purple "#a626a4"
+red: &red "#e45649"
+cyan: &cyan "#0184bc"
+highlight: &highlight "#e5e5e6"
+
+# Skin...
+k9s:
+  body:
+    fgColor: *foreground
+    bgColor: *background
+    logoColor: *blue
+  prompt:
+    fgColor: *foreground
+    bgColor: *background
+    suggestColor: *orange
+  info:
+    fgColor: *grey
+    sectionColor: *blue
+  help:
+    fgColor: *foreground
+    bgColor: *background
+    keyColor: *orange
+    numKeyColor: *blue
+    sectionColor: *purple
+  dialog:
+    fgColor: *foreground
+    bgColor: *background
+    buttonFgColor: *white
+    buttonBgColor: *blue
+    buttonFocusFgColor: *white
+    buttonFocusBgColor: *cyan
+    labelFgColor: *orange
+    fieldFgColor: *blue
+  frame:
+    border:
+      fgColor: *highlight
+      focusColor: *blue
+    menu:
+      fgColor: *grey
+      keyColor: *orange
+      numKeyColor: *orange
+    crumbs:
+      fgColor: *white
+      bgColor: *blue
+      activeColor: *orange
+    status:
+      newColor: *cyan
+      modifyColor: *blue
+      addColor: *grey
+      pendingColor: *orange
+      errorColor: *red
+      highlightColor: *orange
+      killColor: *purple
+      completedColor: *grey
+    title:
+      fgColor: *blue
+      bgColor: *background
+      highlightColor: *purple
+      counterColor: *foreground
+      filterColor: *blue
+  views:
+    charts:
+      bgColor: *background
+      defaultDialColors:
+        - *blue
+        - *red
+      defaultChartColors:
+        - *blue
+        - *red
+    table:
+      fgColor: *foreground
+      bgColor: *background
+      cursorFgColor: *white
+      cursorBgColor: *blue
+      markColor: *orange
+      header:
+        fgColor: *grey
+        bgColor: *background
+        sorterColor: *cyan
+    xray:
+      fgColor: *blue
+      bgColor: *background
+      cursorColor: *foreground
+      graphicColor: *orange
+      showIcons: false
+    yaml:
+      keyColor: *red
+      colonColor: *grey
+      valueColor: *foreground
+    logs:
+      fgColor: *foreground
+      bgColor: *background
+      indicator:
+        fgColor: *blue
+        bgColor: *background
+        toggleOnColor: *red
+        toggleOffColor: *grey
+    help:
+      fgColor: *grey
+      bgColor: *background
+      indicator:
+        fgColor: *blue
