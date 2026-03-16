@@ -93,7 +93,7 @@ func (t *OwnerTree) SetFilter(q string) {
 }
 
 // ToYAML returns the YAML representation of the given resource.
-func (t *OwnerTree) ToYAML(ctx context.Context, gvr *client.GVR, path string) (string, error) {
+func (*OwnerTree) ToYAML(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return "", fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
@@ -105,7 +105,7 @@ func (t *OwnerTree) ToYAML(ctx context.Context, gvr *client.GVR, path string) (s
 }
 
 // Describe returns a textual description of the given resource.
-func (t *OwnerTree) Describe(ctx context.Context, gvr *client.GVR, path string) (string, error) {
+func (*OwnerTree) Describe(ctx context.Context, gvr *client.GVR, path string) (string, error) {
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return "", fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
@@ -165,17 +165,12 @@ func (t *OwnerTree) reconcile(ctx context.Context) error {
 
 	// Step 1 & 2: build the reverse ownerRef index.
 	indexStart := time.Now()
-	ownerIndex, err := buildOwnerIndex(factory, ns)
-	slog.Debug("OwnerTree: buildOwnerIndex", "duration", time.Since(indexStart), "entries", len(ownerIndex))
-	if err != nil {
-		// Non-fatal — we still try to build the tree with what we have.
-		slog.Warn("OwnerTree: partial index build error", slogs.Error, err)
-	}
-
+	ownerIndex := buildOwnerIndex(factory, ns)
+	slog.Debug("OwnerTree: buildOwnerIndex", slogs.Duration, time.Since(indexStart), slogs.Entries, len(ownerIndex))
 	// Step 3: list root resources from the informer cache (no direct API call).
 	listStart := time.Now()
 	rootObjs, err := factory.List(t.gvr, ns, false, labels.Everything())
-	slog.Debug("OwnerTree: factory.List root GVR", slogs.GVR, t.gvr, "duration", time.Since(listStart), "count", len(rootObjs))
+	slog.Debug("OwnerTree: factory.List root GVR", slogs.GVR, t.gvr, slogs.Duration, time.Since(listStart), slogs.Count, len(rootObjs))
 	if err != nil {
 		return fmt.Errorf("listing root GVR %s: %w", t.gvr, err)
 	}
@@ -189,7 +184,7 @@ func (t *OwnerTree) reconcile(ctx context.Context) error {
 			continue
 		}
 		nodeFQN := resourceFQN(u)
-		slog.Info("OwnerTree: root resource", "fqn", nodeFQN, "uid", u.GetUID(), "childrenInIndex", len(ownerIndex[u.GetUID()]))
+		slog.Info("OwnerTree: root resource", slogs.FQN, nodeFQN, slogs.UID, u.GetUID(), slogs.ChildrenInIndex, len(ownerIndex[u.GetUID()]))
 		node := xray.NewTreeNode(t.gvr, nodeFQN)
 		setOwnerNodeStatus(node, u)
 		buildOwnerChildren(node, u.GetUID(), ownerIndex)
@@ -224,7 +219,7 @@ func (t *OwnerTree) reconcile(ctx context.Context) error {
 // informer lister cache (in-memory, no network calls). Resources whose
 // informer is not yet synced are silently skipped — they will appear on
 // the next reconcile cycle once the watch stream has caught up.
-func buildOwnerIndex(factory dao.Factory, ns string) (map[types.UID][]*unstructured.Unstructured, error) {
+func buildOwnerIndex(factory dao.Factory, ns string) map[types.UID][]*unstructured.Unstructured {
 	totalStart := time.Now()
 
 	// Collect all namespaced, listable GVRs first.
@@ -287,8 +282,8 @@ func buildOwnerIndex(factory dao.Factory, ns string) (map[types.UID][]*unstructu
 		"objects", totalObjs,
 		"entries", len(index),
 	)
-	slog.Debug("OwnerTree: buildOwnerIndex total", "duration", time.Since(totalStart))
-	return index, nil
+	slog.Debug("OwnerTree: buildOwnerIndex total", slogs.Duration, time.Since(totalStart))
+	return index
 }
 
 // buildOwnerChildren recursively adds children to a tree node using the
