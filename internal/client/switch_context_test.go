@@ -207,3 +207,38 @@ func TestInitConnectionStoresDialClient(t *testing.T) {
 	assert.NotNil(t, a.getClient(),
 		"InitConnection should store a Dial client for reuse")
 }
+
+func TestInitConnectionBrokenDiscoveryButReachable(t *testing.T) {
+	// Simulate a scenario where discovery (e.g. /apis) fails (stale cache, corrupt
+	// response, etc.) but the cluster is otherwise reachable via /version.
+	mux := http.NewServeMux()
+	mux.HandleFunc("/version", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(version.Info{
+			Major:      "1",
+			Minor:      "28",
+			GitVersion: "v1.28.0",
+		})
+	})
+	mux.HandleFunc("/api", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"kind":"APIVersions","versions":["v1"]}`))
+	})
+	mux.HandleFunc("/apis", func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "simulated stale discovery failure", http.StatusInternalServerError)
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	t.Setenv("HOME", t.TempDir())
+
+	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
+	flags := genericclioptions.NewConfigFlags(false)
+	flags.KubeConfig = &kubeconfig
+	ctx := testContext1
+	flags.Context = &ctx
+
+	a, err := InitConnection(NewConfig(flags), slog.Default())
+	require.NoError(t, err)
+	assert.True(t, a.ConnectionOK(),
+		"InitConnection should remain connected when discovery fails but cluster is reachable")
+}

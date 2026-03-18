@@ -74,8 +74,10 @@ func InitConnection(config *Config, log *slog.Logger) (*APIClient, error) {
 	if err := a.supportsMetricsResources(); err != nil {
 		slog.Warn("Fail to locate metrics-server", slogs.Error, err)
 		if !errors.Is(err, noMetricServerErr) && !errors.Is(err, metricsUnsupportedErr) {
-			a.connOK = false
-			return &a, err
+			if !a.CheckConnectivity() {
+				return &a, err
+			}
+			slog.Warn("Metrics discovery failed but cluster is reachable, continuing", slogs.Error, err)
 		}
 	}
 	return &a, nil
