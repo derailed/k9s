@@ -205,6 +205,11 @@ func (c *Interpreter) IsDirCmd() bool {
 	return dirCmd.Has(c.cmd)
 }
 
+// IsFilterCmd returns true if filter cmd is detected.
+func (c *Interpreter) IsFilterCmd() bool {
+	return filterCmd.Has(c.cmd)
+}
+
 // IsRBACCmd returns true if rbac cmd is detected.
 func (c *Interpreter) IsRBACCmd() bool {
 	return c.cmd == canCmd

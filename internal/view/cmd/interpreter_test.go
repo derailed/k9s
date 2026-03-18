@@ -198,6 +198,53 @@ func TestClearNS(t *testing.T) {
 	}
 }
 
+func TestIsFilterCmd(t *testing.T) {
+	uu := map[string]struct {
+		cmd    string
+		ok     bool
+		filter string
+	}{
+		"empty": {},
+		"plain": {
+			cmd: "filter",
+			ok:  true,
+		},
+		"with-arg": {
+			cmd:    "filter !Completed",
+			ok:     true,
+			filter: "!completed",
+		},
+		"with-slash-arg": {
+			cmd:    "filter /fred",
+			ok:     true,
+			filter: "fred",
+		},
+		"toast": {
+			cmd: "filterable",
+		},
+		"toast-other": {
+			cmd: "pod",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			assert.Equal(t, u.ok, p.IsFilterCmd())
+			if u.ok {
+				f, ok := p.FilterArg()
+				if u.filter != "" {
+					assert.True(t, ok)
+					assert.Equal(t, u.filter, f)
+				} else {
+					assert.False(t, ok)
+				}
+			}
+		})
+	}
+}
+
 func TestFilterCmd(t *testing.T) {
 	uu := map[string]struct {
 		cmd    string

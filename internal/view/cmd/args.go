@@ -71,6 +71,9 @@ func newArgs(p *Interpreter, aa []string) args {
 					arguments[topicKey] = strings.ToLower(a)
 				}
 
+			case p.IsFilterCmd():
+				arguments[filterKey] = strings.ToLower(a)
+
 			default:
 				arguments[nsKey] = strings.ToLower(a)
 			}

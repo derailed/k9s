@@ -74,4 +74,7 @@ var (
 		"xr",
 		"xray",
 	)
+	filterCmd = sets.New(
+		"filter",
+	)
 )

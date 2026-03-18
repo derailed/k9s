@@ -6,10 +6,59 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func newTestBrowser() ResourceViewer {
+	b := NewBrowser(client.PodGVR).(*Browser)
+	b.meta = &metav1.APIResource{Kind: "Pod"}
+
+	return NewScaleExtender(NewOwnerExtender(b))
+}
+
+func TestFilterCmd(t *testing.T) {
+	uu := map[string]struct {
+		cmd    string
+		filter string
+	}{
+		"no-filter": {
+			cmd: "filter",
+		},
+		"with-arg": {
+			cmd:    "filter !Completed",
+			filter: "!completed",
+		},
+		"with-slash-arg": {
+			cmd:    "filter /fred",
+			filter: "fred",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			a := NewApp(mock.NewMockConfig(t))
+			comp := newTestBrowser()
+			a.Content.Push(comp)
+
+			c := &Command{app: a}
+			p := cmd.NewInterpreter(u.cmd)
+			c.filterCmd(p)
+
+			buff := comp.(TableViewer).GetTable().CmdBuff()
+			if u.filter != "" {
+				assert.Equal(t, u.filter, buff.GetText())
+				assert.False(t, buff.IsActive())
+			} else {
+				assert.True(t, buff.IsActive())
+			}
+		})
+	}
+}
 
 func Test_viewMetaFor(t *testing.T) {
 	uu := map[string]struct {

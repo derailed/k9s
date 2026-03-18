@@ -267,8 +267,32 @@ func (c *Command) defaultCmd(isRoot bool) error {
 	return nil
 }
 
+func (c *Command) filterCmd(p *cmd.Interpreter) {
+	comp := c.app.Content.Current()
+	if comp == nil {
+		return
+	}
+	if c.app.InCmdMode() {
+		return
+	}
+	tv, ok := comp.(TableViewer)
+	if !ok {
+		return
+	}
+	buff := tv.GetTable().CmdBuff()
+	filter, hasFilter := p.FilterArg()
+	if hasFilter {
+		buff.SetText(filter, "", true)
+		buff.SetActive(false)
+	} else {
+		c.app.ResetPrompt(buff)
+	}
+}
+
 func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 	switch {
+	case p.IsFilterCmd():
+		c.filterCmd(p)
 	case p.IsCowCmd():
 		if msg, ok := p.CowArg(); !ok {
 			c.app.Flash().Errf("Invalid command. Use `cow xxx`")
