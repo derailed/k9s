@@ -6,7 +6,6 @@ package view
 import (
 	"encoding/base64"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -17,10 +16,15 @@ import (
 const (
 	clipboardModeEnv = "K9S_CLIPBOARD"
 	osc52MaxEnv      = "K9S_OSC52_MAX"
+	termEnv          = "TERM"
+	tmuxEnv          = "TMUX"
 
 	clipboardModeAuto   = "auto"
 	clipboardModeNative = "native"
 	clipboardModeOSC52  = "osc52"
+
+	dumbTerm         = "dumb"
+	screenTermPrefix = "screen"
 
 	defaultOSC52MaxEncodedLen = 74994
 )
@@ -36,18 +40,11 @@ func clipboardWrite(text string) error {
 	case clipboardModeOSC52:
 		return writeOSC52(text)
 	default:
-		err := clipboard.WriteAll(text)
-		if err == nil {
-			return nil
-		}
-		if !canTryOSC52() {
-			return err
-		}
-		if oscErr := writeOSC52(text); oscErr == nil {
+		if err := clipboard.WriteAll(text); err == nil {
 			return nil
 		}
 
-		return err
+		return writeOSC52(text)
 	}
 }
 
@@ -69,7 +66,12 @@ func canTryOSC52() bool {
 	if !isTTY(os.Stdout) {
 		return false
 	}
-	return strings.ToLower(strings.TrimSpace(os.Getenv("TERM"))) != "dumb"
+
+	return termValue() != dumbTerm
+}
+
+func termValue() string {
+	return strings.ToLower(strings.TrimSpace(os.Getenv(termEnv)))
 }
 
 func isTTY(f *os.File) bool {
@@ -85,13 +87,18 @@ func isTTY(f *os.File) bool {
 }
 
 func writeOSC52(text string) error {
+	if !canTryOSC52() {
+		return fmt.Errorf("osc52 clipboard unavailable: stdout is not a tty or TERM=dumb")
+	}
+
 	encoded := base64.StdEncoding.EncodeToString([]byte(text))
 	maxLen := osc52MaxEncodedLen()
 	if len(encoded) > maxLen {
 		return fmt.Errorf("osc52 payload exceeds encoded size limit (%d > %d)", len(encoded), maxLen)
 	}
 
-	seq := osc52Sequence(encoded, os.Getenv("TMUX") != "", strings.HasPrefix(strings.ToLower(os.Getenv("TERM")), "screen"))
+	term := termValue()
+	seq := osc52Sequence(encoded, os.Getenv(tmuxEnv) != "", strings.HasPrefix(term, screenTermPrefix))
 	_, err := os.Stdout.WriteString(seq)
 
 	return err
