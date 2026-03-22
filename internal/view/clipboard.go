@@ -92,7 +92,7 @@ func writeOSC52(text string) error {
 	}
 
 	seq := osc52Sequence(encoded, os.Getenv("TMUX") != "", strings.HasPrefix(strings.ToLower(os.Getenv("TERM")), "screen"))
-	_, err := io.WriteString(os.Stdout, seq)
+	_, err := os.Stdout.WriteString(seq)
 
 	return err
 }
