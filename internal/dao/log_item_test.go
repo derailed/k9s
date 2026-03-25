@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -129,4 +130,21 @@ func BenchmarkLogItemRenderNoTS(b *testing.B) {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
 		i.Render("yellow", false, bb)
 	}
+}
+func TestLogItemRenderWithLocalTime(t *testing.T) {
+	origLocal := time.Local
+	time.Local = time.FixedZone("FakeLocal", 5*60*60) 
+	defer func() { time.Local = origLocal }() 
+
+	logLine := fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972Z", "Testing local time conversion...")
+	i := dao.NewLogItem([]byte(tview.Escape(logLine)))
+	i.Pod, i.Container = "fred", "blee"
+
+	bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
+	
+	i.RenderWithLocalTime("yellow", true, true, bb)
+
+	expected := "[gray::b]2018-12-14T15:36:43.326972+05:00    [-::-][yellow::]fred [yellow::b]blee[-::-] Testing local time conversion...\n"
+	
+	assert.Equal(t, expected, bb.String())
 }
