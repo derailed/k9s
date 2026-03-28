@@ -8,14 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	res "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
-
-	"github.com/derailed/k9s/internal/client"
 )
 
 func Test_checkInitContainerStatus(t *testing.T) {
@@ -821,8 +820,8 @@ func Test_initContainerStats(t *testing.T) {
 	always := v1.ContainerRestartPolicyAlways
 
 	uu := map[string]struct {
-		cc                              []v1.Container
-		cos                             []v1.ContainerStatus
+		cc                       []v1.Container
+		cos                      []v1.ContainerStatus
 		eReady, eTotal, eRestart int
 	}{
 		"sidecar-ready": {
@@ -853,7 +852,7 @@ func Test_initContainerStats(t *testing.T) {
 			eReady: 1, eTotal: 1,
 		},
 		"more-statuses-than-containers": {
-			cc:  []v1.Container{},
+			cc: []v1.Container{},
 			cos: []v1.ContainerStatus{
 				{Name: "gone", Ready: true},
 			},
