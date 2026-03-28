@@ -26,6 +26,7 @@ type LogOptions struct {
 	SingleContainer  bool
 	MultiPods        bool
 	ShowTimestamp    bool
+	ShowLocalTime    bool
 	AllContainers    bool
 }
 
@@ -50,6 +51,7 @@ func (o *LogOptions) Clone() *LogOptions {
 		SingleContainer:  o.SingleContainer,
 		MultiPods:        o.MultiPods,
 		ShowTimestamp:    o.ShowTimestamp,
+		ShowLocalTime:    o.ShowLocalTime,
 		SinceTime:        o.SinceTime,
 		SinceSeconds:     o.SinceSeconds,
 		AllContainers:    o.AllContainers,
