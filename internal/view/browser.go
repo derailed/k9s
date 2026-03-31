@@ -652,8 +652,10 @@ func (b *Browser) refreshActions() {
 		slog.Warn("Plugins load failed", slogs.Error, err)
 		if b.pluginErrShown.CompareAndSwap(0, 1) {
 			d := b.app.Styles.Dialog()
-			dialog.ShowError(&d, b.app.Content.Pages, err.Error())
+			dialog.ShowError(&d, b.app.Content.Pages, truncErrs(err, maxDialogErrs))
 		}
+	} else {
+		b.pluginErrShown.Store(0)
 	}
 	if err := hotKeyActions(b, b.Actions()); err != nil {
 		slog.Warn("Hotkeys load failed", slogs.Error, err)

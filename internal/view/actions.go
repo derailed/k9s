@@ -263,3 +263,20 @@ func executePlugin(r Runner, p *config.Plugin, inputValues dialog.PluginInputVal
 	}
 	cb()
 }
+
+const maxDialogErrs = 3
+
+func truncErrs(err error, max int) string {
+	if me, ok := err.(interface{ Unwrap() []error }); ok {
+		ee := me.Unwrap()
+		if len(ee) <= max {
+			return err.Error()
+		}
+		msgs := make([]string, max)
+		for i := range max {
+			msgs[i] = ee[i].Error()
+		}
+		return strings.Join(msgs, "\n") + fmt.Sprintf("\n...and %d more (check logs)", len(ee)-max)
+	}
+	return err.Error()
+}
