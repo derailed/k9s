@@ -72,6 +72,7 @@ func (e EndpointSlice) defaultRow(o any, ns string, r *model1.Row) error {
 		toEPss(eps.Endpoints),
 		ToAge(eps.GetCreationTimestamp()),
 	}
+	r.Age = eps.GetCreationTimestamp().Time
 
 	return nil
 }

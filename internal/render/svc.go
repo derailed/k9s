@@ -81,6 +81,7 @@ func (s Service) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error
 		AsStatus(s.diagnose()),
 		ToAge(svc.GetCreationTimestamp()),
 	}
+	r.Age = svc.GetCreationTimestamp().Time
 
 	return nil
 }

@@ -163,6 +163,7 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 		AsStatus(n.diagnose(statuses)),
 		ToAge(no.GetCreationTimestamp()),
 	}
+	r.Age = no.GetCreationTimestamp().Time
 
 	return nil
 }
