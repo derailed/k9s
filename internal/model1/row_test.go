@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
@@ -334,37 +333,37 @@ func TestRowsSortDuration(t *testing.T) {
 		},
 		"years": {
 			rows: model1.Rows{
-				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},
-				{Fields: []string{testTime().String(), "duh"}},
+				{Fields: []string{"1y", "blee"}},
+				{Fields: []string{"2m", "duh"}},
 			},
 			col: 0,
 			asc: true,
 			e: model1.Rows{
-				{Fields: []string{testTime().String(), "duh"}},
-				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},
+				{Fields: []string{"2m", "duh"}},
+				{Fields: []string{"1y", "blee"}},
 			},
 		},
 		"durationAsc": {
 			rows: model1.Rows{
-				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
-				{Fields: []string{testTime().String(), "blee"}},
+				{Fields: []string{"2m10s", "duh"}},
+				{Fields: []string{"2m", "blee"}},
 			},
 			col: 0,
 			asc: true,
 			e: model1.Rows{
-				{Fields: []string{testTime().String(), "blee"}},
-				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
+				{Fields: []string{"2m", "blee"}},
+				{Fields: []string{"2m10s", "duh"}},
 			},
 		},
 		"durationDesc": {
 			rows: model1.Rows{
-				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
-				{Fields: []string{testTime().String(), "blee"}},
+				{Fields: []string{"2m", "blee"}},
+				{Fields: []string{"2m10s", "duh"}},
 			},
 			col: 0,
 			e: model1.Rows{
-				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
-				{Fields: []string{testTime().String(), "blee"}},
+				{Fields: []string{"2m10s", "duh"}},
+				{Fields: []string{"2m", "blee"}},
 			},
 		},
 	}

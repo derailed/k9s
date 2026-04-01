@@ -422,17 +422,50 @@ func TestRowEventsSort(t *testing.T) {
 	}{
 		"age_time": {
 			re: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", testTime().Add(20 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", testTime().Add(10 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", testTime().String()}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "15d"}, Age: testTime().Add(-15 * 24 * time.Hour)}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "170m"}, Age: testTime().Add(-170 * time.Minute)}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour)}},
 			),
 			col:      2,
 			asc:      true,
 			duration: true,
 			e: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", testTime().String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", testTime().Add(10 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", testTime().Add(20 * time.Second).String()}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "170m"}, Age: testTime().Add(-170 * time.Minute)}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour)}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "15d"}, Age: testTime().Add(-15 * 24 * time.Hour)}},
+			),
+		},
+		"age_duration_desc": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "170m"}, Age: testTime().Add(-170 * time.Minute)}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "15d"}, Age: testTime().Add(-15 * 24 * time.Hour)}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "14d"}, Age: testTime().Add(-14 * 24 * time.Hour)}},
+				model1.RowEvent{Row: model1.Row{ID: "D", Fields: model1.Fields{"5", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour)}},
+			),
+			col:      2,
+			asc:      false,
+			duration: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "15d"}, Age: testTime().Add(-15 * 24 * time.Hour)}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "14d"}, Age: testTime().Add(-14 * 24 * time.Hour)}},
+				model1.RowEvent{Row: model1.Row{ID: "D", Fields: model1.Fields{"5", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour)}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "170m"}, Age: testTime().Add(-170 * time.Minute)}},
+			),
+		},
+		"age_duration_same_string": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "X", Fields: model1.Fields{"1", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 30*time.Minute)}},
+				model1.RowEvent{Row: model1.Row{ID: "Y", Fields: model1.Fields{"0", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 10*time.Minute)}},
+				model1.RowEvent{Row: model1.Row{ID: "Z", Fields: model1.Fields{"10", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 50*time.Minute)}},
+			),
+			col:      2,
+			asc:      true,
+			duration: true,
+			// asc=true → youngest first: Y (-10m offset = most recent), X (-30m), Z (-50m = oldest)
+		e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "Y", Fields: model1.Fields{"0", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 10*time.Minute)}},
+				model1.RowEvent{Row: model1.Row{ID: "X", Fields: model1.Fields{"1", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 30*time.Minute)}},
+				model1.RowEvent{Row: model1.Row{ID: "Z", Fields: model1.Fields{"10", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 50*time.Minute)}},
 			),
 		},
 		"col0": {

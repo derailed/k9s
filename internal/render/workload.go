@@ -59,6 +59,7 @@ func (Workload) Render(o any, _ string, r *model1.Row) error {
 		return fmt.Errorf("expected WorkloadRes but got %T", o)
 	}
 
+	ageTime := res.Row.Cells[6].(metav1.Time)
 	r.ID = fmt.Sprintf("%s|%s|%s", res.Row.Cells[0].(string), res.Row.Cells[1].(string), res.Row.Cells[2].(string))
 	r.Fields = model1.Fields{
 		res.Row.Cells[0].(string),
@@ -67,8 +68,9 @@ func (Workload) Render(o any, _ string, r *model1.Row) error {
 		res.Row.Cells[3].(string),
 		res.Row.Cells[4].(string),
 		res.Row.Cells[5].(string),
-		ToAge(res.Row.Cells[6].(metav1.Time)),
+		ToAge(ageTime),
 	}
+	r.Age = ageTime.Time
 
 	return nil
 }

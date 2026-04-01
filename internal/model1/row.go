@@ -3,10 +3,13 @@
 
 package model1
 
+import "time"
+
 // Row represents a collection of columns.
 type Row struct {
 	ID     string
 	Fields Fields
+	Age    time.Time
 }
 
 // NewRow returns a new row with initialized fields.
@@ -50,6 +53,7 @@ func (r Row) Clone() Row {
 	return Row{
 		ID:     r.ID,
 		Fields: r.Fields.Clone(),
+		Age:    r.Age,
 	}
 }
 

@@ -303,12 +303,22 @@ func (r RowEventSorter) Swap(i, j int) {
 }
 
 func (r RowEventSorter) Less(i, j int) bool {
-	f1, f2 := r.Events.events[i].Row.Fields, r.Events.events[j].Row.Fields
-	id1, id2 := r.Events.events[i].Row.ID, r.Events.events[j].Row.ID
+	e1, e2 := r.Events.events[i], r.Events.events[j]
+	// Use raw timestamp for duration columns when available (avoids precision loss from humanized strings)
+	if r.IsDuration && !e1.Row.Age.IsZero() && !e2.Row.Age.IsZero() {
+		// Smaller duration = more recently created = later timestamp.
+		// Asc (↑): youngest first → later timestamp first → e2.Before(e1).
+		// Desc (↓): oldest first → earlier timestamp first → e1.Before(e2).
+		if r.Asc {
+			return e2.Row.Age.Before(e1.Row.Age)
+		}
+		return e1.Row.Age.Before(e2.Row.Age)
+	}
+	f1, f2 := e1.Row.Fields, e2.Row.Fields
+	id1, id2 := e1.Row.ID, e2.Row.ID
 	less := Less(r.IsNumber, r.IsDuration, r.IsCapacity, id1, id2, f1[r.Index], f2[r.Index])
 	if r.Asc {
 		return less
 	}
-
 	return !less
 }

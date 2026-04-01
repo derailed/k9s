@@ -92,6 +92,7 @@ func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 		AsStatus(n.diagnose(ns.Status.Phase)),
 		ToAge(ns.GetCreationTimestamp()),
 	}
+	r.Age = ns.GetCreationTimestamp().Time
 
 	return nil
 }

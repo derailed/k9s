@@ -103,6 +103,7 @@ func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) er
 		AsStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
 		ToAge(dp.GetCreationTimestamp()),
 	}
+	r.Age = dp.GetCreationTimestamp().Time
 
 	return nil
 }
