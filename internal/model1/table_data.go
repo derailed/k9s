@@ -84,11 +84,11 @@ func NewTableDataFromTable(td *TableData) *TableData {
 	return t
 }
 
-func (t *TableData) AddRow(re RowEvent) {
+func (t *TableData) AddRow(re RowEvent) { //nolint:gocritic
 	t.rowEvents.Add(re)
 }
 
-func (t *TableData) SetRow(idx int, re RowEvent) {
+func (t *TableData) SetRow(idx int, re RowEvent) { //nolint:gocritic
 	t.rowEvents.Set(idx, re)
 }
 

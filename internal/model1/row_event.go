@@ -69,7 +69,7 @@ func (r RowEvent) ExtractHeaderLabels(labelCol int) []string { //nolint:gocritic
 }
 
 // Labelize returns a new row event based on labels.
-func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
+func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent { //nolint:gocritic
 	return RowEvent{
 		Kind:   r.Kind,
 		Deltas: r.Deltas.Labelize(cols, labelCol),
@@ -78,7 +78,7 @@ func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
 }
 
 // Diff returns true if the row changed.
-func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
+func (r RowEvent) Diff(re RowEvent, ageCol int) bool { //nolint:gocritic
 	if r.Kind != re.Kind {
 		return true
 	}
