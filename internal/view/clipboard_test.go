@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestClipboardMode(t *testing.T) {
@@ -76,6 +77,6 @@ func TestWriteOSC52Unavailable(t *testing.T) {
 	t.Setenv(termEnv, dumbTerm)
 
 	err := writeOSC52("hello")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "osc52 clipboard unavailable")
 }
