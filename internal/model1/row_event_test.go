@@ -462,7 +462,7 @@ func TestRowEventsSort(t *testing.T) {
 			asc:      true,
 			duration: true,
 			// asc=true → youngest first: Y (-10m offset = most recent), X (-30m), Z (-50m = oldest)
-		e: model1.NewRowEventsWithEvts(
+			e: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "Y", Fields: model1.Fields{"0", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 10*time.Minute)}},
 				model1.RowEvent{Row: model1.Row{ID: "X", Fields: model1.Fields{"1", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 30*time.Minute)}},
 				model1.RowEvent{Row: model1.Row{ID: "Z", Fields: model1.Fields{"10", "2", "6d21h"}, Age: testTime().Add(-6*24*time.Hour - 21*time.Hour - 50*time.Minute)}},

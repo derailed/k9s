@@ -75,6 +75,7 @@ func (s StorageClass) defaultRow(raw *unstructured.Unstructured, r *model1.Row) 
 		"",
 		ToAge(sc.GetCreationTimestamp()),
 	}
+	r.Age = sc.GetCreationTimestamp().Time
 
 	return nil
 }

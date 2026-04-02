@@ -125,6 +125,7 @@ func (p PersistentVolume) defaultRow(raw *unstructured.Unstructured, r *model1.R
 		AsStatus(p.diagnose(phase)),
 		ToAge(pv.GetCreationTimestamp()),
 	}
+	r.Age = pv.GetCreationTimestamp().Time
 
 	return nil
 }
