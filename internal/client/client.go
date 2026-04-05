@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -312,7 +313,27 @@ func (a *APIClient) CheckConnectivity() bool {
 		a.connOK = false
 		return a.connOK
 	}
-	cfg.Timeout = a.config.CallTimeout()
+
+	// Quick TCP dial to check basic reachability before creating a
+	// full API client. This avoids blocking on stale TLS sessions.
+	if cfg.Host != "" {
+		host := cfg.Host
+		if strings.HasPrefix(host, "https://") {
+			host = strings.TrimPrefix(host, "https://")
+			if !strings.Contains(host, ":") {
+				host += ":443"
+			}
+		}
+		conn, err := net.DialTimeout("tcp", host, 5*time.Second)
+		if err != nil {
+			slog.Error("TCP dial failed", "host", host, slogs.Error, err)
+			a.setConnOK(false)
+			return a.getConnOK()
+		}
+		conn.Close()
+	}
+
+	cfg.Timeout = 10 * time.Second
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		slog.Error("Unable to connect to api server", slogs.Error, err)
