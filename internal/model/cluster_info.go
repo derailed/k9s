@@ -38,24 +38,26 @@ type ClusterInfoListener interface {
 
 // ClusterMeta represents cluster meta data.
 type ClusterMeta struct {
-	Context, Cluster    string
-	User                string
-	K9sVer, K9sLatest   string
-	K8sVer              string
+	Context, Cluster string
+	User             string
+	K9sVer, K9sLatest string
+	K8sVer           string
 	Cpu, Mem, Ephemeral int
+	Connectivity     bool
 }
 
 // NewClusterMeta returns a new instance.
 func NewClusterMeta() *ClusterMeta {
 	return &ClusterMeta{
-		Context:   client.NA,
-		Cluster:   client.NA,
-		User:      client.NA,
-		K9sVer:    client.NA,
-		K8sVer:    client.NA,
-		Cpu:       0,
-		Mem:       0,
-		Ephemeral: 0,
+		Context:      client.NA,
+		Cluster:      client.NA,
+		User:         client.NA,
+		K9sVer:       client.NA,
+		K8sVer:       client.NA,
+		Cpu:          0,
+		Mem:          0,
+		Ephemeral:    0,
+		Connectivity: true,
 	}
 }
 
@@ -70,7 +72,8 @@ func (c *ClusterMeta) Deltas(n *ClusterMeta) bool {
 		c.User != n.User ||
 		c.K8sVer != n.K8sVer ||
 		c.K9sVer != n.K9sVer ||
-		c.K9sLatest != n.K9sLatest
+		c.K9sLatest != n.K9sLatest ||
+		c.Connectivity != n.Connectivity
 }
 
 // ClusterInfo models cluster metadata.
@@ -131,7 +134,8 @@ func (c *ClusterInfo) Reset(f dao.Factory) {
 // Refresh fetches the latest cluster meta.
 func (c *ClusterInfo) Refresh() {
 	data := NewClusterMeta()
-	if c.factory.Client().ConnectionOK() {
+	data.Connectivity = c.factory.Client().ConnectionOK()
+	if data.Connectivity {
 		data.Context = c.cluster.ContextName()
 		data.Cluster = c.cluster.ClusterName()
 		data.User = c.cluster.UserName()

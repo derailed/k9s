@@ -391,7 +391,7 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	}
 }
 
-func (a *App) refreshCluster(context.Context) error {
+func (a *App) refreshCluster(ctx context.Context) error {
 	if a.Conn() == nil || a.factory == nil || a.clusterModel == nil {
 		return nil
 	}
@@ -408,9 +408,14 @@ func (a *App) refreshCluster(context.Context) error {
 			a.ClearStatus(true)
 		}
 		a.factory.ValidatePortForwards()
-	} else if c != nil {
+	} else {
+		if atomic.LoadInt32(&a.conRetry) == 0 {
+			a.Status(model.FlashErr, "K8s connectivity Lost!")
+			if c != nil {
+				c.Stop()
+			}
+		}
 		atomic.AddInt32(&a.conRetry, 1)
-		c.Stop()
 	}
 
 	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), a.Config.K9s.MaxConnRetry
@@ -478,6 +483,8 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 			a.Config.SetActiveView(client.PodGVR.String())
 		}
 		ns := a.Config.ActiveNamespace()
+		atomic.StoreInt32(&a.conRetry, 0)
+		a.ClearStatus(true)
 		if !a.Conn().IsValidNamespace(ns) {
 			slog.Warn("Unable to validate namespace", slogs.Namespace, ns)
 			if err := a.Config.SetActiveNamespace(ns); err != nil {
@@ -574,6 +581,10 @@ func (a *App) Run() error {
 // Status reports a new app status for display.
 func (a *App) Status(l model.FlashLevel, msg string) {
 	a.QueueUpdateDraw(func() {
+		if atomic.LoadInt32(&a.conRetry) > 0 {
+			l = model.FlashErr
+			msg = "K8s connectivity Lost!"
+		}
 		if a.showHeader {
 			a.setLogo(l, msg)
 		} else {
@@ -590,7 +601,19 @@ func (a *App) IsBenchmarking() bool {
 // ClearStatus reset logo back to normal.
 func (a *App) ClearStatus(flash bool) {
 	a.QueueUpdate(func() {
+		if atomic.LoadInt32(&a.conRetry) > 0 {
+			if a.showHeader {
+				a.setLogo(model.FlashErr, "K8s connectivity Lost!")
+			} else {
+				a.setIndicator(model.FlashErr, "K8s connectivity Lost!")
+			}
+			if flash {
+				a.Flash().Clear()
+			}
+			return
+		}
 		a.Logo().Reset()
+		a.statusIndicator().Reset()
 		if flash {
 			a.Flash().Clear()
 		}

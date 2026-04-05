@@ -313,6 +313,9 @@ func (a *APIClient) CheckConnectivity() bool {
 		return a.connOK
 	}
 	cfg.Timeout = a.config.CallTimeout()
+	if cfg.Timeout > 5*time.Second {
+		cfg.Timeout = 5 * time.Second
+	}
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		slog.Error("Unable to connect to api server", slogs.Error, err)
