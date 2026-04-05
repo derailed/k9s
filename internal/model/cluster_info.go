@@ -43,7 +43,9 @@ type ClusterMeta struct {
 	K9sVer, K9sLatest string
 	K8sVer           string
 	Cpu, Mem, Ephemeral int
-	Connectivity     bool
+
+	// Connectivity tracks cluster connectivity status.
+	Connectivity bool
 }
 
 // NewClusterMeta returns a new instance.
