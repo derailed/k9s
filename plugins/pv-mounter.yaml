@@ -1,0 +1,310 @@
+# Requires 'pv-mounter' and its dependencies to be installed as 'kubectl' plugin
+# Add column 'MOUNTED:.metadata.annotations.pv-mounter' to 'views.yaml'
+# Supports non-root mounts only
+shortCut: Shift-M
+description: Mount/Clean PVC
+overwriteOutput: true
+confirm: false
+scopes:
+  - pvc
+command: /bin/bash
+background: true
+args:
+  - -lc
+  - |
+    read -r -d '' SCRIPT_BODY <<'PV_MOUNTER' || true
+    set -euo pipefail
+
+    ACTION="${1:-}"
+    NAMESPACE="${2:-}"
+    PVC_NAME="${3:-}"
+    MOUNT_PATH_ARG="${4:-}"
+
+    PVC_MOUNT_ROOT="${PVC_MOUNT_ROOT:-$HOME/pv-mounter}"
+    PVC_MOUNTED_ANNOTATION_KEY="${PVC_MOUNTED_ANNOTATION_KEY:-pv-mounter}"
+    PVC_MOUNT_BACKEND="${PVC_MOUNT_BACKEND:-ssh}"
+    PVC_LOCK_ROOT="${PVC_LOCK_ROOT:-${TMPDIR:-/tmp}/k9s-pv-mounter-locks}"
+    NS_LOCK=''
+    PVC_LOCK=''
+
+    _pvc_mount_path() {
+        local target_namespace="${1:-$NAMESPACE}"
+        local target_pvc="${2:-$PVC_NAME}"
+
+        [[ -n "$target_namespace" && -n "$target_pvc" ]] || return 1
+        printf '%s/%s/%s\n' "$PVC_MOUNT_ROOT" "$target_namespace" "$target_pvc"
+    }
+
+    _pvc_mount_path_check() {
+        local target_path="${1:-}"
+
+        [[ -n "$target_path" ]] || return 1
+        mount | grep -F " on $target_path " >/dev/null 2>&1
+    }
+
+    _pvc_annotation_read() {
+        local namespace="${1:-$NAMESPACE}"
+        local pvc="${2:-$PVC_NAME}"
+        local template=''
+
+        [[ -n "$namespace" && -n "$pvc" ]] || return 1
+
+        template='{{ with index .metadata.annotations "'"$PVC_MOUNTED_ANNOTATION_KEY"'" }}{{ . }}{{ end }}'
+        kubectl get pvc "$pvc" -n "$namespace" -o go-template --template="$template" 2>/dev/null || true
+    }
+
+    _pvc_annotation_write() {
+        local namespace="${1:-}"
+        local pvc="${2:-}"
+        local value="${3:-}"
+
+        [[ -n "$namespace" && -n "$pvc" && -n "$value" ]] || return 1
+
+        case "$value" in
+            "$HOME") value='~' ;;
+            "$HOME"/*) value="~/${value#"$HOME"/}" ;;
+        esac
+
+        kubectl annotate pvc "$pvc" -n "$namespace" \
+            "$PVC_MOUNTED_ANNOTATION_KEY=$value" --overwrite >/dev/null 2>&1
+    }
+
+    _mounted_sibling_pvc() {
+        local target_namespace="${1:-$NAMESPACE}"
+        local target_pvc="${2:-$PVC_NAME}"
+        local template=''
+        local sibling_path=''
+        local sibling_pvc=''
+        local sibling_value=''
+        local namespace_path=''
+
+        [[ -n "$target_namespace" && -n "$target_pvc" ]] || return 1
+
+        template='{{ range .items }}{{ $pvc := . }}{{ with index $pvc.metadata.annotations "'"$PVC_MOUNTED_ANNOTATION_KEY"'" }}{{ printf "%s\t%s\n" $pvc.metadata.name . }}{{ end }}{{ end }}'
+        while IFS=$'\t' read -r sibling_pvc sibling_value; do
+            [[ -n "$sibling_pvc" && -n "$sibling_value" ]] || continue
+            [[ "$sibling_pvc" == "$target_pvc" ]] && continue
+            case "$sibling_value" in
+                "~"|"~/"*|/*)
+                    printf '%s\n' "$sibling_pvc"
+                    return 0
+                    ;;
+            esac
+        done < <(kubectl get pvc -n "$target_namespace" -o go-template --template="$template" 2>/dev/null || true)
+
+        namespace_path="$(dirname "$(_pvc_mount_path "$target_namespace" "$target_pvc")")"
+        [[ -d "$namespace_path" ]] || return 1
+
+        while IFS= read -r sibling_path; do
+            sibling_pvc="${sibling_path##*/}"
+            [[ "$sibling_pvc" == "$target_pvc" ]] && continue
+
+            if _pvc_mount_path_check "$sibling_path"; then
+                printf '%s\n' "$sibling_pvc"
+                return 0
+            fi
+        done < <(find "$namespace_path" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+
+        return 1
+    }
+
+    _lock_path() {
+        local target_namespace="${1:-$NAMESPACE}"
+        local target_pvc="${2:-}"
+
+        [[ -n "$target_namespace" ]] || return 1
+        printf '%s/%s.lock\n' "$PVC_LOCK_ROOT" \
+            "$(printf '%s\n' "${target_namespace}_${target_pvc:-namespace}" | tr -cs 'A-Za-z0-9._-' '_')"
+    }
+
+    _active_lock_pid() {
+        local lock_path="${1:-}"
+        local lock_pid=''
+
+        [[ -n "$lock_path" && -f "$lock_path" ]] || return 1
+
+        lock_pid="$(<"$lock_path")"
+        if [[ -n "$lock_pid" ]] && kill -0 "$lock_pid" 2>/dev/null; then
+            printf '%s\n' "$lock_pid"
+            return 0
+        fi
+
+        rm -f "$lock_path" 2>/dev/null || true
+        return 1
+    }
+
+    acquire_lock() {
+        local lock_path="${1:-}"
+        local busy_message="${2:-Another pvc mount/clean action is already in progress.}"
+        local tmp_lock=''
+
+        [[ -n "$lock_path" ]] || return 1
+
+        mkdir -p "$PVC_LOCK_ROOT" 2>/dev/null || true
+        tmp_lock="${lock_path}.$$.$RANDOM.tmp"
+        printf '%s\n' "$$" > "$tmp_lock" 2>/dev/null || return 1
+
+        if ! ln "$tmp_lock" "$lock_path" 2>/dev/null; then
+            rm -f "$tmp_lock" 2>/dev/null || true
+            if _active_lock_pid "$lock_path" >/dev/null; then
+                printf '%s\n' "$busy_message"
+                return 1
+            fi
+
+            rm -f "$lock_path" 2>/dev/null || true
+            printf '%s\n' "$$" > "$tmp_lock" 2>/dev/null || return 1
+            if ! ln "$tmp_lock" "$lock_path" 2>/dev/null; then
+                rm -f "$tmp_lock" 2>/dev/null || true
+                printf '%s\n' "$busy_message"
+                return 1
+            fi
+        fi
+
+        rm -f "$tmp_lock" 2>/dev/null || true
+    }
+
+    release_locks() {
+        [[ -n "$PVC_LOCK" ]] && rm -f "$PVC_LOCK" 2>/dev/null || true
+        [[ -n "$NS_LOCK" ]] && rm -f "$NS_LOCK" 2>/dev/null || true
+    }
+
+    _pv_mounter() {
+        local requested_action="${1:-}"
+        local target_namespace="${2:-}"
+        local target_pvc="${3:-}"
+        local target_path="${4:-}"
+        local -a cmd_args
+
+        [[ -n "$requested_action" && -n "$target_namespace" && -n "$target_pvc" && -n "$target_path" ]] || return 1
+
+        cmd_args=(kubectl pv-mounter "$requested_action" --backend "$PVC_MOUNT_BACKEND" "$target_namespace" "$target_pvc" "$target_path")
+        "${cmd_args[@]}" >/dev/null 2>&1
+    }
+
+    run_clean() {
+        local mount_path="${1:-}"
+
+        [[ -n "$mount_path" ]] || return 1
+
+        if ! _pv_mounter clean "$NAMESPACE" "$PVC_NAME" "$mount_path"; then
+            kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+                "$PVC_MOUNTED_ANNOTATION_KEY=clean command failed" --overwrite >/dev/null 2>&1 || true
+            return 1
+        fi
+
+        kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+            "${PVC_MOUNTED_ANNOTATION_KEY}-" >/dev/null 2>&1 || true
+
+        local target_dir=''
+        for target_dir in "$mount_path" "$(dirname "$mount_path")" "$PVC_MOUNT_ROOT"; do
+            [[ -d "$target_dir" ]] || continue
+            find "$target_dir" -mindepth 1 -maxdepth 1 \
+                \( -name '.DS_Store' -o -name '.localized' \) -exec rm -f {} + 2>/dev/null || true
+            rmdir "$target_dir" 2>/dev/null || true
+        done
+
+        if [[ -d "$mount_path" ]]; then
+            kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+                "$PVC_MOUNTED_ANNOTATION_KEY=path error" --overwrite >/dev/null 2>&1 || true
+            return 1
+        fi
+    }
+
+    main() {
+        local annotation_value=''
+        local probe_path=''
+        local sibling_pvc=''
+        local mount_path=''
+        local ns_lock=''
+
+        [[ -n "$ACTION" && -n "$NAMESPACE" && -n "$PVC_NAME" ]] || exit 1
+
+        case "$ACTION" in
+            __reconcile)
+                annotation_value="$(_pvc_annotation_read "$NAMESPACE" "$PVC_NAME")"
+                probe_path="$(_pvc_mount_path "$NAMESPACE" "$PVC_NAME")"
+
+                case "$annotation_value" in
+                    "~") probe_path="$HOME" ;;
+                    "~/"*) probe_path="$HOME/${annotation_value#\~/}" ;;
+                    /*) probe_path="$annotation_value" ;;
+                esac
+
+                if [[ -n "$probe_path" ]] && _pvc_mount_path_check "$probe_path"; then
+                    _pvc_annotation_write "$NAMESPACE" "$PVC_NAME" "$probe_path" || true
+                    printf "Cleaning '%s' in namespace '%s'\n" "$PVC_NAME" "$NAMESPACE"
+                    printf '%s\n' "$SCRIPT_BODY" | nohup /bin/bash -s -- __clean "$NAMESPACE" "$PVC_NAME" "$probe_path" >/dev/null 2>&1 &
+                    exit 0
+                fi
+
+                case "$annotation_value" in
+                    "~"|"~/"*|/*)
+                        kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+                            "${PVC_MOUNTED_ANNOTATION_KEY}-" >/dev/null 2>&1 || true
+                        ;;
+                esac
+
+                sibling_pvc="$(_mounted_sibling_pvc "$NAMESPACE" "$PVC_NAME" || true)"
+                if [[ -n "$sibling_pvc" ]]; then
+                    printf "'%s' is already mounted in namespace '%s'.\n" "$sibling_pvc" "$NAMESPACE"
+                    exit 0
+                fi
+
+                ns_lock="$(_lock_path "$NAMESPACE")" || exit 1
+                if _active_lock_pid "$ns_lock" >/dev/null; then
+                    exit 0
+                fi
+
+                printf "Mounting '%s' in namespace '%s'\n" "$PVC_NAME" "$NAMESPACE"
+                printf '%s\n' "$SCRIPT_BODY" | nohup /bin/bash -s -- __mount "$NAMESPACE" "$PVC_NAME" "$probe_path" >/dev/null 2>&1 &
+                ;;
+            __mount)
+                mount_path="${MOUNT_PATH_ARG:-$(_pvc_mount_path "$NAMESPACE" "$PVC_NAME")}"
+                trap 'release_locks' EXIT
+                NS_LOCK="$(_lock_path "$NAMESPACE")" || exit 1
+                PVC_LOCK="$(_lock_path "$NAMESPACE" "$PVC_NAME")" || exit 1
+                acquire_lock "$NS_LOCK" \
+                    "Another pvc mount/clean action is already in progress in namespace '$NAMESPACE'." || exit 1
+                acquire_lock "$PVC_LOCK" \
+                    'Another pvc mount/clean action is already in progress.' || exit 1
+
+                mkdir -p "$mount_path" || exit 1
+
+                if _pv_mounter mount "$NAMESPACE" "$PVC_NAME" "$mount_path" \
+                    && _pvc_mount_path_check "$mount_path"; then
+                    _pvc_annotation_write "$NAMESPACE" "$PVC_NAME" "$mount_path" || true
+                    exit 0
+                fi
+
+                kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+                    "$PVC_MOUNTED_ANNOTATION_KEY=mount command failed" --overwrite >/dev/null 2>&1 || true
+                run_clean "$mount_path" || true
+                exit 1
+                ;;
+            __clean)
+                mount_path="${MOUNT_PATH_ARG:-$(_pvc_mount_path "$NAMESPACE" "$PVC_NAME")}"
+                trap 'release_locks' EXIT
+                NS_LOCK="$(_lock_path "$NAMESPACE")" || exit 1
+                PVC_LOCK="$(_lock_path "$NAMESPACE" "$PVC_NAME")" || exit 1
+                acquire_lock "$NS_LOCK" \
+                    "Another pvc mount/clean action is already in progress in namespace '$NAMESPACE'." || exit 1
+                acquire_lock "$PVC_LOCK" \
+                    'Another pvc mount/clean action is already in progress.' || exit 1
+
+                printf "Cleaning '%s' in namespace '%s'\n" "$PVC_NAME" "$NAMESPACE"
+                run_clean "$mount_path"
+                ;;
+            *)
+                exit 1
+                ;;
+        esac
+    }
+
+    main "$@"
+    PV_MOUNTER
+
+    export SCRIPT_BODY
+    printf '%s\n' "$SCRIPT_BODY" | /bin/bash -s -- __reconcile "$1" "$2"
+  - --
+  - $NAMESPACE
+  - $NAME
