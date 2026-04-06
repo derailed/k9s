@@ -73,6 +73,7 @@ args:
         local target_namespace="${1:-$NAMESPACE}"
         local target_pvc="${2:-$PVC_NAME}"
         local template=''
+        local sibling_probe_path=''
         local sibling_path=''
         local sibling_pvc=''
         local sibling_value=''
@@ -85,11 +86,16 @@ args:
             [[ -n "$sibling_pvc" && -n "$sibling_value" ]] || continue
             [[ "$sibling_pvc" == "$target_pvc" ]] && continue
             case "$sibling_value" in
-                "~"|"~/"*|/*)
-                    printf '%s\n' "$sibling_pvc"
-                    return 0
-                    ;;
+                "~") sibling_probe_path="$HOME" ;;
+                "~/"*) sibling_probe_path="$HOME/${sibling_value#\~/}" ;;
+                /*) sibling_probe_path="$sibling_value" ;;
+                *) sibling_probe_path='' ;;
             esac
+
+            if [[ -n "$sibling_probe_path" ]] && _pvc_mount_path_check "$sibling_probe_path"; then
+                printf '%s\n' "$sibling_pvc"
+                return 0
+            fi
         done < <(kubectl get pvc -n "$target_namespace" -o go-template --template="$template" 2>/dev/null || true)
 
         namespace_path="$(dirname "$(_pvc_mount_path "$target_namespace" "$target_pvc")")"
