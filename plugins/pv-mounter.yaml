@@ -16,9 +16,10 @@ args:
     set -euo pipefail
 
     ACTION="${1:-}"
-    NAMESPACE="${2:-}"
-    PVC_NAME="${3:-}"
-    MOUNT_PATH_ARG="${4:-}"
+    CONTEXT="${2:-}"
+    NAMESPACE="${3:-}"
+    PVC_NAME="${4:-}"
+    MOUNT_PATH_ARG="${5:-}"
 
     PVC_MOUNT_ROOT="${PVC_MOUNT_ROOT:-$HOME/pv-mounter}"
     PVC_MOUNTED_ANNOTATION_KEY="${PVC_MOUNTED_ANNOTATION_KEY:-pv-mounter}"
@@ -50,7 +51,7 @@ args:
         [[ -n "$namespace" && -n "$pvc" ]] || return 1
 
         template='{{ with index .metadata.annotations "'"$PVC_MOUNTED_ANNOTATION_KEY"'" }}{{ . }}{{ end }}'
-        kubectl get pvc "$pvc" -n "$namespace" -o go-template --template="$template" 2>/dev/null || true
+        kubectl --context "$CONTEXT" get pvc "$pvc" -n "$namespace" -o go-template --template="$template" 2>/dev/null || true
     }
 
     _pvc_annotation_write() {
@@ -65,7 +66,7 @@ args:
             "$HOME"/*) value="~/${value#"$HOME"/}" ;;
         esac
 
-        kubectl annotate pvc "$pvc" -n "$namespace" \
+        kubectl --context "$CONTEXT" annotate pvc "$pvc" -n "$namespace" \
             "$PVC_MOUNTED_ANNOTATION_KEY=$value" --overwrite >/dev/null 2>&1
     }
 
@@ -96,7 +97,7 @@ args:
                 printf '%s\n' "$sibling_pvc"
                 return 0
             fi
-        done < <(kubectl get pvc -n "$target_namespace" -o go-template --template="$template" 2>/dev/null || true)
+        done < <(kubectl --context "$CONTEXT" get pvc -n "$target_namespace" -o go-template --template="$template" 2>/dev/null || true)
 
         namespace_path="$(dirname "$(_pvc_mount_path "$target_namespace" "$target_pvc")")"
         [[ -d "$namespace_path" ]] || return 1
@@ -183,7 +184,7 @@ args:
 
         [[ -n "$requested_action" && -n "$target_namespace" && -n "$target_pvc" && -n "$target_path" ]] || return 1
 
-        cmd_args=(kubectl pv-mounter "$requested_action" --backend "$PVC_MOUNT_BACKEND" "$target_namespace" "$target_pvc" "$target_path")
+        cmd_args=(kubectl pv-mounter "$requested_action" --context "$CONTEXT" --backend "$PVC_MOUNT_BACKEND" "$target_namespace" "$target_pvc" "$target_path")
         "${cmd_args[@]}" >/dev/null 2>&1
     }
 
@@ -193,12 +194,12 @@ args:
         [[ -n "$mount_path" ]] || return 1
 
         if ! _pv_mounter clean "$NAMESPACE" "$PVC_NAME" "$mount_path"; then
-            kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+            kubectl --context "$CONTEXT" annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
                 "$PVC_MOUNTED_ANNOTATION_KEY=clean command failed" --overwrite >/dev/null 2>&1 || true
             return 1
         fi
 
-        kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+        kubectl --context "$CONTEXT" annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
             "${PVC_MOUNTED_ANNOTATION_KEY}-" >/dev/null 2>&1 || true
 
         local target_dir=''
@@ -210,7 +211,7 @@ args:
         done
 
         if [[ -d "$mount_path" ]]; then
-            kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+            kubectl --context "$CONTEXT" annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
                 "$PVC_MOUNTED_ANNOTATION_KEY=path error" --overwrite >/dev/null 2>&1 || true
             return 1
         fi
@@ -239,13 +240,13 @@ args:
                 if [[ -n "$probe_path" ]] && _pvc_mount_path_check "$probe_path"; then
                     _pvc_annotation_write "$NAMESPACE" "$PVC_NAME" "$probe_path" || true
                     printf "Cleaning '%s' in namespace '%s'\n" "$PVC_NAME" "$NAMESPACE"
-                    printf '%s\n' "$SCRIPT_BODY" | nohup /bin/bash -s -- __clean "$NAMESPACE" "$PVC_NAME" "$probe_path" >/dev/null 2>&1 &
+                    printf '%s\n' "$SCRIPT_BODY" | nohup /bin/bash -s -- __clean "$CONTEXT" "$NAMESPACE" "$PVC_NAME" "$probe_path" >/dev/null 2>&1 &
                     exit 0
                 fi
 
                 case "$annotation_value" in
                     "~"|"~/"*|/*)
-                        kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+                        kubectl --context "$CONTEXT" annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
                             "${PVC_MOUNTED_ANNOTATION_KEY}-" >/dev/null 2>&1 || true
                         ;;
                 esac
@@ -262,7 +263,7 @@ args:
                 fi
 
                 printf "Mounting '%s' in namespace '%s'\n" "$PVC_NAME" "$NAMESPACE"
-                printf '%s\n' "$SCRIPT_BODY" | nohup /bin/bash -s -- __mount "$NAMESPACE" "$PVC_NAME" "$probe_path" >/dev/null 2>&1 &
+                printf '%s\n' "$SCRIPT_BODY" | nohup /bin/bash -s -- __mount "$CONTEXT" "$NAMESPACE" "$PVC_NAME" "$probe_path" >/dev/null 2>&1 &
                 ;;
             __mount)
                 mount_path="${MOUNT_PATH_ARG:-$(_pvc_mount_path "$NAMESPACE" "$PVC_NAME")}"
@@ -282,7 +283,7 @@ args:
                     exit 0
                 fi
 
-                kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+                kubectl --context "$CONTEXT" annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
                     "$PVC_MOUNTED_ANNOTATION_KEY=mount command failed" --overwrite >/dev/null 2>&1 || true
                 run_clean "$mount_path" || true
                 exit 1
@@ -310,7 +311,8 @@ args:
     PV_MOUNTER
 
     export SCRIPT_BODY
-    printf '%s\n' "$SCRIPT_BODY" | /bin/bash -s -- __reconcile "$1" "$2"
+    printf '%s\n' "$SCRIPT_BODY" | /bin/bash -s -- __reconcile "$1" "$2" "$3"
   - --
+  - $CONTEXT
   - $NAMESPACE
   - $NAME
