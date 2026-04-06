@@ -1,1 +1,85 @@
-/Users/freeman/Library/Application Support/k9s/plugins/internal-dns.yaml
+plugins:
+  # Add column 'INTERNAL DNS:.metadata.annotations.fqdn|S' to 'views.yaml'
+  internal-dns:
+    shortCut: Shift-D
+    description: Refresh Internal DNS
+    overwriteOutput: true
+    confirm: false
+    scopes:
+      - svc
+    command: /bin/bash
+    background: true
+    args:
+      - -c
+      - |
+        set -euo pipefail
+
+        snapshot_file=''
+        lock_dir="${TMPDIR:-/tmp}/k9s-internal-dns-${2}.lock"
+        service_label='services'
+        refreshed_count=0
+        failed_count=0
+
+        if [[ -d "$lock_dir" ]]; then
+          if [[ -f "$lock_dir/pid" ]]; then
+            lock_pid="$(cat "$lock_dir/pid" 2>/dev/null || true)"
+            if [[ -n "$lock_pid" ]] && kill -0 "$lock_pid" >/dev/null 2>&1; then
+              printf "Internal DNS refresh is already running in '%s'\n" "$2"
+              exit 0
+            fi
+          fi
+          rm -rf "$lock_dir"
+        fi
+
+        if ! mkdir "$lock_dir" 2>/dev/null; then
+          printf "Internal DNS refresh is already running in '%s'\n" "$2"
+          exit 0
+        fi
+
+        printf '%s\n' "$$" >"$lock_dir/pid"
+        trap 'rm -f "$snapshot_file" >/dev/null 2>&1 || true; [[ -n "$lock_dir" ]] && rm -rf "$lock_dir" >/dev/null 2>&1 || true' EXIT
+        snapshot_file="$(mktemp "${TMPDIR:-/tmp}/k9s-internal-dns.${2}.XXXXXX")"
+
+        if ! kubectl --context "$1" get services -n "$2" \
+          --sort-by=.metadata.name \
+          -o custom-columns=NAME:.metadata.name \
+          --no-headers >"$snapshot_file"; then
+          printf "Cannot list services in '%s'\n" "$2" >&2
+          exit 1
+        fi
+
+        service_count="$(wc -l <"$snapshot_file")"
+        service_count="${service_count//[[:space:]]/}"
+        [[ "$service_count" == "1" ]] && service_label='service'
+        if [[ "$service_count" == "0" ]]; then
+          printf "No services found in '%s'\n" "$2"
+          exit 0
+        fi
+
+        printf "Refreshing Internal DNS for %s %s in '%s'\n" \
+          "$service_count" "$service_label" "$2"
+
+        while IFS= read -r service_name; do
+          [[ -n "$service_name" ]] || continue
+          dns_name="${service_name}.${2}.svc.cluster.local"
+          if kubectl --context "$1" annotate service -n "$2" "$service_name" \
+            "fqdn=${dns_name}" \
+            --overwrite >/dev/null; then
+            refreshed_count=$((refreshed_count + 1))
+          else
+            failed_count=$((failed_count + 1))
+            printf "Failed to refresh Internal DNS for service '%s' in '%s'\n" "$service_name" "$2" >&2
+          fi
+        done < "$snapshot_file"
+
+        if (( failed_count > 0 )); then
+          printf "Internal DNS refresh failed for %s of %s %s in '%s'\n" \
+            "$failed_count" "$service_count" "$service_label" "$2" >&2
+          exit 1
+        fi
+
+        printf "Internal DNS refreshed for %s %s in '%s'\n" \
+          "$refreshed_count" "$service_label" "$2"
+      - --
+      - $CONTEXT
+      - $NAMESPACE
