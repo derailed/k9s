@@ -44,11 +44,20 @@ plugins:
         }
 
         acquire_lock() {
+          local context_hash
           local lock_pid
           local modified_at
           local now
 
-          LOCK_DIR="${TMP_BASE%/}/df-pv-${NAMESPACE}.lock"
+          if command -v sha256sum >/dev/null 2>&1; then
+            context_hash="$(printf '%s' "${CONTEXT:-default}" | sha256sum)"
+          elif command -v shasum >/dev/null 2>&1; then
+            context_hash="$(printf '%s' "${CONTEXT:-default}" | shasum -a 256)"
+          else
+            context_hash="$(printf '%s' "${CONTEXT:-default}" | cksum)"
+          fi
+          context_hash="${context_hash%% *}"
+          LOCK_DIR="${TMP_BASE%/}/df-pv-${context_hash:0:16}-${NAMESPACE}.lock"
           if [[ -d "$LOCK_DIR" ]]; then
             if [[ -f "$LOCK_DIR/pid" ]]; then
               lock_pid="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
