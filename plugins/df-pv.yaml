@@ -9,7 +9,7 @@ plugins:
     confirm: false
     scopes:
       - pvc
-    command: /bin/bash
+    command: bash
     background: true
     args:
       - -c
