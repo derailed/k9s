@@ -187,7 +187,7 @@ func (t *OwnerTree) reconcile(ctx context.Context) error {
 		slog.Info("OwnerTree: root resource", slogs.FQN, nodeFQN, slogs.UID, u.GetUID(), slogs.ChildrenInIndex, len(ownerIndex[u.GetUID()]))
 		node := xray.NewTreeNode(t.gvr, nodeFQN)
 		setOwnerNodeStatus(node, u)
-		buildOwnerChildren(node, u.GetUID(), ownerIndex)
+		buildOwnerChildren(node, u.GetUID(), ownerIndex, map[types.UID]struct{}{u.GetUID(): {}})
 		root.Add(node)
 	}
 	slog.Debug("OwnerTree: tree build", "duration", time.Since(buildStart))
@@ -199,7 +199,17 @@ func (t *OwnerTree) reconcile(ctx context.Context) error {
 	resultRoot := root
 	if t.query != "" {
 		filterStart := time.Now()
-		if filtered := root.Filter(t.query, ownerRxMatch); filtered != nil {
+		rx, err := regexp.Compile(`(?i)` + t.query)
+		if err != nil {
+			slog.Warn("OwnerTree: invalid filter regex", "query", t.query, "error", err)
+		} else if filtered := root.Filter(t.query, func(_, path string) bool {
+			for _, tok := range strings.Split(path, "::") {
+				if rx.MatchString(tok) {
+					return true
+				}
+			}
+			return false
+		}); filtered != nil {
 			resultRoot = filtered
 		}
 		slog.Debug("OwnerTree: filter", "query", t.query, "duration", time.Since(filterStart))
@@ -287,14 +297,21 @@ func buildOwnerIndex(factory dao.Factory, ns string) map[types.UID][]*unstructur
 }
 
 // buildOwnerChildren recursively adds children to a tree node using the
-// ownerIndex reverse map.
-func buildOwnerChildren(parent *xray.TreeNode, uid types.UID, ownerIndex map[types.UID][]*unstructured.Unstructured) {
+// ownerIndex reverse map. visited tracks UIDs already on the current path
+// to prevent infinite recursion on circular OwnerReferences.
+func buildOwnerChildren(parent *xray.TreeNode, uid types.UID, ownerIndex map[types.UID][]*unstructured.Unstructured, visited map[types.UID]struct{}) {
 	for _, child := range ownerIndex[uid] {
+		if _, seen := visited[child.GetUID()]; seen {
+			slog.Warn("OwnerTree: cycle detected, skipping", slogs.UID, child.GetUID())
+			continue
+		}
 		childGVR := gvrFromUnstructured(child)
 		childNode := xray.NewTreeNode(childGVR, resourceFQN(child))
 		childNode.Extras[xray.KindKey] = child.GetKind()
 		setOwnerNodeStatus(childNode, child)
-		buildOwnerChildren(childNode, child.GetUID(), ownerIndex)
+		visited[child.GetUID()] = struct{}{}
+		buildOwnerChildren(childNode, child.GetUID(), ownerIndex, visited)
+		delete(visited, child.GetUID())
 		parent.Add(childNode)
 	}
 }
@@ -381,15 +398,4 @@ func (t *OwnerTree) fireTreeLoadFailed(err error) {
 	for _, l := range t.listeners {
 		l.TreeLoadFailed(err)
 	}
-}
-
-func ownerRxMatch(q, path string) bool {
-	rx := regexp.MustCompile(`(?i)` + q)
-	tokens := strings.Split(path, "::")
-	for _, t := range tokens {
-		if rx.MatchString(t) {
-			return true
-		}
-	}
-	return false
 }
