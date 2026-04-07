@@ -229,6 +229,7 @@ func (t *Table) bindKeys() {
 		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
 		ui.KeyShiftS:           ui.NewKeyAction("Sort Status", t.SortColCmd(statusCol, true), false),
 		ui.KeyShiftO:           ui.NewKeyAction("Sort Selected Column", t.sortSelectedColumnCmd, false),
+		ui.KeyShiftI:           ui.NewKeyAction("Toggle Column Invert", t.toggleColInvertCmd, false),
 	})
 }
 
@@ -244,6 +245,11 @@ func (t *Table) toggleWideCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (t *Table) sortSelectedColumnCmd(*tcell.EventKey) *tcell.EventKey {
 	t.Table.SortSelectedColumn()
+	return nil
+}
+
+func (t *Table) toggleColInvertCmd(*tcell.EventKey) *tcell.EventKey {
+	t.Table.ToggleInvertSelectedCol()
 	return nil
 }
 
