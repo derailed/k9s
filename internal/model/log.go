@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/creack/pty"
-
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
@@ -117,7 +116,6 @@ func (l *Log) SetSinceSeconds(ctx context.Context, i int64) {
 func (l *Log) Configure(opts config.Logger) {
 	l.logOptions.Lines = opts.TailCount
 	l.logOptions.SinceSeconds = opts.SinceSeconds
-	l.shellFilter = opts.ShellFilter
 }
 
 // GetPath returns resource path.
@@ -332,7 +330,7 @@ func (l *Log) pipeThrough(ctx context.Context, in dao.LogChan) dao.LogChan {
 	}
 
 	if err := cmd.Start(); err != nil {
-		slog.Error("Log shell filter: start failed", "cmd", l.shellFilter, slogs.Error, err)
+		slog.Error("Log shell filter: start failed", slogs.Command, l.shellFilter, slogs.Error, err)
 		if ptyErr == nil {
 			pts.Close()
 			ptm.Close()
