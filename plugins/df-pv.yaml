@@ -198,7 +198,7 @@ plugins:
               --overwrite >/dev/null
           done <"$PVC_INVENTORY_FILE"
 
-          printf "Refreshing PVC usage in namespace '%s'\n" "$NAMESPACE"
+          printf "Refreshed PVC usage in namespace '%s'\n" "$NAMESPACE"
         }
 
         trap 'exit_code=$?; printf "Cannot refresh PVC usage in namespace '\''%s'\''\n" "$NAMESPACE" >&2; exit "$exit_code"' ERR
