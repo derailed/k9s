@@ -83,8 +83,14 @@ plugins:
         }
 
         load_pvc_inventory() {
+          local go_template
+
+          printf -v go_template '{{range .items}}{{.metadata.name}}{{"\\t"}}{{.status.capacity.storage}}{{"\\t"}}{{with .metadata.annotations}}{{index . "%s"}}{{end}}{{"\\t"}}{{with .metadata.annotations}}{{index . "%s"}}{{end}}{{"\\t"}}{{.spec.volumeName}}{{"\\n"}}{{end}}' \
+            "$USED_ANNOTATION_KEY" \
+            "$USED_PCT_ANNOTATION_KEY"
+
           kubectl --context "$CONTEXT" get pvc -n "$NAMESPACE" \
-            -o go-template='{{range .items}}{{.metadata.name}}{{"\t"}}{{.status.capacity.storage}}{{"\t"}}{{with .metadata.annotations}}{{index . "df-pv-used"}}{{end}}{{"\t"}}{{with .metadata.annotations}}{{index . "df-pv-used-pct"}}{{end}}{{"\t"}}{{.spec.volumeName}}{{"\n"}}{{end}}' \
+            -o "go-template=$go_template" \
             >"$PVC_INVENTORY_FILE"
         }
 
