@@ -211,7 +211,7 @@ func loadK9s(m ResourceMetas) {
 		SingularName: "xray",
 		Categories:   []string{k9sCat},
 	}
-	m[client.OwnersGVR] = &metav1.APIResource{
+	m[client.OwnGVR] = &metav1.APIResource{
 		Name:         "owners",
 		Kind:         "Owners",
 		SingularName: "owner",
