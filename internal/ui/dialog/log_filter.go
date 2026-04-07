@@ -6,15 +6,16 @@ package dialog
 import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 )
 
 type shellFilterFunc func(cmd string)
 
 // ShowLogFilter pops a dialog that lets the user enter (or clear) a shell
-// filter command for the log stream.  The current filter value is shown as the
-// pre-filled field text.  Submitting an empty string clears the filter.
-func ShowLogFilter(styles *config.Dialog, pages *ui.Pages, current string, ack shellFilterFunc, cancel cancelFunc) {
+// filter command for the log stream.  Up/Down arrows cycle through history.
+// Submitting an empty string clears the filter.
+func ShowLogFilter(styles *config.Dialog, pages *ui.Pages, current string, history []string, ack shellFilterFunc, cancel cancelFunc) {
 	cmd := current
 
 	f := tview.NewForm()
@@ -28,6 +29,42 @@ func ShowLogFilter(styles *config.Dialog, pages *ui.Pages, current string, ack s
 	f.AddInputField("Filter:", current, 50, nil, func(v string) {
 		cmd = v
 	})
+
+	// Wire Up/Down arrows on the input field to cycle through history.
+	// navIdx == len(history) means the user is at their current typed value.
+	if field, ok := f.GetFormItemByLabel("Filter:").(*tview.InputField); ok {
+		navIdx := len(history)
+		savedCurrent := current
+		field.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			switch event.Key() {
+			case tcell.KeyUp:
+				if navIdx > 0 {
+					if navIdx == len(history) {
+						savedCurrent = field.GetText()
+					}
+					navIdx--
+					text := history[len(history)-1-navIdx]
+					field.SetText(text)
+					cmd = text
+				}
+				return nil
+			case tcell.KeyDown:
+				if navIdx < len(history) {
+					navIdx++
+					var text string
+					if navIdx == len(history) {
+						text = savedCurrent
+					} else {
+						text = history[len(history)-1-navIdx]
+					}
+					field.SetText(text)
+					cmd = text
+				}
+				return nil
+			}
+			return event
+		})
+	}
 
 	f.AddButton("Cancel", func() {
 		dismiss(pages)

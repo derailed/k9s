@@ -476,8 +476,9 @@ func (l *Log) shellFilterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	d := l.app.Styles.Dialog()
-	dialog.ShowLogFilter(&d, l.app.Content.Pages, l.shellFilter, func(cmd string) {
+	dialog.ShowLogFilter(&d, l.app.Content.Pages, l.shellFilter, l.app.ShellFilterHistory(), func(cmd string) {
 		l.app.QueueUpdateDraw(func() {
+			l.app.AddShellFilterHistory(cmd)
 			l.shellFilter = cmd
 			l.model.SetShellFilter(l.getContext(), cmd)
 			l.updateTitle()
