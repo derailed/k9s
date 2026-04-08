@@ -599,13 +599,13 @@ var toastPhases = sets.New(
 	render.PhaseOOMKilled,
 )
 
-func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
+func (p *Pod) Sanitize(ctx context.Context, ns string, progressFn SanitizeProgressFn) (int, error) {
 	oo, err := p.Resource.List(ctx, ns)
 	if err != nil {
 		return 0, err
 	}
 
-	var count int
+	toast := make([]string, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
@@ -618,18 +618,33 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 		}
 
 		if toastPhases.Has(render.PodStatus(&pod)) {
-			// !!BOZO!! Might need to bump timeout otherwise rev limit if too many??
-			fqn := client.FQN(pod.Namespace, pod.Name)
-			slog.Debug("Sanitizing resource", slogs.FQN, fqn)
-			if err := p.Delete(ctx, fqn, nil, 0); err != nil {
-				slog.Debug("Aborted! Sanitizer delete failed",
-					slogs.FQN, fqn,
-					slogs.Count, count,
-					slogs.Error, err,
-				)
-				return count, err
-			}
-			count++
+			toast = append(toast, client.FQN(pod.Namespace, pod.Name))
+		}
+	}
+
+	if progressFn != nil {
+		progressFn(len(toast), 0, "")
+	}
+
+	var count int
+	for _, fqn := range toast {
+		if progressFn != nil {
+			progressFn(len(toast), count, fqn)
+		}
+
+		// !!BOZO!! Might need to bump timeout otherwise rev limit if too many??
+		slog.Debug("Sanitizing resource", slogs.FQN, fqn)
+		if err := p.Delete(ctx, fqn, nil, 0); err != nil {
+			slog.Debug("Aborted! Sanitizer delete failed",
+				slogs.FQN, fqn,
+				slogs.Count, count,
+				slogs.Error, err,
+			)
+			return count, err
+		}
+		count++
+		if progressFn != nil {
+			progressFn(len(toast), count, fqn)
 		}
 	}
 	slog.Debug("Sanitizer deleted pods", slogs.Count, count)
