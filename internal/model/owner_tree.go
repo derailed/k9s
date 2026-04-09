@@ -381,7 +381,10 @@ func setOwnerNodeStatus(node *xray.TreeNode, u *unstructured.Unstructured) {
 				node.Extras[xray.InfoKey] = reason
 			}
 			return
+		} else {
+			node.Extras[xray.StatusKey] = xray.CompletedStatus
 		}
+			
 		if reason != "" {
 			node.Extras[xray.InfoKey] = reason
 		}
