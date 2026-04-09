@@ -415,12 +415,15 @@ const (
 func (t TreeNode) toTitle() (title string) {
 	_, n := client.Namespaced(t.ID)
 	color, status := "white", "OK"
+	infoColor := "antiquewhite"
 	if v, ok := t.Extras[StatusKey]; ok {
 		switch v {
+		case CompletedStatus:
+			infoColor = "green"
 		case ToastStatus:
-			color, status = "orangered", toast
+			infoColor, color, status = "orangered", "orangered", toast
 		case MissingRefStatus:
-			color, status = "orange", toast+"_REF"
+			infoColor, color, status = "orange", "orange", toast+"_REF"
 		}
 	}
 	defer func() {
@@ -447,7 +450,7 @@ func (t TreeNode) toTitle() (title string) {
 	if !ok {
 		return
 	}
-	title += fmt.Sprintf(" [antiquewhite::][%s][::]", info)
+	title += fmt.Sprintf(" [%s::][%s][::]", infoColor, info)
 
 	return
 }
@@ -457,12 +460,15 @@ const colorFmt = "%s [%s::b]%s[::]"
 func (t TreeNode) toEmojiTitle() (title string) {
 	_, n := client.Namespaced(t.ID)
 	color, status := "white", "OK"
+	infoColor := "antiquewhite"
 	if v, ok := t.Extras[StatusKey]; ok {
 		switch v {
+		case CompletedStatus:
+			infoColor = "green"
 		case ToastStatus:
-			color, status = "orangered", toast
+			infoColor, color, status = "orangered", "orangered", toast
 		case MissingRefStatus:
-			color, status = "orange", toast+"_REF"
+			infoColor, color, status = "orange", "orange", toast+"_REF"
 		}
 	}
 	defer func() {
@@ -484,7 +490,7 @@ func (t TreeNode) toEmojiTitle() (title string) {
 	if !ok {
 		return
 	}
-	title += fmt.Sprintf(" [antiquewhite::][%s][::]", info)
+	title += fmt.Sprintf(" [%s::][%s][::]", infoColor, info)
 
 	return
 }
