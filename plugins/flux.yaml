@@ -303,6 +303,7 @@ plugins:
   # credits: https://github.com/fluxcd/flux2/discussions/2494
   get-suspended-helmreleases:
     shortCut: Shift-S
+    override: true
     confirm: false
     description: Suspended Helm Releases
     scopes:
@@ -320,6 +321,7 @@ plugins:
         | less -K
   get-suspended-kustomizations:
     shortCut: Shift-S
+    override: true
     confirm: false
     description: Suspended Kustomizations
     scopes:
