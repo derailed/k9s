@@ -342,6 +342,18 @@ func Test_sanitizeEsc(t *testing.T) {
 			s: "[fred[]",
 			e: "[fred]",
 		},
+		"multi-tags": {
+			s: "[INFO[]: some text [WARN[]: more",
+			e: "[INFO]: some text [WARN]: more",
+		},
+		"multi-tags-adjacent": {
+			s: "[INFO[] [blah-blah[] Testing",
+			e: "[INFO] [blah-blah] Testing",
+		},
+		"mixed-content": {
+			s: `{"foo":["bar"[]} Server on [::[]:5000`,
+			e: `{"foo":["bar"]} Server on [::]:5000`,
+		},
 	}
 
 	for k, u := range uu {

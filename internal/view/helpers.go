@@ -45,7 +45,7 @@ func aliases(m *v1.APIResource, aa sets.Set[string]) sets.Set[string] {
 	return ss
 }
 
-var bracketRX = regexp.MustCompile(`\[(.+)\[\]`)
+var bracketRX = regexp.MustCompile(`\[([^\[\]]+)\[\]`)
 
 func sanitizeEsc(s string) string {
 	return bracketRX.ReplaceAllString(s, `[$1]`)
