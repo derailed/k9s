@@ -77,7 +77,7 @@ func customJump(app *App, sourceGVR *client.GVR, sourcePath string, rule *config
 	})
 
 	// Jump to the target namespace if needed
-	if targetNS != "" && targetNS != client.NamespaceAll {
+	if targetNS != "" && targetNS != client.NamespaceAll && targetNS != client.ClusterScope {
 		if err := app.Config.SetActiveNamespace(targetNS); err != nil {
 			slog.Error("Unable to set active namespace during custom jump", slogs.Error, err)
 		}
@@ -118,9 +118,9 @@ func determineTargetNamespace(sourcePath, targetNSConfig string, sourceObj map[s
 	switch targetNSConfig {
 	case "":
 		// Default: use the source resource's namespace
-		// If source is cluster-scoped, default to all namespaces
+		// If source is cluster-scoped, use ClusterScope
 		if client.IsClusterScoped(sourceNS) {
-			return client.NamespaceAll, nil
+			return client.ClusterScope, nil
 		}
 		return sourceNS, nil
 	case "all":

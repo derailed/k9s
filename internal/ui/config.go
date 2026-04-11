@@ -124,12 +124,12 @@ func (c *Configurator) CustomJumpsWatcher(ctx context.Context, s synchronizer) e
 					})
 				}
 			case err := <-w.Errors:
-				slog.Warn("CustomNavigations watcher failed", slogs.Error, err)
+				slog.Warn("CustomJumps watcher failed", slogs.Error, err)
 				return
 			case <-ctx.Done():
-				slog.Debug("CustomNavigationsWatcher canceled", slogs.FileName, config.AppJumpsFile)
+				slog.Debug("CustomJumpsWatcher canceled", slogs.FileName, config.AppJumpsFile)
 				if err := w.Close(); err != nil {
-					slog.Error("Closing CustomNavigations watcher", slogs.Error, err)
+					slog.Error("Closing CustomJumps watcher", slogs.Error, err)
 				}
 				return
 			}
