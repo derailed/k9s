@@ -71,16 +71,14 @@ func InitConnection(config *Config, log *slog.Logger) (*APIClient, error) {
 		connOK: true,
 		log:    log.With(slogs.Subsys, "client"),
 	}
-	err := a.supportsMetricsResources()
-	if err != nil {
+	if err := a.supportsMetricsResources(); err != nil {
 		slog.Warn("Fail to locate metrics-server", slogs.Error, err)
+		if !errors.Is(err, noMetricServerErr) && !errors.Is(err, metricsUnsupportedErr) {
+			a.connOK = false
+			return &a, err
+		}
 	}
-	if err == nil || errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
-		return &a, nil
-	}
-	a.connOK = false
-
-	return &a, err
+	return &a, nil
 }
 
 // ConnectionOK returns connection status.
@@ -149,6 +147,10 @@ func (a *APIClient) clearCache() {
 func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth bool, err error) {
 	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
+	}
+	if gvr == NsGVR {
+		// The name of the namespace is required to check permissions in some cases
+		ns = name
 	}
 	if IsClusterWide(ns) {
 		ns = BlankNamespace
@@ -318,8 +320,8 @@ func (a *APIClient) CheckConnectivity() bool {
 		return a.getConnOK()
 	}
 
-	// Check connection
 	if _, err := client.ServerVersion(); err == nil {
+		a.setClient(client)
 		if !a.getConnOK() {
 			a.reset()
 		}
@@ -562,18 +564,16 @@ func (a *APIClient) SwitchContext(name string) error {
 	if err := a.config.SwitchContext(name); err != nil {
 		return err
 	}
-
-	if !a.CheckConnectivity() {
-		slog.Debug("No connectivity, skipping cache invalidation")
-	} else if err := a.invalidateCache(); err != nil {
-		return err
-	}
 	a.reset()
 	ResetMetrics()
-
-	// Need reload to pick up any kubeconfig changes.
 	a.config = NewConfig(a.config.flags)
+	if !a.CheckConnectivity() {
+		slog.Warn("SwitchContext: connectivity check failed", slogs.Context, name)
+	}
 
+	if _, err := a.DynDial(); err != nil {
+		slog.Warn("SwitchContext: DynDial pre-warm failed", slogs.Error, err)
+	}
 	return a.invalidateCache()
 }
 

@@ -74,7 +74,7 @@ func (t *Table) defaultHeader() model1.Header {
 			continue
 		}
 		timeCol := ageCols.Has(c.Name)
-		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name), Attrs: model1.Attrs{Time: timeCol}})
+		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name), Attrs: model1.Attrs{Time: timeCol, Wide: c.Priority > 0}})
 	}
 	if t.getAgeIndex() > 0 {
 		h = append(h, model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}})
@@ -95,7 +95,12 @@ func (t *Table) Render(o any, ns string, r *model1.Row) error {
 	if t.specs.isEmpty() {
 		return nil
 	}
-	cols, err := t.specs.realize(row.Object.Object, t.defaultHeader(), r)
+
+	obj := row.Object.Object
+	if obj != nil {
+		obj = obj.DeepCopyObject()
+	}
+	cols, err := t.specs.realize(obj, t.defaultHeader(), r)
 	if err != nil {
 		return err
 	}

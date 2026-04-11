@@ -275,10 +275,14 @@ func (p *Pulse) bindKeys() {
 		tcell.KeyEnter:   ui.NewKeyAction("Goto", p.enterCmd, true),
 		tcell.KeyTab:     ui.NewKeyAction("Next", p.nextFocusCmd(dirLeft), true),
 		tcell.KeyBacktab: ui.NewKeyAction("Prev", p.nextFocusCmd(dirRight), true),
-		tcell.KeyDown:    ui.NewKeyAction("Next", p.nextFocusCmd(dirDown), false),
-		tcell.KeyUp:      ui.NewKeyAction("Prev", p.nextFocusCmd(dirUp), false),
+		tcell.KeyDown:    ui.NewKeyAction("Down", p.nextFocusCmd(dirDown), false),
+		tcell.KeyUp:      ui.NewKeyAction("Up", p.nextFocusCmd(dirUp), false),
 		tcell.KeyRight:   ui.NewKeyAction("Next", p.nextFocusCmd(dirLeft), false),
-		tcell.KeyLeft:    ui.NewKeyAction("Next", p.nextFocusCmd(dirRight), false),
+		tcell.KeyLeft:    ui.NewKeyAction("Prev", p.nextFocusCmd(dirRight), false),
+		ui.KeyH:          ui.NewKeyAction("Prev", p.nextFocusCmd(dirRight), false),
+		ui.KeyJ:          ui.NewKeyAction("Down", p.nextFocusCmd(dirDown), false),
+		ui.KeyK:          ui.NewKeyAction("Up", p.nextFocusCmd(dirUp), false),
+		ui.KeyL:          ui.NewKeyAction("Next", p.nextFocusCmd(dirLeft), false),
 	}))
 }
 
@@ -436,17 +440,17 @@ func (p *Pulse) nextFocusCmd(direction int) func(evt *tcell.EventKey) *tcell.Eve
 
 		currentIndex := p.findIndex(g)
 		nextIndex, total := currentIndex+direction, len(p.charts)
-		if nextIndex < 0 {
-			return nil
-		}
 
 		switch direction {
 		case dirLeft:
 			if nextIndex >= total {
-				return nil
+				nextIndex = 0
 			}
 			p.prevFocusIndex = -1
 		case dirRight:
+			if nextIndex < 0 {
+				nextIndex = total - 1
+			}
 			p.prevFocusIndex = -1
 		case dirUp:
 			if p.app.Conn().HasMetrics() {

@@ -172,6 +172,14 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			continue
 		}
 
+		if o == nil {
+			cols[idx] = RenderedCol{
+				Header: cc[idx].Header,
+				Value:  NAValue,
+			}
+			continue
+		}
+
 		var (
 			vals [][]reflect.Value
 			err  error
@@ -186,7 +194,15 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			}
 			vals, err = parser.FindResults(unstructured.UnstructuredContent())
 		} else {
-			vals, err = parser.FindResults(reflect.ValueOf(o).Elem().Interface())
+			rv := reflect.ValueOf(o)
+			if !rv.IsValid() || (rv.Kind() == reflect.Ptr && rv.IsNil()) {
+				cols[idx] = RenderedCol{
+					Header: cc[idx].Header,
+					Value:  NAValue,
+				}
+				continue
+			}
+			vals, err = parser.FindResults(rv.Elem().Interface())
 		}
 		if err != nil {
 			return nil, err

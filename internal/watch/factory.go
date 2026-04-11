@@ -115,7 +115,7 @@ func (f *Factory) Get(gvr *client.GVR, fqn string, wait bool, _ labels.Selector)
 		ns = client.BlankNamespace
 	}
 
-	inf, err := f.CanForResource(ns, gvr, []string{client.GetVerb})
+	inf, err := f.CanForInstance(fqn, gvr, []string{client.GetVerb})
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +206,30 @@ func (f *Factory) CanForResource(ns string, gvr *client.GVR, verbs []string) (in
 		resName = ns
 	}
 	auth, err := f.Client().CanI(ns, gvr, resName, verbs)
+	if err != nil {
+		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("%v access denied on resource %q:%q", verbs, ns, gvr)
+	}
+
+	return f.ForResource(ns, gvr)
+}
+
+// CanForInstance return an informer is user has access.
+func (f *Factory) CanForInstance(fqn string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error) {
+	ns, n := namespaced(fqn)
+	if client.IsAllNamespace(ns) {
+		ns = client.BlankNamespace
+	}
+
+	// For namespace resources, set namespace to the resource name to allow
+	// RoleBindings within that namespace to grant permissions
+	if gvr == client.NsGVR {
+		ns = n
+	}
+
+	auth, err := f.Client().CanI(ns, gvr, n, verbs)
 	if err != nil {
 		return nil, err
 	}

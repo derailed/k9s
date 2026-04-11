@@ -37,6 +37,9 @@ type UI struct {
 	// NoIcons toggles icons display.
 	NoIcons bool `json:"noIcons" yaml:"noIcons"`
 
+	// Invert inverts all skin colors using Oklch lightness inversion.
+	Invert bool `json:"invert" yaml:"invert"`
+
 	// Skin reference the general k9s skin name.
 	// Can be overridden per context.
 	Skin string `json:"skin" yaml:"skin,omitempty"`
@@ -51,4 +54,5 @@ type UI struct {
 	manualLogoless   *bool
 	manualCrumbsless *bool
 	manualSplashless *bool
+	manualInvert     *bool
 }

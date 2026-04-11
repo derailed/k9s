@@ -1,0 +1,56 @@
+# Plugin to interact with argo workflows directly from k9s.
+# As the plugin acts as a wrapper around the argo (workflows) CLI, it must be installed for
+# the plugin to work. To install it, see https://github.com/argoproj/argo-workflows/releases/
+plugins:
+  view-workflow:
+    shortCut: v
+    confirm: false
+    description: view
+    scopes:
+      - workflows
+    command: sh
+    background: false
+    args:
+      - -c
+      - |
+        argo -n $NAMESPACE get $NAME
+        echo -n "\nPress enter to return to k9s..." && read _
+  watch-workflow:
+    shortCut: Shift-W
+    confirm: false
+    description: watch
+    scopes:
+      - workflows
+    command: sh
+    background: false
+    args:
+      - -c
+      - "watch -n 3 -q 5 argo -n $NAMESPACE get $NAME"
+  terminate-workflow:
+    shortCut: t
+    confirm: true
+    description: terminate
+    scopes:
+      - workflows
+    command: argo
+    background: false
+    args:
+      - -n 
+      - $NAMESPACE 
+      - terminate 
+      - $NAME
+  submit-from:
+    shortCut: s
+    confirm: true
+    description: submit-as-workflow
+    scopes:
+      - workflowtemplates
+      - cronworkflows
+    command: argo
+    background: false
+    args:
+      - -n 
+      - $NAMESPACE 
+      - submit 
+      - --from
+      - $RESOURCE_NAME/$NAME

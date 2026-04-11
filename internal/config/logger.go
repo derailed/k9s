@@ -21,6 +21,7 @@ type Logger struct {
 	SinceSeconds      int64 `json:"sinceSeconds" yaml:"sinceSeconds"`
 	TextWrap          bool  `json:"textWrap" yaml:"textWrap"`
 	DisableAutoscroll bool  `json:"disableAutoscroll" yaml:"disableAutoscroll"`
+	ColumnLock        bool  `json:"columnLock" yaml:"columnLock"`
 	ShowTime          bool  `json:"showTime" yaml:"showTime"`
 }
 
