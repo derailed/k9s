@@ -840,7 +840,7 @@ jumps:
 * **labelSelector** (optional): Kubernetes label selector to filter target resources. Supports Go template syntax
 * **fieldSelector** (optional): Kubernetes field selector to filter target resources. Supports Go template syntax
 * **targetNamespace** (optional): Controls namespace behavior:
-  * Empty (default): Use the source resource's namespace (or "all" if source is cluster-scoped)
+  * Empty (default): Use the source resource's namespace (or cluster-scoped if source is cluster-scoped)
   * `all`: View resources across all namespaces
   * `<namespace-name>`: Jump to a specific namespace
   * `{{.spec.field}}`: Use template expression to extract namespace from source resource
