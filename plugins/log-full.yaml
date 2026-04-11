@@ -59,3 +59,24 @@ plugins:
     - $CONTEXT
     - --kubeconfig
     - $KUBECONFIG
+  log-less-deployment:
+    shortCut: Shift-L
+    description: "logs|less"
+    scopes:
+    - deployment
+    command: bash
+    background: false
+    args:
+    - -c
+    - '"$@" | less'
+    - dummy-arg
+    - kubectl
+    - logs
+    - deployment/$NAME
+    - --all-pods
+    - -n
+    - $NAMESPACE
+    - --context
+    - $CONTEXT
+    - --kubeconfig
+    - $KUBECONFIG
