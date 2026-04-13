@@ -1,0 +1,235 @@
+plugins:
+  # Requires 'df-pv' to be installed as 'kubectl' plugin
+  # Add column "SIZE:.metadata.annotations.df-pv-used|R" to "views.yaml"
+  # Add column "'% USED:.metadata.annotations.df-pv-used-pct|N'" to "views.yaml"
+  df-pv:
+    shortCut: Shift-U
+    description: Refresh PVC usage
+    overwriteOutput: true
+    confirm: false
+    scopes:
+      - pvc
+    command: bash
+    background: true
+    args:
+      - -c
+      - |
+        set -euo pipefail
+
+        USED_ANNOTATION_KEY="df-pv-used"
+        USED_PCT_ANNOTATION_KEY="df-pv-used-pct"
+        LOCK_MAX_AGE_SECONDS="${DF_PV_LOCK_MAX_AGE_SECONDS:-1800}"
+        LONGHORN_NAMESPACE="${DF_PV_LONGHORN_NAMESPACE:-longhorn-system}"
+        TMP_BASE="${TMPDIR:-/tmp}"
+
+        CONTEXT="${1:-}"
+        NAMESPACE="${2:-}"
+
+        to_mib() {
+          awk -v size="$1" -v unit="${2:-}" 'BEGIN {
+            value = size
+            if (unit == "") {
+              unit = size
+              sub(/[A-Za-z]+$/, "", value)
+              sub(/^[0-9.]+/, "", unit)
+            }
+            if (unit == "Ti") mult = 1024 * 1024
+            else if (unit == "Gi") mult = 1024
+            else if (unit == "Mi") mult = 1
+            else if (unit == "Ki") mult = 1 / 1024
+            else if (unit == "B") mult = 1 / (1024 * 1024)
+            else exit
+            printf "%.6f", value * mult
+          }'
+        }
+
+        acquire_lock() {
+          local context_hash
+          local lock_pid
+          local modified_at
+          local now
+
+          if command -v sha256sum >/dev/null 2>&1; then
+            context_hash="$(printf '%s' "${CONTEXT:-default}" | sha256sum)"
+          elif command -v shasum >/dev/null 2>&1; then
+            context_hash="$(printf '%s' "${CONTEXT:-default}" | shasum -a 256)"
+          else
+            context_hash="$(printf '%s' "${CONTEXT:-default}" | cksum)"
+          fi
+          context_hash="${context_hash%% *}"
+          LOCK_DIR="${TMP_BASE%/}/df-pv-${context_hash:0:16}-${NAMESPACE}.lock"
+          if [[ -d "$LOCK_DIR" ]]; then
+            if [[ -f "$LOCK_DIR/pid" ]]; then
+              lock_pid="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
+              if [[ -n "$lock_pid" ]] && kill -0 "$lock_pid" >/dev/null 2>&1; then
+                return 1
+              fi
+            fi
+
+            if stat -c '%Y' "$LOCK_DIR" >/dev/null 2>&1; then
+              modified_at="$(stat -c '%Y' "$LOCK_DIR")"
+            else
+              modified_at="$(stat -f '%m' "$LOCK_DIR" 2>/dev/null || printf '0')"
+            fi
+
+            [[ "$modified_at" -ne 0 ]] || return 1
+            now="$(date +%s)"
+            (( now - modified_at > LOCK_MAX_AGE_SECONDS )) || return 1
+            rm -rf "$LOCK_DIR"
+          fi
+
+          mkdir "$LOCK_DIR" 2>/dev/null || return 1
+          printf '%s\n' "$$" >"$LOCK_DIR/pid"
+        }
+
+        load_pvc_inventory() {
+          local go_template
+
+          printf -v go_template '{{range .items}}{{.metadata.name}}{{"\\t"}}{{.status.capacity.storage}}{{"\\t"}}{{with .metadata.annotations}}{{index . "%s"}}{{end}}{{"\\t"}}{{with .metadata.annotations}}{{index . "%s"}}{{end}}{{"\\t"}}{{.spec.volumeName}}{{"\\n"}}{{end}}' \
+            "$USED_ANNOTATION_KEY" \
+            "$USED_PCT_ANNOTATION_KEY"
+
+          kubectl --context "$CONTEXT" get pvc -n "$NAMESPACE" \
+            -o "go-template=$go_template" \
+            >"$PVC_INVENTORY_FILE"
+        }
+
+        load_df_usage_map() {
+          local df_output
+
+          : >"$DF_USAGE_FILE"
+
+          if ! df_output="$(kubectl df-pv --context "$CONTEXT" -d -n "$NAMESPACE" 2>&1)"; then
+            return 0
+          fi
+
+          printf '%s\n' "$df_output" | awk -v namespace="$NAMESPACE" '
+            function size_to_mib(size, value, unit) {
+              value = size
+              unit = size
+              sub(/[A-Za-z]+$/, "", value)
+              sub(/^[0-9.]+/, "", unit)
+
+              if (unit == "Ti") return value * 1024 * 1024
+              if (unit == "Gi") return value * 1024
+              if (unit == "Mi") return value
+              if (unit == "Ki") return value / 1024
+              if (unit == "B") return value / (1024 * 1024)
+              return -1
+            }
+
+            $3 == namespace && $7 ~ /^[0-9][0-9.]*[A-Za-z]+$/ && $8 ~ /^[0-9][0-9.]*[A-Za-z]+$/ {
+              total_size = size_to_mib($7)
+              used_size = size_to_mib($8)
+
+              if (total_size >= 0 && used_size >= 0) {
+                printf "%s\t%.6f\t%.6f\n", $2, used_size, total_size
+              }
+            }
+          ' >"$DF_USAGE_FILE"
+        }
+
+        load_longhorn_map() {
+          local raw_file
+
+          : >"$LONGHORN_MAP_FILE"
+
+          if ! kubectl --context "$CONTEXT" get crd volumes.longhorn.io >/dev/null 2>&1; then
+            return 0
+          fi
+
+          raw_file="$TMP_DIR/longhorn-raw.tsv"
+          if ! kubectl --context "$CONTEXT" get volumes.longhorn.io -n "$LONGHORN_NAMESPACE" \
+            -o go-template='{{range .items}}{{.metadata.name}}{{"\t"}}{{.status.actualSize}}{{"\t"}}{{.status.kubernetesStatus.namespace}}{{"\n"}}{{end}}' \
+            >"$raw_file" 2>/dev/null; then
+            return 0
+          fi
+
+          while IFS=$'\t' read -r volume_name actual_size volume_namespace; do
+            [[ -z "$volume_name" || -z "$actual_size" ]] && continue
+            [[ "$volume_namespace" != "$NAMESPACE" ]] && continue
+            printf '%s\t%s\n' "$volume_name" "$(to_mib "$actual_size" B)"
+          done <"$raw_file" >"$LONGHORN_MAP_FILE"
+        }
+
+        refresh_view() {
+          local pvc_name capacity_text current_used current_pct volume_name
+          local usage_record source_name used_size_mib total_size_mib
+          local used_text pct_denominator pct_text
+
+          load_pvc_inventory
+          load_df_usage_map
+          load_longhorn_map
+
+          while IFS=$'\t' read -r pvc_name capacity_text current_used current_pct volume_name; do
+            [[ -z "$pvc_name" ]] && continue
+
+            source_name='mounted'
+            used_size_mib=''
+            total_size_mib=''
+            pct_denominator=''
+
+            usage_record="$(awk -F '\t' -v pvc="$pvc_name" '$1 == pvc { print $2 "\t" $3; exit }' "$DF_USAGE_FILE")"
+            if [[ -n "$usage_record" ]]; then
+              IFS=$'\t' read -r used_size_mib total_size_mib <<<"$usage_record"
+            else
+              used_size_mib="$(awk -F '\t' -v volume="$volume_name" '$1 == volume { print $2; exit }' "$LONGHORN_MAP_FILE")"
+              if [[ -n "$used_size_mib" ]]; then
+                source_name='longhorn'
+              fi
+            fi
+
+            [[ -z "$used_size_mib" ]] && continue
+
+            used_text="$(awk -v mib="$used_size_mib" 'BEGIN {
+              if (mib >= 1024) printf "%.2f GiB", mib / 1024
+              else if (mib < 1) printf "%.2f KiB", mib * 1024
+              else printf "%.2f MiB", mib
+            }')"
+            if [[ "$source_name" != "mounted" ]]; then
+              used_text="${used_text}*"
+            fi
+
+            if [[ -n "$capacity_text" ]]; then
+              pct_denominator="$(to_mib "$capacity_text")"
+            fi
+            if [[ -z "$pct_denominator" && -n "$total_size_mib" ]]; then
+              pct_denominator="$total_size_mib"
+            fi
+            [[ -z "$pct_denominator" ]] && continue
+
+            if ! pct_text="$(awk -v numerator="$used_size_mib" -v denominator="$pct_denominator" 'BEGIN { if (denominator <= 0) exit 1; printf "%.0f", (numerator / denominator) * 100 }')"; then
+              continue
+            fi
+            pct_text="${pct_text}%"
+
+            if [[ "$current_used" == "$used_text" && "$current_pct" == "$pct_text" ]]; then
+              continue
+            fi
+
+            kubectl --context "$CONTEXT" annotate pvc "$pvc_name" -n "$NAMESPACE" \
+              "$USED_ANNOTATION_KEY=$used_text" \
+              "$USED_PCT_ANNOTATION_KEY=$pct_text" \
+              --overwrite >/dev/null
+          done <"$PVC_INVENTORY_FILE"
+
+          printf "Refreshed PVC usage in namespace '%s'\n" "$NAMESPACE"
+        }
+
+        trap 'exit_code=$?; printf "Cannot refresh PVC usage in namespace '\''%s'\''\n" "$NAMESPACE" >&2; exit "$exit_code"' ERR
+        trap 'if [[ -n "${TMP_DIR:-}" && -d "$TMP_DIR" ]]; then rm -rf "$TMP_DIR"; fi; if [[ -n "${LOCK_DIR:-}" && -d "$LOCK_DIR" && -f "$LOCK_DIR/pid" ]] && [[ "$(cat "$LOCK_DIR/pid" 2>/dev/null || true)" == "$$" ]]; then rm -rf "$LOCK_DIR" >/dev/null 2>&1 || true; fi' EXIT
+
+        TMP_DIR="$(mktemp -d "${TMP_BASE%/}/df-pv.XXXXXX")"
+        LONGHORN_MAP_FILE="$TMP_DIR/longhorn.tsv"
+        PVC_INVENTORY_FILE="$TMP_DIR/pvc.tsv"
+        DF_USAGE_FILE="$TMP_DIR/df.tsv"
+
+        if ! acquire_lock; then
+          printf "Refreshing PVC usage in namespace '%s' is already running\n" "$NAMESPACE"
+          exit 0
+        fi
+
+        refresh_view
+      - --
+      - $CONTEXT
+      - $NAMESPACE
