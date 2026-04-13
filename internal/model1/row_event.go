@@ -304,6 +304,9 @@ func (r RowEventSorter) Swap(i, j int) {
 
 func (r RowEventSorter) Less(i, j int) bool {
 	f1, f2 := r.Events.events[i].Row.Fields, r.Events.events[j].Row.Fields
+	if r.Index >= len(f1) || r.Index >= len(f2) {
+		return i < j
+	}
 	id1, id2 := r.Events.events[i].Row.ID, r.Events.events[j].Row.ID
 	less := Less(r.IsNumber, r.IsDuration, r.IsCapacity, id1, id2, f1[r.Index], f2[r.Index])
 	if r.Asc {
