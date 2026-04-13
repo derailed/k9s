@@ -16,7 +16,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -365,27 +364,21 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	}
 
 	if err := a.refreshCluster(ctx); err != nil {
-		slog.Error("Cluster updater failed!", slogs.Error, err)
-		return
+		slog.Warn("Initial cluster refresh failed, will keep retrying...", slogs.Error, err)
 	}
 
-	bf := model.NewExpBackOff(ctx, clusterRefresh, 2*time.Minute)
-	delay := clusterRefresh
+	// Simple retry loop: check every clusterRefresh (15s).
+	// No exponential backoff, no bailout. The connectivity check
+	// itself has a 10s timeout, so each iteration takes at most ~25s.
+	// This ensures k9s detects recovery quickly after any disconnect.
 	for {
 		select {
 		case <-ctx.Done():
 			slog.Debug("ClusterInfo updater canceled!")
 			return
-		case <-time.After(delay):
+		case <-time.After(clusterRefresh):
 			if err := a.refreshCluster(ctx); err != nil {
-				slog.Error("Cluster updates failed. Giving up ;(", slogs.Error, err)
-				if delay = bf.NextBackOff(); delay == backoff.Stop {
-					a.BailOut(1)
-					return
-				}
-			} else {
-				bf.Reset()
-				delay = clusterRefresh
+				slog.Warn("Cluster update failed, retrying...", slogs.Error, err)
 			}
 		}
 	}
@@ -400,6 +393,7 @@ func (a *App) refreshCluster(context.Context) error {
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
 			atomic.StoreInt32(&a.conRetry, 0)
+			slog.Info("✅ Kubernetes connectivity OK")
 			a.Status(model.FlashInfo, "K8s connectivity OK")
 			if c != nil {
 				c.Start()
@@ -413,18 +407,10 @@ func (a *App) refreshCluster(context.Context) error {
 		c.Stop()
 	}
 
-	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), a.Config.K9s.MaxConnRetry
-	if count >= maxConnRetry {
-		slog.Error("Conn check failed. Bailing out!",
-			slogs.Retry, count,
-			slogs.MaxRetries, maxConnRetry,
-		)
-		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", count)
-		a.BailOut(1)
-	}
+	count := atomic.LoadInt32(&a.conRetry)
 	if count > 0 {
-		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d/%d]", count, maxConnRetry))
-		return fmt.Errorf("conn check failed (%d/%d)", count, maxConnRetry)
+		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d]", count))
+		return fmt.Errorf("conn check failed (%d)", count)
 	}
 
 	// Reload alias
