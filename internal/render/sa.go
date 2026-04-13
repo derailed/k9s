@@ -70,6 +70,7 @@ func (ServiceAccount) defaultRow(raw *unstructured.Unstructured, r *model1.Row) 
 		"",
 		ToAge(sa.GetCreationTimestamp()),
 	}
+	r.Age = sa.GetCreationTimestamp().Time
 
 	return nil
 }

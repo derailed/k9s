@@ -72,6 +72,7 @@ func (ClusterRoleBinding) defaultRow(raw *unstructured.Unstructured, r *model1.R
 		mapToStr(crb.Labels),
 		ToAge(crb.GetCreationTimestamp()),
 	}
+	r.Age = crb.GetCreationTimestamp().Time
 
 	return nil
 }

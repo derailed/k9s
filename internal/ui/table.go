@@ -503,7 +503,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.UpdateTitle()
 }
 
-func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad) {
+func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad) { //nolint:gocritic
 	color := model1.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn

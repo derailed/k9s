@@ -70,6 +70,7 @@ func (Secret) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 		"",
 		ToAge(raw.GetCreationTimestamp()),
 	}
+	r.Age = raw.GetCreationTimestamp().Time
 
 	return nil
 }

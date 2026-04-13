@@ -75,6 +75,7 @@ func (PortForward) Render(o any, _ string, r *model1.Row) error {
 	r.ID = pf.ID()
 	ns, n := client.Namespaced(r.ID)
 
+	pfAge := pf.Age()
 	r.Fields = model1.Fields{
 		ns,
 		trimContainer(n),
@@ -84,8 +85,9 @@ func (PortForward) Render(o any, _ string, r *model1.Row) error {
 		AsThousands(int64(pf.Config.C)),
 		AsThousands(int64(pf.Config.N)),
 		"",
-		ToAge(metav1.Time{Time: pf.Age()}),
+		ToAge(metav1.Time{Time: pfAge}),
 	}
+	r.Age = pfAge
 
 	return nil
 }

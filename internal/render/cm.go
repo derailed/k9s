@@ -70,6 +70,7 @@ func (ConfigMap) defaultRow(o any, r *model1.Row) error {
 		"",
 		ToAge(cm.GetCreationTimestamp()),
 	}
+	r.Age = cm.GetCreationTimestamp().Time
 
 	return nil
 }

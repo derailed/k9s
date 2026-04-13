@@ -39,7 +39,7 @@ func NewRowEventWithDeltas(row Row, delta DeltaRow) RowEvent {
 }
 
 // Clone returns a row event deep copy.
-func (r RowEvent) Clone() RowEvent {
+func (r RowEvent) Clone() RowEvent { //nolint:gocritic
 	return RowEvent{
 		Kind:   r.Kind,
 		Row:    r.Row.Clone(),
@@ -48,7 +48,7 @@ func (r RowEvent) Clone() RowEvent {
 }
 
 // Customize returns a new subset based on the given column indices.
-func (r RowEvent) Customize(cols []int) RowEvent {
+func (r RowEvent) Customize(cols []int) RowEvent { //nolint:gocritic
 	delta := r.Deltas
 	if !r.Deltas.IsBlank() {
 		delta = make(DeltaRow, len(cols))
@@ -63,13 +63,13 @@ func (r RowEvent) Customize(cols []int) RowEvent {
 }
 
 // ExtractHeaderLabels extract collection of fields into header.
-func (r RowEvent) ExtractHeaderLabels(labelCol int) []string {
+func (r RowEvent) ExtractHeaderLabels(labelCol int) []string { //nolint:gocritic
 	hh, _ := sortLabels(labelize(r.Row.Fields[labelCol]))
 	return hh
 }
 
 // Labelize returns a new row event based on labels.
-func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
+func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent { //nolint:gocritic
 	return RowEvent{
 		Kind:   r.Kind,
 		Deltas: r.Deltas.Labelize(cols, labelCol),
@@ -78,7 +78,7 @@ func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
 }
 
 // Diff returns true if the row changed.
-func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
+func (r RowEvent) Diff(re RowEvent, ageCol int) bool { //nolint:gocritic
 	if r.Kind != re.Kind {
 		return true
 	}
@@ -128,12 +128,12 @@ func (r *RowEvents) At(i int) (RowEvent, bool) {
 	return r.events[i], true
 }
 
-func (r *RowEvents) Set(i int, re RowEvent) {
+func (r *RowEvents) Set(i int, re RowEvent) { //nolint:gocritic
 	r.events[i] = re
 	r.index[re.Row.ID] = i
 }
 
-func (r *RowEvents) Add(re RowEvent) {
+func (r *RowEvents) Add(re RowEvent) { //nolint:gocritic
 	r.events = append(r.events, re)
 	r.index[re.Row.ID] = len(r.events) - 1
 }
@@ -193,7 +193,7 @@ func (r *RowEvents) Clone() *RowEvents {
 }
 
 // Upsert add or update a row if it exists.
-func (r *RowEvents) Upsert(re RowEvent) {
+func (r *RowEvents) Upsert(re RowEvent) { //nolint:gocritic
 	if idx, ok := r.FindIndex(re.Row.ID); ok {
 		r.events[idx] = re
 	} else {
@@ -303,12 +303,22 @@ func (r RowEventSorter) Swap(i, j int) {
 }
 
 func (r RowEventSorter) Less(i, j int) bool {
-	f1, f2 := r.Events.events[i].Row.Fields, r.Events.events[j].Row.Fields
-	id1, id2 := r.Events.events[i].Row.ID, r.Events.events[j].Row.ID
+	e1, e2 := r.Events.events[i], r.Events.events[j]
+	// Use raw timestamp for duration columns when available (avoids precision loss from humanized strings)
+	if r.IsDuration && !e1.Row.Age.IsZero() && !e2.Row.Age.IsZero() {
+		// Smaller duration = more recently created = later timestamp.
+		// Asc (↑): youngest first → later timestamp first → e2.Before(e1).
+		// Desc (↓): oldest first → earlier timestamp first → e1.Before(e2).
+		if r.Asc {
+			return e2.Row.Age.Before(e1.Row.Age)
+		}
+		return e1.Row.Age.Before(e2.Row.Age)
+	}
+	f1, f2 := e1.Row.Fields, e2.Row.Fields
+	id1, id2 := e1.Row.ID, e2.Row.ID
 	less := Less(r.IsNumber, r.IsDuration, r.IsCapacity, id1, id2, f1[r.Index], f2[r.Index])
 	if r.Asc {
 		return less
 	}
-
 	return !less
 }

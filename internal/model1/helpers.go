@@ -179,7 +179,7 @@ func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 
 func lessDuration(s1, s2 string) bool {
 	d1, d2 := durationToSeconds(s1), durationToSeconds(s2)
-	return d1 <= d2
+	return d1 < d2
 }
 
 func lessCapacity(s1, s2 string) bool {

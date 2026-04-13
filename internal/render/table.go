@@ -69,7 +69,7 @@ func (t *Table) defaultHeader() model1.Header {
 	}
 	h := make(model1.Header, 0, len(t.table.ColumnDefinitions))
 	for i, c := range t.table.ColumnDefinitions {
-		if c.Name == ageTableCol {
+		if strings.EqualFold(c.Name, ageTableCol) {
 			t.setAgeIndex(i)
 			continue
 		}
@@ -157,6 +157,19 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 	} else if ageIdx > 0 {
 		slog.Warn("No Duration detected on age field")
 		r.Fields = append(r.Fields, NAValue)
+	}
+
+	// Populate raw timestamp from object metadata when available.
+	switch {
+	case row.Object.Object != nil:
+		if m, _ := meta.Accessor(row.Object.Object); m != nil {
+			r.Age = m.GetCreationTimestamp().Time
+		}
+	case row.Object.Raw != nil:
+		var pm metav1.PartialObjectMetadata
+		if err := json.Unmarshal(row.Object.Raw, &pm); err == nil {
+			r.Age = pm.GetCreationTimestamp().Time
+		}
 	}
 
 	return nil

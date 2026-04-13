@@ -95,6 +95,7 @@ func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *
 		AsStatus(c.diagnose(crd.Name, crd.Spec.Versions)),
 		ToAge(crd.GetCreationTimestamp()),
 	}
+	r.Age = crd.GetCreationTimestamp().Time
 
 	return nil
 }

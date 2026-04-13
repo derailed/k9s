@@ -84,6 +84,7 @@ func (s StatefulSet) defaultRow(raw *unstructured.Unstructured, r *model1.Row) e
 		AsStatus(s.diagnose(desired, sts.Status.Replicas, sts.Status.ReadyReplicas)),
 		ToAge(sts.GetCreationTimestamp()),
 	}
+	r.Age = sts.GetCreationTimestamp().Time
 
 	return nil
 }
