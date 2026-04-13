@@ -154,9 +154,6 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	case tcell.KeyRune:
 		r := evt.Rune()
-		// Filter out control characters and non-printable runes that may come from
-		// terminal escape sequences (e.g., cursor position reports like [7;15R)
-		// Only accept printable characters for user input
 		if isValidInputRune(r) {
 			p.model.Add(r)
 		}

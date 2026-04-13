@@ -48,6 +48,7 @@ type App struct {
 	Content       *PageStack
 	command       *Command
 	factory       *watch.Factory
+	escFilter     *ui.EscapeSequenceFilter
 	cancelFn      context.CancelFunc
 	clusterModel  *model.ClusterInfo
 	cmdHistory    *model.History
@@ -66,6 +67,11 @@ func NewApp(cfg *config.Config) *App {
 		filterHistory: model.NewHistory(model.MaxHistory),
 		Content:       NewPageStack(),
 	}
+	// Set up escape filter with undo callback that deactivates any
+	// mode accidentally activated by escape sequence residue.
+	a.escFilter = ui.NewEscapeSequenceFilter(func() {
+		a.Prompt().Deactivate()
+	})
 	a.ReloadStyles()
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
@@ -244,6 +250,12 @@ func (a *App) contextNames() ([]string, error) {
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	// Filter out terminal escape sequence responses (OSC 10/11, CPR) that
+	// leak through tcell as individual KeyRune events. See #3885.
+	if evt.Key() == tcell.KeyRune && a.escFilter.Filter(evt) {
+		return nil
+	}
+
 	if k, ok := a.HasAction(ui.AsKey(evt)); ok && !a.Content.IsTopDialog() {
 		return k.Action(evt)
 	}

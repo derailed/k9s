@@ -6,6 +6,7 @@ package ui_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -83,42 +84,57 @@ func TestPrompt_AcceptsPrintableCharacters(t *testing.T) {
 	})
 }
 
-// TestPrompt_FiltersEscapeSequencePattern tests that escape sequence
-// patterns are not automatically added when they appear as individual runes.
-// Note: This test verifies the validation works, but escape sequences
-// should ideally be handled by tcell before reaching KeyRune.
-func TestPrompt_FiltersEscapeSequencePattern(t *testing.T) {
-	m := model.NewFishBuff(':', model.CommandBuffer)
-	p := ui.NewPrompt(nil, true, config.NewStyles())
-	p.SetModel(m)
-	m.AddListener(p)
-	m.SetActive(true)
+// TestEscapeFilter_IntegrationCPR tests that a CPR response is fully
+// filtered by the EscapeSequenceFilter at the application level.
+// The filter is applied in view.App.keyboard(), not in the Prompt.
+func TestEscapeFilter_IntegrationCPR(t *testing.T) {
+	f := ui.NewEscapeSequenceFilter(nil)
 
-	// Simulate the problematic escape sequence pattern [7;15R
-	// Each character individually is printable, but we want to ensure
-	// they don't appear unexpectedly
-	escapeSequence := "[7;15R"
-
-	// Send each character
-	for _, r := range escapeSequence {
-		evt := tcell.NewEventKey(tcell.KeyRune, r, tcell.ModNone)
-		p.SendKey(evt)
+	// Simulate a CPR response: \x1b[7;15R
+	// tcell delivers: Alt+[, then 7, ;, 1, 5, R
+	events := []*tcell.EventKey{
+		tcell.NewEventKey(tcell.KeyRune, '[', tcell.ModAlt),
+		tcell.NewEventKey(tcell.KeyRune, '7', tcell.ModNone),
+		tcell.NewEventKey(tcell.KeyRune, ';', tcell.ModNone),
+		tcell.NewEventKey(tcell.KeyRune, '1', tcell.ModNone),
+		tcell.NewEventKey(tcell.KeyRune, '5', tcell.ModNone),
+		tcell.NewEventKey(tcell.KeyRune, 'R', tcell.ModNone),
 	}
 
-	// The characters themselves are printable, so they will be added
-	// This test documents the current behavior - the fix prevents
-	// control characters, but printable escape sequence chars would
-	// still be added if tcell doesn't filter them first
-	text := m.GetText()
+	for _, evt := range events {
+		assert.True(t, f.Filter(evt), "CPR event should be filtered")
+	}
 
-	// If all characters are printable, they will be in the buffer
-	// This is expected behavior - the fix prevents control chars,
-	// but can't prevent legitimate printable characters
-	assert.NotEmpty(t, text, "Printable escape sequence chars may still appear")
+	// Normal typing after sequence should pass through
+	assert.False(t, f.Filter(tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModNone)))
+}
 
-	// However, we can verify no control characters made it through
-	for _, r := range text {
-		assert.False(t, isControlChar(r), "No control characters should be in buffer")
+// TestEscapeFilter_IntegrationOSC tests that an OSC 10 color response
+// is fully filtered by the EscapeSequenceFilter.
+func TestEscapeFilter_IntegrationOSC(t *testing.T) {
+	f := ui.NewEscapeSequenceFilter(nil)
+
+	// Simulate OSC 10 response: \x1b]10;rgb:fafa/f9f9/f6f6\x1b\\
+	assert.True(t, f.Filter(tcell.NewEventKey(tcell.KeyRune, ']', tcell.ModAlt)))
+	for _, r := range "10;rgb:fafa/f9f9/f6f6" {
+		assert.True(t, f.Filter(tcell.NewEventKey(tcell.KeyRune, r, tcell.ModNone)))
+	}
+	assert.True(t, f.Filter(tcell.NewEventKey(tcell.KeyRune, '\\', tcell.ModAlt)))
+
+	// Normal typing after should pass
+	assert.False(t, f.Filter(tcell.NewEventKey(tcell.KeyRune, 'a', tcell.ModNone)))
+}
+
+// TestEscapeFilter_IntegrationNormalTyping tests that normal user input
+// is never affected by the filter. Adds realistic delays between keystrokes
+// to simulate actual typing speed (> 5ms between chars).
+func TestEscapeFilter_IntegrationNormalTyping(t *testing.T) {
+	f := ui.NewEscapeSequenceFilter(nil)
+
+	for _, r := range "pods/nginx:123" {
+		time.Sleep(10 * time.Millisecond) // simulate typing speed
+		assert.False(t, f.Filter(tcell.NewEventKey(tcell.KeyRune, r, tcell.ModNone)),
+			"Normal char %c should pass through", r)
 	}
 }
 
