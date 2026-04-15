@@ -186,7 +186,15 @@ func (v *LiveView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	v.Stop()
 	defer v.Start()
-	if err := editRes(v.app, v.model.GVR(), path); err != nil {
+
+	gvr := v.model.GVR()
+	var err error
+	if gvr.IsDecodable() {
+		err = editSecretRes(v.app, gvr, path)
+	} else {
+		err = editRes(v.app, gvr, path)
+	}
+	if err != nil {
 		v.app.Flash().Err(err)
 	}
 

@@ -9,12 +9,15 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/derailed/k9s/internal/slogs"
+	yamlv3 "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
+	sigsyaml "sigs.k8s.io/yaml"
 )
 
 // Secret represents a secret K8s resource.
@@ -79,6 +82,97 @@ func (s *Secret) decodeYAML(path string, showManaged bool) (string, error) {
 	return buff.String(), nil
 }
 
+// secretKeyOrder surfaces the secret type (for context) followed by the editable
+// fields first. sigs.k8s.io/yaml sorts alphabetically (via JSON), which would
+// push stringData off-screen and make editing non-obvious.
+var secretKeyOrder = []string{"type", "stringData", "data"}
+
+// EditYAML returns the secret YAML decoded for editing. Text values are moved
+// to stringData and the output is reordered so editable fields appear first.
+func (s *Secret) EditYAML(path string) (string, error) {
+	o, err := s.Get(context.Background(), path)
+	if err != nil {
+		return "", err
+	}
+	if o == nil {
+		return "", fmt.Errorf("secret not found: %s", path)
+	}
+
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return "", fmt.Errorf("expecting unstructured but got %T", o)
+	}
+
+	secret, err := toSecret(o)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert to secret: %w", err)
+	}
+
+	// TypeMeta is not populated by DefaultUnstructuredConverter.
+	secret.APIVersion = u.GetAPIVersion()
+	secret.Kind = u.GetKind()
+
+	// Separate text-safe values (stringData) from binary values (data).
+	// sigs.k8s.io/yaml marshals []byte via JSON, which base64-encodes them.
+	stringData := make(map[string]string, len(secret.Data))
+	binaryData := make(map[string][]byte, len(secret.Data))
+	for k, val := range secret.Data {
+		if utf8.Valid(val) {
+			stringData[k] = string(val)
+		} else {
+			binaryData[k] = val
+		}
+	}
+	secret.Data = binaryData
+	secret.StringData = stringData
+
+	out, err := sigsyaml.Marshal(secret)
+	if err != nil {
+		return "", err
+	}
+
+	return reorderSecretYAML(string(out))
+}
+
+// reorderSecretYAML reorders top-level keys so type (for context) and the
+// editable fields (stringData, data) appear first, visible without scrolling.
+func reorderSecretYAML(src string) (string, error) {
+	var doc yamlv3.Node
+	if err := yamlv3.Unmarshal([]byte(src), &doc); err != nil {
+		return src, err
+	}
+	if len(doc.Content) == 0 || doc.Content[0].Kind != yamlv3.MappingNode {
+		return src, nil
+	}
+	root := doc.Content[0]
+
+	pairs := make(map[string][2]*yamlv3.Node, len(root.Content)/2)
+	for i := 0; i+1 < len(root.Content); i += 2 {
+		pairs[root.Content[i].Value] = [2]*yamlv3.Node{root.Content[i], root.Content[i+1]}
+	}
+
+	newContent := make([]*yamlv3.Node, 0, len(root.Content))
+	seen := make(map[string]bool, len(secretKeyOrder))
+	for _, k := range secretKeyOrder {
+		if p, ok := pairs[k]; ok {
+			newContent = append(newContent, p[0], p[1])
+			seen[k] = true
+		}
+	}
+	for i := 0; i+1 < len(root.Content); i += 2 {
+		if k := root.Content[i].Value; !seen[k] {
+			newContent = append(newContent, root.Content[i], root.Content[i+1])
+		}
+	}
+	root.Content = newContent
+
+	out, err := yamlv3.Marshal(root)
+	if err != nil {
+		return src, err
+	}
+	return string(out), nil
+}
+
 // SetDecodeData toggles decode mode.
 func (s *Secret) SetDecodeData(b bool) {
 	s.decodeData = b
@@ -124,12 +218,7 @@ func (s *Secret) Decode(encodedDescription, path string) (string, error) {
 // the corresponding secret data values.
 // If the conversion fails, it returns an error.
 func ExtractSecrets(o runtime.Object) (map[string]string, error) {
-	u, ok := o.(*unstructured.Unstructured)
-	if !ok {
-		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got %T", o)
-	}
-	var secret v1.Secret
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret)
+	secret, err := toSecret(o)
 	if err != nil {
 		return nil, err
 	}
@@ -139,4 +228,18 @@ func ExtractSecrets(o runtime.Object) (map[string]string, error) {
 	}
 
 	return secretData, nil
+}
+
+func toSecret(o runtime.Object) (*v1.Secret, error) {
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got %T", o)
+	}
+	var secret v1.Secret
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return &secret, nil
 }
