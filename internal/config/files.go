@@ -80,6 +80,9 @@ var (
 
 	// AppHotKeysFile tracks hotkeys config file.
 	AppHotKeysFile string
+
+	// AppShellFilterHistoryFile tracks shell filter command history.
+	AppShellFilterHistoryFile string
 )
 
 // InitLogLoc initializes K9s logs location.
@@ -155,6 +158,7 @@ func initK9sEnvLocs() error {
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
+	AppShellFilterHistoryFile = filepath.Join(AppConfigDir, "shell_filter_history.yaml")
 
 	return nil
 }
@@ -176,6 +180,7 @@ func initXDGLocs() error {
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
 	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
+	AppShellFilterHistoryFile = filepath.Join(AppConfigDir, "shell_filter_history.yaml")
 
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
 	if e := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); e != nil {
@@ -295,4 +300,16 @@ func SkinFileFromName(n string) string {
 	}
 
 	return filepath.Join(AppSkinsDir, n+".yaml")
+}
+
+// SaveShellFilterHistory persists the shell filter command history to disk.
+func SaveShellFilterHistory(history []string) error {
+	if AppShellFilterHistoryFile == "" {
+		return nil
+	}
+	if err := data.EnsureDirPath(AppShellFilterHistoryFile, data.DefaultDirMod); err != nil {
+		return err
+	}
+
+	return data.SaveYAML(AppShellFilterHistoryFile, history)
 }

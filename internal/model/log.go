@@ -4,12 +4,17 @@
 package model
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
+	"os/exec"
 	"sync"
 	"time"
 
+	"github.com/creack/pty"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
@@ -49,6 +54,7 @@ type Log struct {
 	cancelFn     context.CancelFunc
 	mx           sync.RWMutex
 	filter       string
+	shellFilter  string
 	lastSent     int
 	flushTimeout time.Duration
 }
@@ -235,7 +241,11 @@ func (l *Log) load(ctx context.Context) error {
 		l.fireLogError(err)
 	}
 	for _, c := range cc {
-		go l.updateLogs(ctx, c)
+		ch := c
+		if l.shellFilter != "" {
+			ch = l.pipeThrough(ctx, c)
+		}
+		go l.updateLogs(ctx, ch)
 	}
 
 	return nil
@@ -275,6 +285,142 @@ func (l *Log) Notify() {
 func (l *Log) ToggleAllContainers(ctx context.Context) {
 	l.logOptions.ToggleAllContainers()
 	l.Restart(ctx)
+}
+
+// SetShellFilter sets a shell command to pipe log lines through and restarts
+// the stream. An empty string disables the filter.
+func (l *Log) SetShellFilter(ctx context.Context, cmd string) {
+	l.shellFilter = cmd
+	l.Restart(ctx)
+}
+
+// pipeThrough starts a shell subprocess for the configured shellFilter and
+// returns a new LogChan whose items are the filtered output. Pod/Container
+// metadata is preserved from the first item on the input channel so that
+// per-container coloring and context remain intact. One subprocess is
+// started per call, so multi-container streams each get their own filter.
+func (l *Log) pipeThrough(ctx context.Context, in dao.LogChan) dao.LogChan {
+	out := make(dao.LogChan, cap(in))
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", l.shellFilter)
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		slog.Error("Log shell filter: stdin pipe failed", slogs.Error, err)
+		return in
+	}
+
+	// Give the subprocess a PTY for stdout so TTY-detection in the filter
+	// succeeds and ANSI colors are enabled.  Fall back to a plain pipe if
+	// the PTY cannot be opened (e.g. unsupported platform).
+	ptm, pts, ptyErr := pty.Open()
+	var stdoutReader io.Reader
+	if ptyErr == nil {
+		cmd.Stdout = pts
+		cmd.Stderr = pts
+		stdoutReader = ptm
+	} else {
+		slog.Warn("Log shell filter: PTY unavailable, colors disabled", slogs.Error, ptyErr)
+		pipe, pipeErr := cmd.StdoutPipe()
+		if pipeErr != nil {
+			slog.Error("Log shell filter: stdout pipe failed", slogs.Error, pipeErr)
+			return in
+		}
+		stdoutReader = pipe
+	}
+
+	if err := cmd.Start(); err != nil {
+		slog.Error("Log shell filter: start failed", slogs.Command, l.shellFilter, slogs.Error, err)
+		if ptyErr == nil {
+			pts.Close()
+			ptm.Close()
+		}
+		return in
+	}
+	// Slave end is only needed by the child; close it in the parent so EOF
+	// propagates correctly when the child exits.
+	if ptyErr == nil {
+		pts.Close()
+	}
+
+	// metaCh carries the Pod/Container metadata from the first input item to
+	// the reader goroutine so output items are decorated identically.
+	metaCh := make(chan *dao.LogItem, 1)
+
+	// Writer: copy raw log bytes to the filter's stdin.
+	go func() {
+		defer stdin.Close()
+		defer close(metaCh)
+		first := true
+		for {
+			select {
+			case item, ok := <-in:
+				if !ok || item == dao.ItemEOF {
+					return
+				}
+				if first {
+					first = false
+					metaCh <- &dao.LogItem{
+						Pod:             item.Pod,
+						Container:       item.Container,
+						SingleContainer: item.SingleContainer,
+					}
+				}
+				// Undo tview's [ → [[] escaping, then strip the leading
+				// timestamp field (first word) so the filter receives only
+				// the message body — matching what is shown on screen.
+				bb := bytes.ReplaceAll(item.Bytes, []byte("[[]"), []byte("["))
+				if idx := bytes.IndexByte(bb, ' '); idx > 0 {
+					bb = bb[idx+1:]
+				}
+				if _, werr := stdin.Write(bb); werr != nil {
+					return
+				}
+				if len(bb) == 0 || bb[len(bb)-1] != '\n' {
+					if _, werr := stdin.Write([]byte{'\n'}); werr != nil {
+						return
+					}
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	// Reader: emit filtered lines as LogItems, re-attaching container metadata.
+	// PTY output uses \r\n line endings; trim the \r so lines are clean.
+	go func() {
+		defer func() { out <- dao.ItemEOF }()
+		if ptyErr == nil {
+			defer ptm.Close()
+		}
+
+		var tmpl dao.LogItem
+		if m := <-metaCh; m != nil {
+			tmpl = *m
+		}
+
+		scanner := bufio.NewScanner(stdoutReader)
+		scanner.Buffer(make([]byte, 64*1024), 1024*1024)
+		for scanner.Scan() {
+			raw := bytes.TrimRight(scanner.Bytes(), "\r")
+			if len(raw) == 0 {
+				continue
+			}
+			bb := make([]byte, len(raw)+1)
+			copy(bb, raw)
+			bb[len(bb)-1] = '\n'
+			out <- &dao.LogItem{
+				Bytes:           bb,
+				Pod:             tmpl.Pod,
+				Container:       tmpl.Container,
+				SingleContainer: tmpl.SingleContainer,
+				IsRaw:           true,
+			}
+		}
+	}()
+
+	return out
 }
 
 func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
