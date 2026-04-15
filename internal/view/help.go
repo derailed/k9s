@@ -306,6 +306,10 @@ func (*Help) showGeneral() model.MenuHints {
 			Mnemonic:    "shift-right",
 			Description: "Select Next Column",
 		},
+		{
+			Mnemonic:    "Shift-I",
+			Description: "Toggle Column Invert",
+		},
 	}
 }
 
