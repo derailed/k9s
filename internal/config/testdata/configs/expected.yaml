@@ -41,6 +41,7 @@ k9s:
     disableAutoscroll: false
     columnLock: false
     showTime: false
+    localTime: false
   thresholds:
     cpu:
       critical: 90

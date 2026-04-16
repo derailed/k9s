@@ -23,6 +23,7 @@ type Logger struct {
 	DisableAutoscroll bool  `json:"disableAutoscroll" yaml:"disableAutoscroll"`
 	ColumnLock        bool  `json:"columnLock" yaml:"columnLock"`
 	ShowTime          bool  `json:"showTime" yaml:"showTime"`
+	LocalTime         bool  `json:"localTime" yaml:"localTime"`
 }
 
 // NewLogger returns a new instance.

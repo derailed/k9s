@@ -5,6 +5,7 @@ package dao
 
 import (
 	"bytes"
+	"time"
 )
 
 // LogChan represents a channel for logs.
@@ -42,7 +43,7 @@ func (l *LogItem) ID() string {
 	return l.Container
 }
 
-// GetTimestamp fetch log lime timestamp
+// GetTimestamp fetch log line timestamp
 func (l *LogItem) GetTimestamp() string {
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if index < 0 {
@@ -68,10 +69,24 @@ func (l *LogItem) Size() int {
 
 // Render returns a log line as string.
 func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+	l.RenderWithLocalTime(paint, showTime, false, bb)
+}
+
+// RenderWithLocalTime returns a log line as string with optional local timezone conversion.
+func (l *LogItem) RenderWithLocalTime(paint string, showTime, useLocalTime bool, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if showTime && index > 0 {
 		bb.WriteString("[gray::b]")
-		bb.Write(l.Bytes[:index])
+		if useLocalTime {
+			ts := string(l.Bytes[:index])
+			if t, err := time.Parse(time.RFC3339Nano, ts); err == nil {
+				bb.WriteString(t.Local().Format(time.RFC3339Nano))
+			} else {
+				bb.Write(l.Bytes[:index])
+			}
+		} else {
+			bb.Write(l.Bytes[:index])
+		}
 		bb.WriteString(" ")
 		if l := 30 - len(l.Bytes[:index]); l > 0 {
 			bb.Write(bytes.Repeat([]byte{' '}, l))
