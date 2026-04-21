@@ -255,6 +255,7 @@ func (a *App) bindKeys() {
 	a.AddActions(ui.NewKeyActionsFromMap(ui.KeyMap{
 		tcell.KeyCtrlE:     ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		tcell.KeyCtrlG:     ui.NewSharedKeyAction("ToggleCrumbs", a.toggleCrumbsCmd, false),
+		tcell.KeyCtrlT:     ui.NewSharedKeyAction("ToggleReadOnly", a.toggleReadOnlyCmd, false),
 		ui.KeyHelp:         ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		ui.KeyLeftBracket:  ui.NewSharedKeyAction("Go Back", a.previousCommand, false),
 		ui.KeyRightBracket: ui.NewSharedKeyAction("Go Forward", a.nextCommand, false),
@@ -641,6 +642,32 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 		a.showHeader = !a.showHeader
 		a.toggleHeader(a.showHeader, a.showLogo)
 	})
+
+	return nil
+}
+
+func (a *App) toggleReadOnlyCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.Prompt().InCmdMode() {
+		return evt
+	}
+
+	a.Config.ToggleReadOnly()
+	if a.clusterModel != nil {
+		a.clusterModel.Refresh()
+	}
+	if top := a.Content.Top(); top != nil {
+		top.Start()
+	}
+	go func() {
+		<-time.After(500 * time.Millisecond)
+		a.QueueUpdateDraw(func() {
+			if a.Config.IsReadOnly() {
+				a.Flash().Info("Read-Only mode enabled")
+			} else {
+				a.Flash().Info("Read-Write mode enabled")
+			}
+		})
+	}()
 
 	return nil
 }
