@@ -425,13 +425,13 @@ func (k *K9s) ToggleReadOnly() {
 	k.mx.Lock()
 	defer k.mx.Unlock()
 
-	v := !k.IsReadOnlyLocked()
+	v := !k.isReadOnlyLocked()
 	k.manualReadOnly = &v
 }
 
-// IsReadOnlyLocked returns the readonly setting without locking.
+// isReadOnlyLocked returns the readonly setting without locking.
 // Must be called with the mutex held.
-func (k *K9s) IsReadOnlyLocked() bool {
+func (k *K9s) isReadOnlyLocked() bool {
 	ro := k.ReadOnly
 	if k.activeConfig != nil && k.activeConfig.Context != nil && k.activeConfig.Context.ReadOnly != nil {
 		ro = *k.activeConfig.Context.ReadOnly
