@@ -448,6 +448,15 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
+	// Check for custom jump rules first
+	if rule, ok := b.App().CustomJumps().GetRule(b.GVR()); ok {
+		if err := customJump(b.app, b.GVR(), path, rule); err != nil {
+			b.app.Flash().Errf("Custom jump failed: %s", err)
+		}
+		return nil
+	}
+
+	// Fall back to default behavior
 	f := describeResource
 	if b.enterFn != nil {
 		f = b.enterFn
