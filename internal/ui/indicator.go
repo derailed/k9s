@@ -47,7 +47,19 @@ func (s *StatusIndicator) StylesChanged(styles *config.Styles) {
 	s.SetTextColor(styles.FgColor())
 }
 
-const statusIndicatorFmt = "[%s::b]K9s [%s::]%s [%s::]%s:%s:%s [%s::]%s[%s::]::[%s::]%s"
+const statusIndicatorFmt = "[%s::b]K9s [%s::]%s [%s::]%s:%s:%s %s [%s::]%s[%s::]::[%s::]%s"
+
+func (s *StatusIndicator) roIndicator() string {
+	ic := ROIndicator(s.app.Config.IsReadOnly(), s.app.Config.K9s.UI.NoIcons)
+	if ic == "" {
+		return ""
+	}
+	if s.app.Config.IsReadOnly() {
+		return "[orangered::b]" + ic
+	}
+
+	return "[lawngreen::]" + ic
+}
 
 // ClusterInfoUpdated notifies the cluster meta was updated.
 func (s *StatusIndicator) ClusterInfoUpdated(data *model.ClusterMeta) {
@@ -61,6 +73,7 @@ func (s *StatusIndicator) ClusterInfoUpdated(data *model.ClusterMeta) {
 			data.Context,
 			data.Cluster,
 			data.K8sVer,
+			s.roIndicator(),
 			s.styles.K9s.Info.CPUColor.String(),
 			render.PrintPerc(data.Cpu),
 			s.styles.Body().FgColor.String(),
@@ -85,6 +98,7 @@ func (s *StatusIndicator) ClusterInfoChanged(prev, cur *model.ClusterMeta) {
 			cur.Context,
 			cur.Cluster,
 			cur.K8sVer,
+			s.roIndicator(),
 			s.styles.K9s.Info.CPUColor.String(),
 			AsPercDelta(prev.Cpu, cur.Cpu),
 			s.styles.Body().FgColor.String(),
