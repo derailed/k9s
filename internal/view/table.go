@@ -70,6 +70,26 @@ func (t *Table) SetCommand(i *cmd.Interpreter) {
 	t.command = i
 }
 
+// stripFormatTags removes all formatting tags ([...]) from a string.
+func stripFormatTags(s string) string {
+	var result strings.Builder
+	inTag := false
+	for _, ch := range s {
+		if ch == '[' {
+			inTag = true
+			continue
+		}
+		if ch == ']' {
+			inTag = false
+			continue
+		}
+		if !inTag {
+			result.WriteRune(ch)
+		}
+	}
+	return result.String()
+}
+
 // HeaderIndex returns index of a given column or false if not found.
 func (t *Table) HeaderIndex(colName string) (int, bool) {
 	for i := range t.GetColumnCount() {
@@ -77,10 +97,7 @@ func (t *Table) HeaderIndex(colName string) (int, bool) {
 		if h == nil {
 			continue
 		}
-		s := h.Text
-		if idx := strings.Index(s, "["); idx > 0 {
-			s = s[:idx]
-		}
+		s := stripFormatTags(h.Text)
 		if s == colName {
 			return i, true
 		}
