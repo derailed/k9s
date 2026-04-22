@@ -276,6 +276,7 @@ func (c *Configurator) loadSkinFile(synchronizer) {
 
 	skinFile := config.SkinFileFromName(skin)
 	slog.Debug("Loading skin file", slogs.Skin, skinFile)
+	c.Styles.Reset(invert)
 	if err := c.Styles.Load(skinFile, invert); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			slog.Warn("Skin file not found in skins dir",

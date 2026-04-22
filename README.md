@@ -441,6 +441,15 @@ K9s uses aliases to navigate most K8s resources.
 
 You can now override the context portForward default address configuration by setting an env variable that can override all clusters portForward local address using `K9S_DEFAULT_PF_ADDRESS=a.b.c.d`
 
+
+Clipboard behavior can also be controlled via environment variables:
+
+- `K9S_CLIPBOARD=auto|native|osc52` (default `auto`)
+  - `auto`: try native clipboard utilities first, then fall back to OSC52 when available.
+  - `native`: only use native clipboard utilities (xclip/xsel/wl-clipboard/etc).
+  - `osc52`: force OSC52 clipboard writes.
+- `K9S_OSC52_MAX=<encoded-bytes>` sets the maximum allowed OSC52 payload size before k9s rejects the copy operation. Default is `74994`.
+
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yaml
   k9s:
