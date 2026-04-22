@@ -35,14 +35,15 @@ import (
 type Browser struct {
 	*Table
 
-	namespaces map[int]string
-	meta       *metav1.APIResource
-	accessor   dao.Accessor
-	contextFn  ContextFunc
-	cancelFn   context.CancelFunc
-	mx         sync.RWMutex
-	updating   bool
-	firstView  atomic.Int32
+	namespaces     map[int]string
+	meta           *metav1.APIResource
+	accessor       dao.Accessor
+	contextFn      ContextFunc
+	cancelFn       context.CancelFunc
+	mx             sync.RWMutex
+	updating       bool
+	firstView      atomic.Int32
+	pluginErrShown atomic.Int32
 }
 
 // NewBrowser returns a new browser.
@@ -172,7 +173,8 @@ func (b *Browser) Start() {
 	}
 
 	b.Stop()
-	b.firstView.Store(0) // Reset first view counter on each start
+	b.firstView.Store(0)
+	b.pluginErrShown.Store(0)
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -648,7 +650,12 @@ func (b *Browser) refreshActions() {
 
 	if err := pluginActions(b, b.Actions()); err != nil {
 		slog.Warn("Plugins load failed", slogs.Error, err)
-		b.app.Logo().Warn("Plugins load failed!")
+		if b.pluginErrShown.CompareAndSwap(0, 1) {
+			d := b.app.Styles.Dialog()
+			dialog.ShowError(&d, b.app.Content.Pages, truncErrs(err, maxDialogErrs))
+		}
+	} else {
+		b.pluginErrShown.Store(0)
 	}
 	if err := hotKeyActions(b, b.Actions()); err != nil {
 		slog.Warn("Hotkeys load failed", slogs.Error, err)
