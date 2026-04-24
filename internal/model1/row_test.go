@@ -462,6 +462,50 @@ func TestRowsSortCapacity(t *testing.T) {
 	}
 }
 
+func TestRowsSortShortRows(t *testing.T) {
+	uu := map[string]struct {
+		rows model1.Rows
+		col  int
+		asc  bool
+		e    model1.Rows
+	}{
+		"short-row-no-panic": {
+			rows: model1.Rows{
+				{ID: "A", Fields: []string{"blee", "duh", "zorg"}},
+				{ID: "B", Fields: []string{"albert"}},
+				{ID: "C", Fields: []string{"fred", "blee", "abc"}},
+			},
+			col: 2,
+			asc: true,
+			e: model1.Rows{
+				{ID: "B", Fields: []string{"albert"}},
+				{ID: "C", Fields: []string{"fred", "blee", "abc"}},
+				{ID: "A", Fields: []string{"blee", "duh", "zorg"}},
+			},
+		},
+		"all-short-rows": {
+			rows: model1.Rows{
+				{ID: "B", Fields: []string{}},
+				{ID: "A", Fields: []string{}},
+			},
+			col: 1,
+			asc: true,
+			e: model1.Rows{
+				{ID: "A", Fields: []string{}},
+				{ID: "B", Fields: []string{}},
+			},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			u.rows.Sort(u.col, u.asc, false, false, false)
+			assert.Equal(t, u.e, u.rows)
+		})
+	}
+}
+
 func TestLess(t *testing.T) {
 	uu := map[string]struct {
 		isNumber   bool
