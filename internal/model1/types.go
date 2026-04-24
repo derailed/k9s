@@ -14,6 +14,10 @@ import (
 const (
 	NAValue = "na"
 
+	// MissingSortValue is used as the sort key when a row has fewer fields
+	// than the column being sorted on (e.g. during degraded API responses).
+	MissingSortValue = ""
+
 	// EventUnchanged notifies listener resource has not changed.
 	EventUnchanged ResEvent = 1 << iota
 
