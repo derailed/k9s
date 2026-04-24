@@ -490,6 +490,32 @@ func TestRowEventsSort(t *testing.T) {
 				model1.RowEvent{Row: model1.Row{ID: "ns2/C", Fields: model1.Fields{"C", "2", "3", "0.1Ei"}}},
 			),
 		},
+		"short-row-no-panic": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0"}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
+			),
+			col: 2,
+			asc: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0"}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
+			),
+		},
+		"all-short-rows": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{}}},
+			),
+			col: 2,
+			asc: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{}}},
+			),
+		},
 	}
 
 	for k := range uu {
