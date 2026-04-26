@@ -11,7 +11,7 @@ import (
 	"github.com/derailed/tview"
 )
 
-const maxPromptSuggestions = 5
+const maxPromptSuggestions = 8
 
 // SuggestionDropdown renders command suggestions below the prompt.
 type SuggestionDropdown struct {
@@ -135,7 +135,7 @@ func (d *SuggestionDropdown) Draw(screen tcell.Screen) {
 
 	px, py, pw, ph := d.prompt.GetRect()
 	sw, sh := screen.Size()
-	x, y := px+d.prompt.spacer, py+ph
+	x, y := px+d.prompt.spacer, py+ph-1
 	if x >= sw || y >= sh {
 		return
 	}
