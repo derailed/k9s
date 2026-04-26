@@ -176,6 +176,7 @@ func (a *App) layout(ctx context.Context) {
 	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
+	a.Main.AddPage("commandSuggestions", a.CommandSuggestions(), false, true)
 	a.toggleHeader(!a.Config.K9s.IsHeadless(), !a.Config.K9s.IsLogoless())
 	if !a.Config.K9s.IsSplashless() {
 		a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version), true, true)
@@ -553,6 +554,7 @@ func (a *App) Run() error {
 		}
 		a.QueueUpdateDraw(func() {
 			a.Main.SwitchToPage("main")
+			a.Main.ShowPage("commandSuggestions")
 			// if command bar is already active, focus it
 			if a.CmdBuff().IsActive() {
 				a.SetFocus(a.Prompt())
@@ -660,7 +662,11 @@ func (a *App) toggleCrumbsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		a.gotoResource(a.GetCmd(), "", true, true)
+		cmd := a.GetCmd()
+		if s, ok := a.CmdBuff().CurrentSuggestion(); ok {
+			cmd += s
+		}
+		a.gotoResource(cmd, "", true, true)
 		a.ResetCmd()
 		return nil
 	}

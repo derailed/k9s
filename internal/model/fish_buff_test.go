@@ -70,6 +70,21 @@ func TestFishDelete(t *testing.T) {
 	assert.Equal(t, "blee", c)
 }
 
+func TestFishSuggestions(t *testing.T) {
+	f := model.NewFishBuff(' ', model.FilterBuffer)
+	f.SetSuggestionFn(func(string) sort.StringSlice {
+		return sort.StringSlice{"blee", "brew"}
+	})
+	f.Add('b')
+
+	assert.Equal(t, []string{"blee", "brew"}, f.Suggestions())
+	assert.Equal(t, 0, f.SuggestionIndex())
+
+	_, ok := f.NextSuggestion()
+	assert.True(t, ok)
+	assert.Equal(t, 1, f.SuggestionIndex())
+}
+
 // Helpers...
 
 type mockSuggestionListener struct {
