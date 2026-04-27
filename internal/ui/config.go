@@ -56,11 +56,12 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 		return err
 	}
 
+	ctxViewsFile := c.contextViewsFile()
 	go func() {
 		for {
 			select {
 			case evt := <-w.Events:
-				if evt.Name == config.AppViewsFile && evt.Op != fsnotify.Chmod {
+				if evt.Op != fsnotify.Chmod && (evt.Name == config.AppViewsFile || (ctxViewsFile != "" && evt.Name == ctxViewsFile)) {
 					s.QueueUpdateDraw(func() {
 						if err := c.RefreshCustomViews(); err != nil {
 							slog.Warn("Custom views refresh failed", slogs.Error, err)
@@ -85,6 +86,19 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 	}
 	slog.Debug("Loading custom views", slogs.FileName, config.AppViewsFile)
 
+	if ctxViewsFile != "" {
+		if _, err := os.Stat(ctxViewsFile); err == nil {
+			if err := w.Add(ctxViewsFile); err != nil {
+				slog.Warn("Unable to watch context views file",
+					slogs.FileName, ctxViewsFile,
+					slogs.Error, err,
+				)
+			} else {
+				slog.Debug("Loading context custom views", slogs.FileName, ctxViewsFile)
+			}
+		}
+	}
+
 	return c.RefreshCustomViews()
 }
 
@@ -92,7 +106,21 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 func (c *Configurator) RefreshCustomViews() error {
 	c.CustomView().Reset()
 
-	return c.CustomView().Load(config.AppViewsFile)
+	if err := c.CustomView().Load(config.AppViewsFile); err != nil {
+		return err
+	}
+	if p := c.contextViewsFile(); p != "" {
+		return c.CustomView().Load(p)
+	}
+
+	return nil
+}
+
+func (c *Configurator) contextViewsFile() string {
+	if c.Config == nil {
+		return ""
+	}
+	return c.Config.ContextViewsPath()
 }
 
 // SkinsDirWatcher watches for skin directory file changes.
