@@ -70,6 +70,16 @@ func (c *Config) ContextAliasesPath() string {
 	return AppContextAliasesFile(ct.GetClusterName(), c.K9s.activeContextName)
 }
 
+// ContextViewsPath returns a context specific views file spec.
+func (c *Config) ContextViewsPath() string {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+
+	return AppContextViewsFile(ct.GetClusterName(), c.K9s.activeContextName)
+}
+
 // ContextPluginsPath returns a context specific plugins file spec.
 func (c *Config) ContextPluginsPath() (string, error) {
 	ct, err := c.K9s.ActiveContext()

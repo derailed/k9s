@@ -5,6 +5,8 @@ package config_test
 
 import (
 	"log/slog"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
@@ -47,6 +49,56 @@ func TestCustomViewLoad(t *testing.T) {
 			assert.Equal(t, u.e, cfg.Views[u.key].Columns)
 		})
 	}
+}
+
+func TestCustomViewLoadMerge(t *testing.T) {
+	dir := t.TempDir()
+	globalPath := filepath.Join(dir, "global.yaml")
+	ctxPath := filepath.Join(dir, "ctx.yaml")
+
+	globalYAML := []byte(`views:
+  v1/pods:
+    columns:
+      - NAMESPACE
+      - NAME
+      - AGE
+  v1/services:
+    columns:
+      - NAMESPACE
+      - NAME
+`)
+	ctxYAML := []byte(`views:
+  v1/pods:
+    columns:
+      - NAME
+      - IP
+      - NODE
+  v1/configmaps:
+    columns:
+      - NAME
+      - DATA
+`)
+	require.NoError(t, os.WriteFile(globalPath, globalYAML, 0o600))
+	require.NoError(t, os.WriteFile(ctxPath, ctxYAML, 0o600))
+
+	cv := config.NewCustomView()
+	require.NoError(t, cv.Load(globalPath))
+	require.NoError(t, cv.Load(ctxPath))
+
+	// Per-context overrides global on key collision.
+	assert.Equal(t, []string{"NAME", "IP", "NODE"}, cv.Views[client.PodGVR.String()].Columns)
+	// Global-only entries survive.
+	assert.Equal(t, []string{"NAMESPACE", "NAME"}, cv.Views["v1/services"].Columns)
+	// Per-context-only entries are added.
+	assert.Equal(t, []string{"NAME", "DATA"}, cv.Views["v1/configmaps"].Columns)
+
+	// Reset clears prior content before next reload.
+	cv.Reset()
+	assert.Empty(t, cv.Views)
+	require.NoError(t, cv.Load(globalPath))
+	assert.Equal(t, []string{"NAMESPACE", "NAME", "AGE"}, cv.Views[client.PodGVR.String()].Columns)
+	_, hasCtxOnly := cv.Views["v1/configmaps"]
+	assert.False(t, hasCtxOnly)
 }
 
 func TestViewSettingEquals(t *testing.T) {
