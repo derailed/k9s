@@ -31,6 +31,11 @@ type Config struct {
 	flags *genericclioptions.ConfigFlags
 	mx    sync.RWMutex
 	proxy func(*http.Request) (*url.URL, error)
+
+	// SkipAccessCheck disables pre-flight SelfSubjectAccessReview probes.
+	// When true, CanI returns true unconditionally and access errors surface
+	// only on the actual API call. Off by default.
+	SkipAccessCheck bool
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.

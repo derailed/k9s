@@ -148,6 +148,9 @@ func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth
 	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
+	if a.config != nil && a.config.SkipAccessCheck {
+		return true, nil
+	}
 	if gvr == NsGVR {
 		// The name of the namespace is required to check permissions in some cases
 		ns = name
@@ -566,7 +569,9 @@ func (a *APIClient) SwitchContext(name string) error {
 	}
 	a.reset()
 	ResetMetrics()
+	skipAccessCheck := a.config.SkipAccessCheck
 	a.config = NewConfig(a.config.flags)
+	a.config.SkipAccessCheck = skipAccessCheck
 	if !a.CheckConnectivity() {
 		slog.Warn("SwitchContext: connectivity check failed", slogs.Context, name)
 	}
