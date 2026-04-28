@@ -16,37 +16,39 @@ const (
 
 // Flags represents K9s configuration flags.
 type Flags struct {
-	RefreshRate   *float32
-	LogLevel      *string
-	LogFile       *string
-	Headless      *bool
-	Logoless      *bool
-	Command       *string
-	AllNamespaces *bool
-	ReadOnly      *bool
-	Write         *bool
-	Crumbsless    *bool
-	Splashless    *bool
-	Invert        *bool
-	ScreenDumpDir *string
+	RefreshRate     *float32
+	LogLevel        *string
+	LogFile         *string
+	Headless        *bool
+	Logoless        *bool
+	Command         *string
+	AllNamespaces   *bool
+	ReadOnly        *bool
+	Write           *bool
+	Crumbsless      *bool
+	Splashless      *bool
+	Invert          *bool
+	ScreenDumpDir   *string
+	SkipAccessCheck *bool
 }
 
 // NewFlags returns new configuration flags.
 func NewFlags() *Flags {
 	return &Flags{
-		RefreshRate:   float32Ptr(DefaultRefreshRate),
-		LogLevel:      strPtr(DefaultLogLevel),
-		LogFile:       strPtr(AppLogFile),
-		Headless:      boolPtr(false),
-		Logoless:      boolPtr(false),
-		Command:       strPtr(DefaultCommand),
-		AllNamespaces: boolPtr(false),
-		ReadOnly:      boolPtr(false),
-		Write:         boolPtr(false),
-		Crumbsless:    boolPtr(false),
-		Splashless:    boolPtr(false),
-		Invert:        boolPtr(false),
-		ScreenDumpDir: strPtr(AppDumpsDir),
+		RefreshRate:     float32Ptr(DefaultRefreshRate),
+		LogLevel:        strPtr(DefaultLogLevel),
+		LogFile:         strPtr(AppLogFile),
+		Headless:        boolPtr(false),
+		Logoless:        boolPtr(false),
+		Command:         strPtr(DefaultCommand),
+		AllNamespaces:   boolPtr(false),
+		ReadOnly:        boolPtr(false),
+		Write:           boolPtr(false),
+		Crumbsless:      boolPtr(false),
+		Splashless:      boolPtr(false),
+		Invert:          boolPtr(false),
+		ScreenDumpDir:   strPtr(AppDumpsDir),
+		SkipAccessCheck: boolPtr(false),
 	}
 }
 

@@ -293,6 +293,11 @@ k9s --context coolCtx
 
 # Start K9s in readonly mode - with all cluster modification commands disabled
 k9s --readonly
+
+# Skip pre-flight SelfSubjectAccessReview probes (rely on API server responses).
+# Useful when SAR is denied/blocked by RBAC or to reduce API server load.
+# Can also be enabled persistently via `k9s.skipAccessCheck: true` in config.yaml.
+k9s --skip-access-check
 ```
 
 ## Logs And Debug Logs
@@ -506,6 +511,10 @@ Clipboard behavior can also be controlled via environment variables:
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
     skipLatestRevCheck: false
+    # Skip pre-flight SelfSubjectAccessReview probes before API requests. When
+    # true, k9s relies solely on API server responses for authorization. The
+    # CLI flag --skip-access-check overrides this when set. Default is false.
+    skipAccessCheck: false
     # When altering kubeconfig or using multiple kube configs, k9s will clean up clusters configurations that are no longer in use. Setting this flag to true will keep k9s from cleaning up inactive cluster configs. Defaults to false.
     keepMissingClusters: false
     # Logs configuration
@@ -1238,6 +1247,7 @@ k9s:
     defaultsToFullScreen: false
   skipLatestRevCheck: false
   disablePodCounting: false
+  skipAccessCheck: false
   shellPod:
     image: busybox
     namespace: default
