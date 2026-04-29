@@ -470,6 +470,8 @@ func (a *App) switchNS(ns string) error {
 		return err
 	}
 
+	a.tabManager.switchNS(ns)
+
 	return a.factory.SetActiveNS(ns)
 }
 

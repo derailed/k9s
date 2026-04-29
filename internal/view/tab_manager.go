@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -332,4 +333,26 @@ func (tm *TabManager) refreshTabBar() {
 
 func (tm *TabManager) pageKey(id int) string {
 	return fmt.Sprintf("tab-%d", id)
+}
+
+// switchNS switches the namespace for all open sessions.
+func (tm *TabManager) switchNS(ns string) {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+
+	for _, sess := range tm.sessions {
+		sess.cmdHistory.SwitchNS(ns)
+		for _, c := range sess.Content.Peek() {
+			if rv, ok := c.(ResourceViewer); ok {
+				if namespaced, err := dao.MetaAccess.IsNamespaced(rv.GVR()); err == nil && !namespaced {
+					continue
+				}
+				if b, ok := rv.(*Browser); ok {
+					b.setNamespace(ns)
+				} else {
+					rv.GetTable().GetModel().SetNamespace(ns)
+				}
+			}
+		}
+	}
 }
