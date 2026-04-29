@@ -354,6 +354,22 @@ K9S_LOGS_DIR=/var/log k9s
 less /var/log/k9s.log
 ```
 
+## Tabs
+
+K9s supports multiple tabs to allow you to quickly switch between different views and resources!
+You can open up to 9 tabs simultaneously. Each tab maintains its own isolated view stack, command interpreter, and navigation/filter histories, while sharing the same underlying cluster connection.
+
+A tab bar appears at the top of the content area whenever more than one tab is open, displaying the tab index and the active resource label.
+
+You can manage tabs using the following key bindings:
+
+| Action                     | Command  | Comment                                                          |
+|----------------------------|----------|------------------------------------------------------------------|
+| Open a new tab             | `ctrl-t` | Opens a new tab pre-loaded with the resource currently on screen |
+| Close the active tab       | `ctrl-x` | Closing the last tab is a no-op                                  |
+| Switch to the next tab     | `ctrl-n` | Wraps around to the first tab                                    |
+| Switch to the previous tab | `ctrl-b` | Wraps around to the last tab                                     |
+
 ## Key Bindings
 
 K9s uses aliases to navigate most K8s resources.
