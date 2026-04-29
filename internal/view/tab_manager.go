@@ -166,6 +166,41 @@ func (tm *TabManager) closeActive() error {
 	return nil
 }
 
+// CloseOtherTabs closes all tabs except the currently active one.
+// Must be called on the tview main goroutine.
+func (tm *TabManager) CloseOtherTabs() {
+	tm.mu.Lock()
+	if len(tm.sessions) <= 1 {
+		tm.mu.Unlock()
+		return
+	}
+
+	activeSess := tm.sessions[tm.activeIdx]
+	var toClose []*TabSession
+	for i, sess := range tm.sessions {
+		if i != tm.activeIdx {
+			toClose = append(toClose, sess)
+		}
+	}
+
+	tm.sessions = []*TabSession{activeSess}
+	tm.activeIdx = 0
+	tm.mu.Unlock()
+
+	for _, sess := range toClose {
+		sess.Content.Clear()
+		tm.container.RemovePage(tm.pageKey(sess.id))
+	}
+
+	// Re-establish focus on the new session's top component, which may have
+	// been overwritten by the PageStack.StackTop callbacks fired during Clear().
+	if top := tm.app.Content.Top(); top != nil {
+		tm.app.SetFocus(top)
+	}
+
+	tm.refreshTabBar()
+}
+
 // SwitchTo activates the tab at the given zero-based slice index.
 // Must be called on the tview main goroutine.
 func (tm *TabManager) SwitchTo(idx int) {

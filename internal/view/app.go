@@ -528,6 +528,9 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 			slogs.View, a.Config.ActiveView(),
 		)
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
+		if a.tabManager != nil {
+			a.tabManager.CloseOtherTabs()
+		}
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		if a.clusterModel != nil {
