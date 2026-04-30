@@ -139,8 +139,8 @@ func showReplicasets(app *App, path string, labelSel labels.Selector, fieldSel s
 	v.SetLabelSelector(labelSel, true)
 
 	ns, _ := client.Namespaced(path)
-	if err := app.Config.SetActiveNamespace(ns); err != nil {
-		slog.Error("Unable to set active namespace during show replicasets", slogs.Error, err)
+	if err := app.switchNS(ns); err != nil {
+		slog.Error("Unable to switch namespace during show replicasets", slogs.Error, err)
 	}
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
@@ -153,8 +153,8 @@ func showPods(app *App, path string, labelSel labels.Selector, fieldSel string) 
 	v.SetLabelSelector(labelSel, true)
 
 	ns, _ := client.Namespaced(path)
-	if err := app.Config.SetActiveNamespace(ns); err != nil {
-		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
+	if err := app.switchNS(ns); err != nil {
+		slog.Error("Unable to switch namespace during show pods", slogs.Error, err)
 	}
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
