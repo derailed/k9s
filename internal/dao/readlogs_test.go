@@ -65,7 +65,7 @@ func TestReadLogs_DropsOnFullChannel(t *testing.T) {
 	assert.Equal(t, streamEOF, result)
 	// Some lines should have been dropped since buffer is tiny
 	assert.Less(t, received, lineCount+2, "some lines should be dropped when channel is full")
-	assert.Greater(t, received, 0, "at least some lines should be delivered")
+	assert.Positive(t, received, "at least some lines should be delivered")
 }
 
 func TestReadLogs_CancelStopsEarly(t *testing.T) {

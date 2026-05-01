@@ -495,7 +495,7 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 				if droppedLines == 1 || droppedLines%100 == 0 {
 					slog.Warn("Dropping log lines due to slow consumer",
 						slogs.Container, opts.Info(),
-						"dropped", droppedLines,
+						slogs.Count, droppedLines,
 					)
 				}
 			}
@@ -505,7 +505,7 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 		if droppedLines > 0 {
 			slog.Warn("Total log lines dropped during stream",
 				slogs.Container, opts.Info(),
-				"dropped", droppedLines,
+				slogs.Count, droppedLines,
 			)
 		}
 
