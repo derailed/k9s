@@ -23,6 +23,17 @@ type Logger struct {
 	cmdBuff        *model.FishBuff
 }
 
+// Write implements io.Writer, shadowing the embedded tview.TextView.Write.
+// tview's Write can return n > len(p) which violates the io.Writer contract
+// and causes bytes.Buffer.WriteTo to panic with "invalid Write count".
+func (l *Logger) Write(p []byte) (int, error) {
+	n, err := l.TextView.Write(p)
+	if n > len(p) {
+		n = len(p)
+	}
+	return n, err
+}
+
 // NewLogger returns a logger viewer.
 func NewLogger(app *App) *Logger {
 	return &Logger{
