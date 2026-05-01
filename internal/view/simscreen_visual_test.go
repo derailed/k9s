@@ -35,7 +35,7 @@ func TestSimScreen_BracketLiteralRendering(t *testing.T) {
 	sim.Render(tv)
 
 	lines := sim.ScreenLines()
-	require.Positive(t, len(lines))
+	require.NotEmpty(t, lines)
 	assert.Contains(t, lines[0], "[INFO]", "literal brackets should render on screen")
 	assert.Contains(t, lines[0], "[8080]", "literal brackets should render on screen")
 }
@@ -86,7 +86,7 @@ func TestSimScreen_EscapedBracketsInLogLine(t *testing.T) {
 	sim.Render(tv)
 
 	lines := sim.ScreenLines()
-	require.Positive(t, len(lines))
+	require.NotEmpty(t, lines)
 	assert.Contains(t, lines[0], "[INFO]")
 	assert.Contains(t, lines[0], "Application started")
 }
