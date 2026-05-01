@@ -71,8 +71,8 @@ func (s *SimScreen) ScreenText() string {
 	s.t.Helper()
 	cells, w, h := s.Screen.GetContents()
 	var sb strings.Builder
-	for row := 0; row < h; row++ {
-		for col := 0; col < w; col++ {
+	for row := range h {
+		for col := range w {
 			cell := cells[row*w+col]
 			if len(cell.Runes) > 0 {
 				sb.WriteRune(cell.Runes[0])
