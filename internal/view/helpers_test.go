@@ -342,6 +342,26 @@ func Test_sanitizeEsc(t *testing.T) {
 			s: "[fred[]",
 			e: "[fred]",
 		},
+		"multi-bracket": {
+			s: "[INFO[] some [DEBUG[] msg",
+			e: "[INFO] some [DEBUG] msg",
+		},
+		"json-array": {
+			s: `[["a","b"[]`,
+			e: `[["a","b"]`,
+		},
+		"nested-tags": {
+			s: "[red::b[]text[-::-[]",
+			e: "[red::b]text[-::-]",
+		},
+		"no-escape-needed": {
+			s: "plain text without brackets",
+			e: "plain text without brackets",
+		},
+		"real-log-line": {
+			s: "2024-01-01T00:00:00Z [INFO[] Application started on port [8080[]",
+			e: "2024-01-01T00:00:00Z [INFO] Application started on port [8080]",
+		},
 	}
 
 	for k, u := range uu {
