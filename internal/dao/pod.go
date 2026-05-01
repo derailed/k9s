@@ -46,7 +46,7 @@ const (
 	logRetryCount                  = 20
 	logBackoffInitial              = 500 * time.Millisecond
 	logBackoffMax                  = 30 * time.Second
-	logChannelBuffer               = 50   // Buffer size for log channel to reduce drops
+	logChannelBuffer               = 1000 // Buffer size for log channel to reduce drops
 	streamEOF         streamResult = iota // legit container log close (no retry)
 	streamError                           // retryable error (network, auth, etc.)
 	streamCanceled                        // context canceled
@@ -480,6 +480,7 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 	}()
 
 	r := bufio.NewReader(stream)
+	var droppedLines int64
 
 	for {
 		bytes, err := r.ReadBytes('\n')
@@ -490,12 +491,22 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 				return streamCanceled
 			case out <- item:
 			default:
-				// Avoid deadlock if consumer is too slow
-				slog.Warn("Dropping log line due to slow consumer",
-					slogs.Container, opts.Info(),
-				)
+				droppedLines++
+				if droppedLines == 1 || droppedLines%100 == 0 {
+					slog.Warn("Dropping log lines due to slow consumer",
+						slogs.Container, opts.Info(),
+						slogs.Count, droppedLines,
+					)
+				}
 			}
 			continue
+		}
+
+		if droppedLines > 0 {
+			slog.Warn("Total log lines dropped during stream",
+				slogs.Container, opts.Info(),
+				slogs.Count, droppedLines,
+			)
 		}
 
 		if errors.Is(err, io.EOF) {
@@ -513,8 +524,6 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 			slogs.Container, opts.Info(),
 			slogs.Error, fmt.Errorf("stream error: %w for %s", err, opts.Info()),
 		)
-		// Don't send stream errors to user - they will be retried
-		// Only final retry exhaustion message is shown
 		return streamError
 	}
 }
