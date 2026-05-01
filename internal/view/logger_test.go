@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoggerWriteClampsCount(t *testing.T) {
@@ -18,7 +19,7 @@ func TestLoggerWriteClampsCount(t *testing.T) {
 	p := []byte("hello world\n")
 	n, err := l.Write(p)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.LessOrEqual(t, n, len(p), "Write must not return n > len(p)")
 }
 
@@ -34,7 +35,7 @@ func TestLoggerWriteRoundTrip(t *testing.T) {
 	}
 	for _, line := range lines {
 		n, err := l.Write([]byte(line))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.LessOrEqual(t, n, len(line))
 	}
 
@@ -47,11 +48,11 @@ func TestLoggerWriteEmpty(t *testing.T) {
 	l := NewLogger(a)
 
 	n, err := l.Write([]byte{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 0, n)
 }
 
-func TestLoggerEmbeddedTextViewWrite(t *testing.T) {
+func TestLoggerEmbeddedTextViewWrite(_ *testing.T) {
 	tv := tview.NewTextView()
 	tv.SetDynamicColors(true)
 
