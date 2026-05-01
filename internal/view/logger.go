@@ -155,7 +155,7 @@ func (l *Logger) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (l *Logger) saveCmd(*tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(l.app.Config.K9s.ContextScreenDumpDir(), l.title, l.GetText(true)); err != nil {
+	if path, err := saveYAML(l.app.Config.K9s.ContextScreenDumpDir(), l.title, sanitizeEsc(l.GetText(true))); err != nil {
 		l.app.Flash().Err(err)
 	} else {
 		l.app.Flash().Infof("Log %s saved successfully!", path)
