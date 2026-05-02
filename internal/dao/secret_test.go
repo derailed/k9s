@@ -5,7 +5,6 @@ package dao_test
 
 import (
 	"encoding/base64"
-	"strings"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
@@ -229,8 +228,5 @@ func TestUpdateFromEditedYAML_ParseError(t *testing.T) {
 
 	err := s.UpdateFromEditedYAML([]byte("not: valid: yaml: {{{}"))
 	require.Error(t, err)
-	assert.True(t, strings.Contains(err.Error(), "failed to parse edited YAML"),
-		"should report parse failure")
+	assert.Contains(t, err.Error(), "failed to parse edited YAML")
 }
-
-
