@@ -110,9 +110,9 @@ func editDecodedSecret(app *App, path string) error {
 		}
 	}()
 
-	if _, err := tmpFile.Write(original); err != nil {
+	if _, e := tmpFile.Write(original); e != nil {
 		tmpFile.Close()
-		return fmt.Errorf("failed to write temp file: %w", err)
+		return fmt.Errorf("failed to write temp file: %w", e)
 	}
 	tmpFile.Close()
 
@@ -126,7 +126,7 @@ func editDecodedSecret(app *App, path string) error {
 	}
 
 	if bytes.Equal(original, edited) {
-		app.Flash().Info("Edit cancelled, no changes made")
+		app.Flash().Info("Edit canceled, no changes made")
 		return nil
 	}
 
