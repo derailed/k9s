@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/slogs"
@@ -186,8 +187,15 @@ func (v *LiveView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	v.Stop()
 	defer v.Start()
-	if err := editRes(v.app, v.model.GVR(), path); err != nil {
-		v.app.Flash().Err(err)
+
+	if v.model.GVR() == client.SecGVR {
+		if err := editDecodedSecret(v.app, path); err != nil {
+			v.app.Flash().Err(err)
+		}
+	} else {
+		if err := editRes(v.app, v.model.GVR(), path); err != nil {
+			v.app.Flash().Err(err)
+		}
 	}
 
 	return nil
