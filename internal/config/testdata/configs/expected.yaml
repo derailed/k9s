@@ -8,6 +8,7 @@ k9s:
   maxConnRetry: 5
   readOnly: true
   noExitOnCtrlC: false
+  fieldManager: my-field-manager
   portForwardAddress: localhost
   ui:
     enableMouse: false
