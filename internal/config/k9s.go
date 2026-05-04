@@ -42,6 +42,7 @@ type K9s struct {
 	MaxConnRetry        int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
 	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	FieldManager        string     `json:"fieldManager" yaml:"fieldManager"`
 	PortForwardAddress  string     `yaml:"portForwardAddress"`
 	UI                  UI         `json:"ui" yaml:"ui"`
 	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
@@ -73,6 +74,7 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 		MaxConnRetry:       defaultMaxConnRetry,
 		APIServerTimeout:   client.DefaultCallTimeoutDuration.String(),
 		ScreenDumpDir:      AppDumpsDir,
+		FieldManager:       defaultFieldManager,
 		Logger:             NewLogger(),
 		Thresholds:         NewThreshold(),
 		PortForwardAddress: defaultPFAddress(),
@@ -143,6 +145,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.MaxConnRetry = k1.MaxConnRetry
 	k.ReadOnly = k1.ReadOnly
 	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
+	k.FieldManager = k1.FieldManager
 	k.PortForwardAddress = k1.PortForwardAddress
 	k.UI = k1.UI
 	k.SkipLatestRevCheck = k1.SkipLatestRevCheck
@@ -427,6 +430,9 @@ func (k *K9s) Validate(c client.Connection, contextName, clusterName string) {
 	}
 	if k.MaxConnRetry <= 0 {
 		k.MaxConnRetry = defaultMaxConnRetry
+	}
+	if k.FieldManager == "" {
+		k.FieldManager = defaultFieldManager
 	}
 
 	if a := os.Getenv(envPFAddress); a != "" {
