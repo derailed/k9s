@@ -206,7 +206,7 @@ func (s *Secret) UpdateFromEditedYAML(editedYAML []byte) error {
 		EncodeSecretData(data)
 	}
 
-	ns, n := client.Namespaced(obj.GetNamespace() + "/" + obj.GetName())
+	ns, n := obj.GetNamespace(), obj.GetName()
 	auth, err := s.Client().CanI(ns, s.gvr, n, []string{client.UpdateVerb})
 	if err != nil {
 		return err
