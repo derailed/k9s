@@ -8,22 +8,37 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/slogs"
+	lru "github.com/hashicorp/golang-lru/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
 	defaultResync   = 10 * time.Minute
 	defaultWaitTime = 500 * time.Millisecond
+	maxWatchedGVRs  = 100
 )
+
+type handlerEntry struct {
+	reg cache.ResourceEventHandlerRegistration
+	inf cache.SharedInformer
+}
+
+// gvrWatcher tracks per-GVR event state and handler registrations.
+type gvrWatcher struct {
+	seq     atomic.Int64
+	handles map[string]handlerEntry
+}
 
 // Factory tracks various resource informers.
 type Factory struct {
@@ -32,15 +47,26 @@ type Factory struct {
 	stopChan   chan struct{}
 	forwarders Forwarders
 	mx         sync.RWMutex
+
+	watchers *lru.Cache[string, *gvrWatcher]
 }
 
 // NewFactory returns a new informers factory.
 func NewFactory(clt client.Connection) *Factory {
-	return &Factory{
+	f := Factory{
 		client:     clt,
 		factories:  make(map[string]di.DynamicSharedInformerFactory),
 		forwarders: NewForwarders(),
 	}
+	f.watchers, _ = lru.NewWithEvict[string, *gvrWatcher](maxWatchedGVRs, func(gvr string, w *gvrWatcher) {
+		for _, h := range w.handles {
+			if err := h.inf.RemoveEventHandler(h.reg); err != nil {
+				slog.Debug("Failed to remove event handler", slogs.GVR, gvr)
+			}
+		}
+	})
+
+	return &f
 }
 
 // Start initializes the informers until caller cancels the context.
@@ -68,6 +94,7 @@ func (f *Factory) Terminate() {
 	for k := range f.factories {
 		delete(f.factories, k)
 	}
+	f.watchers.Purge()
 	f.forwarders.DeleteAll()
 }
 
@@ -255,11 +282,65 @@ func (f *Factory) ForResource(ns string, gvr *client.GVR) (informers.GenericInfo
 		return inf, nil
 	}
 
+	f.registerEventHandler(ns, gvr, inf)
+
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 	fact.Start(f.stopChan)
 
 	return inf, nil
+}
+
+func (f *Factory) registerEventHandler(ns string, gvr *client.GVR, inf informers.GenericInformer) {
+	gvrKey := gvr.String()
+	f.mx.Lock()
+	defer f.mx.Unlock()
+
+	w, ok := f.watchers.Get(gvrKey)
+	if !ok {
+		w = &gvrWatcher{handles: make(map[string]handlerEntry)}
+		f.watchers.Add(gvrKey, w)
+	}
+	if _, ok := w.handles[ns]; ok {
+		return
+	}
+	bump := func() { w.seq.Add(1) }
+	reg, err := inf.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(_ any) { bump() },
+		UpdateFunc: func(_, _ any) { bump() },
+		DeleteFunc: func(_ any) { bump() },
+	})
+	if err != nil {
+		slog.Error("Failed to register event handler",
+			slogs.GVR, gvr,
+			slogs.Namespace, ns,
+			slogs.Error, err,
+		)
+		return
+	}
+	w.handles[ns] = handlerEntry{reg: reg, inf: inf.Informer()}
+}
+
+// HasChanged checks if a GVR received informer events since last reset.
+func (f *Factory) HasChanged(gvr *client.GVR) bool {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
+
+	w, ok := f.watchers.Get(gvr.String())
+	if !ok {
+		return true
+	}
+	return w.seq.Load() > 0
+}
+
+// ResetChanged zeros the event counter for a given GVR.
+func (f *Factory) ResetChanged(gvr *client.GVR) {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
+
+	if w, ok := f.watchers.Peek(gvr.String()); ok {
+		w.seq.Store(0)
+	}
 }
 
 func (f *Factory) ensureFactory(ns string) (di.DynamicSharedInformerFactory, error) {
