@@ -249,33 +249,34 @@ func (t *TableData) Reset(ns string) {
 	t.Clear()
 }
 
-func (t *TableData) Render(_ context.Context, r Renderer, oo []runtime.Object) error {
+// Render hydrates rows and returns true if data changed.
+func (t *TableData) Render(_ context.Context, r Renderer, oo []runtime.Object) (bool, error) {
 	var rows Rows
 	if len(oo) > 0 {
 		if r.IsGeneric() {
 			table, ok := oo[0].(*metav1.Table)
 			if !ok {
-				return fmt.Errorf("expecting a meta table but got %T", oo[0])
+				return false, fmt.Errorf("expecting a meta table but got %T", oo[0])
 			}
 			rows = make(Rows, len(table.Rows))
 			if err := GenericHydrate(t.namespace, table, rows, r); err != nil {
-				return err
+				return false, err
 			}
 		} else {
 			rows = make(Rows, len(oo))
 			if err := Hydrate(t.namespace, oo, rows, r); err != nil {
-				return err
+				return false, err
 			}
 		}
 	}
 
-	t.Update(rows)
+	changed := t.Update(rows)
 	t.SetHeader(t.namespace, r.Header(t.namespace))
 	if t.HeaderCount() == 0 {
-		return fmt.Errorf("no data found for resource %s", t.gvr)
+		return false, fmt.Errorf("no data found for resource %s", t.gvr)
 	}
 
-	return nil
+	return changed, nil
 }
 
 // Empty checks if there are no entries.
@@ -421,11 +422,12 @@ func (t *TableData) SetHeader(ns string, h Header) {
 	t.namespace, t.header = ns, h
 }
 
-// Update computes row deltas and update the table data.
-func (t *TableData) Update(rows Rows) {
+// Update computes row deltas and returns true if any rows changed.
+func (t *TableData) Update(rows Rows) bool {
 	empty := t.Empty()
 	kk := sets.New[string]()
 	var blankDelta DeltaRow
+	changed := empty && len(rows) > 0
 	t.mx.Lock()
 	for _, row := range rows {
 		kk.Insert(row.ID)
@@ -444,20 +446,26 @@ func (t *TableData) Update(rows Rows) {
 				t.rowEvents.Set(index, ev)
 			} else {
 				t.rowEvents.Set(index, NewRowEventWithDeltas(row, delta))
+				changed = true
 			}
 			continue
 		}
 		t.rowEvents.Add(NewRowEvent(EventAdd, row))
+		changed = true
 	}
 	t.mx.Unlock()
 
 	if !empty {
-		t.Delete(kk)
+		if t.Delete(kk) {
+			changed = true
+		}
 	}
+
+	return changed
 }
 
-// Delete removes items in cache that are no longer valid.
-func (t *TableData) Delete(newKeys sets.Set[string]) {
+// Delete removes stale entries and returns true if any were deleted.
+func (t *TableData) Delete(newKeys sets.Set[string]) bool {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
@@ -479,6 +487,8 @@ func (t *TableData) Delete(newKeys sets.Set[string]) {
 			)
 		}
 	}
+
+	return victims.Len() > 0
 }
 
 // Diff checks if two tables are equal.
