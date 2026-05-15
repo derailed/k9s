@@ -79,7 +79,13 @@ func (s RowSorter) Swap(i, j int) {
 }
 
 func (s RowSorter) Less(i, j int) bool {
-	v1, v2 := s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index]
+	v1, v2 := MissingSortValue, MissingSortValue
+	if s.Index < len(s.Rows[i].Fields) {
+		v1 = s.Rows[i].Fields[s.Index]
+	}
+	if s.Index < len(s.Rows[j].Fields) {
+		v2 = s.Rows[j].Fields[s.Index]
+	}
 	id1, id2 := s.Rows[i].ID, s.Rows[j].ID
 	less := Less(s.IsNumber, s.IsDuration, s.IsCapacity, id1, id2, v1, v2)
 	if s.Asc {
