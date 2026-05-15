@@ -374,6 +374,7 @@ func (t *Table) FilterInput(r rune) bool {
 		return false
 	}
 	t.cmdBuff.Add(r)
+	t.SelectTable.ClearMarks()
 	t.ClearSelection()
 	t.doUpdate(t.filtered(t.GetModel().Peek()))
 	t.UpdateTitle()
@@ -384,6 +385,7 @@ func (t *Table) FilterInput(r rune) bool {
 
 // Filter filters out table data.
 func (t *Table) Filter(string) {
+	t.SelectTable.ClearMarks()
 	t.ClearSelection()
 	t.doUpdate(t.filtered(t.GetModel().Peek()))
 	t.UpdateTitle()
