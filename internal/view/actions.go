@@ -147,9 +147,9 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 			errs = errors.Join(errs, err)
 			continue
 		}
-		if _, ok := aa.Get(key); ok {
+		if existing, ok := aa.Get(key); ok {
 			if !pp.Plugins[k].Override {
-				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", pp.Plugins[k].ShortCut, k))
+				errs = errors.Join(errs, fmt.Errorf("plugin %q shortcut %q conflicts with %q (use override: true to replace)", k, pp.Plugins[k].ShortCut, existing.Description))
 				continue
 			}
 			slog.Debug("Plugin overrode action shortcut",
@@ -262,4 +262,21 @@ func executePlugin(r Runner, p *config.Plugin, inputValues dialog.PluginInputVal
 		return
 	}
 	cb()
+}
+
+const maxDialogErrs = 3
+
+func truncErrs(err error, max int) string {
+	if me, ok := err.(interface{ Unwrap() []error }); ok {
+		ee := me.Unwrap()
+		if len(ee) <= max {
+			return err.Error()
+		}
+		msgs := make([]string, max)
+		for i := range max {
+			msgs[i] = ee[i].Error()
+		}
+		return strings.Join(msgs, "\n") + fmt.Sprintf("\n...and %d more (check logs)", len(ee)-max)
+	}
+	return err.Error()
 }
