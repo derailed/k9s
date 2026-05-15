@@ -16,6 +16,7 @@ func loadCustomViewers() MetaViewers {
 	batchViewers(m)
 	crdViewers(m)
 	helmViewers(m)
+	karpenterViewers(m)
 
 	return m
 }
@@ -143,5 +144,11 @@ func batchViewers(vv MetaViewers) {
 func crdViewers(vv MetaViewers) {
 	vv[client.CrdGVR] = MetaViewer{
 		viewerFn: NewCRD,
+	}
+}
+
+func karpenterViewers(vv MetaViewers) {
+	vv[client.NodeClaimGVR] = MetaViewer{
+		viewerFn: NewNodeClaim,
 	}
 }
