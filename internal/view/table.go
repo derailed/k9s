@@ -216,10 +216,12 @@ func (t *Table) saveCmd(*tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) bindKeys() {
+	markRangeKey, _ := pickMarkRangeKey()
+
 	t.Actions().Bulk(ui.KeyMap{
 		ui.KeyHelp:             ui.NewKeyAction("Help", t.App().helpCmd, true),
 		ui.KeySpace:            ui.NewSharedKeyAction("Mark", t.markCmd, false),
-		tcell.KeyCtrlSpace:     ui.NewSharedKeyAction("Mark Range", t.markSpanCmd, false),
+		markRangeKey:           ui.NewSharedKeyAction("Mark Range", t.markSpanCmd, false),
 		tcell.KeyCtrlBackslash: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
 		tcell.KeyCtrlS:         ui.NewSharedKeyAction("Save", t.saveCmd, false),
 		ui.KeySlash:            ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
