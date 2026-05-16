@@ -4,7 +4,7 @@
 package dao
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -469,6 +469,17 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	return out
 }
 
+// partialLineTimeout is how long readLogs waits for a newline before
+// flushing whatever partial data has arrived. This makes progress bars,
+// slow JSON serializers, and other non-newline-terminated output visible.
+const partialLineTimeout = 3 * time.Second
+
+// readChunk carries raw bytes from the reader goroutine.
+type readChunk struct {
+	data []byte
+	err  error
+}
+
 func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions) streamResult {
 	defer func() {
 		if err := stream.Close(); err != nil && !errors.Is(err, io.ErrClosedPipe) {
@@ -479,43 +490,93 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 		}
 	}()
 
-	r := bufio.NewReader(stream)
+	// Single goroutine reads raw chunks; the main loop assembles lines.
+	chunks := make(chan readChunk, 1)
+	go func() {
+		defer close(chunks)
+		buf := make([]byte, 32*1024)
+		for {
+			n, err := stream.Read(buf)
+			if n > 0 {
+				cp := make([]byte, n)
+				copy(cp, buf[:n])
+				chunks <- readChunk{data: cp}
+			}
+			if err != nil {
+				chunks <- readChunk{err: err}
+				return
+			}
+		}
+	}()
+
+	var partial []byte
+	timer := time.NewTimer(partialLineTimeout)
+	timer.Stop()
+
+	flushPartial := func() {
+		if len(partial) > 0 {
+			sendLogLine(ctx, out, opts, partial)
+			partial = nil
+		}
+	}
 
 	for {
-		bytes, err := r.ReadBytes('\n')
-		if err == nil {
-			item := opts.ToLogItem(tview.EscapeBytes(bytes))
-			select {
-			case <-ctx.Done():
-				return streamCanceled
-			case out <- item:
-			default:
-				// Avoid deadlock if consumer is too slow
-				slog.Warn("Dropping log line due to slow consumer",
+		select {
+		case <-ctx.Done():
+			flushPartial()
+			return streamCanceled
+
+		case chunk, ok := <-chunks:
+			if !ok {
+				flushPartial()
+				return streamEOF
+			}
+			if chunk.err != nil {
+				flushPartial()
+				if errors.Is(chunk.err, io.EOF) {
+					slog.Debug("Log reader reached EOF", slogs.Container, opts.Info())
+					out <- opts.ToErrLogItem(fmt.Errorf("stream closed: %w for %s", chunk.err, opts.Info()))
+					return streamEOF
+				}
+				slog.Debug("Log stream error, will retry connection",
 					slogs.Container, opts.Info(),
+					slogs.Error, fmt.Errorf("stream error: %w for %s", chunk.err, opts.Info()),
 				)
+				return streamError
 			}
-			continue
-		}
 
-		if errors.Is(err, io.EOF) {
-			if len(bytes) > 0 {
-				// Emit trailing partial line before EOF
-				out <- opts.ToLogItem(tview.EscapeBytes(bytes))
+			partial = append(partial, chunk.data...)
+
+			// Extract and emit all complete lines from the buffer.
+			for {
+				idx := bytes.IndexByte(partial, '\n')
+				if idx < 0 {
+					break
+				}
+				line := partial[:idx+1]
+				sendLogLine(ctx, out, opts, line)
+				partial = partial[idx+1:]
 			}
-			slog.Debug("Log reader reached EOF", slogs.Container, opts.Info())
-			out <- opts.ToErrLogItem(fmt.Errorf("stream closed: %w for %s", err, opts.Info()))
-			return streamEOF
-		}
 
-		// Non-EOF error
-		slog.Debug("Log stream error, will retry connection",
-			slogs.Container, opts.Info(),
-			slogs.Error, fmt.Errorf("stream error: %w for %s", err, opts.Info()),
-		)
-		// Don't send stream errors to user - they will be retried
-		// Only final retry exhaustion message is shown
-		return streamError
+			// If there's leftover (no newline yet), arm the timer.
+			if len(partial) > 0 {
+				timer.Reset(partialLineTimeout)
+			} else {
+				timer.Stop()
+			}
+
+		case <-timer.C:
+			flushPartial()
+		}
+	}
+}
+
+func sendLogLine(ctx context.Context, out chan<- *LogItem, opts *LogOptions, data []byte) {
+	item := opts.ToLogItem(tview.EscapeBytes(data))
+	select {
+	case <-ctx.Done():
+	case out <- item:
+	default:
 	}
 }
 
