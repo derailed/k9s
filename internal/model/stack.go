@@ -182,6 +182,16 @@ func (s *Stack) notify(a StackAction, c Component) {
 	}
 }
 
+// Repopulate replaces the stack contents with the given components without
+// triggering any lifecycle (Stop/Start) callbacks or notifying listeners.
+// Use this to mirror an external stack snapshot (e.g. when switching tabs).
+func (s *Stack) Repopulate(components []Component) {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+	s.components = make([]Component, len(components))
+	copy(s.components, components)
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 

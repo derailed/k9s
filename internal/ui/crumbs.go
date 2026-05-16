@@ -58,6 +58,13 @@ func (c *Crumbs) StackPopped(_, _ model.Component) {
 // StackTop indicates the top of the stack.
 func (*Crumbs) StackTop(model.Component) {}
 
+// Reset rebuilds the crumbs display from a snapshot of the component stack.
+// Call this when switching tabs to replace the previous tab's breadcrumb trail.
+func (c *Crumbs) Reset(components []model.Component) {
+	c.stack.Repopulate(components)
+	c.refresh(c.stack.Flatten())
+}
+
 // Refresh updates view with new crumbs.
 func (c *Crumbs) refresh(crumbs []string) {
 	c.Clear()
