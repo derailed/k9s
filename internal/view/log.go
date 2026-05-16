@@ -22,6 +22,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -51,6 +52,7 @@ type Log struct {
 	follow            bool
 	columnLock        bool
 	requestOneRefresh bool
+	shellFilter       string
 }
 
 var _ model.Component = (*Log)(nil)
@@ -258,6 +260,7 @@ func (l *Log) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, false),
 		ui.KeyQ:         ui.NewKeyAction("Back", l.resetCmd, false),
 		ui.KeyShiftC:    ui.NewKeyAction("Clear", l.clearCmd, true),
+		ui.KeyShiftF:    ui.NewKeyAction("Shell Filter", l.shellFilterCmd, true),
 		ui.KeyM:         ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyShiftL:    ui.NewKeyAction("Toggle ColumnLock", l.toggleColumnLockCmd, true),
@@ -333,6 +336,9 @@ func (l *Log) updateTitle() {
 	buff := l.logs.cmdBuff.GetText()
 	if buff != "" {
 		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), &styles)
+	}
+	if l.shellFilter != "" {
+		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, "|"+l.shellFilter+"|"), &styles)
 	}
 	l.SetTitle(title)
 }
@@ -463,6 +469,22 @@ func saveData(dir, fqn, logs string) (string, error) {
 	}
 
 	return path, nil
+}
+
+func (l *Log) shellFilterCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	d := l.app.Styles.Dialog()
+	dialog.ShowLogFilter(&d, l.app.Content.Pages, l.shellFilter, l.app.ShellFilterHistory(), func(cmd string) {
+		l.app.QueueUpdateDraw(func() {
+			l.app.AddShellFilterHistory(cmd)
+			l.shellFilter = cmd
+			l.model.SetShellFilter(l.getContext(), cmd)
+			l.updateTitle()
+		})
+	}, func() {})
+	return nil
 }
 
 func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {

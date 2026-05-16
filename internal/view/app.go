@@ -45,17 +45,18 @@ const (
 type App struct {
 	version string
 	*ui.App
-	Content       *PageStack
-	command       *Command
-	factory       *watch.Factory
-	cancelFn      context.CancelFunc
-	clusterModel  *model.ClusterInfo
-	cmdHistory    *model.History
-	filterHistory *model.History
-	conRetry      int32
-	showHeader    bool
-	showLogo      bool
-	showCrumbs    bool
+	Content             *PageStack
+	command             *Command
+	factory             *watch.Factory
+	cancelFn            context.CancelFunc
+	clusterModel        *model.ClusterInfo
+	cmdHistory          *model.History
+	filterHistory       *model.History
+	shellFilterHistory  []string
+	conRetry            int32
+	showHeader          bool
+	showLogo            bool
+	showCrumbs          bool
 }
 
 // NewApp returns a K9s app instance.
@@ -66,12 +67,61 @@ func NewApp(cfg *config.Config) *App {
 		filterHistory: model.NewHistory(model.MaxHistory),
 		Content:       NewPageStack(),
 	}
+	a.shellFilterHistory = loadShellFilterHistory()
 	a.ReloadStyles()
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
 	a.Views()["clusterInfo"] = NewClusterInfo(&a)
 
 	return &a
+}
+
+// ShellFilterHistory returns the shell filter command history.
+func (a *App) ShellFilterHistory() []string {
+	return a.shellFilterHistory
+}
+
+// AddShellFilterHistory appends a command to the shell filter history and
+// persists it to disk.  Consecutive duplicates are ignored.
+func (a *App) AddShellFilterHistory(cmd string) {
+	if cmd == "" {
+		return
+	}
+	n := len(a.shellFilterHistory)
+	if n > 0 && a.shellFilterHistory[n-1] == cmd {
+		return
+	}
+	const maxShellFilterHistory = 50
+	a.shellFilterHistory = append(a.shellFilterHistory, cmd)
+	if len(a.shellFilterHistory) > maxShellFilterHistory {
+		a.shellFilterHistory = a.shellFilterHistory[len(a.shellFilterHistory)-maxShellFilterHistory:]
+	}
+	go saveShellFilterHistory(a.shellFilterHistory)
+}
+
+func loadShellFilterHistory() []string {
+	bb, err := os.ReadFile(config.AppShellFilterHistoryFile)
+	if err != nil {
+		return nil
+	}
+	var history []string
+	// Simple line-by-line YAML list: each entry is "- <command>"
+	for _, line := range strings.Split(string(bb), "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "- ") {
+			history = append(history, line[2:])
+		}
+	}
+	return history
+}
+
+func saveShellFilterHistory(history []string) {
+	if config.AppShellFilterHistoryFile == "" {
+		return
+	}
+	if err := config.SaveShellFilterHistory(history); err != nil {
+		slog.Warn("Failed to save shell filter history", slogs.Error, err)
+	}
 }
 
 // ReloadStyles reloads skin file.

@@ -18,6 +18,10 @@ type LogItem struct {
 	SingleContainer bool
 	Bytes           []byte
 	IsError         bool
+	// IsRaw marks items produced by an external shell filter whose Bytes
+	// are already formatted output.  Render() writes them verbatim instead
+	// of stripping the leading timestamp field.
+	IsRaw bool
 }
 
 // NewLogItem returns a new item.
@@ -68,6 +72,24 @@ func (l *LogItem) Size() int {
 
 // Render returns a log line as string.
 func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+	if l.IsRaw {
+		// Shell-filter output: write pod/container prefix then the full bytes
+		// as-is without any timestamp stripping.
+		if l.Pod != "" {
+			bb.WriteString("[" + paint + "::]" + l.Pod)
+		}
+		if !l.SingleContainer && l.Container != "" {
+			if l.Pod != "" {
+				bb.WriteString(" ")
+			}
+			bb.WriteString("[" + paint + "::b]" + l.Container + "[-::-] ")
+		} else if l.Pod != "" {
+			bb.WriteString("[-::] ")
+		}
+		bb.Write(l.Bytes)
+		return
+	}
+
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if showTime && index > 0 {
 		bb.WriteString("[gray::b]")
