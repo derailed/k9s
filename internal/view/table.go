@@ -147,6 +147,9 @@ func (t *Table) defaultEnv() Env {
 	env["RESOURCE_VERSION"] = t.GVR().V()
 	env["RESOURCE_NAME"] = t.GVR().R()
 
+	// Add list of selected FQNs
+	paths := t.GetSelectedItems()
+	env["SELECTED_FQNS"] = strings.Join(paths, ",")
 	return env
 }
 
