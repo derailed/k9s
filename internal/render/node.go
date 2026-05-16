@@ -191,13 +191,17 @@ func (Node) diagnose(ss []string) error {
 		return nil
 	}
 
-	var ready bool
+	var (
+		ready               bool
+		hasSchedulingDisabled bool
+	)
+	
 	for _, s := range ss {
 		if s == "" {
 			continue
 		}
 		if s == "SchedulingDisabled" {
-			return cordonErr
+			hasSchedulingDisabled = true
 		}
 		if s == "Ready" {
 			ready = true
@@ -208,6 +212,10 @@ func (Node) diagnose(ss []string) error {
 		return notReadyErr
 	}
 
+	if hasSchedulingDisabled {
+		return cordonErr
+	}
+	
 	return nil
 }
 

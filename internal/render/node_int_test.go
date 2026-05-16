@@ -198,3 +198,110 @@ func makeQ(t *testing.T, v string) *resource.Quantity {
 
 	return &q
 }
+
+// Test_node_diagnose covers all boundary scenarios of Node.diagnose method
+func Test_node_diagnose(t *testing.T) {
+	tests := []struct {
+		name       string
+		statuses   []string
+		wantErr    bool
+		wantErrVal error
+	}{
+		{
+			name:       "empty status slice",
+			statuses:   []string{},
+			wantErr:    false,
+			wantErrVal: nil,
+		},
+		{
+			name:       "slice with only empty string",
+			statuses:   []string{""},
+			wantErr:    true,
+			wantErrVal: notReadyErr,
+		},
+		{
+			name:       "slice with multiple empty strings",
+			statuses:   []string{"", "", ""},
+			wantErr:    true,
+			wantErrVal: notReadyErr,
+		},
+		{
+			name:       "single element: Ready",
+			statuses:   []string{"Ready"},
+			wantErr:    false,
+			wantErrVal: nil,
+		},
+		{
+			name:       "single element: SchedulingDisabled (no Ready)",
+			statuses:   []string{"SchedulingDisabled"},
+			wantErr:    true,
+			wantErrVal: notReadyErr,
+		},
+		{
+			name:       "single element: unknown status (Unknown)",
+			statuses:   []string{"Unknown"},
+			wantErr:    true,
+			wantErrVal: notReadyErr,
+		},
+		{
+			name:       "multiple duplicate Ready statuses",
+			statuses:   []string{"Ready", "Ready", "Ready"},
+			wantErr:    false,
+			wantErrVal: nil,
+		},
+		{
+			name:       "multiple duplicate SchedulingDisabled (no Ready)",
+			statuses:   []string{"SchedulingDisabled", "SchedulingDisabled"},
+			wantErr:    true,
+			wantErrVal: notReadyErr,
+		},
+		{
+			name:       "Ready + SchedulingDisabled (return cordonErr)",
+			statuses:   []string{"Ready", "SchedulingDisabled"},
+			wantErr:    true,
+			wantErrVal: cordonErr,
+		},
+		{
+			name:       "empty string + Ready + SchedulingDisabled",
+			statuses:   []string{"", "Ready", "SchedulingDisabled"},
+			wantErr:    true,
+			wantErrVal: cordonErr,
+		},
+		{
+			name:       "NotReady + SchedulingDisabled (no Ready)",
+			statuses:   []string{"NotReady", "SchedulingDisabled"},
+			wantErr:    true,
+			wantErrVal: notReadyErr,
+		},
+		{
+			name:       "unknown status + Ready (unknown ignored)",
+			statuses:   []string{"Unknown", "Ready"},
+			wantErr:    false,
+			wantErrVal: nil,
+		},
+		{
+			name:       "mixed empty + NotReady + SchedulingDisabled + Unknown",
+			statuses:   []string{"", "NotReady", "SchedulingDisabled", "Unknown"},
+			wantErr:    true,
+			wantErrVal: notReadyErr,
+		},
+		{
+			name:       "large slice with Ready + SchedulingDisabled + empty",
+			statuses:   append(make([]string, 1000), "", "Ready", "SchedulingDisabled"),
+			wantErr:    true,
+			wantErrVal: cordonErr,
+		},
+	}
+
+	var n Node
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := n.diagnose(tt.statuses)
+			if tt.wantErr {
+				assert.ErrorIs(t, err, tt.wantErrVal, "test case failed: %s", tt.name)
+			} else {
+				assert.NoError(t, err, "test case failed: %s", tt.name)
+			}
+		})
+	}
+}
