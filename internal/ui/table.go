@@ -37,26 +37,27 @@ type (
 // Table represents tabular data.
 type Table struct {
 	*SelectTable
-	gvr            *client.GVR
-	sortCol        model1.SortColumn
-	selectedColIdx int
-	manualSort     bool
-	Path           string
-	Extras         string
-	actions        *KeyActions
-	cmdBuff        *model.FishBuff
-	styles         *config.Styles
-	viewSetting    *config.ViewSetting
-	colorerFn      model1.ColorerFunc
-	decorateFn     DecorateFunc
-	wide           bool
-	toast          bool
-	hasMetrics     bool
-	ctx            context.Context
-	mx             sync.RWMutex
-	readOnly       bool
-	noIcon         bool
-	fullGVR        bool
+	gvr               *client.GVR
+	sortCol           model1.SortColumn
+	selectedColIdx    int
+	invertSelectedCol bool
+	manualSort        bool
+	Path              string
+	Extras            string
+	actions           *KeyActions
+	cmdBuff           *model.FishBuff
+	styles            *config.Styles
+	viewSetting       *config.ViewSetting
+	colorerFn         model1.ColorerFunc
+	decorateFn        DecorateFunc
+	wide              bool
+	toast             bool
+	hasMetrics        bool
+	ctx               context.Context
+	mx                sync.RWMutex
+	readOnly          bool
+	noIcon            bool
+	fullGVR           bool
 }
 
 // NewTable returns a new table view.
@@ -118,6 +119,21 @@ func (t *Table) getSortCol() model1.SortColumn {
 	defer t.mx.RUnlock()
 
 	return t.sortCol
+}
+
+// ToggleInvertSelectedCol toggles invert-video highlighting on the selected column header.
+func (t *Table) ToggleInvertSelectedCol() {
+	t.mx.Lock()
+	t.invertSelectedCol = !t.invertSelectedCol
+	t.mx.Unlock()
+	t.Refresh()
+}
+
+func (t *Table) getInvertSelectedCol() bool {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.invertSelectedCol
 }
 
 func (t *Table) setMSort(b bool) {
@@ -633,7 +649,7 @@ func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 	sortCol := h.Name == sc.Name
 	selectedCol := col == t.getSelectedColIdx()
 	styles := t.styles.Table()
-	c := tview.NewTableCell(columnIndicator(sortCol, selectedCol, sc.ASC, &styles, h.Name))
+	c := tview.NewTableCell(columnIndicator(sortCol, selectedCol, t.getInvertSelectedCol(), sc.ASC, &styles, h.Name))
 	c.SetExpansion(1)
 	c.SetSelectable(false)
 	c.SetAlign(h.Align)

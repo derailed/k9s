@@ -84,11 +84,15 @@ func SkinTitle(fmat string, style *config.Frame) string {
 	return fmat
 }
 
-func columnIndicator(sort, selected, asc bool, style *config.Table, name string) string {
+func columnIndicator(sort, selected, invert, asc bool, style *config.Table, name string) string {
 	// Build the column name with selection indicator
 	var displayName string
 	if selected {
-		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.SelectedSortColumnColor, name)
+		attr := "::"
+		if invert {
+			attr = "::r"
+		}
+		displayName = fmt.Sprintf("[%s%s]%s[::]", style.Header.SelectedSortColumnColor, attr, name)
 	} else {
 		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.FgColor, name)
 	}
