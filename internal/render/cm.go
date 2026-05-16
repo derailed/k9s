@@ -50,7 +50,7 @@ func (m ConfigMap) Render(o any, _ string, row *model1.Row) error {
 	return nil
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (ConfigMap) defaultRow(o any, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
