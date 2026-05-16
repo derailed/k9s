@@ -469,6 +469,32 @@ func TestRowEventsSort(t *testing.T) {
 				model1.RowEvent{Row: model1.Row{ID: "ns2/C", Fields: model1.Fields{"C", "2", "3"}}},
 			),
 		},
+		"index-out-of-bounds": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2"}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
+			),
+			col: 2,
+			asc: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2"}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
+			),
+		},
+		"all-rows-short": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0"}}},
+			),
+			col: 5,
+			asc: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0"}}},
+			),
+		},
 		"capacity": {
 			re: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "ns1/B", Fields: model1.Fields{"B", "2", "3", "1Gi"}}},
