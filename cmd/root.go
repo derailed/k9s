@@ -144,6 +144,9 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 	k9sCfg.K9s.Override(k9sFlags)
+	// Apply resolved skip-access-check (CLI > YAML > default) to the API client
+	// config. Done after Override so YAML and CLI precedence are honored.
+	k8sCfg.SkipAccessCheck = k9sCfg.K9s.IsSkipAccessCheck()
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		slog.Error("Fail to refine k9s config", slogs.Error, err)
 		errs = errors.Join(errs, err)
@@ -260,6 +263,12 @@ func initK9sFlags() {
 		"screen-dump-dir",
 		"",
 		"Sets a path to a dir for a screen dumps",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.SkipAccessCheck,
+		"skip-access-check",
+		false,
+		"Skip pre-flight SelfSubjectAccessReview checks (relies on API server responses)",
 	)
 	rootCmd.Flags()
 }

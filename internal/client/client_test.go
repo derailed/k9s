@@ -150,6 +150,19 @@ func TestIsValidNamespace(t *testing.T) {
 	}
 }
 
+func TestCanI_SkipAccessCheck(t *testing.T) {
+	c := NewTestAPIClient()
+	c.connOK = true
+	c.config.SkipAccessCheck = true
+
+	// No Dial is configured: if CanI did not short-circuit it would attempt
+	// to reach the API server and fail. The successful return proves the SAR
+	// call is bypassed.
+	ok, err := c.CanI("default", PodGVR, "p1", []string{"get", "list", "delete"})
+	assert.NoError(t, err)
+	assert.True(t, ok)
+}
+
 func TestCheckCacheBool(t *testing.T) {
 	c := NewTestAPIClient()
 

@@ -34,35 +34,37 @@ var defaultGPUVendors = gpuVendors{
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
-	GPUVendors          gpuVendors `json:"gpuVendors" yaml:"gpuVendors"`
-	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
-	RefreshRate         float32    `json:"refreshRate" yaml:"refreshRate"`
-	APIServerTimeout    string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
-	MaxConnRetry        int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
-	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
-	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
-	PortForwardAddress  string     `yaml:"portForwardAddress"`
-	UI                  UI         `json:"ui" yaml:"ui"`
-	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
-	DisablePodCounting  bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
-	ShellPod            *ShellPod  `json:"shellPod" yaml:"shellPod"`
-	ImageScans          ImageScans `json:"imageScans" yaml:"imageScans"`
-	Logger              Logger     `json:"logger" yaml:"logger"`
-	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
-	DefaultView         string     `json:"defaultView" yaml:"defaultView"`
-	manualRefreshRate   float32
-	manualReadOnly      *bool
-	manualCommand       *string
-	manualScreenDumpDir *string
-	refreshRateWarned   bool
-	dir                 *data.Dir
-	activeContextName   string
-	activeConfig        *data.Config
-	conn                client.Connection
-	ks                  data.KubeSettings
-	mx                  sync.RWMutex
-	contextSwitch       bool
+	LiveViewAutoRefresh   bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
+	GPUVendors            gpuVendors `json:"gpuVendors" yaml:"gpuVendors"`
+	ScreenDumpDir         string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
+	RefreshRate           float32    `json:"refreshRate" yaml:"refreshRate"`
+	APIServerTimeout      string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
+	MaxConnRetry          int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
+	ReadOnly              bool       `json:"readOnly" yaml:"readOnly"`
+	NoExitOnCtrlC         bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	PortForwardAddress    string     `yaml:"portForwardAddress"`
+	UI                    UI         `json:"ui" yaml:"ui"`
+	SkipLatestRevCheck    bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
+	DisablePodCounting    bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
+	ShellPod              *ShellPod  `json:"shellPod" yaml:"shellPod"`
+	ImageScans            ImageScans `json:"imageScans" yaml:"imageScans"`
+	Logger                Logger     `json:"logger" yaml:"logger"`
+	Thresholds            Threshold  `json:"thresholds" yaml:"thresholds"`
+	DefaultView           string     `json:"defaultView" yaml:"defaultView"`
+	SkipAccessCheck       bool       `json:"skipAccessCheck,omitempty" yaml:"skipAccessCheck,omitempty"`
+	manualRefreshRate     float32
+	manualReadOnly        *bool
+	manualCommand         *string
+	manualScreenDumpDir   *string
+	manualSkipAccessCheck *bool
+	refreshRateWarned     bool
+	dir                   *data.Dir
+	activeContextName     string
+	activeConfig          *data.Config
+	conn                  client.Connection
+	ks                    data.KubeSettings
+	mx                    sync.RWMutex
+	contextSwitch         bool
 }
 
 // NewK9s create a new K9s configuration.
@@ -147,6 +149,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.UI = k1.UI
 	k.SkipLatestRevCheck = k1.SkipLatestRevCheck
 	k.DisablePodCounting = k1.DisablePodCounting
+	k.SkipAccessCheck = k1.SkipAccessCheck
 	k.ShellPod = k1.ShellPod
 	k.Logger = k1.Logger
 	k.ImageScans = k1.ImageScans
@@ -334,6 +337,9 @@ func (k *K9s) Override(k9sFlags *Flags) {
 	}
 	k.manualCommand = k9sFlags.Command
 	k.manualScreenDumpDir = k9sFlags.ScreenDumpDir
+	if k9sFlags.SkipAccessCheck != nil && *k9sFlags.SkipAccessCheck {
+		k.manualSkipAccessCheck = k9sFlags.SkipAccessCheck
+	}
 }
 
 // IsHeadless returns headless setting.
@@ -418,6 +424,17 @@ func (k *K9s) IsReadOnly() bool {
 	}
 
 	return ro
+}
+
+// IsSkipAccessCheck returns whether pre-flight SelfSubjectAccessReview probes
+// should be bypassed. The CLI flag takes precedence over the YAML config; the
+// CLI flag only overrides when explicitly set to true.
+func (k *K9s) IsSkipAccessCheck() bool {
+	if IsBoolSet(k.manualSkipAccessCheck) {
+		return true
+	}
+
+	return k.SkipAccessCheck
 }
 
 // Validate the current configuration.
