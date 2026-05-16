@@ -198,6 +198,11 @@ func (a *App) CmdBuff() *model.FishBuff {
 	return a.cmdBuff
 }
 
+// CommandSuggestions returns the command suggestion overlay.
+func (a *App) CommandSuggestions() *SuggestionDropdown {
+	return a.Prompt().SuggestionDropdown()
+}
+
 // HasCmd check if cmd buffer is active and has a command.
 func (a *App) HasCmd() bool {
 	return a.cmdBuff.IsActive() && !a.cmdBuff.Empty()

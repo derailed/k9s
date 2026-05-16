@@ -93,10 +93,18 @@ func (*FishBuff) AutoSuggests() bool {
 
 // Suggestions returns suggestions.
 func (f *FishBuff) Suggestions() []string {
-	if f.suggestionFn != nil {
-		return f.suggestionFn(string(f.buff))
+	if len(f.suggestions) == 0 {
+		return nil
 	}
-	return nil
+
+	ss := make([]string, len(f.suggestions))
+	copy(ss, f.suggestions)
+	return ss
+}
+
+// SuggestionIndex returns the active suggestion index.
+func (f *FishBuff) SuggestionIndex() int {
+	return f.suggestionIndex
 }
 
 // SetSuggestionFn sets up suggestions.

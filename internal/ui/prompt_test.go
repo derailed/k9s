@@ -4,6 +4,7 @@
 package ui_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
@@ -98,6 +99,107 @@ func TestPrompt_Deactivate(t *testing.T) {
 		v.Deactivate()
 		assert.False(t, v.InCmdMode())
 	}
+}
+
+func TestPromptCommandSuggestionsUseDropdown(t *testing.T) {
+	m := model.NewFishBuff(':', model.CommandBuffer)
+	m.SetSuggestionFn(func(string) sort.StringSlice {
+		return sort.StringSlice{"line", "lines"}
+	})
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(m)
+	m.AddListener(v)
+
+	m.SetActive(true)
+	v.SendStrokes("pipe")
+
+	assert.Equal(t, " > [::b]pipe\n", v.GetText(false))
+	assert.True(t, v.SuggestionDropdown().IsActive())
+	assert.Equal(t, []string{"pipeline", "pipelines"}, v.SuggestionDropdown().Items())
+	assert.Equal(t, 0, v.SuggestionDropdown().SelectedIndex())
+}
+
+func TestPromptFilterSuggestionsStayInline(t *testing.T) {
+	m := model.NewFishBuff('/', model.FilterBuffer)
+	m.SetSuggestionFn(func(string) sort.StringSlice {
+		return sort.StringSlice{"line"}
+	})
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(m)
+	m.AddListener(v)
+
+	m.SetActive(true)
+	v.SendStrokes("pipe")
+
+	assert.Contains(t, v.GetText(false), "line")
+	assert.False(t, v.SuggestionDropdown().IsActive())
+}
+
+func TestPromptCommandNoSuggestionsHidesDropdown(t *testing.T) {
+	m := model.NewFishBuff(':', model.CommandBuffer)
+	m.SetSuggestionFn(func(string) sort.StringSlice {
+		return nil
+	})
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(m)
+	m.AddListener(v)
+
+	m.SetActive(true)
+	v.SendStrokes("pipe")
+
+	assert.False(t, v.SuggestionDropdown().IsActive())
+}
+
+func TestPromptCommandSuggestionSelectionTracksArrows(t *testing.T) {
+	m := model.NewFishBuff(':', model.CommandBuffer)
+	m.SetSuggestionFn(func(string) sort.StringSlice {
+		return sort.StringSlice{"line", "linerun", "lines"}
+	})
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(m)
+	m.AddListener(v)
+
+	m.SetActive(true)
+	v.SendStrokes("pipe")
+	v.SendKey(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+
+	assert.Equal(t, " > [::b]pipe\n", v.GetText(false))
+	assert.Equal(t, 1, v.SuggestionDropdown().SelectedIndex())
+	assert.Equal(t, []string{"pipeline", "pipelinerun", "pipelines"}, v.SuggestionDropdown().Items())
+}
+
+func TestPromptCommandEnterAcceptsSelectedSuggestion(t *testing.T) {
+	m := model.NewFishBuff(':', model.CommandBuffer)
+	m.SetSuggestionFn(func(string) sort.StringSlice {
+		return sort.StringSlice{"line", "linerun"}
+	})
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(m)
+	m.AddListener(v)
+
+	m.SetActive(true)
+	v.SendStrokes("pipe")
+	v.SendKey(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+	v.SendKey(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+
+	assert.Equal(t, "pipelinerun", m.GetText())
+	assert.False(t, v.SuggestionDropdown().IsActive())
+}
+
+func TestPromptCommandUpMovesToPreviousSuggestion(t *testing.T) {
+	m := model.NewFishBuff(':', model.CommandBuffer)
+	m.SetSuggestionFn(func(string) sort.StringSlice {
+		return sort.StringSlice{"line", "linerun", "lines"}
+	})
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(m)
+	m.AddListener(v)
+
+	m.SetActive(true)
+	v.SendStrokes("pipe")
+	v.SendKey(tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone))
+
+	assert.Equal(t, 2, v.SuggestionDropdown().SelectedIndex())
 }
 
 // Tests that, when active, the prompt has the appropriate color
