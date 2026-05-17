@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/derailed/k9s/internal/slogs"
@@ -110,8 +112,8 @@ func (s *Secret) Decode(encodedDescription, path string) (string, error) {
 		return "", err
 	}
 	decodedSecrets := make([]string, 0, len(data))
-	for k, v := range data {
-		line := fmt.Sprintf("%s: %s", k, v)
+	for _, k := range slices.Sorted(maps.Keys(data)) {
+		line := fmt.Sprintf("%s: %s", k, data[k])
 		decodedSecrets = append(decodedSecrets, strings.TrimSpace(line))
 	}
 
