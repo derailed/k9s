@@ -107,6 +107,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.columnLock = l.app.Config.K9s.Logger.ColumnLock
 
 	l.model.ToggleShowTimestamp(l.app.Config.K9s.Logger.ShowTime)
+	l.model.ToggleShowLocalTime(l.app.Config.K9s.Logger.LocalTime)
 
 	return nil
 }
@@ -263,6 +264,7 @@ func (l *Log) bindKeys() {
 		ui.KeyShiftL:    ui.NewKeyAction("Toggle ColumnLock", l.toggleColumnLockCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
+		ui.KeyZ:         ui.NewKeyAction("Toggle LocalTime", l.toggleLocalTimeCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
@@ -403,6 +405,18 @@ func (l *Log) toggleAllContainers(evt *tcell.EventKey) *tcell.EventKey {
 	l.updateTitle()
 
 	return nil
+}
+
+func (l *Log) toggleLocalTimeCmd(evt *tcell.EventKey) *tcell.EventKey {
+    if l.app.InCmdMode() {
+        return evt
+    }
+
+    l.indicator.ToggleLocalTime()
+    l.model.ToggleShowLocalTime(l.indicator.showLocalTime)
+    l.indicator.Refresh()
+
+    return nil
 }
 
 func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {

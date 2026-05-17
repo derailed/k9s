@@ -121,26 +121,26 @@ func (l *LogItems) podColorFor(id string) string {
 }
 
 // Lines returns a collection of log lines.
-func (l *LogItems) Lines(index int, showTime bool, ll [][]byte) {
+func (l *LogItems) Lines(index int, showTime, showLocalTime bool, ll [][]byte) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
 	for i, item := range l.items[index:] {
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.RenderWithLocalTime(l.podColorFor(item.ID()), showTime, showLocalTime, bb)
 		ll[i] = bb.Bytes()
 	}
 }
 
 // StrLines returns a collection of log lines.
-func (l *LogItems) StrLines(index int, showTime bool) []string {
+func (l *LogItems) StrLines(index int, showTime, showLocalTime bool) []string {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
 	ll := make([]string, len(l.items[index:]))
 	for i, item := range l.items[index:] {
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.RenderWithLocalTime(l.podColorFor(item.ID()), showTime, showLocalTime, bb)
 		ll[i] = bb.String()
 	}
 
@@ -148,10 +148,10 @@ func (l *LogItems) StrLines(index int, showTime bool) []string {
 }
 
 // Render returns logs as a collection of strings.
-func (l *LogItems) Render(index int, showTime bool, ll [][]byte) {
+func (l *LogItems) Render(index int, showTime, showLocalTime bool, ll [][]byte) {
 	for i, item := range l.items[index:] {
 		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
-		item.Render(l.podColorFor(item.ID()), showTime, bb)
+		item.RenderWithLocalTime(l.podColorFor(item.ID()), showTime, showLocalTime, bb)
 		ll[i] = bb.Bytes()
 	}
 }
@@ -165,15 +165,15 @@ func (l *LogItems) DumpDebug(m string) {
 }
 
 // Filter filters out log items based on given filter.
-func (l *LogItems) Filter(index int, q string, showTime bool) (matches []int, indices [][]int, err error) {
+func (l *LogItems) Filter(index int, q string, showTime, showLocalTime bool) (matches []int, indices [][]int, err error) {
 	if q == "" {
 		return
 	}
 	if f, ok := internal.IsFuzzySelector(q); ok {
-		matches, indices = l.fuzzyFilter(index, f, showTime)
+		matches, indices = l.fuzzyFilter(index, f, showTime, showLocalTime)
 		return
 	}
-	matches, indices, err = l.filterLogs(index, q, showTime)
+	matches, indices, err = l.filterLogs(index, q, showTime, showLocalTime)
 	if err != nil {
 		return
 	}
@@ -181,10 +181,10 @@ func (l *LogItems) Filter(index int, q string, showTime bool) (matches []int, in
 	return matches, indices, nil
 }
 
-func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) (matches []int, indices [][]int) {
+func (l *LogItems) fuzzyFilter(index int, q string, showTime, showLocalTime bool) (matches []int, indices [][]int) {
 	q = strings.TrimSpace(q)
 	matches, indices = make([]int, 0, len(l.items)), make([][]int, 0, len(l.items))
-	mm := fuzzy.Find(q, l.StrLines(index, showTime))
+	mm := fuzzy.Find(q, l.StrLines(index, showTime, showLocalTime))
 	for _, m := range mm {
 		matches = append(matches, m.Index)
 		indices = append(indices, m.MatchedIndexes)
@@ -193,7 +193,7 @@ func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) (matches []in
 	return matches, indices
 }
 
-func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int, indices [][]int, err error) {
+func (l *LogItems) filterLogs(index int, q string, showTime, showLocalTime bool) (matches []int, indices [][]int, err error) {
 	var invert bool
 	if internal.IsInverseSelector(q) {
 		invert = true
@@ -205,7 +205,7 @@ func (l *LogItems) filterLogs(index int, q string, showTime bool) (matches []int
 	}
 	matches, indices = make([]int, 0, len(l.items)), make([][]int, 0, len(l.items))
 	ll := make([][]byte, len(l.items[index:]))
-	l.Lines(index, showTime, ll)
+	l.Lines(index, showTime, showLocalTime, ll)
 	for i, line := range ll {
 		locs := rx.FindAllIndex(line, -1)
 		if locs != nil && invert {

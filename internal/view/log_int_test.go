@@ -27,10 +27,10 @@ func TestLogAutoScroll(t *testing.T) {
 	v.GetModel().Set(ii)
 	v.GetModel().Notify()
 
-	assert.Len(t, v.Hints(), 18)
+	assert.Len(t, v.Hints(), 19)
 
 	v.toggleAutoScrollCmd(nil)
-	assert.Equal(t, "Autoscroll:Off     ColumnLock:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
+	assert.Equal(t, "Autoscroll:Off     ColumnLock:Off     LocalTime:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
 }
 
 func TestLogColumnLock(t *testing.T) {
@@ -112,7 +112,7 @@ func TestLogTimestamp(t *testing.T) {
 	l.SendKeys(ui.KeyT)
 	l.Logs().Clear()
 	ll := make([][]byte, ii.Len())
-	ii.Lines(0, true, ll)
+	ii.Lines(0, true, false, ll)
 	l.Flush(ll)
 
 	assert.Equal(t, fmt.Sprintf("%-30s %s", "ttt", "fred/blee c1 Testing 1, 2, 3\n"), l.Logs().GetText(true))
