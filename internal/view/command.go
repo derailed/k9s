@@ -172,6 +172,34 @@ func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	return c.exec(p, client.XGVR, NewXray(gvr), true, pushCmd)
 }
 
+// ownersCmd handles the `owners <gvr> [-n namespace]` command.
+// It opens an OwnerReference-based tree view for any resource type.
+func (c *Command) ownersCmd(p *cmd.Interpreter, pushCmd bool) error {
+	arg, cns, ok := p.OwnersArgs()
+	if !ok {
+		return errors.New("invalid command. use `owners <resource>`")
+	}
+	if c.alias == nil {
+		return fmt.Errorf("no connection available")
+	}
+	gvr, ok := c.alias.Resolve(cmd.NewInterpreter(arg))
+	if !ok {
+		return fmt.Errorf("invalid resource name: %q", arg)
+	}
+	ns := c.app.Config.ActiveNamespace()
+	if cns != "" {
+		ns = cns
+	}
+	if err := c.app.Config.SetActiveNamespace(client.CleanseNamespace(ns)); err != nil {
+		return err
+	}
+	if err := c.app.switchNS(ns); err != nil {
+		return err
+	}
+
+	return c.exec(p, client.XGVR, NewOwnerXray(gvr), true, pushCmd)
+}
+
 // Run execs the command by showing associated display.
 func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) error {
 	if c.specialCmd(p, pushCmd) {
@@ -285,6 +313,10 @@ func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 		}
 	case p.IsXrayCmd():
 		if err := c.xrayCmd(p, pushCmd); err != nil {
+			c.app.Flash().Err(err)
+		}
+	case p.IsOwnersCmd():
+		if err := c.ownersCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	case p.IsRBACCmd():
