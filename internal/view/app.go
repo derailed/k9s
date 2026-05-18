@@ -259,6 +259,7 @@ func (a *App) bindKeys() {
 		ui.KeyLeftBracket:  ui.NewSharedKeyAction("Go Back", a.previousCommand, false),
 		ui.KeyRightBracket: ui.NewSharedKeyAction("Go Forward", a.nextCommand, false),
 		ui.KeyDash:         ui.NewSharedKeyAction("Last View", a.lastCommand, false),
+		ui.KeyShiftT:       ui.NewSharedKeyAction("Skins", a.skinPickerCmd, false),
 		tcell.KeyCtrlA:     ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter:     ui.NewKeyAction("Goto", a.gotoCmd, false),
 		tcell.KeyCtrlC:     ui.NewKeyAction("Quit", a.quitCmd, false),
