@@ -326,11 +326,26 @@ func (a *APIClient) CheckConnectivity() bool {
 			a.reset()
 		}
 	} else {
-		slog.Error("Unable to fetch server version", slogs.Error, err)
+		if hint := ConnectivityHint(err); hint != "" {
+			slog.Error("Unable to fetch server version", slogs.Error, err, "hint", hint)
+		} else {
+			slog.Error("Unable to fetch server version", slogs.Error, err)
+		}
 		a.setConnOK(false)
 	}
 
 	return a.getConnOK()
+}
+
+func ConnectivityHint(err error) string {
+	if err == nil {
+		return ""
+	}
+	msg := err.Error()
+	if strings.Contains(msg, "i/o timeout") || strings.Contains(msg, "no such host") || strings.Contains(msg, "connection refused") {
+		return "API server endpoint may be stale — verify kubeconfig 'server:' field is current (e.g. re-run your cloud provider's get-credentials command)"
+	}
+	return ""
 }
 
 // Config return a kubernetes configuration.

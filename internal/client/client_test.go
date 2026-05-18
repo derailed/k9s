@@ -4,12 +4,38 @@
 package client
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	authorizationv1 "k8s.io/api/authorization/v1"
 )
+
+func TestConnectivityHint(t *testing.T) {
+	uu := map[string]struct {
+		err  error
+		want string
+	}{
+		"nil":               {err: nil, want: ""},
+		"io-timeout":        {err: errors.New(`Get "https://1.2.3.4/api?timeout=32s": dial tcp 1.2.3.4:443: i/o timeout`), want: "stale"},
+		"no-such-host":      {err: errors.New(`dial tcp: lookup foo.example.com: no such host`), want: "stale"},
+		"connection-refused": {err: errors.New(`dial tcp 1.2.3.4:443: connect: connection refused`), want: "stale"},
+		"unauthorized":      {err: errors.New(`Unauthorized`), want: ""},
+		"other":             {err: errors.New(`something else`), want: ""},
+	}
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			got := ConnectivityHint(u.err)
+			if u.want == "" {
+				assert.Empty(t, got)
+				return
+			}
+			assert.Contains(t, got, u.want)
+		})
+	}
+}
 
 func TestMakeSAR(t *testing.T) {
 	uu := map[string]struct {
