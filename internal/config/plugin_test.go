@@ -244,3 +244,60 @@ func TestPluginLoadSymlink(t *testing.T) {
 
 	assert.Equal(t, ee, p)
 }
+
+func TestPluginCatalogLoad(t *testing.T) {
+	tmp := t.TempDir()
+	globalPath := filepath.Join(tmp, "config", "plugins.yaml")
+	contextPath := filepath.Join(tmp, "contexts", "plugins.yaml")
+
+	require.NoError(t, os.MkdirAll(filepath.Dir(globalPath), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Dir(contextPath), 0o755))
+	require.NoError(t, os.WriteFile(globalPath, []byte(`plugins:
+  shared:
+    shortCut: Shift-G
+    description: global
+    scopes:
+      - all
+    command: kubectl
+  global-only:
+    shortCut: Shift-O
+    description: global only
+    scopes:
+      - all
+    command: kubectl
+`), 0o600))
+	require.NoError(t, os.WriteFile(contextPath, []byte(`plugins:
+  shared:
+    shortCut: Shift-C
+    description: context
+    scopes:
+      - pods
+    command: kubectl
+  context-only:
+    shortCut: Shift-X
+    description: context only
+    scopes:
+      - pods
+    command: kubectl
+`), 0o600))
+
+	origPluginsFile := AppPluginsFile
+	AppPluginsFile = globalPath
+	t.Cleanup(func() {
+		AppPluginsFile = origPluginsFile
+	})
+
+	catalog := NewPluginCatalog()
+	require.NoError(t, catalog.Load(contextPath, false))
+	require.Len(t, catalog.Entries, 3)
+
+	assert.Equal(t, PluginSourceContext, catalog.Entries["shared"].Source)
+	assert.Equal(t, contextPath, catalog.Entries["shared"].Path)
+	assert.Equal(t, "context", catalog.Entries["shared"].Plugin.Description)
+
+	assert.Equal(t, PluginSourceGlobal, catalog.Entries["global-only"].Source)
+	assert.Equal(t, globalPath, catalog.Entries["global-only"].Path)
+
+	assert.Equal(t, PluginSourceContext, catalog.Entries["context-only"].Source)
+	assert.Equal(t, contextPath, catalog.Entries["context-only"].Path)
+}

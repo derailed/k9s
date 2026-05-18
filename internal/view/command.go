@@ -143,6 +143,15 @@ func (c *Command) aliasCmd(p *cmd.Interpreter, pushCmd bool) error {
 	return c.exec(p, client.AliGVR, v, false, pushCmd)
 }
 
+func (c *Command) pluginCmd(p *cmd.Interpreter, pushCmd bool) error {
+	filter, _ := p.FilterArg()
+
+	v := NewPlugin(client.PlgGVR)
+	v.SetFilter(filter, true)
+
+	return c.exec(p, client.PlgGVR, v, false, pushCmd)
+}
+
 func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	arg, cns, ok := p.XrayArgs()
 	if !ok {
@@ -281,6 +290,10 @@ func (c *Command) specialCmd(p *cmd.Interpreter, pushCmd bool) bool {
 		_ = c.app.helpCmd(nil)
 	case p.IsAliasCmd():
 		if err := c.aliasCmd(p, pushCmd); err != nil {
+			c.app.Flash().Err(err)
+		}
+	case p.IsPluginCmd():
+		if err := c.pluginCmd(p, pushCmd); err != nil {
 			c.app.Flash().Err(err)
 		}
 	case p.IsXrayCmd():
