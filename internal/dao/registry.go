@@ -272,6 +272,14 @@ func loadK9s(m ResourceMetas) {
 		Verbs:        []string{},
 		Categories:   []string{k9sCat},
 	}
+	m[client.ExplainGVR] = &metav1.APIResource{
+		Name:         "explain",
+		Kind:         "Explain",
+		SingularName: "explain",
+		ShortNames:   []string{"exp"},
+		Verbs:        []string{},
+		Categories:   []string{k9sCat},
+	}
 }
 
 func loadHelm(m ResourceMetas) {
