@@ -136,6 +136,9 @@ func loadConfiguration() (*config.Config, error) {
 
 	conn, err := client.InitConnection(k8sCfg, slog.Default())
 	if err != nil {
+		if hint := client.ConnectivityHint(err); hint != "" {
+			err = fmt.Errorf("%w (%s)", err, hint)
+		}
 		errs = errors.Join(errs, err)
 	}
 	k9sCfg.SetConnection(conn)
