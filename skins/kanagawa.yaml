@@ -35,7 +35,7 @@ k9s:
     numKeyColor: *blue
     sectionColor: *purple
   dialog:
-    fgColor: *black
+    fgColor: *orange
     bgColor: *background
     buttonFgColor: *foreground
     buttonBgColor: *green
