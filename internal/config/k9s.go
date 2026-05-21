@@ -13,11 +13,13 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/slogs"
+	"github.com/derailed/k9s/internal/termdetect"
 )
 
 type gpuVendors map[string]string
@@ -62,7 +64,11 @@ type K9s struct {
 	conn                client.Connection
 	ks                  data.KubeSettings
 	mx                  sync.RWMutex
-	contextSwitch       bool
+	contextSwitch     bool
+	autoDetectDone    atomic.Bool
+	autoDetectResult  atomic.Bool
+	terminalLightDone atomic.Bool
+	terminalLightVal  atomic.Bool
 }
 
 // NewK9s create a new K9s configuration.
@@ -373,12 +379,83 @@ func (k *K9s) IsSplashless() bool {
 }
 
 // IsInvert returns invert setting.
+// When invert is forced (true), the terminal's perceived background is inverted
+// via OSC 11 before comparing with the skin theme. Falls back to force-invert
+// if OSC 11 fails.
+// When invert is false, auto-detects and inverts only if terminal and skin
+// themes differ.
 func (k *K9s) IsInvert() bool {
 	if IsBoolSet(k.UI.manualInvert) {
+		return k.forceInvert()
+	}
+	if k.UI.Invert {
+		return k.forceInvert()
+	}
+	return k.autoDetect()
+}
+
+func (k *K9s) getTerminalLight() (light, ok bool) {
+	if k.terminalLightDone.Load() {
+		return k.terminalLightVal.Load(), true
+	}
+	l, err := termdetect.IsBackgroundLight()
+	if err != nil {
+		k.terminalLightDone.Store(true)
+		return false, false
+	}
+	k.terminalLightVal.Store(l)
+	k.terminalLightDone.Store(true)
+	return l, true
+}
+
+func (k *K9s) skinIsLight() bool {
+	skinName := k.ResolveSkinName()
+	if skinName == "" {
+		return false
+	}
+	v, err := termdetect.SkinIsLight(SkinFileFromName(skinName))
+	if err != nil {
+		return false
+	}
+	return v
+}
+
+func (k *K9s) forceInvert() bool {
+	terminalLight, ok := k.getTerminalLight()
+	if !ok {
 		return true
 	}
+	return k.skinIsLight() != !terminalLight
+}
 
-	return k.UI.Invert
+func (k *K9s) autoDetect() bool {
+	if k.autoDetectDone.Load() {
+		return k.autoDetectResult.Load()
+	}
+	terminalLight, ok := k.getTerminalLight()
+	invert := false
+	if ok {
+		invert = k.skinIsLight() != terminalLight
+	}
+	k.autoDetectResult.Store(invert)
+	k.autoDetectDone.Store(true)
+	return invert
+}
+
+// ResolveSkinName resolves the active skin name.
+// Returns empty string if using stock skin.
+func (k *K9s) ResolveSkinName() string {
+	if envSkin := os.Getenv("K9S_SKIN"); envSkin != "" {
+		if _, err := os.Stat(SkinFileFromName(envSkin)); err == nil {
+			return envSkin
+		}
+	}
+	if ct, err := k.ActiveContext(); err == nil && ct.Skin != "" {
+		if _, err := os.Stat(SkinFileFromName(ct.Skin)); err == nil {
+			return ct.Skin
+		}
+	}
+	return k.UI.Skin
 }
 
 // GetRefreshRate returns the current refresh rate.
