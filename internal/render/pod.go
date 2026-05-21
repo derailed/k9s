@@ -537,6 +537,10 @@ func checkInitContainerStatus(cs *v1.ContainerStatus, count, initCount int, rest
 		if cs.State.Terminated.ExitCode == 0 {
 			return ""
 		}
+		// Sidecar containers are expected to be terminated when the pod completes.
+		if restartable {
+			return ""
+		}
 		if cs.State.Terminated.Reason != "" {
 			return "Init:" + cs.State.Terminated.Reason
 		}
@@ -568,11 +572,21 @@ func PodStatus(pod *v1.Pod) string {
 		}
 	}
 
+	sidecars := make(map[string]bool)
+	for i := range pod.Spec.InitContainers {
+		if isSideCarContainer(pod.Spec.InitContainers[i].RestartPolicy) {
+			sidecars[pod.Spec.InitContainers[i].Name] = true
+		}
+	}
+
 	var initializing bool
 	for i := range pod.Status.InitContainerStatuses {
 		container := pod.Status.InitContainerStatuses[i]
 		switch {
 		case container.State.Terminated != nil && container.State.Terminated.ExitCode == 0:
+			continue
+		case container.State.Terminated != nil && sidecars[container.Name]:
+			// Sidecar containers are expected to be terminated when the pod completes.
 			continue
 		case container.State.Terminated != nil:
 			if container.State.Terminated.Reason == "" {
@@ -589,6 +603,9 @@ func PodStatus(pod *v1.Pod) string {
 			reason = "Init:" + container.State.Waiting.Reason
 			initializing = true
 		default:
+			if sidecars[container.Name] {
+				continue
+			}
 			reason = fmt.Sprintf("Init:%d/%d", i, len(pod.Spec.InitContainers))
 			initializing = true
 		}
