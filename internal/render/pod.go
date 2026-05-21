@@ -624,7 +624,7 @@ func hasPodReadyCondition(conditions []v1.PodCondition) bool {
 	return false
 }
 
-func initContainerStatus(pod *v1.Pod) (bool, string) {
+func initContainerStatus(pod *v1.Pod) (initializing bool, reason string) {
 	sidecars := make(map[string]bool)
 	for i := range pod.Spec.InitContainers {
 		if isSideCarContainer(pod.Spec.InitContainers[i].RestartPolicy) {
