@@ -37,7 +37,10 @@ type UI struct {
 	// NoIcons toggles icons display.
 	NoIcons bool `json:"noIcons" yaml:"noIcons"`
 
-	// Invert inverts all skin colors using Oklch lightness inversion.
+	// Invert controls the color inversion mode.
+	// When true, forces skin color inversion using Oklch lightness inversion.
+	// When false, auto-detects terminal background and inverts only if it
+	// differs from the skin theme.
 	Invert bool `json:"invert" yaml:"invert"`
 
 	// Skin reference the general k9s skin name.
