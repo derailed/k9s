@@ -213,7 +213,14 @@ func (f *Factory) CanForResource(ns string, gvr *client.GVR, verbs []string) (in
 		return nil, fmt.Errorf("%v access denied on resource %q:%q", verbs, ns, gvr)
 	}
 
-	return f.ForResource(ns, gvr)
+	// Namespaces are cluster-scoped; passing a specific namespace to ForResource
+	// would cause the informer factory to build an invalid path like
+	// /api/v1/namespaces/default/namespaces instead of /api/v1/namespaces.
+	forNs := ns
+	if gvr == client.NsGVR {
+		forNs = client.BlankNamespace
+	}
+	return f.ForResource(forNs, gvr)
 }
 
 // CanForInstance return an informer is user has access.
