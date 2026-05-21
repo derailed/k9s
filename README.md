@@ -393,6 +393,7 @@ K9s uses aliases to navigate most K8s resources.
 | Toggle wide columns                                                             | `ctrl-w`                       |                                                                        |
 | Toggle header                                                                   | `ctrl-e`                       |                                                                        |
 | Toggle breadcrumbs                                                              | `ctrl-g`                       |                                                                        |
+| Toggle read-only mode                                                           | `ctrl-t`                       | Session only, does not persist to config                               |
 | Move selected column left                                                       | `shift-left arrow`             |                                                                        |
 | Move selected column right                                                      | `shift-right arrow`            |                                                                        |
 | Sort by selected column                                                         | `shift-o`                      |                                                                        |

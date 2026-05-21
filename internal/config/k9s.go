@@ -420,6 +420,29 @@ func (k *K9s) IsReadOnly() bool {
 	return ro
 }
 
+// ToggleReadOnly toggles the read-only mode at runtime.
+func (k *K9s) ToggleReadOnly() {
+	k.mx.Lock()
+	defer k.mx.Unlock()
+
+	v := !k.isReadOnlyLocked()
+	k.manualReadOnly = &v
+}
+
+// isReadOnlyLocked returns the readonly setting without locking.
+// Must be called with the mutex held.
+func (k *K9s) isReadOnlyLocked() bool {
+	ro := k.ReadOnly
+	if k.activeConfig != nil && k.activeConfig.Context != nil && k.activeConfig.Context.ReadOnly != nil {
+		ro = *k.activeConfig.Context.ReadOnly
+	}
+	if k.manualReadOnly != nil {
+		ro = *k.manualReadOnly
+	}
+
+	return ro
+}
+
 // Validate the current configuration.
 func (k *K9s) Validate(c client.Connection, contextName, clusterName string) {
 	if k.RefreshRate <= 0 {
