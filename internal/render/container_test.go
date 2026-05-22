@@ -86,6 +86,43 @@ func TestContainer(t *testing.T) {
 	)
 }
 
+func TestContainerRenderCustomColumns(t *testing.T) {
+	uu := map[string]struct {
+		vs          *cfg.ViewSetting
+		firstFields model1.Fields
+	}{
+		"no-custom-cols": {
+			firstFields: model1.Fields{"", "fred", "●", "img"},
+		},
+		"custom-cols-reordered": {
+			vs:          &cfg.ViewSetting{Columns: []string{"NAME", "IMAGE"}},
+			firstFields: model1.Fields{"fred", "img"},
+		},
+		"custom-cols-subset": {
+			vs:          &cfg.ViewSetting{Columns: []string{"STATE", "NAME"}},
+			firstFields: model1.Fields{"Running", "fred"},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			c := new(render.Container)
+			if u.vs != nil {
+				c.SetViewSetting(u.vs)
+			}
+			cres := render.ContainerRes{
+				Container: makeContainer(),
+				Status:    makeContainerStatus(),
+				MX:        makeContainerMetrics(),
+				Age:       makeAge(),
+			}
+			var r model1.Row
+			require.NoError(t, c.Render(cres, "", &r))
+			assert.Equal(t, u.firstFields, r.Fields[:len(u.firstFields)])
+		})
+	}
+}
+
 func BenchmarkContainerRender(b *testing.B) {
 	var (
 		c    render.Container

@@ -106,7 +106,19 @@ func (c Container) Render(o any, _ string, row *model1.Row) error {
 		return fmt.Errorf("expected ContainerRes, but got %T", o)
 	}
 
-	return c.defaultRow(cr, row)
+	if err := c.defaultRow(cr, row); err != nil {
+		return err
+	}
+	if c.specs.isEmpty() {
+		return nil
+	}
+	cols, err := c.specs.realize(&cr, defaultCOHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
 }
 
 func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
