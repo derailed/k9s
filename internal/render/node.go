@@ -112,7 +112,7 @@ func (n Node) Render(o any, _ string, row *model1.Row) error {
 	return nil
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 	var no v1.Node
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(nwm.Raw.Object, &no)

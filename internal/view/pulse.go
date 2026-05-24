@@ -440,17 +440,17 @@ func (p *Pulse) nextFocusCmd(direction int) func(evt *tcell.EventKey) *tcell.Eve
 
 		currentIndex := p.findIndex(g)
 		nextIndex, total := currentIndex+direction, len(p.charts)
-		if nextIndex < 0 {
-			return nil
-		}
 
 		switch direction {
 		case dirLeft:
 			if nextIndex >= total {
-				return nil
+				nextIndex = 0
 			}
 			p.prevFocusIndex = -1
 		case dirRight:
+			if nextIndex < 0 {
+				nextIndex = total - 1
+			}
 			p.prevFocusIndex = -1
 		case dirUp:
 			if p.app.Conn().HasMetrics() {
