@@ -10,6 +10,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/fvbommel/sortorder"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -18,6 +19,13 @@ import (
 )
 
 const poolSize = 10
+
+// capacityCache caches parsed capacity values to avoid expensive
+// resource.MustParse calls during sort comparisons (called O(n log n) times).
+var capacityCache = struct {
+	sync.RWMutex
+	m map[string]int64
+}{m: make(map[string]int64)}
 
 func Hydrate(ns string, oo []runtime.Object, rr Rows, re Renderer) error {
 	pool := NewWorkerPool(context.Background(), poolSize)
@@ -153,8 +161,21 @@ func capacityToNumber(capacity string) int64 {
 	if strings.TrimSpace(capacity) == "" {
 		return 0
 	}
+	capacityCache.RLock()
+	if v, ok := capacityCache.m[capacity]; ok {
+		capacityCache.RUnlock()
+		return v
+	}
+	capacityCache.RUnlock()
+
 	quantity := resource.MustParse(capacity)
-	return quantity.Value()
+	v := quantity.Value()
+
+	capacityCache.Lock()
+	capacityCache.m[capacity] = v
+	capacityCache.Unlock()
+
+	return v
 }
 
 // Less return true if c1 <= c2.
