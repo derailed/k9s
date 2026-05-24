@@ -6,7 +6,6 @@ package view
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
@@ -27,6 +26,11 @@ const maxTabs = 9
 // The K8s factory, cluster model, and application styles are shared across all
 // sessions.  Each session owns its view stack, command interpreter and
 // navigation histories.
+//
+// Concurrency: every method on TabManager must be called from the tview main
+// goroutine.  Call sites running on other goroutines must wrap invocations in
+// app.QueueUpdateDraw.  This single-writer contract is what allows the type
+// to omit explicit synchronization.
 type TabManager struct {
 	sessions      []*TabSession
 	activeIdx     int
@@ -36,7 +40,6 @@ type TabManager struct {
 	contentArea   *tview.Flex
 	tabBarVisible bool
 	app           *App
-	mu            sync.RWMutex
 }
 
 // newTabManager constructs a TabManager without any sessions.
@@ -66,15 +69,11 @@ func (tm *TabManager) initWithSession(sess *TabSession) {
 
 // Active returns the currently active session.
 func (tm *TabManager) Active() *TabSession {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
 	return tm.sessions[tm.activeIdx]
 }
 
 // Count returns the number of open tabs.
 func (tm *TabManager) Count() int {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
 	return len(tm.sessions)
 }
 
@@ -83,17 +82,12 @@ func (tm *TabManager) Count() int {
 // desired resource after newTab returns.
 // Must be called on the tview main goroutine.
 func (tm *TabManager) newTab(ctx context.Context) error {
-	tm.mu.Lock()
 	if len(tm.sessions) >= maxTabs {
-		tm.mu.Unlock()
 		return fmt.Errorf("maximum %d tabs allowed", maxTabs)
 	}
-	id := tm.nextID
-	tm.nextID++
-	tm.mu.Unlock()
 
 	sess := &TabSession{
-		id:            id,
+		id:            tm.nextID,
 		Content:       NewPageStack(),
 		cmdHistory:    model.NewHistory(model.MaxHistory),
 		filterHistory: model.NewHistory(model.MaxHistory),
@@ -106,14 +100,16 @@ func (tm *TabManager) newTab(ctx context.Context) error {
 
 	cmd := NewCommand(tm.app)
 	if err := cmd.Init(tm.app.Config.ContextAliasesPath()); err != nil {
+		// Roll back the already-initialised PageStack so it doesn't outlive
+		// this failed newTab call as an orphaned, listener-attached primitive.
+		sess.Content.Clear()
 		return fmt.Errorf("init tab command: %w", err)
 	}
 	sess.command = cmd
 
-	tm.mu.Lock()
+	tm.nextID++
 	tm.sessions = append(tm.sessions, sess)
 	newIdx := len(tm.sessions) - 1
-	tm.mu.Unlock()
 
 	tm.container.AddPage(tm.pageKey(sess.id), sess.Content, true, false)
 	tm.activateSession(newIdx)
@@ -127,9 +123,7 @@ func (tm *TabManager) newTab(ctx context.Context) error {
 // Returns an error when the last tab is requested to be closed.
 // Must be called on the tview main goroutine.
 func (tm *TabManager) closeActive() error {
-	tm.mu.Lock()
 	if len(tm.sessions) <= 1 {
-		tm.mu.Unlock()
 		return fmt.Errorf("cannot close the last tab")
 	}
 
@@ -145,7 +139,6 @@ func (tm *TabManager) closeActive() error {
 	// one, landing at idx — so nextIdx stays correct when nextIdx == idx.
 
 	tm.sessions = append(tm.sessions[:idx], tm.sessions[idx+1:]...)
-	tm.mu.Unlock()
 
 	// Switch app state to the target session (rewires listeners).
 	tm.activateSession(nextIdx)
@@ -170,14 +163,12 @@ func (tm *TabManager) closeActive() error {
 // CloseOtherTabs closes all tabs except the currently active one.
 // Must be called on the tview main goroutine.
 func (tm *TabManager) CloseOtherTabs() {
-	tm.mu.Lock()
 	if len(tm.sessions) <= 1 {
-		tm.mu.Unlock()
 		return
 	}
 
 	activeSess := tm.sessions[tm.activeIdx]
-	var toClose []*TabSession
+	toClose := make([]*TabSession, 0, len(tm.sessions)-1)
 	for i, sess := range tm.sessions {
 		if i != tm.activeIdx {
 			toClose = append(toClose, sess)
@@ -186,9 +177,16 @@ func (tm *TabManager) CloseOtherTabs() {
 
 	tm.sessions = []*TabSession{activeSess}
 	tm.activeIdx = 0
-	tm.mu.Unlock()
 
 	for _, sess := range toClose {
+		// Defensively detach app-wide listeners before Clear(), since Clear
+		// fires StackPopped → StackTop callbacks on every remaining listener.
+		// The invariant today is that only the active tab carries Crumbs/Menu
+		// listeners (activateSession hands them over on every switch), so
+		// these RemoveListener calls are normally no-ops, but they protect us
+		// from regressions if that invariant ever loosens.
+		sess.Content.RemoveListener(tm.app.Crumbs())
+		sess.Content.RemoveListener(tm.app.Menu())
 		sess.Content.Clear()
 		tm.container.RemovePage(tm.pageKey(sess.id))
 	}
@@ -205,11 +203,7 @@ func (tm *TabManager) CloseOtherTabs() {
 // SwitchTo activates the tab at the given zero-based slice index.
 // Must be called on the tview main goroutine.
 func (tm *TabManager) SwitchTo(idx int) {
-	tm.mu.RLock()
-	count := len(tm.sessions)
-	tm.mu.RUnlock()
-
-	if idx < 0 || idx >= count {
+	if idx < 0 || idx >= len(tm.sessions) {
 		return
 	}
 	tm.activateSession(idx)
@@ -218,36 +212,26 @@ func (tm *TabManager) SwitchTo(idx int) {
 
 // NextTab activates the tab to the right, wrapping around.
 func (tm *TabManager) NextTab() {
-	tm.mu.RLock()
 	count := len(tm.sessions)
-	cur := tm.activeIdx
-	tm.mu.RUnlock()
-
 	if count <= 1 {
 		return
 	}
-	tm.SwitchTo((cur + 1) % count)
+	tm.SwitchTo((tm.activeIdx + 1) % count)
 }
 
 // PrevTab activates the tab to the left, wrapping around.
 func (tm *TabManager) PrevTab() {
-	tm.mu.RLock()
 	count := len(tm.sessions)
-	cur := tm.activeIdx
-	tm.mu.RUnlock()
-
 	if count <= 1 {
 		return
 	}
-	tm.SwitchTo((cur - 1 + count) % count)
+	tm.SwitchTo((tm.activeIdx - 1 + count) % count)
 }
 
 // updateActiveLabel updates the label shown for the active tab.
 // Must be called on the tview main goroutine.
 func (tm *TabManager) updateActiveLabel(label string) {
-	tm.mu.Lock()
 	tm.sessions[tm.activeIdx].label = label
-	tm.mu.Unlock()
 	tm.refreshTabBar()
 }
 
@@ -255,23 +239,29 @@ func (tm *TabManager) updateActiveLabel(label string) {
 // histories) to the session at idx and brings its page to the front.
 // Must be called on the tview main goroutine.
 func (tm *TabManager) activateSession(idx int) {
-	app := tm.app
-
-	tm.mu.Lock()
 	if idx < 0 || idx >= len(tm.sessions) {
-		tm.mu.Unlock()
 		return
 	}
+
+	app := tm.app
 	newSess := tm.sessions[idx]
 	oldContent := app.Content
+
 	// Guard: if the target session is already active there is nothing to do.
 	if oldContent == newSess.Content {
 		tm.activeIdx = idx
-		tm.mu.Unlock()
 		return
 	}
 	tm.activeIdx = idx
-	tm.mu.Unlock()
+
+	// Stop the outgoing tab's top component so its data-watch goroutines,
+	// informers and tickers terminate.  Without this every tab switch would
+	// leak goroutines and stack watchers on the API server.
+	if oldContent != nil {
+		if top := oldContent.Top(); top != nil {
+			top.Stop()
+		}
+	}
 
 	// Detach breadcrumbs and menu from the outgoing content so they no longer
 	// receive push/pop events from the tab we are leaving.
@@ -308,14 +298,11 @@ func (tm *TabManager) activateSession(idx int) {
 // refreshTabBar shows or hides the tab bar strip and re-renders its labels.
 // Must be called on the tview main goroutine.
 func (tm *TabManager) refreshTabBar() {
-	tm.mu.RLock()
 	count := len(tm.sessions)
-	active := tm.activeIdx
 	labels := make([]string, count)
 	for i, s := range tm.sessions {
 		labels[i] = s.label
 	}
-	tm.mu.RUnlock()
 
 	showBar := count > 1
 	switch {
@@ -327,7 +314,7 @@ func (tm *TabManager) refreshTabBar() {
 		tm.tabBarVisible = false
 	}
 	if showBar {
-		tm.tabBar.Render(labels, active)
+		tm.tabBar.Render(labels, tm.activeIdx)
 	}
 }
 
@@ -336,23 +323,31 @@ func (tm *TabManager) pageKey(id int) string {
 }
 
 // switchNS switches the namespace for all open sessions.
+// Must be called on the tview main goroutine.
 func (tm *TabManager) switchNS(ns string) {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-
 	for _, sess := range tm.sessions {
 		sess.cmdHistory.SwitchNS(ns)
 		for _, c := range sess.Content.Peek() {
-			if rv, ok := c.(ResourceViewer); ok {
-				if namespaced, err := dao.MetaAccess.IsNamespaced(rv.GVR()); err == nil && !namespaced {
-					continue
-				}
-				if b, ok := rv.(*Browser); ok {
-					b.setNamespace(ns)
-				} else {
-					rv.GetTable().GetModel().SetNamespace(ns)
-				}
+			rv, ok := c.(ResourceViewer)
+			if !ok {
+				continue
 			}
+			if namespaced, err := dao.MetaAccess.IsNamespaced(rv.GVR()); err == nil && !namespaced {
+				continue
+			}
+			if b, ok := rv.(*Browser); ok {
+				b.setNamespace(ns)
+				continue
+			}
+			tbl := rv.GetTable()
+			if tbl == nil {
+				continue
+			}
+			m := tbl.GetModel()
+			if m == nil {
+				continue
+			}
+			m.SetNamespace(ns)
 		}
 	}
 }

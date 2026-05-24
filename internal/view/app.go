@@ -807,12 +807,13 @@ func (a *App) aliasCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(c, path string, clearStack, pushCmd bool) {
+func (a *App) gotoResource(c, path string, clearStack, pushCmd bool) error {
 	err := a.command.run(cmd.NewInterpreter(c), path, clearStack, pushCmd)
 	if err != nil {
 		d := a.Styles.Dialog()
 		dialog.ShowError(&d, a.Content.Pages, err.Error())
 	}
+	return err
 }
 
 func (a *App) inject(c model.Component, clearStack bool) error {
@@ -848,7 +849,16 @@ func (a *App) newTabCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	// Navigate the new tab to the resource that was active in the source tab.
-	a.gotoResource(a.Config.ActiveView(), "", true, false)
+	// gotoResource shows its own error dialog; if navigation fails we still
+	// have to unwind the empty tab we just created so the user isn't left
+	// staring at a blank page after dismissing the dialog.
+	if err := a.gotoResource(a.Config.ActiveView(), "", true, false); err != nil {
+		if closeErr := a.tabManager.closeActive(); closeErr != nil {
+			slog.Warn("Failed to close new tab after navigation error",
+				slogs.Error, closeErr,
+			)
+		}
+	}
 	return nil
 }
 
