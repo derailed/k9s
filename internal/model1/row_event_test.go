@@ -288,7 +288,7 @@ func TestRowEventsUpsert(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.ee.Upsert(u.re)
+			u.ee.Upsert(&u.re)
 			assert.Equal(t, u.e, u.ee)
 		})
 	}
