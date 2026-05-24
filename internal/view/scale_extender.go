@@ -124,7 +124,9 @@ func (s *ScaleExtender) replicasFromScaleSubresource(sel string) (string, error)
 }
 
 func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
-	factor := "0"
+	// Use empty string as the "unknown" sentinel so a legitimate current
+	// replica count of 0 (e.g., paused workload) is not treated as failure.
+	factor := ""
 	if len(fqns) == 1 {
 		// If the CRD resource supports scaling, then first try to
 		// read the replicas directly from the CRD.
@@ -137,13 +139,30 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 
 		// For built-in resources or cases where we can't get the replicas from the CRD, we can
 		// only try to get the number of copies from the READY field.
-		if factor == "0" {
-			if replicas, err := s.replicasFromReady(fqns[0]); err == nil {
+		var readyErr error
+		if factor == "" {
+			replicas, err := s.replicasFromReady(fqns[0])
+			if err == nil {
 				factor = replicas
 			} else {
+				readyErr = err
 				slog.Warn("Unable to read replicas from ready column", slogs.Error, err)
 			}
 		}
+
+		// Refuse to open the dialog when we cannot determine the current
+		// replica count — otherwise a user hitting OK without editing would
+		// silently scale the workload to zero.
+		if factor == "" {
+			if readyErr != nil {
+				return nil, fmt.Errorf("unable to determine current replica count: %w", readyErr)
+			}
+			return nil, fmt.Errorf("unable to determine current replica count for %s", fqns[0])
+		}
+	} else {
+		// Bulk-scale: there is no single "current" value to pre-fill, so the
+		// user must explicitly enter a target.  Keep the documented default.
+		factor = "0"
 	}
 
 	styles := s.App().Styles.Dialog()
