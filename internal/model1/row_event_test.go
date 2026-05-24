@@ -495,7 +495,7 @@ func TestRowEventsSort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, u.duration, u.num, u.capacity, u.asc)
+			u.re.Sort("", u.col, u.duration, u.num, u.capacity, false, u.asc)
 			assert.Equal(t, u.e, u.re)
 		})
 	}

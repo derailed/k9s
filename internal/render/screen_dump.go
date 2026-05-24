@@ -52,6 +52,7 @@ func (ScreenDump) Render(o any, _ string, r *model1.Row) error {
 		"",
 		timeToAge(f.File.ModTime()),
 	}
+	r.Age = f.File.ModTime()
 
 	return nil
 }

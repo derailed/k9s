@@ -254,8 +254,10 @@ func (r *RowEvents) FindIndex(id string) (int, bool) {
 	return i, ok
 }
 
-// Sort rows based on column index and order.
-func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, asc bool) {
+// Sort rows based on column index and order. When isAge is true, the AGE
+// column is sorted using the stashed Row.Age timestamps so that the
+// ordering is stable and not affected by humanized-string precision loss.
+func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, isAge, asc bool) {
 	if sortCol == -1 || r == nil {
 		return
 	}
@@ -268,6 +270,7 @@ func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity,
 		IsNumber:   numCol,
 		IsDuration: isDuration,
 		IsCapacity: isCapacity,
+		IsAge:      isAge,
 	}
 	sort.Sort(t)
 	r.reindex()
@@ -291,6 +294,7 @@ type RowEventSorter struct {
 	IsNumber   bool
 	IsDuration bool
 	IsCapacity bool
+	IsAge      bool
 	Asc        bool
 }
 
@@ -303,9 +307,8 @@ func (r RowEventSorter) Swap(i, j int) {
 }
 
 func (r RowEventSorter) Less(i, j int) bool {
-	f1, f2 := r.Events.events[i].Row.Fields, r.Events.events[j].Row.Fields
-	id1, id2 := r.Events.events[i].Row.ID, r.Events.events[j].Row.ID
-	less := Less(r.IsNumber, r.IsDuration, r.IsCapacity, id1, id2, f1[r.Index], f2[r.Index])
+	r1, r2 := r.Events.events[i].Row, r.Events.events[j].Row
+	less := lessRow(r.IsAge, r.IsNumber, r.IsDuration, r.IsCapacity, r.Index, r1, r2)
 	if r.Asc {
 		return less
 	}

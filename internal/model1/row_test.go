@@ -307,7 +307,7 @@ func TestRowsSortText(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc, u.num, false, false)
+			u.rows.Sort(u.col, u.asc, u.num, false, false, false)
 			assert.Equal(t, u.e, u.rows)
 		})
 	}
@@ -372,7 +372,7 @@ func TestRowsSortDuration(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc, false, true, false)
+			u.rows.Sort(u.col, u.asc, false, true, false, false)
 			assert.Equal(t, u.e, u.rows)
 		})
 	}
@@ -414,7 +414,7 @@ func TestRowsSortMetrics(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc, true, false, false)
+			u.rows.Sort(u.col, u.asc, true, false, false, false)
 			assert.Equal(t, u.e, u.rows)
 		})
 	}
@@ -456,7 +456,7 @@ func TestRowsSortCapacity(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc, false, false, true)
+			u.rows.Sort(u.col, u.asc, false, false, true, false)
 			assert.Equal(t, u.e, u.rows)
 		})
 	}
@@ -517,4 +517,47 @@ func TestLess(t *testing.T) {
 			assert.Equal(t, u.e, model1.Less(u.isNumber, u.isDuration, u.isCapacity, u.id1, u.id2, u.v1, u.v2))
 		})
 	}
+}
+
+// TestRowsSortAgeStable exercises the issue described in the upstream bug
+// report: when two rows humanize to the same age string but actually have
+// different creation timestamps, sorting by AGE should be stable and
+// reflect the true chronological order rather than fall back to ID
+// comparison.
+func TestRowsSortAgeStable(t *testing.T) {
+	now := time.Now()
+	// Both rows humanize to "12m" because HumanDuration drops seconds at
+	// this granularity, but they were created 30s apart.
+	older := now.Add(-12*time.Minute - 45*time.Second)
+	younger := now.Add(-12*time.Minute - 15*time.Second)
+
+	rows := model1.Rows{
+		// Note: the order returned by HumanDuration for both ages would
+		// be identical ("12m"), which previously caused the sort to
+		// tie-break by ID and bounce as one row ticked over to "13m".
+		{ID: "b", Fields: model1.Fields{"12m"}, Age: younger},
+		{ID: "a", Fields: model1.Fields{"12m"}, Age: older},
+	}
+
+	// Ascending age: younger (smaller real age) should come first.
+	rows.Sort(0, true, false, true, false, true)
+	assert.Equal(t, "b", rows[0].ID)
+	assert.Equal(t, "a", rows[1].ID)
+
+	// Descending age: older first.
+	rows.Sort(0, false, false, true, false, true)
+	assert.Equal(t, "a", rows[0].ID)
+	assert.Equal(t, "b", rows[1].ID)
+}
+
+// TestRowsSortAgeFallback confirms that when Row.Age is not populated the
+// sort gracefully falls back to the string-based duration comparison.
+func TestRowsSortAgeFallback(t *testing.T) {
+	rows := model1.Rows{
+		{ID: "b", Fields: model1.Fields{"10m"}},
+		{ID: "a", Fields: model1.Fields{"2m"}},
+	}
+	rows.Sort(0, true, false, true, false, true)
+	assert.Equal(t, "a", rows[0].ID)
+	assert.Equal(t, "b", rows[1].ID)
 }

@@ -94,6 +94,7 @@ func (NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row) e
 		"",
 		ToAge(np.GetCreationTimestamp()),
 	}
+	stashAge(r, np.GetCreationTimestamp())
 
 	return nil
 }

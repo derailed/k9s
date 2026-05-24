@@ -115,6 +115,7 @@ func (t *TableData) Sort(sc SortColumn) {
 		col.Time,
 		col.MX,
 		col.Capacity,
+		sc.Name == ageCol,
 		sc.ASC,
 	)
 }
