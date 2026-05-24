@@ -109,13 +109,20 @@ func (s *ScaleExtender) replicasFromReady(_ string) (string, error) {
 }
 
 func (s *ScaleExtender) replicasFromScaleSubresource(sel string) (string, error) {
-	var scaler dao.Scaler
-	scaler.Init(s.App().factory, s.GVR())
-	
+	res, err := dao.AccessorFor(s.App().factory, s.GVR())
+	if err != nil {
+		return "", err
+	}
+
+	replicasGetter, ok := res.(dao.ReplicasGetter)
+	if !ok {
+		return "", fmt.Errorf("expecting a replicasGetter resource for %q", s.GVR())
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 	defer cancel()
 
-	replicas, err := scaler.Replicas(ctx, sel)
+	replicas, err := replicasGetter.Replicas(ctx, sel)
 	if err != nil {
 		return "", err
 	}
@@ -138,11 +145,12 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 		// For built-in resources or cases where we can't get the replicas from the CRD, we can
 		// only try to get the number of copies from the READY field.
 		if factor == "0" {
-			if replicas, err := s.replicasFromReady(fqns[0]); err == nil {
-				factor = replicas
-			} else {
-				slog.Warn("Unable to read replicas from ready column", slogs.Error, err)
+			replicas, err := s.replicasFromReady(fqns[0])
+			if err != nil {
+				return nil, err
 			}
+
+			factor = replicas
 		}
 	}
 
@@ -214,9 +222,7 @@ func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int32) 
 	}
 	scaler, ok := res.(dao.Scalable)
 	if !ok {
-		var genericScaler dao.Scaler
-		genericScaler.Init(s.App().factory, s.GVR())
-		return genericScaler.Scale(ctx, path, replicas)
+		return fmt.Errorf("expecting a scalable resource for %q", s.GVR())
 	}
 
 	return scaler.Scale(ctx, path, replicas)
