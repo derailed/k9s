@@ -84,12 +84,12 @@ func NewTableDataFromTable(td *TableData) *TableData {
 	return t
 }
 
-func (t *TableData) AddRow(re RowEvent) {
-	t.rowEvents.Add(&re)
+func (t *TableData) AddRow(re *RowEvent) {
+	t.rowEvents.Add(re)
 }
 
-func (t *TableData) SetRow(idx int, re RowEvent) {
-	t.rowEvents.Set(idx, &re)
+func (t *TableData) SetRow(idx int, re *RowEvent) {
+	t.rowEvents.Set(idx, re)
 }
 
 func (t *TableData) FindRow(id string) (RowEvent, bool) {
