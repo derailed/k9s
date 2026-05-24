@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	shlex "github.com/anmitsu/go-shlex"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -52,6 +53,15 @@ type shellOpts struct {
 
 func (s shellOpts) String() string {
 	return fmt.Sprintf("%s %s", s.binary, strings.Join(s.args, " "))
+}
+
+func splitCommandLine(s string) ([]string, error) {
+	tokens, err := shlex.Split(s, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
 }
 
 func runK(a *App, opts *shellOpts) error {
@@ -136,7 +146,17 @@ func edit(a *App, opts *shellOpts) bool {
 		// followed by some arguments (e.g. "code -w" to make it work with vscode)
 		//
 		// In such cases, the actual binary is only the first token
-		envTokens := strings.Split(env, " ")
+		envTokens, splitErr := splitCommandLine(env)
+		if splitErr != nil {
+			slog.Warn("Unable to parse editor command, falling back to whitespace splitting",
+				slogs.Command, env,
+				slogs.Error, splitErr,
+			)
+			envTokens = strings.Fields(env)
+		}
+		if len(envTokens) == 0 {
+			continue
+		}
 
 		if bin, err = exec.LookPath(envTokens[0]); err == nil {
 			// Make sure the path is at the end (this allows running editors
@@ -205,18 +225,33 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 		// followed by some arguments (e.g. "code -w" to make it work with vscode)
 		//
 		// In such cases, the actual binary is only the first token
-		binTokens := strings.Split(env, " ")
-
-		if bin, err := exec.LookPath(binTokens[0]); err == nil {
-			binTokens[0] = bin
-			cmd.Env = append(os.Environ(), fmt.Sprintf("KUBE_EDITOR=%s", strings.Join(binTokens, " ")))
+		binTokens, splitErr := splitCommandLine(env)
+		if splitErr != nil {
+			slog.Warn("Unable to parse K9S_EDITOR, falling back to whitespace splitting",
+				slogs.Command, env,
+				slogs.Error, splitErr,
+			)
+			binTokens = strings.Fields(env)
+		}
+		if len(binTokens) > 0 {
+			if bin, err := exec.LookPath(binTokens[0]); err == nil {
+				binTokens[0] = bin
+				cmd.Env = append(os.Environ(), fmt.Sprintf("KUBE_EDITOR=%s", strings.Join(binTokens, " ")))
+			}
 		}
 	}
 
 	cmds = append(cmds, cmd)
 
 	for _, p := range opts.pipes {
-		tokens := strings.Split(p, " ")
+		tokens, splitErr := splitCommandLine(p)
+		if splitErr != nil {
+			slog.Warn("Unable to parse pipe command, falling back to whitespace splitting",
+				slogs.Command, p,
+				slogs.Error, splitErr,
+			)
+			tokens = strings.Fields(p)
+		}
 		if len(tokens) < 2 {
 			continue
 		}
