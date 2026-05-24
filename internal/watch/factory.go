@@ -213,6 +213,11 @@ func (f *Factory) CanForResource(ns string, gvr *client.GVR, verbs []string) (in
 		return nil, fmt.Errorf("%v access denied on resource %q:%q", verbs, ns, gvr)
 	}
 
+	// Namespaces are cluster-scoped; always use cluster scope for the informer
+	if gvr == client.NsGVR {
+		ns = client.ClusterScope
+	}
+
 	return f.ForResource(ns, gvr)
 }
 
@@ -223,18 +228,20 @@ func (f *Factory) CanForInstance(fqn string, gvr *client.GVR, verbs []string) (i
 		ns = client.BlankNamespace
 	}
 
-	// For namespace resources, set namespace to the resource name to allow
-	// RoleBindings within that namespace to grant permissions
+	// For namespace resources, use the resource name as the namespace for RBAC
+	// (RoleBindings within that namespace can grant permissions),
+	// but keep the original ns for the informer since namespaces are cluster-scoped.
+	authNs := ns
 	if gvr == client.NsGVR {
-		ns = n
+		authNs = n
 	}
 
-	auth, err := f.Client().CanI(ns, gvr, n, verbs)
+	auth, err := f.Client().CanI(authNs, gvr, n, verbs)
 	if err != nil {
 		return nil, err
 	}
 	if !auth {
-		return nil, fmt.Errorf("%v access denied on resource %q:%q", verbs, ns, gvr)
+		return nil, fmt.Errorf("%v access denied on resource %q:%q", verbs, authNs, gvr)
 	}
 
 	return f.ForResource(ns, gvr)
