@@ -114,12 +114,19 @@ func (k *K9s) Save(contextName, clusterName string, force bool) error {
 	)
 
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) || force {
+		cfg := k.getActiveConfig()
+		if cfg == nil {
+			slog.Warn("[CONFIG] Skipping save: no active context config loaded",
+				slogs.Context, k.getActiveContextName(),
+			)
+			return nil
+		}
 		slog.Debug("[CONFIG] Saving context config to disk",
 			slogs.Path, path,
-			slogs.Cluster, k.getActiveConfig().Context.GetClusterName(),
+			slogs.Cluster, cfg.Context.GetClusterName(),
 			slogs.Context, k.getActiveContextName(),
 		)
-		return k.dir.Save(path, k.getActiveConfig())
+		return k.dir.Save(path, cfg)
 	}
 
 	return nil

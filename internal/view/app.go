@@ -539,7 +539,9 @@ func (a *App) BailOut(exitCode int) {
 	}
 
 	a.stopImgScanner()
-	a.factory.Terminate()
+	if a.factory != nil {
+		a.factory.Terminate()
+	}
 	a.App.BailOut(exitCode)
 }
 
