@@ -30,7 +30,6 @@ func parallelRender(n int, fn func(i int) error) error {
 		return nil
 	}
 
-<<<<<<< HEAD
 	workers := min(runtime.NumCPU(), n)
 	if workers < 1 {
 		workers = 1
@@ -55,25 +54,6 @@ func parallelRender(n int, fn func(i int) error) error {
 				if err := fn(i); err != nil {
 					errOnce.Do(func() { firstErr = err })
 				}
-=======
-// capacityCache caches parsed capacity values to avoid expensive
-// resource.MustParse calls during sort comparisons (called O(n log n) times).
-var capacityCache = struct {
-	sync.RWMutex
-	m map[string]int64
-}{m: make(map[string]int64)}
-
-func Hydrate(ns string, oo []runtime.Object, rr Rows, re Renderer) error {
-	pool := NewWorkerPool(context.Background(), poolSize)
-	for i, o := range oo {
-		pool.Add(func(ctx context.Context) error {
-			select {
-			case <-ctx.Done():
-				slog.Debug("Worker canceled")
-				return nil
-			default:
-				return re.Render(o, ns, &rr[i])
->>>>>>> 0f772bf6 (feat: enhance performance with caching and batch operations)
 			}
 		}()
 	}
