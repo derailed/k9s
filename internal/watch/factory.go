@@ -21,8 +21,14 @@ import (
 )
 
 const (
-	defaultResync   = 10 * time.Minute
-	defaultWaitTime = 500 * time.Millisecond
+	// defaultResync=0 disables the periodic resync that replays all cached objects
+	// through event handlers on a timer. Informers rely on the watch stream for
+	// real-time updates; the periodic resync only burns CPU without benefit.
+	defaultResync = 0
+
+	// defaultWaitTime is raised from 500ms to give large clusters enough time
+	// for HasSynced() to return true before falling back to a direct list.
+	defaultWaitTime = 2 * time.Second
 )
 
 // Factory tracks various resource informers.

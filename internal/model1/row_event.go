@@ -254,6 +254,17 @@ func (r *RowEvents) FindIndex(id string) (int, bool) {
 	return i, ok
 }
 
+// HasChanges returns true if any row event has a kind other than EventUnchanged.
+// Used to skip unnecessary UI refreshes when the informer cache is idle.
+func (r *RowEvents) HasChanges() bool {
+	for _, e := range r.events {
+		if e.Kind != EventUnchanged {
+			return true
+		}
+	}
+	return false
+}
+
 // Sort rows based on column index and order.
 func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, asc bool) {
 	if sortCol == -1 || r == nil {

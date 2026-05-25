@@ -23,7 +23,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const initRefreshRate = 300 * time.Millisecond
+const (
+	initRefreshRate = 300 * time.Millisecond
+
+	// ageForceRefreshRate controls how often the table fires events even when
+	// no row data changed, so that time columns (AGE) stay up to date in the UI.
+	ageForceRefreshRate = 15 * time.Second
+)
 
 // TableListener represents a table model listener.
 type TableListener interface {
@@ -48,6 +54,7 @@ type Table struct {
 	labelSelector labels.Selector
 	mx            sync.RWMutex
 	vs            *config.ViewSetting
+	lastFireTime  time.Time
 }
 
 // NewTable returns a new table model.
@@ -233,9 +240,21 @@ func (t *Table) refresh(ctx context.Context) error {
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)
 
+	prevCount := t.data.RowCount()
 	if err := t.reconcile(ctx); err != nil {
 		return err
 	}
+	currCount := t.data.RowCount()
+
+	// Skip the expensive Clone+fire when the informer cache hasn't changed.
+	// Still fire every ageForceRefreshRate so time columns (AGE) stay current.
+	dataChanged := currCount != prevCount || t.data.HasChanges()
+	forceRefresh := time.Since(t.lastFireTime) >= ageForceRefreshRate
+	if !dataChanged && !forceRefresh {
+		return nil
+	}
+	t.lastFireTime = time.Now()
+
 	data := t.Peek()
 	if data.RowCount() == 0 {
 		t.fireNoData(data)
