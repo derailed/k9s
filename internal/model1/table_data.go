@@ -40,6 +40,7 @@ const spacer = " "
 
 type FilterOpts struct {
 	Toast  bool
+	Favs   bool
 	Filter string
 	Invert bool
 }
@@ -146,6 +147,9 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 	if f.Toast {
 		td.rowEvents = t.filterToast()
 	}
+	if f.Favs {
+		td.rowEvents = t.filterFavs()
+	}
 	if f.Filter == "" || internal.IsLabelSelector(f.Filter) {
 		return td
 	}
@@ -226,6 +230,18 @@ func (t *TableData) filterToast() *RowEvents {
 	}
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
 		if re.Row.Fields[idx] != "" {
+			rr.Add(re)
+		}
+		return true
+	})
+
+	return rr
+}
+
+func (t *TableData) filterFavs() *RowEvents {
+	rr := NewRowEvents(10)
+	t.rowEvents.Range(func(_ int, re RowEvent) bool {
+		if len(re.Row.Fields) > 0 && strings.HasSuffix(re.Row.Fields[0], "+") {
 			rr.Add(re)
 		}
 		return true
