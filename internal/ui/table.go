@@ -52,6 +52,7 @@ type Table struct {
 	decorateFn     DecorateFunc
 	wide           bool
 	toast          bool
+	favs           bool
 	hasMetrics     bool
 	ctx            context.Context
 	mx             sync.RWMutex
@@ -353,6 +354,12 @@ func (t *Table) ToggleToast() {
 	t.Refresh()
 }
 
+// ToggleFavs toggles to show only favorite resources.
+func (t *Table) ToggleFavs() {
+	t.favs = !t.favs
+	t.Refresh()
+}
+
 // ToggleWide toggles wide col display.
 func (t *Table) ToggleWide() {
 	t.wide = !t.wide
@@ -644,6 +651,7 @@ func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 func (t *Table) filtered(data *model1.TableData) *model1.TableData {
 	return data.Filter(model1.FilterOpts{
 		Toast:  t.toast,
+		Favs:   t.favs,
 		Filter: t.cmdBuff.GetText(),
 	})
 }

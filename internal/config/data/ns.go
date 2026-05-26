@@ -104,6 +104,14 @@ func (n *Namespace) isAllNamespaces() bool {
 	return n.Active == client.NamespaceAll || n.Active == ""
 }
 
+// AddFavNS adds a namespace to favorites if not already present.
+func (n *Namespace) AddFavNS(ns string) {
+	n.mx.Lock()
+	defer n.mx.Unlock()
+
+	n.addFavNS(ns)
+}
+
 func (n *Namespace) addFavNS(ns string) {
 	if slices.Contains(n.Favorites, ns) {
 		return
@@ -119,11 +127,15 @@ func (n *Namespace) addFavNS(ns string) {
 	n.Favorites = nfv
 }
 
-func (n *Namespace) rmFavNS(ns string) {
-	if n.LockFavorites {
-		return
-	}
+// RmFavNS removes a namespace from favorites.
+func (n *Namespace) RmFavNS(ns string) {
+	n.mx.Lock()
+	defer n.mx.Unlock()
 
+	n.rmFavNS(ns)
+}
+
+func (n *Namespace) rmFavNS(ns string) {
 	victim := -1
 	for i, f := range n.Favorites {
 		if f == ns {
@@ -136,6 +148,22 @@ func (n *Namespace) rmFavNS(ns string) {
 	}
 
 	n.Favorites = append(n.Favorites[:victim], n.Favorites[victim+1:]...)
+}
+
+// SetLockFavorites enables or disables the lock on favorites.
+func (n *Namespace) SetLockFavorites(lock bool) {
+	n.mx.Lock()
+	defer n.mx.Unlock()
+
+	n.LockFavorites = lock
+}
+
+// IsFav checks if a namespace is in the favorites list.
+func (n *Namespace) IsFav(ns string) bool {
+	n.mx.RLock()
+	defer n.mx.RUnlock()
+
+	return slices.Contains(n.Favorites, ns)
 }
 
 func (n *Namespace) trimFavNs() {

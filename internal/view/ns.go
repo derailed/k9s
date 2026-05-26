@@ -35,8 +35,50 @@ func NewNamespace(gvr *client.GVR) ResourceViewer {
 
 func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
-		ui.KeyU: ui.NewKeyAction("Use", n.useNsCmd, true),
+		ui.KeyU:        ui.NewKeyAction("Use", n.useNsCmd, true),
+		tcell.KeyCtrlF: ui.NewKeyAction("Toggle Favorites", n.toggleFavsCmd, true),
+		ui.KeyF:        ui.NewKeyAction("Fav/Unfav", n.toggleFavCmd, true),
+		tcell.KeyCtrlL: ui.NewKeyAction("Unlock Favorites", n.unlockFavsCmd, true),
 	})
+}
+
+func (n *Namespace) toggleFavsCmd(*tcell.EventKey) *tcell.EventKey {
+	n.GetTable().ToggleFavs()
+	return nil
+}
+
+func (n *Namespace) toggleFavCmd(*tcell.EventKey) *tcell.EventKey {
+	path := n.GetTable().GetSelectedItem()
+	if path == "" {
+		return nil
+	}
+	_, ns := client.Namespaced(path)
+	if n.App().Config.IsFavNamespace(ns) {
+		if err := n.App().Config.RemoveFavNamespace(ns); err != nil {
+			n.App().Flash().Err(err)
+			return nil
+		}
+		n.App().Flash().Infof("Removed %q from favorites", ns)
+	} else {
+		if err := n.App().Config.AddFavNamespace(ns); err != nil {
+			n.App().Flash().Err(err)
+			return nil
+		}
+		n.App().Flash().Infof("Added %q to favorites (auto-locked)", ns)
+	}
+	n.Refresh()
+
+	return nil
+}
+
+func (n *Namespace) unlockFavsCmd(*tcell.EventKey) *tcell.EventKey {
+	if err := n.App().Config.UnlockFavNamespaces(); err != nil {
+		n.App().Flash().Err(err)
+		return nil
+	}
+	n.App().Flash().Info("Favorites unlocked - dynamic assignment enabled")
+
+	return nil
 }
 
 func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ *client.GVR, path string) {

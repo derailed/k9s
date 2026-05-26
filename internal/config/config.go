@@ -207,6 +207,50 @@ func (c *Config) SetActiveNamespace(ns string) error {
 	return ct.Namespace.SetActive(ns, c.settings)
 }
 
+// AddFavNamespace adds a namespace to favorites and locks the list.
+func (c *Config) AddFavNamespace(ns string) error {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	ct.Namespace.AddFavNS(ns)
+	ct.Namespace.SetLockFavorites(true)
+
+	return nil
+}
+
+// RemoveFavNamespace removes a namespace from favorites.
+func (c *Config) RemoveFavNamespace(ns string) error {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	ct.Namespace.RmFavNS(ns)
+
+	return nil
+}
+
+// IsFavNamespace checks if a namespace is in the favorites list.
+func (c *Config) IsFavNamespace(ns string) bool {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return false
+	}
+
+	return ct.Namespace.IsFav(ns)
+}
+
+// UnlockFavNamespaces re-enables dynamic favorite assignment.
+func (c *Config) UnlockFavNamespaces() error {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	ct.Namespace.SetLockFavorites(false)
+
+	return nil
+}
+
 // ActiveView returns the active view in the current context.
 func (c *Config) ActiveView() string {
 	ct, err := c.K9s.ActiveContext()
