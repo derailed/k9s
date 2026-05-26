@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSortLabels(t *testing.T) {
@@ -162,7 +163,7 @@ func TestParallelRender(t *testing.T) {
 				results[i] = i + 1
 				return nil
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			for i := range u.n {
 				assert.Equal(t, i+1, results[i], "index %d", i)
 			}
@@ -177,7 +178,7 @@ func TestParallelRenderError(t *testing.T) {
 		}
 		return nil
 	})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "boom")
 }
 
