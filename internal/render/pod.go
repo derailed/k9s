@@ -162,9 +162,9 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	dt := pwm.Raw.GetDeletionTimestamp()
 	cReady, _, cRestarts, lastRestart := p.ContainerStats(st.ContainerStatuses)
 
-	iReady, iTerminated, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
+	iReady, iTotal, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cReady += iReady
-	allCounts := len(spec.Containers) + iTerminated
+	allCounts := len(spec.Containers) + iTotal
 	rgr, rgt := p.readinessGateStats(spec, &st)
 	ready := hasPodReadyCondition(st.Conditions)
 
@@ -426,18 +426,20 @@ func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, re
 }
 
 func (*Pod) initContainerStats(cc []v1.Container, cos []v1.ContainerStatus) (ready, total, restart int) {
-	containerByName := make(map[string]*v1.Container, len(cc))
+	mm := make(map[string]v1.Container, len(cc))
 	for i := range cc {
-		containerByName[cc[i].Name] = &cc[i]
+		mm[cc[i].Name] = cc[i]
 	}
+
 	for i := range cos {
-		c, ok := containerByName[cos[i].Name]
+		c, ok := mm[cos[i].Name]
 		if !ok {
 			continue
 		}
 		if !isSideCarContainer(c.RestartPolicy) {
 			continue
 		}
+
 		total++
 		if cos[i].Ready {
 			ready++
