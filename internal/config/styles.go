@@ -218,6 +218,8 @@ type (
 		FgColor                 Color `json:"fgColor" yaml:"fgColor"`
 		BgColor                 Color `json:"bgColor" yaml:"bgColor"`
 		SorterColor             Color `json:"sorterColor" yaml:"sorterColor"`
+		SecondarySorterColor    Color `json:"secondarySorterColor" yaml:"secondarySorterColor"`
+		TertiarySorterColor     Color `json:"tertiarySorterColor" yaml:"tertiarySorterColor"`
 		SelectedSortColumnColor Color `json:"selectedSortColumnColor" yaml:"selectedSortColumnColor"`
 	}
 
@@ -439,6 +441,8 @@ func newTableHeader() TableHeader {
 		FgColor:                 "white",
 		BgColor:                 "black",
 		SorterColor:             "aqua",
+		SecondarySorterColor:    "cadetblue",
+		TertiarySorterColor:     "grey",
 		SelectedSortColumnColor: "lightskyblue",
 	}
 }
@@ -715,6 +719,8 @@ func (t *TableHeader) Invert() {
 	t.FgColor = t.FgColor.InvertColor()
 	t.BgColor = t.BgColor.InvertColor()
 	t.SorterColor = t.SorterColor.InvertColor()
+	t.SecondarySorterColor = t.SecondarySorterColor.InvertColor()
+	t.TertiarySorterColor = t.TertiarySorterColor.InvertColor()
 	t.SelectedSortColumnColor = t.SelectedSortColumnColor.InvertColor()
 }
 

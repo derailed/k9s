@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+
+	"github.com/fvbommel/sortorder"
 )
 
 type ReRangeFn func(int, RowEvent) bool
@@ -311,4 +313,55 @@ func (r RowEventSorter) Less(i, j int) bool {
 	}
 
 	return !less
+}
+
+// ----------------------------------------------------------------------------
+
+// SortSpec describes how to sort by a single column within a multi-column sort.
+type SortSpec struct {
+	Index      int
+	IsNumber   bool
+	IsDuration bool
+	IsCapacity bool
+	Asc        bool
+}
+
+// RowEventMultiSorter sorts row events by multiple columns in priority order.
+type RowEventMultiSorter struct {
+	Events *RowEvents
+	NS     string
+	Specs  []SortSpec
+}
+
+func (r RowEventMultiSorter) Len() int {
+	return len(r.Events.events)
+}
+
+func (r RowEventMultiSorter) Swap(i, j int) {
+	r.Events.events[i], r.Events.events[j] = r.Events.events[j], r.Events.events[i]
+}
+
+func (r RowEventMultiSorter) Less(i, j int) bool {
+	f1, f2 := r.Events.events[i].Row.Fields, r.Events.events[j].Row.Fields
+	for _, spec := range r.Specs {
+		cmp := Compare(spec.IsNumber, spec.IsDuration, spec.IsCapacity, f1[spec.Index], f2[spec.Index])
+		if cmp == 0 {
+			continue
+		}
+		if spec.Asc {
+			return cmp < 0
+		}
+		return cmp > 0
+	}
+	id1, id2 := r.Events.events[i].Row.ID, r.Events.events[j].Row.ID
+	return sortorder.NaturalLess(id1, id2)
+}
+
+// SortMulti sorts rows based on multiple column specs in priority order.
+func (r *RowEvents) SortMulti(ns string, specs []SortSpec) {
+	if len(specs) == 0 || r == nil {
+		return
+	}
+	sort.Sort(RowEventMultiSorter{Events: r, NS: ns, Specs: specs})
+	r.reindex()
 }

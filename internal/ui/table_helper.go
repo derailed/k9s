@@ -84,8 +84,7 @@ func SkinTitle(fmat string, style *config.Frame) string {
 	return fmat
 }
 
-func columnIndicator(sort, selected, asc bool, style *config.Table, name string) string {
-	// Build the column name with selection indicator
+func columnIndicator(sortRank int, selected, asc bool, style *config.Table, name string) string {
 	var displayName string
 	if selected {
 		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.SelectedSortColumnColor, name)
@@ -93,14 +92,26 @@ func columnIndicator(sort, selected, asc bool, style *config.Table, name string)
 		displayName = fmt.Sprintf("[%s::]%s[::]", style.Header.FgColor, name)
 	}
 
-	// Add sort indicator if this column is sorted
 	suffix := ""
-	if sort {
+	if sortRank > 0 {
 		order := descIndicator
 		if asc {
 			order = ascIndicator
 		}
-		suffix = fmt.Sprintf("[%s::b]%s[::]", style.Header.SorterColor, order)
+		var color config.Color
+		switch sortRank {
+		case 1:
+			color = style.Header.SorterColor
+		case 2:
+			color = style.Header.SecondarySorterColor
+		default:
+			color = style.Header.TertiarySorterColor
+		}
+		if sortRank == 1 {
+			suffix = fmt.Sprintf("[%s::b]%s[::]", color, order)
+		} else {
+			suffix = fmt.Sprintf("[%s::d]%s[::]", color, order)
+		}
 	}
 
 	return displayName + suffix

@@ -36,6 +36,48 @@ func (s SortColumn) IsSet() bool {
 	return s.Name != ""
 }
 
+const MaxSortColumns = 3
+
+// SortColumns represents an ordered list of sort columns (primary first).
+type SortColumns []SortColumn
+
+func (sc SortColumns) Primary() SortColumn {
+	if len(sc) == 0 {
+		return SortColumn{}
+	}
+	return sc[0]
+}
+
+func (sc SortColumns) Has(name string) (int, bool) {
+	for i, c := range sc {
+		if c.Name == name {
+			return i, true
+		}
+	}
+	return -1, false
+}
+
+func (sc SortColumns) Add(col SortColumn) SortColumns {
+	if len(sc) >= MaxSortColumns {
+		return sc
+	}
+	return append(sc, col)
+}
+
+func (sc SortColumns) Toggle(name string) SortColumns {
+	for i, c := range sc {
+		if c.Name == name {
+			sc[i].ASC = !c.ASC
+			return sc
+		}
+	}
+	return sc
+}
+
+func (sc SortColumns) IsMulti() bool {
+	return len(sc) > 1
+}
+
 const spacer = " "
 
 type FilterOpts struct {
@@ -117,6 +159,34 @@ func (t *TableData) Sort(sc SortColumn) {
 		col.Capacity,
 		sc.ASC,
 	)
+}
+
+func (t *TableData) SortMulti(cols SortColumns) {
+	if len(cols) == 0 {
+		return
+	}
+	if len(cols) == 1 {
+		t.Sort(cols[0])
+		return
+	}
+	specs := make([]SortSpec, 0, len(cols))
+	for _, sc := range cols {
+		col, idx := t.HeadCol(sc.Name, false)
+		if idx < 0 {
+			continue
+		}
+		specs = append(specs, SortSpec{
+			Index:      idx,
+			IsNumber:   col.MX,
+			IsDuration: col.Time,
+			IsCapacity: col.Capacity,
+			Asc:        sc.ASC,
+		})
+	}
+	if len(specs) == 0 {
+		return
+	}
+	t.rowEvents.SortMulti(t.GetNamespace(), specs)
 }
 
 func (t *TableData) Header() Header {
