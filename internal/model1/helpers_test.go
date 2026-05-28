@@ -4,10 +4,12 @@
 package model1
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSortLabels(t *testing.T) {
@@ -121,6 +123,75 @@ func TestDurationToSecond(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, durationToSeconds(u.s))
+		})
+	}
+}
+
+func TestCapacityToNumber(t *testing.T) {
+	uu := map[string]struct {
+		s string
+		e int64
+	}{
+		"empty": {s: "", e: 0},
+		"blank": {s: "  ", e: 0},
+		"1Gi":   {s: "1Gi", e: 1073741824},
+		"10Mi":  {s: "10Mi", e: 10485760},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, capacityToNumber(u.s))
+		})
+	}
+}
+
+func TestParallelRender(t *testing.T) {
+	uu := map[string]struct {
+		n int
+	}{
+		"empty":  {n: 0},
+		"one":    {n: 1},
+		"small":  {n: 7},
+		"medium": {n: 100},
+		"large":  {n: 10_000},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			results := make([]int, u.n)
+			err := parallelRender(u.n, func(i int) error {
+				results[i] = i + 1
+				return nil
+			})
+			require.NoError(t, err)
+			for i := range u.n {
+				assert.Equal(t, i+1, results[i], "index %d", i)
+			}
+		})
+	}
+}
+
+func TestParallelRenderError(t *testing.T) {
+	err := parallelRender(50, func(i int) error {
+		if i == 25 {
+			return fmt.Errorf("boom at %d", i)
+		}
+		return nil
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "boom")
+}
+
+func BenchmarkParallelRender(b *testing.B) {
+	const n = 50_000
+	results := make([]int, n)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		_ = parallelRender(n, func(i int) error {
+			results[i] = i
+			return nil
 		})
 	}
 }

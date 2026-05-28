@@ -4,40 +4,61 @@
 package model1
 
 import (
-	"context"
 	"fmt"
-	"log/slog"
 	"math"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/fvbommel/sortorder"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 )
 
-const poolSize = 10
+// parallelRender fans work across NumCPU batch workers.
+func parallelRender(n int, fn func(i int) error) error {
+	if n == 0 {
+		return nil
+	}
 
-func Hydrate(ns string, oo []runtime.Object, rr Rows, re Renderer) error {
-	pool := NewWorkerPool(context.Background(), poolSize)
-	for i, o := range oo {
-		pool.Add(func(ctx context.Context) error {
-			select {
-			case <-ctx.Done():
-				slog.Debug("Worker canceled")
-				return nil
-			default:
-				return re.Render(o, ns, &rr[i])
+	workers := min(runtime.NumCPU(), n)
+	if workers < 1 {
+		workers = 1
+	}
+	chunkSize := (n + workers - 1) / workers
+
+	var (
+		wg       sync.WaitGroup
+		firstErr error
+		errOnce  sync.Once
+	)
+	for w := range workers {
+		lo := w * chunkSize
+		hi := min(lo+chunkSize, n)
+		if lo >= n {
+			break
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := lo; i < hi; i++ {
+				if err := fn(i); err != nil {
+					errOnce.Do(func() { firstErr = err })
+				}
 			}
-		})
+		}()
 	}
-	errs := pool.Drain()
-	if len(errs) > 0 {
-		return errs[0]
-	}
+	wg.Wait()
 
-	return nil
+	return firstErr
+}
+
+func Hydrate(ns string, oo []k8sruntime.Object, rr Rows, re Renderer) error {
+	return parallelRender(len(oo), func(i int) error {
+		return re.Render(oo[i], ns, &rr[i])
+	})
 }
 
 func GenericHydrate(ns string, table *metav1.Table, rr Rows, re Renderer) error {
@@ -46,24 +67,10 @@ func GenericHydrate(ns string, table *metav1.Table, rr Rows, re Renderer) error 
 		return fmt.Errorf("expecting generic renderer but got %T", re)
 	}
 	gr.SetTable(ns, table)
-	pool := NewWorkerPool(context.Background(), poolSize)
-	for i, row := range table.Rows {
-		pool.Add(func(ctx context.Context) error {
-			select {
-			case <-ctx.Done():
-				slog.Debug("Worker canceled")
-				return nil
-			default:
-				return gr.Render(row, ns, &rr[i])
-			}
-		})
-	}
-	errs := pool.Drain()
-	if len(errs) > 0 {
-		return errs[0]
-	}
 
-	return nil
+	return parallelRender(len(table.Rows), func(i int) error {
+		return gr.Render(table.Rows[i], ns, &rr[i])
+	})
 }
 
 // IsValid returns true if resource is valid, false otherwise.
@@ -80,10 +87,12 @@ func IsValid(_ string, h Header, r Row) bool {
 }
 
 func sortLabels(m map[string]string) (keys, vals []string) {
+	keys = make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+	vals = make([]string, 0, len(m))
 	for _, k := range keys {
 		vals = append(vals, m[k])
 	}
@@ -150,6 +159,9 @@ func runesToNum(rr []rune) int64 {
 }
 
 func capacityToNumber(capacity string) int64 {
+	if strings.TrimSpace(capacity) == "" {
+		return 0
+	}
 	quantity := resource.MustParse(capacity)
 	return quantity.Value()
 }

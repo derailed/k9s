@@ -49,7 +49,7 @@ func (m Generic) Render(o any, _ string, row *model1.Row) error {
 	return nil
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (Generic) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	r.ID = client.FQN(raw.GetNamespace(), raw.GetName())
 	r.Fields = model1.Fields{

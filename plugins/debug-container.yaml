@@ -10,6 +10,41 @@ plugins:
     command: bash
     background: false
     confirm: true
+    inputs:
+      - name: image
+        label: Debug image
+        type: dropdown
+        required: true
+        default: nicolaka/netshoot:v0.15
+        options:
+          - nicolaka/netshoot:v0.15
+          - busybox:1.37
+          - alpine:3.23
+          - ubuntu:26.04
+      - name: profile
+        label: Debug profile
+        type: dropdown
+        required: true
+        default: sysadmin
+        options:
+          - general
+          - baseline
+          - restricted
+          - netadmin
+          - sysadmin
+          - legacy
+      - name: share_processes
+        label: Share processes
+        type: bool
+        required: true
+        default: true
     args:
       - -c
-      - "kubectl debug -it --context $CONTEXT -n=$NAMESPACE $POD --target=$NAME --image=nicolaka/netshoot:v0.14 --profile=sysadmin --share-processes -- bash"
+      - >-
+        kubectl debug -it --context $CONTEXT -n=$NAMESPACE $POD
+        --target=$NAME
+        --image=$INPUT_IMAGE
+        --profile=$INPUT_PROFILE
+        $([ "$INPUT_SHARE_PROCESSES" = "true" ] && echo "--share-processes")
+        -- sh
+

@@ -441,6 +441,15 @@ K9s uses aliases to navigate most K8s resources.
 
 You can now override the context portForward default address configuration by setting an env variable that can override all clusters portForward local address using `K9S_DEFAULT_PF_ADDRESS=a.b.c.d`
 
+
+Clipboard behavior can also be controlled via environment variables:
+
+- `K9S_CLIPBOARD=auto|native|osc52` (default `auto`)
+  - `auto`: try native clipboard utilities first, then fall back to OSC52 when available.
+  - `native`: only use native clipboard utilities (xclip/xsel/wl-clipboard/etc).
+  - `osc52`: force OSC52 clipboard writes.
+- `K9S_OSC52_MAX=<encoded-bytes>` sets the maximum allowed OSC52 payload size before k9s rejects the copy operation. Default is `74994`.
+
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yaml
   k9s:
@@ -841,6 +850,7 @@ Each input has the following properties:
 * `label` -- the label shown to the user in the input dialog
 * `type` (required) -- the input type: `string`, `number`, `bool`, or `dropdown`
 * `required` -- when true, the user must provide a value before the plugin can execute
+* `default` -- a default value pre-filled in the input field (must be a valid option for `dropdown`, `"true"`/`"false"` for `bool`, or a valid number for `number`)
 * `options` -- for `dropdown` type only, defines the list of available choices
 
 Input values are available in plugin args using the format `$INPUT_<NAME>` where `<NAME>` is the uppercase version of the input name.
@@ -886,23 +896,29 @@ plugins:
         label: Enter a message
         type: string
         required: true
+        default: hello world
       - name: count
         label: Enter a number
         type: number
         required: true
+        default: 3
       - name: enabled
         label: Enable feature
         type: bool
         required: false
+        default: true
       - name: environment
         label: Select environment
         type: dropdown
         required: true
+        default: staging
         options:
           - development
           - staging
           - production
 ```
+
+For a real-world example of plugin inputs, see [pvc-resize.yaml](plugins/pvc-resize.yaml) which prompts the user for a new PVC size before resizing.
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 

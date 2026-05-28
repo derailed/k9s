@@ -310,6 +310,15 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 		return
 	}
 
+	// While the informer cache hasn't synced yet, show a neutral status
+	// instead of a misleading "no resources found" warning.
+	if synced, _ := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
+		b.app.QueueUpdateDraw(func() {
+			b.app.Flash().Infof("Synchronizing %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+		})
+		return
+	}
+
 	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		if b.getUpdating() {
