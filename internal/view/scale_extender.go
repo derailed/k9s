@@ -135,16 +135,18 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 	if len(fqns) == 1 {
 		// If the CRD resource supports scaling, then first try to
 		// read the replicas directly from the CRD.
+		gotReplicas := false
 		if meta, _ := dao.MetaAccess.MetaFor(s.GVR()); dao.IsScalable(meta) {
 			replicas, err := s.replicasFromScaleSubresource(fqns[0])
 			if err == nil && replicas != "" {
 				factor = replicas
+				gotReplicas = true
 			}
 		}
 
 		// For built-in resources or cases where we can't get the replicas from the CRD, we can
 		// only try to get the number of copies from the READY field.
-		if factor == "0" {
+		if !gotReplicas {
 			replicas, err := s.replicasFromReady(fqns[0])
 			if err != nil {
 				return nil, err
