@@ -598,6 +598,7 @@ func (b *Browser) setNamespace(ns string) {
 		ns = client.ClusterScope
 	}
 	b.GetModel().SetNamespace(ns)
+	b.GetTable().ClearMarks()
 }
 
 func (b *Browser) defaultContext() context.Context {
