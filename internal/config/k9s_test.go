@@ -32,7 +32,7 @@ func TestK9sReload(t *testing.T) {
 					Context:     &ct,
 				}),
 			),
-			err: errors.New(`no context found for: ""`),
+			err: errors.New(`no active context available`),
 		},
 		"set-context": {
 			k: config.NewK9s(
