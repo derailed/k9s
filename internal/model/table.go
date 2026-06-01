@@ -233,15 +233,6 @@ func (t *Table) refresh(ctx context.Context) error {
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)
 
-	if t.instance == "" && !t.data.Empty() {
-		if seq, ok := ctx.Value(internal.KeyFactory).(dao.EventSequencer); ok {
-			if !seq.HasChanged(t.gvr) {
-				return nil
-			}
-			defer seq.ResetChanged(t.gvr)
-		}
-	}
-
 	if err := t.reconcile(ctx); err != nil {
 		return err
 	}

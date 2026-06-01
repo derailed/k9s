@@ -45,12 +45,6 @@ type Factory interface {
 	Forwarders() watch.Forwarders
 }
 
-// EventSequencer tracks per-GVR change events from informers.
-type EventSequencer interface {
-	HasChanged(gvr *client.GVR) bool
-	ResetChanged(gvr *client.GVR)
-}
-
 // ImageLister tracks resources with container images.
 type ImageLister interface {
 	// ListImages lists container images.
