@@ -50,6 +50,11 @@ type UI struct {
 	// UseFullGVRTitle toggles the display of full GVR (group/version/resource) vs R in views title.
 	UseFullGVRTitle bool `json:"useFullGVRTitle" yaml:"useFullGVRTitle"`
 
+	// EnablePromptCursor shows the terminal hardware cursor in the filter and
+	// command prompt bars. Requires derailed/tview to honor TextView.ShowCursor.
+	// Default is false to preserve existing behavior.
+	EnablePromptCursor bool `json:"enablePromptCursor" yaml:"enablePromptCursor"`
+
 	manualHeadless   *bool
 	manualLogoless   *bool
 	manualCrumbsless *bool

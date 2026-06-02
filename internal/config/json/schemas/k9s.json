@@ -43,7 +43,8 @@
             "skin": {"type": "string"},
             "defaultsToFullScreen": {"type": "boolean"},
             "useFullGVRTitle": {"type": "boolean"},
-            "invert": {"type": "boolean"}
+            "invert": {"type": "boolean"},
+            "enablePromptCursor": {"type": "boolean"}
           }
         },
         "shellPod": {

@@ -266,7 +266,7 @@ func (p *Prompt) SuggestionChanged(text, suggestion string) {
 // BufferActive indicates the buff activity changed.
 func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	if activate {
-		p.ShowCursor(true)
+		p.ShowCursor(p.app.Config.K9s.IsPromptCursorEnabled())
 		p.SetBorder(true)
 		p.SetTextColor(p.styles.FgColor())
 		p.SetBorderColor(p.colorFor(kind))

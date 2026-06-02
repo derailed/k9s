@@ -393,6 +393,11 @@ func (k *K9s) IsInvert() bool {
 	return k.UI.Invert
 }
 
+// IsPromptCursorEnabled returns whether the hardware cursor is shown in prompt bars.
+func (k *K9s) IsPromptCursorEnabled() bool {
+	return k.UI.EnablePromptCursor
+}
+
 // GetRefreshRate returns the current refresh rate.
 func (k *K9s) GetRefreshRate() float32 {
 	k.mx.Lock()
