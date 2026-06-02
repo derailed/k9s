@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	mxCacheSize    = 100
-	mxCacheExpiry  = 1 * time.Minute
+	mxCacheSize           = 100
+	mxCacheExpiry         = 1 * time.Minute
 	metricsPageSize int64 = 500
 )
 
