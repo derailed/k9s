@@ -35,22 +35,24 @@ type ContainerCharts struct {
 	*tview.Flex
 
 	app       *App
-	gvr       *client.GVR
 	path      string
 	container string
 	cancelFn  context.CancelFunc
 	cpu       *tchart.SparkLine
 	mem       *tchart.SparkLine
 	actions   *ui.KeyActions
+	// cpuLimit and memLimit hold the container's configured resource limits
+	// (milliCPU and MiB respectively). Zero means no limit is set.
+	cpuLimit float64
+	memLimit float64
 }
 
 var _ model.Component = (*ContainerCharts)(nil)
 
 // NewContainerCharts returns a new container metrics chart view.
-func NewContainerCharts(gvr *client.GVR, path, container string) *ContainerCharts {
+func NewContainerCharts(path, container string) *ContainerCharts {
 	return &ContainerCharts{
 		Flex:      tview.NewFlex(),
-		gvr:       gvr,
 		path:      path,
 		container: container,
 		actions:   ui.NewKeyActions(),
@@ -146,6 +148,8 @@ func (c *ContainerCharts) Stop() {
 	c.app.Styles.RemoveListener(c)
 }
 
+// setLimits reads the container's resource limits and stores them so that
+// updateLegends can compute a meaningful percentage denominator.
 func (c *ContainerCharts) setLimits() {
 	po, err := fetchPod(c.app.factory, c.path)
 	if err != nil {
@@ -157,10 +161,12 @@ func (c *ContainerCharts) setLimits() {
 	}
 	if lim := co.Resources.Limits; lim != nil {
 		if cpu := lim.Cpu(); cpu != nil && cpu.Value() > 0 {
-			c.cpu.SetMax(float64(cpu.MilliValue()))
+			c.cpuLimit = float64(cpu.MilliValue())
+			c.cpu.SetMax(c.cpuLimit)
 		}
 		if mem := lim.Memory(); mem != nil && mem.Value() > 0 {
-			c.mem.SetMax(float64(client.ToMB(mem.Value())))
+			c.memLimit = float64(client.ToMB(mem.Value()))
+			c.mem.SetMax(c.memLimit)
 		}
 	}
 }
@@ -199,6 +205,8 @@ func (c *ContainerCharts) fetchAndUpdate(ctx context.Context) {
 	memVal := float64(client.ToMB(mx.Usage.Memory().Value()))
 
 	c.app.QueueUpdateDraw(func() {
+		// For unlimited containers, auto-scale the chart to the observed peak.
+		// When a limit is set, SetMax is a no-op here because it only increases.
 		c.cpu.SetMax(cpuVal)
 		c.mem.SetMax(memVal)
 		c.cpu.AddMetric(now, cpuVal)
@@ -209,30 +217,62 @@ func (c *ContainerCharts) fetchAndUpdate(ctx context.Context) {
 
 func (c *ContainerCharts) updateLegends(cpuVal, memVal float64) {
 	nn := c.cpu.GetSeriesColorNames()
-	perc := client.ToPercentage(int64(cpuVal), int64(c.cpu.GetMax()))
-	idx := int(c.app.Config.K9s.Thresholds.LevelFor("cpu", perc))
-	c.cpu.SetColorIndex(idx)
+	var (
+		cpuPerc    int
+		cpuPercStr string
+		cpuColor   string
+		cpuCeiling string
+		cpuIdx     int
+	)
+	if c.cpuLimit > 0 {
+		cpuPerc = client.ToPercentage(int64(cpuVal), int64(c.cpuLimit))
+		cpuPercStr = render.PrintPerc(cpuPerc)
+		cpuColor = c.app.Config.K9s.Thresholds.SeverityColor("cpu", cpuPerc)
+		cpuIdx = int(c.app.Config.K9s.Thresholds.LevelFor("cpu", cpuPerc))
+		cpuCeiling = render.AsThousands(int64(c.cpuLimit))
+	} else {
+		cpuPercStr = client.NA
+		cpuColor = "white"
+		cpuCeiling = render.AsThousands(int64(c.cpu.GetMax()))
+	}
+	c.cpu.SetColorIndex(cpuIdx)
 	c.cpu.SetLegend(fmt.Sprintf(cpuFmt,
 		cases.Title(language.English).String(client.CpuGVR.R()),
-		c.app.Config.K9s.Thresholds.SeverityColor("cpu", perc),
-		render.PrintPerc(perc),
-		nn[idx%len(nn)],
+		cpuColor,
+		cpuPercStr,
+		nn[cpuIdx%len(nn)],
 		render.AsThousands(int64(cpuVal)),
 		"white",
-		render.AsThousands(int64(c.cpu.GetMax())),
+		cpuCeiling,
 	))
 
 	nn = c.mem.GetSeriesColorNames()
-	perc = client.ToPercentage(int64(memVal), int64(c.mem.GetMax()))
-	idx = int(c.app.Config.K9s.Thresholds.LevelFor("memory", perc))
-	c.mem.SetColorIndex(idx)
+	var (
+		memPerc    int
+		memPercStr string
+		memColor   string
+		memCeiling string
+		memIdx     int
+	)
+	if c.memLimit > 0 {
+		memPerc = client.ToPercentage(int64(memVal), int64(c.memLimit))
+		memPercStr = render.PrintPerc(memPerc)
+		memColor = c.app.Config.K9s.Thresholds.SeverityColor("memory", memPerc)
+		memIdx = int(c.app.Config.K9s.Thresholds.LevelFor("memory", memPerc))
+		memCeiling = render.AsThousands(int64(c.memLimit))
+	} else {
+		memPercStr = client.NA
+		memColor = "white"
+		memCeiling = render.AsThousands(int64(c.mem.GetMax()))
+	}
+	c.mem.SetColorIndex(memIdx)
 	c.mem.SetLegend(fmt.Sprintf(memFmt,
 		cases.Title(language.English).String(client.MemGVR.R()),
-		c.app.Config.K9s.Thresholds.SeverityColor("memory", perc),
-		render.PrintPerc(perc),
-		nn[idx%len(nn)],
+		memColor,
+		memPercStr,
+		nn[memIdx%len(nn)],
 		render.AsThousands(int64(memVal)),
 		"white",
-		render.AsThousands(int64(c.mem.GetMax())),
+		memCeiling,
 	))
 }

@@ -42,7 +42,7 @@ func (c *ChartsExtender) chartsCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if err := c.App().inject(NewContainerCharts(c.GVR(), c.GetTable().Path, container), false); err != nil {
+	if err := c.App().inject(NewContainerCharts(c.GetTable().Path, container), false); err != nil {
 		c.App().Flash().Err(err)
 	}
 
