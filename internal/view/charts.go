@@ -27,7 +27,7 @@ import (
 const (
 	chartsTitle    = "Charts"
 	chartsTitleFmt = "[fg:bg:b] Charts([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
-	chartsInterval = 10 * time.Second
+	chartsInterval = 30 * time.Second
 )
 
 // ContainerCharts renders CPU and memory usage sparklines for a single container.

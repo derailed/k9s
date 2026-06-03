@@ -123,7 +123,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 }
 
 func (c *Container) viewLogs(*App, ui.Tabular, *client.GVR, string) {
-	c.ResourceViewer.(*LogsExtender).showLogs(c.GetTable().Path, false)
+	c.ResourceViewer.(*ChartsExtender).ResourceViewer.(*LogsExtender).showLogs(c.GetTable().Path, false)
 }
 
 // Handlers...
