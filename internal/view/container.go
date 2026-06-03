@@ -29,7 +29,7 @@ type Container struct {
 // NewContainer returns a new container view.
 func NewContainer(gvr *client.GVR) ResourceViewer {
 	c := Container{}
-	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.logOptions)
+	c.ResourceViewer = NewChartsExtender(NewLogsExtender(NewBrowser(gvr), c.logOptions))
 	c.SetEnvFn(c.k9sEnv)
 	c.GetTable().SetEnterFn(c.viewLogs)
 	c.GetTable().SetDecorateFn(c.decorateRows)
