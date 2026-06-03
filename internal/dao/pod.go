@@ -355,7 +355,11 @@ func (p *Pod) Scan(_ context.Context, gvr *client.GVR, fqn string, wait bool) (R
 // Helpers...
 
 func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
-	out := make(LogChan, logChannelBuffer)
+	bufSize := opts.LogBufferSize
+	if bufSize <= 0 {
+		bufSize = logChannelBuffer
+	}
+	out := make(LogChan, bufSize)
 	var wg sync.WaitGroup
 
 	wg.Add(1)
