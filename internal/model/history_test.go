@@ -33,6 +33,48 @@ func TestHistoryPush(t *testing.T) {
 	assert.Equal(t, []string{"cmd1", "cmd2", "cmd3"}, h.List())
 }
 
+func TestHistoryUpdate(t *testing.T) {
+	t.Run("empty-is-noop", func(t *testing.T) {
+		h := model.NewHistory(3)
+		h.Update("pods /nginx")
+		assert.True(t, h.Empty())
+	})
+
+	t.Run("rewrites-current", func(t *testing.T) {
+		h := model.NewHistory(3)
+		h.Push("pods")
+		h.Update("pods /nginx")
+
+		top, ok := h.Top()
+		assert.True(t, ok)
+		assert.Equal(t, "pods /nginx", top)
+		assert.Len(t, h.List(), 1)
+	})
+
+	t.Run("lower-cases", func(t *testing.T) {
+		h := model.NewHistory(3)
+		h.Push("pods")
+		h.Update("pods sort:AGE:asc")
+
+		top, _ := h.Top()
+		assert.Equal(t, "pods sort:age:asc", top)
+	})
+
+	t.Run("rewrites-back-entry", func(t *testing.T) {
+		h := model.NewHistory(3)
+		h.Push("pods")
+		h.Push("nodes")
+
+		back, ok := h.Back()
+		assert.True(t, ok)
+		assert.Equal(t, "pods", back)
+
+		h.Update("pods /nginx")
+		assert.Equal(t, []string{"pods /nginx", "nodes"}, h.List())
+		assert.Len(t, h.List(), 2)
+	})
+}
+
 func TestHistoryTop(t *testing.T) {
 	uu := map[string]struct {
 		push []string
