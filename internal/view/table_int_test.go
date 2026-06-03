@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -167,6 +169,103 @@ func TestTableViewSort(t *testing.T) {
 			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
 		}
 	}
+}
+
+func TestTableSortCapturesHistory(t *testing.T) {
+	v := NewTable(client.NewGVR("test"))
+	require.NoError(t, v.Init(makeContext(t)))
+	v.SetModel(new(mockTableModel))
+	v.SetCommand(cmd.NewInterpreter("test"))
+	v.app.cmdHistory.Push("test")
+
+	v.SortColCmd("NAME", true)(nil)
+
+	top, ok := v.app.cmdHistory.Top()
+	require.True(t, ok)
+	assert.Equal(t, "test sort:name:asc", top)
+}
+
+func TestTableRestoreSort(t *testing.T) {
+	v := NewTable(client.NewGVR("test"))
+
+	// Restore in Command.run happens BEFORE the component is initialized.
+	v.SetSortCol("FRED", true)
+	v.SetManualSort(true)
+
+	require.NoError(t, v.Init(makeContext(t)))
+	v.SetCommand(cmd.NewInterpreter("test sort:fred:asc"))
+	// Start registers the table as a view-config listener, which fires
+	// ViewSettingsChanged and may reset the restored manual sort.
+	v.Start()
+
+	data := model1.NewTableDataWithRows(
+		client.NewGVR("test"),
+		model1.Header{
+			model1.HeaderColumn{Name: "NAMESPACE"},
+			model1.HeaderColumn{Name: "NAME"},
+			model1.HeaderColumn{Name: "FRED"},
+			model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true, Decorator: render.AgeDecorator}},
+		},
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{Row: model1.Row{Fields: model1.Fields{"ns1", "a", "30", "3m"}}},
+			model1.RowEvent{Row: model1.Row{Fields: model1.Fields{"ns1", "b", "10", "1m"}}},
+			model1.RowEvent{Row: model1.Row{Fields: model1.Fields{"ns1", "c", "20", "2m"}}},
+		),
+	)
+	cdata := v.Update(data, false)
+	v.UpdateUI(cdata, data)
+
+	assert.Equal(t, "FRED", v.GetSortCol().Name)
+	// FRED ascending => 10,20,30 => rows b,c,a
+	assert.Equal(t, "b", strings.TrimSpace(v.GetCell(1, 1).Text))
+	assert.Equal(t, "c", strings.TrimSpace(v.GetCell(2, 1).Text))
+	assert.Equal(t, "a", strings.TrimSpace(v.GetCell(3, 1).Text))
+	// Visible cols: NAMESPACE=0, NAME=1, FRED=2.
+	// The highlighted column must follow the restored sort column.
+	assert.Equal(t, 2, v.GetSelectedColIdx())
+}
+
+func TestTableRestoreSortWithCustomView(t *testing.T) {
+	v := NewTable(client.NewGVR("test"))
+
+	// Restore in Command.run happens BEFORE the component is initialized.
+	v.SetSortCol("FRED", true)
+	v.SetManualSort(true)
+
+	require.NoError(t, v.Init(makeContext(t)))
+	v.SetCommand(cmd.NewInterpreter("test sort:fred:asc"))
+
+	// Simulate a custom view config (views.yaml) with a different default
+	// sort column. Registering the listener fires ViewSettingsChanged which
+	// must not clobber the restored sort.
+	v.app.CustomView().Views["test"] = config.ViewSetting{SortColumn: "NAME:desc"}
+	v.Start()
+
+	data := model1.NewTableDataWithRows(
+		client.NewGVR("test"),
+		model1.Header{
+			model1.HeaderColumn{Name: "NAMESPACE"},
+			model1.HeaderColumn{Name: "NAME"},
+			model1.HeaderColumn{Name: "FRED"},
+			model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true, Decorator: render.AgeDecorator}},
+		},
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{Row: model1.Row{Fields: model1.Fields{"ns1", "a", "30", "3m"}}},
+			model1.RowEvent{Row: model1.Row{Fields: model1.Fields{"ns1", "b", "10", "1m"}}},
+			model1.RowEvent{Row: model1.Row{Fields: model1.Fields{"ns1", "c", "20", "2m"}}},
+		),
+	)
+	cdata := v.Update(data, false)
+	v.UpdateUI(cdata, data)
+
+	assert.Equal(t, "FRED", v.GetSortCol().Name)
+	// FRED ascending => 10,20,30 => rows b,c,a
+	assert.Equal(t, "b", strings.TrimSpace(v.GetCell(1, 1).Text))
+	assert.Equal(t, "c", strings.TrimSpace(v.GetCell(2, 1).Text))
+	assert.Equal(t, "a", strings.TrimSpace(v.GetCell(3, 1).Text))
+	// Visible cols: NAMESPACE=0, NAME=1, FRED=2.
+	// The highlighted column must follow the restored sort column.
+	assert.Equal(t, 2, v.GetSelectedColIdx())
 }
 
 // ----------------------------------------------------------------------------
