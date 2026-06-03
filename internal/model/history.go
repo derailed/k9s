@@ -127,6 +127,15 @@ func (h *History) Push(c string) {
 	h.currentIdx = len(h.commands) - 1
 }
 
+// Update rewrites the entry at the current position in place, consolidating
+// interactive view changes into a single snapshot. No-op if the stack is empty.
+func (h *History) Update(c string) {
+	if c == "" || h.currentIdx < 0 || h.currentIdx >= len(h.commands) {
+		return
+	}
+	h.commands[h.currentIdx] = strings.ToLower(c)
+}
+
 // Clear clears out the stack.
 func (h *History) Clear() {
 	h.commands = nil
