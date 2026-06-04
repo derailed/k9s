@@ -89,10 +89,11 @@ func (c *ContainerCharts) Init(ctx context.Context) error {
 
 	c.applyStyles(c.app.Styles.Charts())
 
-	c.AddItem(c.cpu, 0, 1, false)
+	c.AddItem(c.cpu, 0, 1, true)
 	c.AddItem(c.mem, 0, 1, false)
 
 	c.bindKeys()
+	c.SetInputCapture(c.keyboard)
 	c.app.Styles.AddListener(c)
 
 	return nil
@@ -114,6 +115,17 @@ func (c *ContainerCharts) applyStyles(styles config.Charts) {
 func (c *ContainerCharts) StylesChanged(s *config.Styles) {
 	c.SetBackgroundColor(s.Charts().BgColor.Color())
 	c.applyStyles(s.Charts())
+}
+
+func (c *ContainerCharts) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	key := evt.Key()
+	if key == tcell.KeyRune {
+		key = tcell.Key(evt.Rune())
+	}
+	if a, ok := c.actions.Get(key); ok {
+		return a.Action(evt)
+	}
+	return evt
 }
 
 func (c *ContainerCharts) bindKeys() {
