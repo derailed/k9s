@@ -41,7 +41,7 @@ k9s:
     disableAutoscroll: false
     columnLock: false
     showTime: false
-    logBufferSize: 1000
+    logBufferSize: 50
   thresholds:
     cpu:
       critical: 90

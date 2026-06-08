@@ -14,7 +14,7 @@ const (
 	DefaultSinceSeconds = -1 // tail logs by default
 
 	// DefaultLogBufferSize is the channel buffer for log streaming.
-	DefaultLogBufferSize = 1000
+	DefaultLogBufferSize = 50
 )
 
 // Logger tracks logger options.
