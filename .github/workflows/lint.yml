@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
 
       - name: Install Go
         uses: actions/setup-go@v6.4.0
@@ -18,7 +18,7 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v9.2.0
+        uses: golangci/golangci-lint-action@v9.2.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           version: v2.6

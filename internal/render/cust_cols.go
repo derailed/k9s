@@ -148,6 +148,9 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh model1.Header, row *model1.Row) (RenderedCols, error) {
 	cols := make(RenderedCols, len(parsers))
 	for idx := range parsers {
+		if idx >= len(cc) {
+			continue
+		}
 		parser := parsers[idx]
 		if parser == nil {
 			ix, ok := rh.IndexOf(cc[idx].Header.Name, true)

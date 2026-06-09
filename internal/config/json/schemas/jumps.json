@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s custom jumps schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "jumps": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "targetGVR": { 
+            "type": "string",
+            "description": "The target resource to jump to (e.g., 'mygroup.io/v1/patchjobs')"
+          },
+          "labelSelector": { 
+            "type": "string",
+            "description": "Label-based filtering for the target resource. Supports Go template syntax."
+          },
+          "fieldSelector": { 
+            "type": "string",
+            "description": "Field-based filtering for the target resource. Supports Go template syntax."
+          },
+          "targetNamespace": { 
+            "type": "string",
+            "description": "Namespace handling: empty (default - use source namespace), 'all', or a specific namespace name"
+          }
+        },
+        "required": ["targetGVR"]
+      }
+    }
+  },
+  "required": ["jumps"]
+}

@@ -61,7 +61,7 @@ func (c CustomResourceDefinition) Render(o any, _ string, row *model1.Row) error
 	return nil
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var crd v1.CustomResourceDefinition
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &crd)

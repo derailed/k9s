@@ -72,7 +72,9 @@ func InitConnection(config *Config, log *slog.Logger) (*APIClient, error) {
 		log:    log.With(slogs.Subsys, "client"),
 	}
 	if err := a.supportsMetricsResources(); err != nil {
-		slog.Warn("Fail to locate metrics-server", slogs.Error, err)
+		if a.HasActiveContext() {
+			slog.Warn("Fail to locate metrics-server", slogs.Error, err)
+		}
 		if !errors.Is(err, noMetricServerErr) && !errors.Is(err, metricsUnsupportedErr) {
 			a.connOK = false
 			return &a, err
@@ -117,6 +119,12 @@ func (a *APIClient) ActiveContext() string {
 		return ""
 	}
 	return c
+}
+
+// HasActiveContext returns true if a kube context is configured.
+func (a *APIClient) HasActiveContext() bool {
+	ctx, _ := a.config.CurrentContextName()
+	return ctx != ""
 }
 
 // IsActiveNamespace returns true if namespaces matches.
@@ -614,7 +622,9 @@ func (a *APIClient) supportsMetricsResources() error {
 
 	dial, err := a.Dial()
 	if err != nil {
-		slog.Warn("Unable to dial API client for metrics", slogs.Error, err)
+		if a.HasActiveContext() {
+			slog.Warn("Unable to dial API client for metrics", slogs.Error, err)
+		}
 		return err
 	}
 	apiGroups, err := dial.Discovery().ServerGroups()

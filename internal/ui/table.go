@@ -19,6 +19,7 @@ import (
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const maxTruncate = 50
@@ -65,7 +66,7 @@ func NewTable(gvr *client.GVR) *Table {
 		SelectTable: &SelectTable{
 			Table: tview.NewTable(),
 			model: model.NewTable(gvr),
-			marks: make(map[string]struct{}),
+			marks: sets.New[string](),
 		},
 		ctx:     context.Background(),
 		gvr:     gvr,
