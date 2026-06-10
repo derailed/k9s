@@ -58,7 +58,7 @@ func TestHeaderIndex(t *testing.T) {
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			ta := NewTable(client.NewGVR("test"))
-			ta.Init(makeContext(t))
+			require.NoError(t, ta.Init(makeContext(t)))
 			for i, c := range u.cells {
 				ta.AddHeaderCell(i, model1.HeaderColumn{Name: c})
 			}
