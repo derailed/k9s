@@ -235,6 +235,24 @@ plugins:
         --kube-context $CONTEXT
         -n $NAMESPACE $NAME
         | less -K
+  toggle-fluxinstance:
+    shortCut: Shift-T
+    confirm: false
+    scopes:
+      - fluxinstances
+    description: Toggle to suspend or resume a FluxInstance
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        reconcile=$(kubectl --context $CONTEXT get fluxinstance -n $NAMESPACE $NAME -o=custom-columns='TYPE:.metadata.annotations.fluxcd\.controlplane\.io/reconcile' | tail -1);
+        verb=$([ $reconcile = "disabled" ] && echo "resume" || echo "suspend");
+        flux-operator
+        $verb instance
+        --kube-context $CONTEXT
+        -n $NAMESPACE $NAME
+        | less -K
   trace:
     shortCut: Shift-Q
     confirm: false
