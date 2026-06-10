@@ -524,6 +524,8 @@ Clipboard behavior can also be controlled via environment variables:
       columnLock: false
       # Toggles log line timestamp info. Default false
       showTime: false
+      # Sets the internal log channel buffer size. Increase when log lines are dropped under high throughput. Default 50
+      logBufferSize: 100
     # Provide shell pod customization when nodeShell feature gate is enabled!
     shellPod:
       # The shell pod image to use.
@@ -1341,6 +1343,7 @@ k9s:
     disableAutoscroll: false
     columnLock: false
     showTime: false
+    logBufferSize: 50
   thresholds:
     cpu:
       critical: 90
