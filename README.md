@@ -315,21 +315,21 @@ k9s info
 
 Version:           vX.Y.Z
 Config:            /Users/fernand/.config/k9s/config.yaml
+Custom Views:      /Users/fernand/.config/k9s/views.yaml
+Plugins:           /Users/fernand/.config/k9s/plugins.yaml
+Hotkeys:           /Users/fernand/.config/k9s/hotkeys.yaml
+Aliases:           /Users/fernand/.config/k9s/aliases.yaml
+Skins:             /Users/fernand/.config/k9s/skins
+Context Configs:   /Users/fernand/.local/share/k9s/clusters
 Logs:              /Users/fernand/.local/state/k9s/k9s.log
-Dumps dir:         /Users/fernand/.local/state/k9s/screen-dumps
-Benchmarks dir:    /Users/fernand/.local/state/k9s/benchmarks
-Skins dir:         /Users/fernand/.local/share/k9s/skins
-Contexts dir:      /Users/fernand/.local/share/k9s/clusters
-Custom views file: /Users/fernand/.local/share/k9s/views.yaml
-Plugins file:      /Users/fernand/.local/share/k9s/plugins.yaml
-Hotkeys file:      /Users/fernand/.local/share/k9s/hotkeys.yaml
-Alias file:        /Users/fernand/.local/share/k9s/aliases.yaml
+Benchmarks:        /Users/fernand/.local/state/k9s/benchmarks
+ScreenDumps:       /Users/fernand/.local/state/k9s/screen-dumps
 ```
 
 ### View K9s logs
 
 ```shell
-tail -f /Users/fernand/.local/data/k9s/k9s.log
+tail -f /Users/fernand/.local/state/k9s/k9s.log
 ```
 
 ### Start K9s in debug mode
@@ -495,7 +495,7 @@ Clipboard behavior can also be controlled via environment variables:
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the $XDG_CONFIG_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
       # Convert dark skins to light, or vice versa, preserving hue. Default: false
       invert: false
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
@@ -616,7 +616,7 @@ In K9s, you can define your very own command aliases (shortnames) to access your
 A K9s alias defines pairs of alias:gvr. A gvr (Group/Version/Resource) represents a fully qualified Kubernetes resource identifier. Here is an example of an alias file:
 
 ```yaml
-#  $XDG_DATA_HOME/k9s/aliases.yaml
+#  $XDG_CONFIG_HOME/k9s/aliases.yaml
 aliases:
   pp: v1/pods
   crb: rbac.authorization.k8s.io/v1/clusterrolebindings
@@ -668,7 +668,7 @@ In order to surface hotkeys globally please follow these steps:
       ```
 
  Not feeling so hot? Your custom hotkeys will be listed in the help view `?`.
- Also your hotkeys file will be automatically reloaded so you can readily use your hotkeys as you define them.
+ K9s reloads hotkeys when it rebuilds actions, so updates will be picked up as views refresh and they will appear in help.
 
  You can choose any keyboard shortcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
 
@@ -1033,7 +1033,7 @@ The following defines a plugin for viewing logs on a selected pod using `ctrl-l`
 
 ```yaml
 # Define several plugins in a single file in the K9s root configuration
-# $XDG_DATA_HOME/k9s/plugins.yaml
+# $XDG_CONFIG_HOME/k9s/plugins.yaml
 plugins:
   # Defines a plugin to provide a `ctrl-l` shortcut to tail the logs while in pod view.
   fred:
@@ -1269,8 +1269,7 @@ You can skin k9s by default by specifying a UI.skin attribute. You can also chan
 In this case, you can specify a skin field on your cluster config aka `skin: dracula` (just the name of the skin file without the extension!) and copy this repo
 `skins/dracula.yaml` to `$XDG_CONFIG_HOME/k9s/skins/` directory. You can also change the skin by setting `K9S_SKIN` in the environment, e.g. `export K9S_SKIN="dracula"`.
 
-In the case where your cluster spans several contexts, you can add a skin context configuration to your context configuration.
-This is a collection of {context_name, skin} tuples (please see example below!)
+Context-specific skins are configured in each context config with a single `skin` field (please see the example below).
 
 Colors can be defined by name or using a hex representation. Of recent, we've added a color named `default` to indicate a transparent background color to preserve your terminal background color settings if so desired.
 
@@ -1320,7 +1319,7 @@ k9s:
     # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live  Defaults to false.
     reactive: false
     # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-    skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+    skin: dracula # => assumes the file skins/dracula.yaml is present in the $XDG_CONFIG_HOME/k9s/skins directory
     defaultsToFullScreen: false
   skipLatestRevCheck: false
   disablePodCounting: false
@@ -1354,7 +1353,7 @@ k9s:
 ```
 
 ```yaml
-# $XDG_DATA_HOME/k9s/skins/in-the-navy.yaml
+# $XDG_CONFIG_HOME/k9s/skins/in-the-navy.yaml
 # Skin InTheNavy!
 k9s:
   # General K9s styles

@@ -5,7 +5,7 @@ OUTPUT_BIN      ?= execs/${NAME}
 GO_FLAGS        ?=
 GO_TAGS	        ?= netgo
 CGO_ENABLED     ?=0
-GIT_REV         ?= $(shell git rev-parse --short HEAD)
+GIT_REV         ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 
 IMG_NAME        := derailed/k9s
 IMAGE           := ${IMG_NAME}:${VERSION}
