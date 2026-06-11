@@ -147,3 +147,31 @@ func TestAppScreenDumpDir(t *testing.T) {
 	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, "/tmp/k9s-test/screen-dumps", cfg.K9s.AppScreenDumpDir())
 }
+
+func TestK9sIsSkipAccessCheck(t *testing.T) {
+	trueVal, falseVal := true, false
+
+	uu := map[string]struct {
+		yaml bool
+		flag *bool
+		want bool
+	}{
+		"default":               {yaml: false, flag: nil, want: false},
+		"yaml-only":             {yaml: true, flag: nil, want: true},
+		"cli-true-only":         {yaml: false, flag: &trueVal, want: true},
+		"cli-false-no-override": {yaml: true, flag: &falseVal, want: true},
+		"both-true":             {yaml: true, flag: &trueVal, want: true},
+		"yaml-false-cli-nil":    {yaml: false, flag: nil, want: false},
+		"yaml-false-cli-false":  {yaml: false, flag: &falseVal, want: false},
+	}
+
+	for name, tc := range uu {
+		t.Run(name, func(t *testing.T) {
+			k := &config.K9s{SkipAccessCheck: tc.yaml}
+			f := config.NewFlags()
+			f.SkipAccessCheck = tc.flag
+			k.Override(f)
+			assert.Equal(t, tc.want, k.IsSkipAccessCheck())
+		})
+	}
+}
