@@ -310,6 +310,15 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 		return
 	}
 
+	// While the informer cache hasn't synced yet, show a neutral status
+	// instead of a misleading "no resources found" warning.
+	if synced, _ := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
+		b.app.QueueUpdateDraw(func() {
+			b.app.Flash().Infof("Synchronizing %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+		})
+		return
+	}
+
 	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		if b.getUpdating() {
@@ -448,6 +457,15 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
+	// Check for custom jump rules first
+	if rule, ok := b.App().CustomJumps().GetRule(b.GVR()); ok {
+		if err := customJump(b.app, b.GVR(), path, rule); err != nil {
+			b.app.Flash().Errf("Custom jump failed: %s", err)
+		}
+		return nil
+	}
+
+	// Fall back to default behavior
 	f := describeResource
 	if b.enterFn != nil {
 		f = b.enterFn

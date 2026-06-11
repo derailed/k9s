@@ -534,6 +534,88 @@ func TestCheckPodStatus(t *testing.T) {
 			},
 			e: "Running",
 		},
+		"sidecar-terminated-after-completion": {
+			pod: v1.Pod{
+				Spec: v1.PodSpec{
+					InitContainers: []v1.Container{
+						{
+							Name:          "sidecar",
+							RestartPolicy: ptrRestartPolicy(v1.ContainerRestartPolicyAlways),
+						},
+					},
+					Containers: []v1.Container{
+						{Name: "main"},
+					},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodSucceeded,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "sidecar",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 137,
+									Reason:   "Error",
+								},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "main",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 0,
+									Reason:   "Completed",
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Completed",
+		},
+		"sidecar-terminated-signal": {
+			pod: v1.Pod{
+				Spec: v1.PodSpec{
+					InitContainers: []v1.Container{
+						{
+							Name:          "sidecar",
+							RestartPolicy: ptrRestartPolicy(v1.ContainerRestartPolicyAlways),
+						},
+					},
+					Containers: []v1.Container{
+						{Name: "main"},
+					},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodSucceeded,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "sidecar",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 137,
+									Signal:   9,
+								},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "main",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 0,
+									Reason:   "Completed",
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Completed",
+		},
 	}
 
 	for k := range uu {
@@ -542,6 +624,10 @@ func TestCheckPodStatus(t *testing.T) {
 			assert.Equal(t, u.e, render.PodStatus(&u.pod))
 		})
 	}
+}
+
+func ptrRestartPolicy(p v1.ContainerRestartPolicy) *v1.ContainerRestartPolicy {
+	return &p
 }
 
 func TestCheckPhase(t *testing.T) {
@@ -649,6 +735,47 @@ func TestCheckPhase(t *testing.T) {
 				},
 			},
 			e: "Init:0/1",
+		},
+		"sidecar-terminated": {
+			pod: v1.Pod{
+				Spec: v1.PodSpec{
+					InitContainers: []v1.Container{
+						{
+							Name:          "ic1",
+							RestartPolicy: &always,
+						},
+					},
+					Containers: []v1.Container{
+						{Name: "c1"},
+					},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodSucceeded,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "ic1",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 137,
+									Reason:   "Error",
+								},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									ExitCode: 0,
+									Reason:   "Completed",
+								},
+							},
+						},
+					},
+				},
+			},
+			e: "Completed",
 		},
 	}
 

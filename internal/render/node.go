@@ -112,7 +112,7 @@ func (n Node) Render(o any, _ string, row *model1.Row) error {
 	return nil
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 	var no v1.Node
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(nwm.Raw.Object, &no)
@@ -191,13 +191,16 @@ func (Node) diagnose(ss []string) error {
 		return nil
 	}
 
-	var ready bool
+	var (
+		ready    bool
+		cordoned bool
+	)
 	for _, s := range ss {
 		if s == "" {
 			continue
 		}
 		if s == "SchedulingDisabled" {
-			return cordonErr
+			cordoned = true
 		}
 		if s == "Ready" {
 			ready = true
@@ -206,6 +209,9 @@ func (Node) diagnose(ss []string) error {
 
 	if !ready {
 		return notReadyErr
+	}
+	if cordoned {
+		return cordonErr
 	}
 
 	return nil

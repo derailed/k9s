@@ -533,6 +533,8 @@ Clipboard behavior can also be controlled via environment variables:
       columnLock: false
       # Toggles log line timestamp info. Default false
       showTime: false
+      # Sets the internal log channel buffer size. Increase when log lines are dropped under high throughput. Default 50
+      logBufferSize: 100
     # Provide shell pod customization when nodeShell feature gate is enabled!
     shellPod:
       # The shell pod image to use.
@@ -820,6 +822,90 @@ views:
 ```
 
 > 🩻 NOTE: This is experimental and will most likely change as we iron this out!
+
+---
+
+## Resource Jumps
+
+K9s allows you to define custom jump shortcuts between Custom Resource Definitions (CRDs) and their related resources. This feature enables you to quickly jump from one CRD to its dependent or associated resources, similar to the built-in "jump to owner" behavior.
+
+By default, K9s provides built-in jumps for standard Kubernetes resources (e.g., Deployment → Pods, Node → Pods). With custom jumps, you can extend this behavior to your own CRDs without modifying k9s source code.
+
+To use this feature, create a configuration file at `$XDG_CONFIG_HOME/k9s/jumps.yaml`.
+
+### Configuration Format
+
+```yaml
+# $XDG_CONFIG_HOME/k9s/jumps.yaml
+jumps:
+  # Define jump from source GVR to target GVR
+  "myoperator.io/v1/patchplans":
+    targetGVR: "myoperator.io/v1/patchjobs"
+    fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
+```
+
+### Configuration Fields
+
+* **Source GVR** (map key): The Group/Version/Resource of the source CRD in format `group/version/resource` or `version/resource` for core resources
+* **targetGVR**: The target resource to jump to
+* **labelSelector** (optional): Kubernetes label selector to filter target resources. Supports Go template syntax
+* **fieldSelector** (optional): Kubernetes field selector to filter target resources. Supports Go template syntax
+* **targetNamespace** (optional): Controls namespace behavior:
+  * Empty (default): Use the source resource's namespace (or cluster-scoped if source is cluster-scoped)
+  * `all`: View resources across all namespaces
+  * `<namespace-name>`: Jump to a specific namespace
+  * `{{.spec.field}}`: Use template expression to extract namespace from source resource
+
+### Template Syntax
+
+Both `labelSelector` and `fieldSelector` support Go template syntax to dynamically reference fields from the selected resource:
+
+* `{{.metadata.name}}` - The resource name
+* `{{.metadata.namespace}}` - The resource namespace
+* `{{.metadata.labels.key}}` - A specific label value
+* `{{.spec.fieldName}}` - Any field from the resource spec
+* `{{.status.field}}` - Any field from the resource status
+
+### Examples
+
+#### Jump between custom operator resources
+
+```yaml
+jumps:
+  "myoperator.io/v1/patchplans":
+    targetGVR: "myoperator.io/v1/patchjobs"
+    fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
+```
+
+#### Jump from ArgoCD Application to Deployments
+
+```yaml
+jumps:
+  "argoproj.io/v1alpha1/applications":
+    targetGVR: "apps/v1/deployments"
+    labelSelector: "app.kubernetes.io/instance={{.metadata.name}}"
+```
+
+#### Jump from Karpenter NodePool to Nodes
+
+```yaml
+jumps:
+  "karpenter.sh/v1/nodepools":
+    targetGVR: "v1/nodes"
+    labelSelector: "karpenter.sh/nodepool={{.metadata.name}}"
+    targetNamespace: "all"  # Nodes are cluster-scoped
+```
+
+### How It Works
+
+1. When viewing a resource that has a custom jump rule defined
+2. Pressing `Enter` on a selected item will:
+   - Apply the template expressions using the selected resource's data
+   - Jump to the target resource view with filters applied
+   - Automatically apply the label/field selectors to show only related resources
+   - Adjust the namespace context as configured
+
+3. If no custom jump is defined, the default behavior applies (describe view or built-in jump)
 
 ---
 
@@ -1267,6 +1353,7 @@ k9s:
     disableAutoscroll: false
     columnLock: false
     showTime: false
+    logBufferSize: 50
   thresholds:
     cpu:
       critical: 90

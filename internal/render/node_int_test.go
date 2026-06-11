@@ -10,6 +10,42 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+func TestNode_diagnose(t *testing.T) {
+	uu := map[string]struct {
+		ss []string
+		e  error
+	}{
+		"empty": {},
+
+		"blank": {
+			ss: []string{""},
+			e:  notReadyErr,
+		},
+
+		"cordoned": {
+			ss: []string{"SchedulingDisabled", "Ready"},
+			e:  cordonErr,
+		},
+
+		"not_ready": {
+			ss: []string{"NotReady"},
+			e:  notReadyErr,
+		},
+
+		"both": {
+			ss: []string{"SchedulingDisabled"},
+			e:  notReadyErr,
+		},
+	}
+
+	var no Node
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, no.diagnose(u.ss))
+		})
+	}
+}
+
 func Test_extractNodeGPU(t *testing.T) {
 	uu := map[string]struct {
 		rl     v1.ResourceList

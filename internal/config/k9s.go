@@ -196,6 +196,10 @@ func (k *K9s) Reset() {
 
 // ActiveContextNamespace fetch the context active ns.
 func (k *K9s) ActiveContextNamespace() (string, error) {
+	// If no context is set, return default namespace
+	if k.ActiveContextName() == "" {
+		return client.DefaultNamespace, nil
+	}
 	act, err := k.ActiveContext()
 	if err != nil {
 		return "", err
@@ -214,7 +218,11 @@ func (k *K9s) ActiveContext() (*data.Context, error) {
 	if cfg := k.getActiveConfig(); cfg != nil && cfg.Context != nil {
 		return cfg.Context, nil
 	}
-	ct, err := k.ActivateContext(k.ActiveContextName())
+	ctxName := k.ActiveContextName()
+	if ctxName == "" {
+		return nil, errors.New("no active context available")
+	}
+	ct, err := k.ActivateContext(ctxName)
 
 	return ct, err
 }
@@ -302,7 +310,11 @@ func (k *K9s) Reload() error {
 	if k.getContextSwitch() {
 		return nil
 	}
-	ct, err := k.ks.GetContext(k.getActiveContextName())
+	ctxName := k.getActiveContextName()
+	if ctxName == "" {
+		return errors.New("no active context available")
+	}
+	ct, err := k.ks.GetContext(ctxName)
 	if err != nil {
 		return err
 	}

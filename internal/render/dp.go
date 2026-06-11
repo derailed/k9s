@@ -79,7 +79,7 @@ func (d Deployment) Render(o any, _ string, row *model1.Row) error {
 	return nil
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var dp appsv1.Deployment
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &dp)

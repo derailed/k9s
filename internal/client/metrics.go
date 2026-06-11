@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	mxCacheSize   = 100
-	mxCacheExpiry = 1 * time.Minute
+	mxCacheSize           = 100
+	mxCacheExpiry         = 1 * time.Minute
+	metricsPageSize int64 = 500
 )
 
 // MetricsDial tracks global metric server handle.
@@ -168,9 +169,20 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	if err != nil {
 		return mx, err
 	}
-	mxList, err := client.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return mx, err
+	mxList := &mv1beta1.NodeMetricsList{
+		Items: make([]mv1beta1.NodeMetrics, 0, metricsPageSize),
+	}
+	opts := metav1.ListOptions{Limit: metricsPageSize}
+	for {
+		page, err := client.MetricsV1beta1().NodeMetricses().List(ctx, opts)
+		if err != nil {
+			return mx, err
+		}
+		mxList.Items = append(mxList.Items, page.Items...)
+		if page.Continue == "" {
+			break
+		}
+		opts.Continue = page.Continue
 	}
 	m.cache.Add(key, mxList, mxCacheExpiry)
 
@@ -239,13 +251,24 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	if err != nil {
 		return mx, err
 	}
-	mxList, err := client.MetricsV1beta1().PodMetricses(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return mx, err
+	mxList := &mv1beta1.PodMetricsList{
+		Items: make([]mv1beta1.PodMetrics, 0, metricsPageSize),
+	}
+	opts := metav1.ListOptions{Limit: metricsPageSize}
+	for {
+		page, err := client.MetricsV1beta1().PodMetricses(ns).List(ctx, opts)
+		if err != nil {
+			return mx, err
+		}
+		mxList.Items = append(mxList.Items, page.Items...)
+		if page.Continue == "" {
+			break
+		}
+		opts.Continue = page.Continue
 	}
 	m.cache.Add(key, mxList, mxCacheExpiry)
 
-	return mxList, err
+	return mxList, nil
 }
 
 // FetchContainersMetrics returns a pod's containers metrics.
