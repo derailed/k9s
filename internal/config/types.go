@@ -6,6 +6,7 @@ package config
 const (
 	defaultRefreshRate  = 2
 	defaultMaxConnRetry = 5
+	defaultFieldManager = "kubectl-rollout"
 
 	// CPU tracks cpu usage.
 	CPU = "cpu"

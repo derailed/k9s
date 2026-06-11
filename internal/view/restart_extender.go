@@ -59,7 +59,7 @@ func (r *RestartExtender) restartCmd(*tcell.EventKey) *tcell.EventKey {
 	opts := dialog.RestartDialogOpts{
 		Title:        "Confirm Restart",
 		Message:      msg,
-		FieldManager: "kubectl-rollout",
+		FieldManager: r.App().Config.K9s.FieldManager,
 		Ack: func(opts *metav1.PatchOptions) bool {
 			ctx, cancel := context.WithTimeout(context.Background(), r.App().Conn().Config().CallTimeout())
 			defer cancel()
