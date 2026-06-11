@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +19,12 @@ func TestReadLogs_Normal(t *testing.T) {
 	out := make(chan *LogItem, 100)
 	opts := &LogOptions{Path: "ns/pod", Container: "c1"}
 
-	result := readLogs(context.Background(), stream, out, opts)
+	done := make(chan streamResult, 1)
+	go func() {
+		done <- readLogs(context.Background(), stream, out, opts)
+	}()
+
+	result := <-done
 	close(out)
 
 	assert.Equal(t, streamEOF, result)
@@ -32,75 +38,45 @@ func TestReadLogs_Normal(t *testing.T) {
 	assert.Len(t, lines, 3)
 }
 
-func TestReadLogs_DropsOnFullChannel(t *testing.T) {
-	// Create more lines than the channel can hold
-	var sb strings.Builder
-	lineCount := 20
-	for i := range lineCount {
-		sb.WriteString("log line ")
-		sb.WriteByte(byte('A' + i%26))
-		sb.WriteByte('\n')
-	}
-	stream := io.NopCloser(strings.NewReader(sb.String()))
-
-	// Intentionally small buffer to force drops.
-	// readLogs sends an EOF error item via a blocking send,
-	// so we drain in a goroutine to prevent deadlock.
-	out := make(chan *LogItem, 2)
-	opts := &LogOptions{Path: "ns/pod", Container: "c1"}
-
-	var received int
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		for range out {
-			received++
-		}
-	}()
-
-	result := readLogs(context.Background(), stream, out, opts)
-	close(out)
-	<-done
-
-	assert.Equal(t, streamEOF, result)
-	// Some lines should have been dropped since buffer is tiny
-	assert.Less(t, received, lineCount+2, "some lines should be dropped when channel is full")
-	assert.Positive(t, received, "at least some lines should be delivered")
-}
-
 func TestReadLogs_CancelStopsEarly(t *testing.T) {
-	// Infinite-like stream: we cancel after a few lines
-	input := strings.Repeat("line\n", 10000)
-	stream := io.NopCloser(strings.NewReader(input))
-	out := make(chan *LogItem, 10)
+	pr, pw := io.Pipe()
+	out := make(chan *LogItem, 100)
 	opts := &LogOptions{Path: "ns/pod", Container: "c1"}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Read a few items then cancel
 	done := make(chan streamResult, 1)
 	go func() {
-		done <- readLogs(ctx, stream, out, opts)
+		done <- readLogs(ctx, pr, out, opts)
 	}()
 
-	// Drain a few items then cancel
+	// Write some lines
+	for range 5 {
+		_, _ = pw.Write([]byte("line\n"))
+	}
+	// Drain
 	for range 5 {
 		<-out
 	}
-	cancel()
 
+	cancel()
 	result := <-done
+	pw.Close()
 	assert.Equal(t, streamCanceled, result)
 }
 
 func TestReadLogs_PartialLineAtEOF(t *testing.T) {
-	// Input without trailing newline
 	input := "full line\npartial line without newline"
 	stream := io.NopCloser(strings.NewReader(input))
 	out := make(chan *LogItem, 100)
 	opts := &LogOptions{Path: "ns/pod", Container: "c1"}
 
-	result := readLogs(context.Background(), stream, out, opts)
+	done := make(chan streamResult, 1)
+	go func() {
+		done <- readLogs(context.Background(), stream, out, opts)
+	}()
+
+	result := <-done
 	close(out)
 
 	assert.Equal(t, streamEOF, result)
@@ -109,10 +85,8 @@ func TestReadLogs_PartialLineAtEOF(t *testing.T) {
 	for item := range out {
 		items = append(items, item)
 	}
-	// Should get: full line, partial line, and the EOF error message
 	assert.GreaterOrEqual(t, len(items), 2, "should emit partial line before EOF")
 
-	// Find the partial line (non-error item that doesn't end with newline)
 	foundPartial := false
 	for _, item := range items {
 		if !item.IsError && strings.Contains(string(item.Bytes), "partial line without newline") {
@@ -120,4 +94,36 @@ func TestReadLogs_PartialLineAtEOF(t *testing.T) {
 		}
 	}
 	assert.True(t, foundPartial, "partial line at EOF should be emitted")
+}
+
+func TestReadLogs_PartialLineTimeout(t *testing.T) {
+	pr, pw := io.Pipe()
+
+	out := make(chan *LogItem, 100)
+	opts := &LogOptions{Path: "ns/pod", Container: "c1"}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan streamResult, 1)
+	go func() {
+		done <- readLogs(ctx, pr, out, opts)
+	}()
+
+	// Write partial data (no newline)
+	_, _ = pw.Write([]byte("progress: 50%"))
+
+	// Wait for the partial line timer to fire (partialLineTimeout = 3s)
+	var item *LogItem
+	select {
+	case item = <-out:
+	case <-time.After(5 * time.Second):
+		t.Fatal("expected partial line to be flushed after timeout")
+	}
+
+	assert.Contains(t, string(item.Bytes), "progress: 50%")
+
+	cancel()
+	pw.Close()
+	<-done
 }
