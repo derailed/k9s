@@ -237,6 +237,26 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   docker run --rm -it -v ~/.kube/config:/root/.kube/config k9s-docker:0.1
   ```
 
+#### Building a multi-platform image
+
+  The `make imgx` target builds for `linux/amd64` and `linux/arm64` via Docker
+  buildx:
+
+  ```shell
+  make imgx
+  ```
+
+  Cross-architecture builds rely on QEMU emulation. Docker Desktop includes
+  this out of the box. On a plain Docker Engine install, see the
+  [buildx multi-platform docs](https://docs.docker.com/build/building/multi-platform/)
+  for enabling emulation.
+
+  Override the defaults with `BUILD_PLATFORMS`, `IMG_NAME` and `VERSION`:
+
+  ```shell
+  make imgx BUILD_PLATFORMS=linux/amd64,linux/arm64 IMG_NAME=your-org/k9s VERSION=v0.0.1
+  ```
+
 ---
 
 ## PreFlight Checks
