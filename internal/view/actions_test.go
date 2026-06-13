@@ -4,6 +4,8 @@
 package view
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"testing"
 
@@ -103,6 +105,57 @@ func TestInScope(t *testing.T) {
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, inScope(u.ss, u.aa))
+		})
+	}
+}
+
+func TestTruncErrs(t *testing.T) {
+	uu := map[string]struct {
+		err error
+		max int
+		e   string
+	}{
+		"single": {
+			err: fmt.Errorf("boom"),
+			max: 3,
+			e:   "boom",
+		},
+
+		"under-max": {
+			err: errors.Join(
+				fmt.Errorf("e1"),
+				fmt.Errorf("e2"),
+			),
+			max: 3,
+			e:   "e1\ne2",
+		},
+
+		"at-max": {
+			err: errors.Join(
+				fmt.Errorf("e1"),
+				fmt.Errorf("e2"),
+				fmt.Errorf("e3"),
+			),
+			max: 3,
+			e:   "e1\ne2\ne3",
+		},
+
+		"over-max": {
+			err: errors.Join(
+				fmt.Errorf("e1"),
+				fmt.Errorf("e2"),
+				fmt.Errorf("e3"),
+				fmt.Errorf("e4"),
+				fmt.Errorf("e5"),
+			),
+			max: 3,
+			e:   "e1\ne2\ne3\n...and 2 more (check logs)",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, truncErrs(u.err, u.max))
 		})
 	}
 }
