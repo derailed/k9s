@@ -590,12 +590,37 @@ func Test_podLimits(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m, g := cosLimits(u.cc)
+			resources := &v1.ResourceRequirements{}
+			c, m, g := cosLimits(u.cc, resources)
 			assert.True(t, c.Equal(*u.l.Cpu()))
 			assert.True(t, m.Equal(*u.l.Memory()))
 			assert.True(t, g.Equal(*extractGPU(u.l)))
 		})
 	}
+}
+
+func Test_podLimits_withPodResources(t *testing.T) {
+	// Arrange: Create containers with limits (should be ignored when pod resources exist)
+	cc := []v1.Container{
+		makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
+		makeContainer("c2", false, "10m", "1Mi", "40m", "4Mi"),
+	}
+
+	// Arrange: Create pod-level resources (these should take priority)
+	resources := &v1.ResourceRequirements{
+		Limits: v1.ResourceList{
+			v1.ResourceCPU:    res.MustParse("500m"),
+			v1.ResourceMemory: res.MustParse("512Mi"),
+		},
+	}
+
+	// Act: Get limits using pod-level resources
+	c, m, g := cosLimits(cc, resources)
+
+	// Assert: Pod-level resources are used (not container sums)
+	assert.Equal(t, "500m", c.String(), "CPU should use pod-level 500m, not container sum of 60m")
+	assert.Equal(t, "512Mi", m.String(), "Memory should use pod-level 512Mi, not container sum of 6Mi")
+	assert.True(t, g.IsZero(), "GPU should be zero when not specified")
 }
 
 func Test_podRequests(t *testing.T) {
@@ -622,12 +647,37 @@ func Test_podRequests(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m, g := cosRequests(u.cc)
+			resources := &v1.ResourceRequirements{}
+			c, m, g := cosRequests(u.cc, resources)
 			assert.True(t, c.Equal(*u.e.Cpu()))
 			assert.True(t, m.Equal(*u.e.Memory()))
 			assert.True(t, g.Equal(*extractGPU(u.e)))
 		})
 	}
+}
+
+func Test_podRequests_withPodResources(t *testing.T) {
+	// Arrange: Create containers with requests (should be ignored when pod resources exist)
+	cc := []v1.Container{
+		makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
+		makeContainer("c2", false, "10m", "1Mi", "40m", "4Mi"),
+	}
+
+	// Arrange: Create pod-level resources (these should take priority)
+	resources := &v1.ResourceRequirements{
+		Requests: v1.ResourceList{
+			v1.ResourceCPU:    res.MustParse("100m"),
+			v1.ResourceMemory: res.MustParse("128Mi"),
+		},
+	}
+
+	// Act: Get requests using pod-level resources
+	c, m, g := cosRequests(cc, resources)
+
+	// Assert: Pod-level resources are used (not container sums)
+	assert.Equal(t, "100m", c.String(), "CPU should use pod-level 100m, not container sum of 20m")
+	assert.Equal(t, "128Mi", m.String(), "Memory should use pod-level 128Mi, not container sum of 2Mi")
+	assert.True(t, g.IsZero(), "GPU should be zero when not specified")
 }
 
 func Test_readinessGateStats(t *testing.T) {
