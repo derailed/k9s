@@ -83,6 +83,18 @@
                   "name": { "type": "string" }
                 }
               }
+            },
+            "hostPathVolume": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "mountPath": { "type": "string" },
+                  "hostPath": { "type": "string" },
+                  "readOnly": { "type": "boolean" }
+                }
+              }
             }
           },
           "required": ["image", "namespace", "limits"]
