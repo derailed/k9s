@@ -64,6 +64,46 @@ func TestTableSelection(t *testing.T) {
 	assert.Equal(t, 1, v.GetSelectedRowIndex())
 }
 
+func TestTableFilterClearsMarks(t *testing.T) {
+	v := ui.NewTable(client.NewGVR("fred"))
+	v.Init(makeContext())
+	m := new(mockModel)
+	v.SetModel(m)
+	data := m.Peek()
+	cdata := v.Update(data, false)
+	v.UpdateUI(cdata, data)
+
+	// Select and mark first row.
+	v.SelectRow(1, 0, true)
+	v.ToggleMark()
+	assert.True(t, v.IsMarked("r1"), "expected r1 to be marked")
+	assert.Equal(t, 1, len(v.GetSelectedItems()))
+
+	// Apply a filter — marks must be cleared.
+	v.Filter("")
+	assert.False(t, v.IsMarked("r1"), "expected marks to be cleared after filter")
+}
+
+func TestTableFilterInputClearsMarks(t *testing.T) {
+	v := ui.NewTable(client.NewGVR("fred"))
+	v.Init(makeContext())
+	m := new(mockModel)
+	v.SetModel(m)
+	data := m.Peek()
+	cdata := v.Update(data, false)
+	v.UpdateUI(cdata, data)
+
+	// Select and mark first row.
+	v.SelectRow(1, 0, true)
+	v.ToggleMark()
+	assert.True(t, v.IsMarked("r1"), "expected r1 to be marked")
+
+	// Activate filter mode and type a character — marks must be cleared.
+	v.CmdBuff().SetActive(true)
+	v.FilterInput('x')
+	assert.False(t, v.IsMarked("r1"), "expected marks to be cleared after filter input")
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
