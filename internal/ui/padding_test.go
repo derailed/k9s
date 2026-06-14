@@ -14,7 +14,7 @@ import (
 func TestMaxColumn(t *testing.T) {
 	uu := map[string]struct {
 		t *model1.TableData
-		s string
+		s model1.SortColumns
 		e MaxyPad
 	}{
 		"ascii col 0": {
@@ -34,7 +34,7 @@ func TestMaxColumn(t *testing.T) {
 					},
 				),
 			),
-			"A",
+			model1.SortColumns{{Name: "A", ASC: true}},
 			MaxyPad{6, 6},
 		},
 		"ascii col 1": {
@@ -54,7 +54,7 @@ func TestMaxColumn(t *testing.T) {
 					},
 				),
 			),
-			"B",
+			model1.SortColumns{{Name: "B", ASC: true}},
 			MaxyPad{6, 6},
 		},
 		"non_ascii": {
@@ -74,7 +74,7 @@ func TestMaxColumn(t *testing.T) {
 					},
 				),
 			),
-			"A",
+			model1.SortColumns{{Name: "A", ASC: true}},
 			MaxyPad{32, 6},
 		},
 	}
@@ -145,6 +145,6 @@ func BenchmarkMaxColumn(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		ComputeMaxColumns(pads, "A", table)
+		ComputeMaxColumns(pads, model1.SortColumns{{Name: "A", ASC: true}}, table)
 	}
 }

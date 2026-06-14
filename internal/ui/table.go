@@ -39,7 +39,7 @@ type (
 type Table struct {
 	*SelectTable
 	gvr            *client.GVR
-	sortCol        model1.SortColumn
+	sortCols       model1.SortColumns
 	selectedColIdx int
 	manualSort     bool
 	Path           string
@@ -68,11 +68,11 @@ func NewTable(gvr *client.GVR) *Table {
 			model: model.NewTable(gvr),
 			marks: sets.New[string](),
 		},
-		ctx:     context.Background(),
-		gvr:     gvr,
-		actions: NewKeyActions(),
-		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
-		sortCol: model1.SortColumn{ASC: true},
+		ctx:      context.Background(),
+		gvr:      gvr,
+		actions:  NewKeyActions(),
+		cmdBuff:  model.NewFishBuff('/', model.FilterBuffer),
+		sortCols: model1.SortColumns{{ASC: true}},
 	}
 }
 
@@ -104,21 +104,37 @@ func (t *Table) setSortCol(sc model1.SortColumn) {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	t.sortCol = sc
+	t.sortCols = model1.SortColumns{sc}
+}
+
+func (t *Table) setSortCols(scs model1.SortColumns) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.sortCols = scs
 }
 
 func (t *Table) toggleSortCol() {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	t.sortCol.ASC = !t.sortCol.ASC
+	if len(t.sortCols) > 0 {
+		t.sortCols[0].ASC = !t.sortCols[0].ASC
+	}
 }
 
 func (t *Table) getSortCol() model1.SortColumn {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
-	return t.sortCol
+	return t.sortCols.Primary()
+}
+
+func (t *Table) getSortCols() model1.SortColumns {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.sortCols
 }
 
 func (t *Table) setMSort(b bool) {
@@ -222,6 +238,8 @@ func (t *Table) SelectPrevColumn() {
 }
 
 // SortSelectedColumn sorts by the currently selected column.
+// Pressing repeatedly on different columns stacks multi-column sort (up to 3).
+// Pressing on an already-sorted column toggles its direction.
 func (t *Table) SortSelectedColumn() {
 	data := t.GetFilteredData()
 	if data == nil || data.HeaderCount() == 0 {
@@ -233,8 +251,6 @@ func (t *Table) SortSelectedColumn() {
 		return
 	}
 
-	// Map visual column index to actual header column name
-	// (accounting for hidden columns)
 	header := data.Header()
 	visibleCol := 0
 	var colName string
@@ -253,16 +269,28 @@ func (t *Table) SortSelectedColumn() {
 		return
 	}
 
-	sc := t.getSortCol()
-
-	// Toggle direction if same column, otherwise default to ascending
-	asc := true
-	if sc.Name == colName {
-		asc = !sc.ASC
+	scs := t.getSortCols()
+	if _, found := scs.Has(colName); found {
+		scs = scs.Toggle(colName)
+	} else if !t.getMSort() {
+		scs = model1.SortColumns{{Name: colName, ASC: true}}
+	} else {
+		scs = scs.Add(model1.SortColumn{Name: colName, ASC: true})
 	}
-
-	t.SetSortCol(colName, asc)
+	t.setSortCols(scs)
 	t.setMSort(true)
+	t.Refresh()
+}
+
+// ClearMultiSort resets multi-column sort back to single-column default.
+func (t *Table) ClearMultiSort() {
+	scs := t.getSortCols()
+	if len(scs) > 1 {
+		t.setSortCols(model1.SortColumns{scs[0]})
+	} else {
+		t.setSortCols(nil)
+		t.setMSort(false)
+	}
 	t.Refresh()
 }
 
@@ -318,11 +346,12 @@ func (t *Table) GVR() *client.GVR { return t.gvr }
 func (t *Table) ViewSettingsChanged(vs *config.ViewSetting) {
 	if t.SetViewSetting(vs) {
 		if vs == nil {
-			if !t.getMSort() && !t.sortCol.IsSet() {
-				t.setSortCol(model1.SortColumn{})
+			if !t.getMSort() && !t.getSortCol().IsSet() {
+				t.setSortCols(nil)
 			}
 		} else {
 			t.setMSort(false)
+			t.setSortCols(nil)
 		}
 		t.Refresh()
 	}
@@ -450,7 +479,9 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	}
 
 	oldSortCol := t.getSortCol()
-	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
+	if !t.getSortCols().IsMulti() {
+		t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
+	}
 
 	// Initialize selected column index to match the current sort column
 	// This ensures the highlight starts at the sorted column
@@ -485,10 +516,10 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 		c.SetTextColor(fg)
 		col++
 	}
-	cdata.Sort(t.getSortCol())
+	cdata.SortMulti(t.getSortCols())
 
 	pads := make(MaxyPad, cdata.HeaderCount())
-	ComputeMaxColumns(pads, t.getSortCol().Name, cdata)
+	ComputeMaxColumns(pads, t.getSortCols(), cdata)
 	cdata.RowsRange(func(row int, re model1.RowEvent) bool {
 		ore, ok := data.FindRow(re.Row.ID)
 		if !ok {
@@ -630,11 +661,16 @@ func (t *Table) NameColIndex() int {
 
 // AddHeaderCell configures a table cell header.
 func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
-	sc := t.getSortCol()
-	sortCol := h.Name == sc.Name
+	scs := t.getSortCols()
+	sortRank := 0
+	asc := true
+	if idx, found := scs.Has(h.Name); found {
+		sortRank = idx + 1
+		asc = scs[idx].ASC
+	}
 	selectedCol := col == t.getSelectedColIdx()
 	styles := t.styles.Table()
-	c := tview.NewTableCell(columnIndicator(sortCol, selectedCol, sc.ASC, &styles, h.Name))
+	c := tview.NewTableCell(columnIndicator(sortRank, selectedCol, asc, &styles, h.Name))
 	c.SetExpansion(1)
 	c.SetSelectable(false)
 	c.SetAlign(h.Align)

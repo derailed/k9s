@@ -236,7 +236,13 @@ func (t *Table) bindKeys() {
 		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
 		ui.KeyShiftS:           ui.NewKeyAction("Sort Status", t.SortColCmd(statusCol, true), false),
 		ui.KeyShiftO:           ui.NewKeyAction("Sort Selected Column", t.sortSelectedColumnCmd, false),
+		ui.KeyShiftQ:           ui.NewKeyAction("Clear Sort", t.clearSortCmd, false),
 	})
+}
+
+func (t *Table) clearSortCmd(*tcell.EventKey) *tcell.EventKey {
+	t.Table.ClearMultiSort()
+	return nil
 }
 
 func (t *Table) toggleFaultCmd(*tcell.EventKey) *tcell.EventKey {

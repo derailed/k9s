@@ -166,6 +166,28 @@ func capacityToNumber(capacity string) int64 {
 	return quantity.Value()
 }
 
+// Compare returns -1 if v1 < v2, 0 if equal, +1 if v1 > v2.
+func Compare(isNumber, isDuration, isCapacity bool, v1, v2 string) int {
+	if v1 == v2 {
+		return 0
+	}
+	var less bool
+	switch {
+	case isNumber:
+		less = lessNumber(v1, v2)
+	case isDuration:
+		less = lessDuration(v1, v2)
+	case isCapacity:
+		less = lessCapacity(v1, v2)
+	default:
+		less = sortorder.NaturalLess(v1, v2)
+	}
+	if less {
+		return -1
+	}
+	return 1
+}
+
 // Less return true if c1 <= c2.
 func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 	var less bool

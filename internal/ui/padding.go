@@ -15,12 +15,12 @@ import (
 type MaxyPad []int
 
 // ComputeMaxColumns figures out column max size and necessary padding.
-func ComputeMaxColumns(pads MaxyPad, sortColName string, t *model1.TableData) {
+func ComputeMaxColumns(pads MaxyPad, sortCols model1.SortColumns, t *model1.TableData) {
 	const colPadding = 1
 
 	for i, n := range t.ColumnNames(true) {
 		pads[i] = len(n)
-		if n == sortColName {
+		if _, found := sortCols.Has(n); found {
 			pads[i] += 2
 		}
 	}
