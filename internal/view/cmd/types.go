@@ -69,6 +69,11 @@ var (
 		"alias",
 		"aliases",
 	)
+	pluginCmd = sets.New(
+		"plugin",
+		"plugins",
+		"plg",
+	)
 	xrayCmd = sets.New(
 		"x",
 		"xr",
