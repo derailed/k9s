@@ -248,6 +248,16 @@ func (b *Browser) BufferActive(state bool, _ model.BufferKind) {
 			b.App().filterHistory.Push(b.CmdBuff().GetText())
 		}
 	})
+
+	text := b.CmdBuff().GetText()
+	if b.command != nil {
+		if internal.IsLabelSelector(text) {
+			b.command.SetLabelArg(strings.TrimPrefix(text, "-l "))
+		} else {
+			b.command.SetFilterArg(text)
+		}
+		b.syncHistory()
+	}
 }
 
 func (b *Browser) prepareContext() context.Context {
