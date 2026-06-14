@@ -71,6 +71,21 @@ func TestPluginLoad(t *testing.T) {
 			},
 		},
 
+		"run-with-no-selection": {
+			path: "testdata/plugins/run-no-selection.yaml",
+			ee: Plugins{
+				Plugins: plugins{
+					"run-no-selection": Plugin{
+						Scopes:             []string{"po"},
+						ShortCut:           "Shift-B",
+						Description:        "debug",
+						Command:            "bash",
+						RunWithNoSelection: true,
+					},
+				},
+			},
+		},
+
 		"toast-no-file": {
 			path: "testdata/plugins/plugins-bozo.yaml",
 			ee:   NewPlugins(),
