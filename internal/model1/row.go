@@ -3,10 +3,13 @@
 
 package model1
 
+import "time"
+
 // Row represents a collection of columns.
 type Row struct {
 	ID     string
 	Fields Fields
+	Age    time.Time
 }
 
 // NewRow returns a new row with initialized fields.
@@ -50,6 +53,7 @@ func (r Row) Clone() Row {
 	return Row{
 		ID:     r.ID,
 		Fields: r.Fields.Clone(),
+		Age:    r.Age,
 	}
 }
 
@@ -67,6 +71,7 @@ type RowSorter struct {
 	IsNumber   bool
 	IsDuration bool
 	IsCapacity bool
+	IsAge      bool
 	Asc        bool
 }
 
@@ -79,9 +84,8 @@ func (s RowSorter) Swap(i, j int) {
 }
 
 func (s RowSorter) Less(i, j int) bool {
-	v1, v2 := s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index]
-	id1, id2 := s.Rows[i].ID, s.Rows[j].ID
-	less := Less(s.IsNumber, s.IsDuration, s.IsCapacity, id1, id2, v1, v2)
+	r1, r2 := s.Rows[i], s.Rows[j]
+	less := lessRow(s.IsAge, s.IsNumber, s.IsDuration, s.IsCapacity, s.Index, r1, r2)
 	if s.Asc {
 		return less
 	}

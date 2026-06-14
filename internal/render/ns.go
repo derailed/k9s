@@ -92,6 +92,7 @@ func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) err
 		AsStatus(n.diagnose(ns.Status.Phase)),
 		ToAge(ns.GetCreationTimestamp()),
 	}
+	stashAge(r, ns.GetCreationTimestamp())
 
 	return nil
 }

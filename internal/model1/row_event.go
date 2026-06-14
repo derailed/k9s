@@ -39,7 +39,7 @@ func NewRowEventWithDeltas(row Row, delta DeltaRow) RowEvent {
 }
 
 // Clone returns a row event deep copy.
-func (r RowEvent) Clone() RowEvent {
+func (r *RowEvent) Clone() RowEvent {
 	return RowEvent{
 		Kind:   r.Kind,
 		Row:    r.Row.Clone(),
@@ -48,7 +48,7 @@ func (r RowEvent) Clone() RowEvent {
 }
 
 // Customize returns a new subset based on the given column indices.
-func (r RowEvent) Customize(cols []int) RowEvent {
+func (r *RowEvent) Customize(cols []int) RowEvent {
 	delta := r.Deltas
 	if !r.Deltas.IsBlank() {
 		delta = make(DeltaRow, len(cols))
@@ -63,13 +63,13 @@ func (r RowEvent) Customize(cols []int) RowEvent {
 }
 
 // ExtractHeaderLabels extract collection of fields into header.
-func (r RowEvent) ExtractHeaderLabels(labelCol int) []string {
+func (r *RowEvent) ExtractHeaderLabels(labelCol int) []string {
 	hh, _ := sortLabels(labelize(r.Row.Fields[labelCol]))
 	return hh
 }
 
 // Labelize returns a new row event based on labels.
-func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
+func (r *RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
 	return RowEvent{
 		Kind:   r.Kind,
 		Deltas: r.Deltas.Labelize(cols, labelCol),
@@ -78,7 +78,7 @@ func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
 }
 
 // Diff returns true if the row changed.
-func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
+func (r *RowEvent) Diff(re *RowEvent, ageCol int) bool {
 	if r.Kind != re.Kind {
 		return true
 	}
@@ -108,7 +108,7 @@ func NewRowEvents(size int) *RowEvents {
 func NewRowEventsWithEvts(ee ...RowEvent) *RowEvents {
 	re := NewRowEvents(len(ee))
 	for _, e := range ee {
-		re.Add(e)
+		re.Add(&e)
 	}
 
 	return re
@@ -128,13 +128,13 @@ func (r *RowEvents) At(i int) (RowEvent, bool) {
 	return r.events[i], true
 }
 
-func (r *RowEvents) Set(i int, re RowEvent) {
-	r.events[i] = re
+func (r *RowEvents) Set(i int, re *RowEvent) {
+	r.events[i] = *re
 	r.index[re.Row.ID] = i
 }
 
-func (r *RowEvents) Add(re RowEvent) {
-	r.events = append(r.events, re)
+func (r *RowEvents) Add(re *RowEvent) {
+	r.events = append(r.events, *re)
 	r.index[re.Row.ID] = len(r.events) - 1
 }
 
@@ -174,7 +174,7 @@ func (r *RowEvents) Diff(re *RowEvents, ageCol int) bool {
 		return true
 	}
 	for i := range r.events {
-		if r.events[i].Diff(re.events[i], ageCol) {
+		if r.events[i].Diff(&re.events[i], ageCol) {
 			return true
 		}
 	}
@@ -193,9 +193,9 @@ func (r *RowEvents) Clone() *RowEvents {
 }
 
 // Upsert add or update a row if it exists.
-func (r *RowEvents) Upsert(re RowEvent) {
+func (r *RowEvents) Upsert(re *RowEvent) {
 	if idx, ok := r.FindIndex(re.Row.ID); ok {
-		r.events[idx] = re
+		r.events[idx] = *re
 	} else {
 		r.Add(re)
 	}
@@ -254,8 +254,10 @@ func (r *RowEvents) FindIndex(id string) (int, bool) {
 	return i, ok
 }
 
-// Sort rows based on column index and order.
-func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, asc bool) {
+// Sort rows based on column index and order. When isAge is true, the AGE
+// column is sorted using the stashed Row.Age timestamps so that the
+// ordering is stable and not affected by humanized-string precision loss.
+func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity, isAge, asc bool) {
 	if sortCol == -1 || r == nil {
 		return
 	}
@@ -268,6 +270,7 @@ func (r *RowEvents) Sort(ns string, sortCol int, isDuration, numCol, isCapacity,
 		IsNumber:   numCol,
 		IsDuration: isDuration,
 		IsCapacity: isCapacity,
+		IsAge:      isAge,
 	}
 	sort.Sort(t)
 	r.reindex()
@@ -291,6 +294,7 @@ type RowEventSorter struct {
 	IsNumber   bool
 	IsDuration bool
 	IsCapacity bool
+	IsAge      bool
 	Asc        bool
 }
 
@@ -303,9 +307,8 @@ func (r RowEventSorter) Swap(i, j int) {
 }
 
 func (r RowEventSorter) Less(i, j int) bool {
-	f1, f2 := r.Events.events[i].Row.Fields, r.Events.events[j].Row.Fields
-	id1, id2 := r.Events.events[i].Row.ID, r.Events.events[j].Row.ID
-	less := Less(r.IsNumber, r.IsDuration, r.IsCapacity, id1, id2, f1[r.Index], f2[r.Index])
+	r1, r2 := r.Events.events[i].Row, r.Events.events[j].Row
+	less := lessRow(r.IsAge, r.IsNumber, r.IsDuration, r.IsCapacity, r.Index, r1, r2)
 	if r.Asc {
 		return less
 	}

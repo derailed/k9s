@@ -95,6 +95,7 @@ func (r ReplicaSet) defaultRow(raw *unstructured.Unstructured, row *model1.Row) 
 		AsStatus(r.diagnose(&rs)),
 		ToAge(rs.GetCreationTimestamp()),
 	}
+	stashAge(row, rs.GetCreationTimestamp())
 
 	return nil
 }
