@@ -17,6 +17,13 @@ import (
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 )
 
+// capacityCache caches parsed capacity values to avoid expensive
+// resource.MustParse calls during sort comparisons (called O(n log n) times).
+var capacityCache = struct {
+	sync.RWMutex
+	m map[string]int64
+}{m: make(map[string]int64)}
+
 // parallelRender fans work across NumCPU batch workers.
 func parallelRender(n int, fn func(i int) error) error {
 	if n == 0 {
@@ -162,8 +169,21 @@ func capacityToNumber(capacity string) int64 {
 	if strings.TrimSpace(capacity) == "" {
 		return 0
 	}
+	capacityCache.RLock()
+	if v, ok := capacityCache.m[capacity]; ok {
+		capacityCache.RUnlock()
+		return v
+	}
+	capacityCache.RUnlock()
+
 	quantity := resource.MustParse(capacity)
-	return quantity.Value()
+	v := quantity.Value()
+
+	capacityCache.Lock()
+	capacityCache.m[capacity] = v
+	capacityCache.Unlock()
+
+	return v
 }
 
 // Less return true if c1 <= c2.

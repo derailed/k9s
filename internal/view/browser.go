@@ -35,14 +35,15 @@ import (
 type Browser struct {
 	*Table
 
-	namespaces map[int]string
-	meta       *metav1.APIResource
-	accessor   dao.Accessor
-	contextFn  ContextFunc
-	cancelFn   context.CancelFunc
-	mx         sync.RWMutex
-	updating   bool
-	firstView  atomic.Int32
+	namespaces    map[int]string
+	meta          *metav1.APIResource
+	accessor      dao.Accessor
+	contextFn     ContextFunc
+	cancelFn      context.CancelFunc
+	mx            sync.RWMutex
+	updating      bool
+	actionsLoaded bool
+	firstView     atomic.Int32
 }
 
 // NewBrowser returns a new browser.
@@ -173,6 +174,7 @@ func (b *Browser) Start() {
 
 	b.Stop()
 	b.firstView.Store(0) // Reset first view counter on each start
+	b.actionsLoaded = false
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -664,13 +666,16 @@ func (b *Browser) refreshActions() {
 	}
 	b.Actions().Merge(aa)
 
-	if err := pluginActions(b, b.Actions()); err != nil {
-		slog.Warn("Plugins load failed", slogs.Error, err)
-		b.app.Logo().Warn("Plugins load failed!")
-	}
-	if err := hotKeyActions(b, b.Actions()); err != nil {
-		slog.Warn("Hotkeys load failed", slogs.Error, err)
-		b.app.Logo().Warn("HotKeys load failed!")
+	if !b.actionsLoaded {
+		if err := pluginActions(b, b.Actions()); err != nil {
+			slog.Warn("Plugins load failed", slogs.Error, err)
+			b.app.Logo().Warn("Plugins load failed!")
+		}
+		if err := hotKeyActions(b, b.Actions()); err != nil {
+			slog.Warn("Hotkeys load failed", slogs.Error, err)
+			b.app.Logo().Warn("HotKeys load failed!")
+		}
+		b.actionsLoaded = true
 	}
 	b.app.Menu().HydrateMenu(b.Hints())
 }
