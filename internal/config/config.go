@@ -40,6 +40,11 @@ func (c *Config) IsReadOnly() bool {
 	return c.K9s.IsReadOnly()
 }
 
+// ToggleReadOnly toggles the read-only mode at runtime.
+func (c *Config) ToggleReadOnly() {
+	c.K9s.ToggleReadOnly()
+}
+
 // ActiveClusterName returns the corresponding cluster name.
 func (c *Config) ActiveClusterName(contextName string) (string, error) {
 	ct, err := c.settings.GetContext(contextName)
