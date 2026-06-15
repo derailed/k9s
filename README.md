@@ -516,6 +516,10 @@ Clipboard behavior can also be controlled via environment variables:
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
       skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
+      # Replaces the K9s header logo with custom ascii art. Can be overridden per context.
+      logo: |
+        MY
+        K9S
       # Convert dark skins to light, or vice versa, preserving hue. Default: false
       invert: false
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
@@ -1304,6 +1308,9 @@ To skin a specific context and provided the file `in-the-navy.yaml` is present i
 k9s:
   cluster: clusterX
   skin: in-the-navy
+  logo: |
+    PROD
+    CLUSTER
   readOnly: false
   namespace:
     active: default
@@ -1341,6 +1348,10 @@ k9s:
     reactive: false
     # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
     skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+    # Replaces the K9s header logo with custom ascii art. Can be overridden per context.
+    logo: |
+      MY
+      K9S
     defaultsToFullScreen: false
   skipLatestRevCheck: false
   disablePodCounting: false
