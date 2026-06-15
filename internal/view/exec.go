@@ -173,6 +173,13 @@ func edit(a *App, opts *shellOpts) bool {
 	return status
 }
 
+func shellQuote(s string) string {
+	if !strings.ContainsAny(s, " \t\n\"'\\") {
+		return s
+	}
+	return `"` + strings.ReplaceAll(strings.ReplaceAll(s, `\`, `\\`), `"`, `\"`) + `"`
+}
+
 func execute(opts *shellOpts, statusChan chan<- string) error {
 	if opts.clear {
 		clearScreen()
@@ -212,6 +219,9 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 		if binTokens, err := shlex.Split(env); err == nil && len(binTokens) > 0 {
 			if bin, err := exec.LookPath(binTokens[0]); err == nil {
 				binTokens[0] = bin
+				for i := range binTokens {
+					binTokens[i] = shellQuote(binTokens[i])
+				}
 				cmd.Env = append(os.Environ(), fmt.Sprintf("KUBE_EDITOR=%s", strings.Join(binTokens, " ")))
 			}
 		}
