@@ -12,6 +12,9 @@ const (
 
 	// DefaultSinceSeconds tracks default log age.
 	DefaultSinceSeconds = -1 // tail logs by default
+
+	// DefaultLogBufferSize is the channel buffer for log streaming.
+	DefaultLogBufferSize = 50
 )
 
 // Logger tracks logger options.
@@ -23,14 +26,16 @@ type Logger struct {
 	DisableAutoscroll bool  `json:"disableAutoscroll" yaml:"disableAutoscroll"`
 	ColumnLock        bool  `json:"columnLock" yaml:"columnLock"`
 	ShowTime          bool  `json:"showTime" yaml:"showTime"`
+	LogBufferSize     int   `json:"logBufferSize" yaml:"logBufferSize"`
 }
 
 // NewLogger returns a new instance.
 func NewLogger() Logger {
 	return Logger{
-		TailCount:    DefaultLoggerTailCount,
-		BufferSize:   MaxLogThreshold,
-		SinceSeconds: DefaultSinceSeconds,
+		TailCount:     DefaultLoggerTailCount,
+		BufferSize:    MaxLogThreshold,
+		SinceSeconds:  DefaultSinceSeconds,
+		LogBufferSize: DefaultLogBufferSize,
 	}
 }
 
@@ -47,6 +52,9 @@ func (l Logger) Validate() Logger {
 	}
 	if l.SinceSeconds == 0 {
 		l.SinceSeconds = DefaultSinceSeconds
+	}
+	if l.LogBufferSize <= 0 {
+		l.LogBufferSize = DefaultLogBufferSize
 	}
 
 	return l
