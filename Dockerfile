@@ -19,7 +19,7 @@ RUN apk --no-cache add --update make libx11-dev git gcc libc-dev curl \
 # Pinning this stage to $BUILDPLATFORM would yield an amd64 runtime image (incl.
 # kubectl) even for the arm64 manifest entry, so we let it default to
 # $TARGETPLATFORM and use buildx's TARGETARCH to fetch the matching kubectl.
-FROM alpine:3.23.3
+FROM alpine:3.24.0
 ARG KUBECTL_VERSION="v1.32.2"
 ARG TARGETARCH
 
