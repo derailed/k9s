@@ -273,6 +273,7 @@ func (p *Pulse) PulseFailed(err error) {
 func (p *Pulse) bindKeys() {
 	p.actions.Merge(ui.NewKeyActionsFromMap(ui.KeyMap{
 		tcell.KeyEnter:   ui.NewKeyAction("Goto", p.enterCmd, true),
+		tcell.KeyLF:      ui.NewKeyAction("Goto", p.enterCmd, true),
 		tcell.KeyTab:     ui.NewKeyAction("Next", p.nextFocusCmd(dirLeft), true),
 		tcell.KeyBacktab: ui.NewKeyAction("Prev", p.nextFocusCmd(dirRight), true),
 		tcell.KeyDown:    ui.NewKeyAction("Down", p.nextFocusCmd(dirDown), false),

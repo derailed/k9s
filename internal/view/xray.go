@@ -142,6 +142,7 @@ func (x *Xray) bindKeys() {
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", x.activateCmd, false),
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", x.resetCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Goto", x.gotoCmd, true),
+		tcell.KeyLF:     ui.NewKeyAction("Goto", x.gotoCmd, true),
 	})
 }
 

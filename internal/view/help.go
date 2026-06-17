@@ -85,6 +85,7 @@ func (h *Help) bindKeys() {
 		ui.KeyQ:         ui.NewKeyAction("Back", h.app.PrevCmd, false),
 		ui.KeyHelp:      ui.NewKeyAction("Back", h.app.PrevCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Back", h.app.PrevCmd, false),
+		tcell.KeyLF:     ui.NewKeyAction("Back", h.app.PrevCmd, false),
 	})
 }
 
