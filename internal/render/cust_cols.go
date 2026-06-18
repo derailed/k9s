@@ -208,7 +208,15 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			vals, err = parser.FindResults(rv.Elem().Interface())
 		}
 		if err != nil {
-			return nil, err
+			slog.Debug("Custom column value not available",
+				slogs.Name, cc[idx].Header.Name,
+				slogs.Error, err,
+			)
+			cols[idx] = RenderedCol{
+				Header: cc[idx].Header,
+				Value:  MissingValue,
+			}
+			continue
 		}
 		values := make([]string, 0, len(vals))
 		if len(vals) == 0 || len(vals[0]) == 0 {
