@@ -45,10 +45,7 @@ func (c ClusterRoleBinding) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := c.specs.realize(raw, defaultCRBHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := c.specs.realize(raw, defaultCRBHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

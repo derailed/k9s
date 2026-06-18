@@ -109,7 +109,7 @@ func (cc ColumnSpecs) Header(rh model1.Header) model1.Header {
 	return hh
 }
 
-func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Row) (RenderedCols, error) {
+func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Row) RenderedCols {
 	parsers := make([]*jsonpath.JSONPath, len(cc))
 	for ix := range cc {
 		if cc[ix].Spec == "" {
@@ -139,7 +139,7 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 		}
 	}
 
-	return vv, nil
+	return vv
 }
 
 func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh model1.Header, row *model1.Row) RenderedCols {

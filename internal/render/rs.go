@@ -57,10 +57,7 @@ func (r ReplicaSet) Render(o any, _ string, row *model1.Row) error {
 	if r.specs.isEmpty() {
 		return nil
 	}
-	cols, err := r.specs.realize(raw, defaultRSHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := r.specs.realize(raw, defaultRSHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

@@ -50,10 +50,7 @@ func (p PersistentVolumeClaim) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := p.specs.realize(raw, defaultPVCHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := p.specs.realize(raw, defaultPVCHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

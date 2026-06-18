@@ -40,10 +40,7 @@ func (m Generic) Render(o any, _ string, row *model1.Row) error {
 	if m.specs.isEmpty() {
 		return nil
 	}
-	cols, err := m.specs.realize(o.(*unstructured.Unstructured), defaultGENHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := m.specs.realize(o.(*unstructured.Unstructured), defaultGENHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

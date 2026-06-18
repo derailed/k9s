@@ -43,10 +43,7 @@ func (r Role) Render(o any, _ string, row *model1.Row) error {
 	if r.specs.isEmpty() {
 		return nil
 	}
-	cols, err := r.specs.realize(raw, defaultROHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := r.specs.realize(raw, defaultROHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

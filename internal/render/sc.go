@@ -48,10 +48,7 @@ func (s StorageClass) Render(o any, _ string, row *model1.Row) error {
 	if s.specs.isEmpty() {
 		return nil
 	}
-	cols, err := s.specs.realize(raw, defaultSCHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := s.specs.realize(raw, defaultSCHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

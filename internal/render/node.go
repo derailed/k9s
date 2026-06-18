@@ -103,10 +103,7 @@ func (n Node) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := n.specs.realize(nwm.Raw, defaultNOHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := n.specs.realize(nwm.Raw, defaultNOHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

@@ -51,10 +51,7 @@ func (d DaemonSet) Render(o any, _ string, row *model1.Row) error {
 	if d.specs.isEmpty() {
 		return nil
 	}
-	cols, err := d.specs.realize(raw, defaultDSHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := d.specs.realize(raw, defaultDSHeader, row)
 	cols.hydrateRow(row)
 
 	return nil
