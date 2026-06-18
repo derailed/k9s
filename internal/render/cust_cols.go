@@ -127,10 +127,7 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 		}
 	}
 
-	vv, err := hydrate(o, cc, parsers, rh, row)
-	if err != nil {
-		return nil, err
-	}
+	vv := hydrate(o, cc, parsers, rh, row)
 	for _, hc := range rh {
 		if vv.HasHeader(hc.Name) {
 			continue
@@ -145,7 +142,7 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 	return vv, nil
 }
 
-func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh model1.Header, row *model1.Row) (RenderedCols, error) {
+func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh model1.Header, row *model1.Row) RenderedCols {
 	cols := make(RenderedCols, len(parsers))
 	for idx := range parsers {
 		if idx >= len(cc) {
@@ -233,7 +230,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 		}
 	}
 
-	return cols, nil
+	return cols
 }
 
 func formatColValue(h model1.HeaderColumn, v any) string {
