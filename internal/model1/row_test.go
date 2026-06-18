@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
@@ -334,37 +333,52 @@ func TestRowsSortDuration(t *testing.T) {
 		},
 		"years": {
 			rows: model1.Rows{
-				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},
-				{Fields: []string{testTime().String(), "duh"}},
+				{Fields: []string{"1y", "blee"}},
+				{Fields: []string{"22s", "duh"}},
 			},
 			col: 0,
 			asc: true,
 			e: model1.Rows{
-				{Fields: []string{testTime().String(), "duh"}},
-				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},
+				{Fields: []string{"22s", "duh"}},
+				{Fields: []string{"1y", "blee"}},
 			},
 		},
 		"durationAsc": {
 			rows: model1.Rows{
-				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
-				{Fields: []string{testTime().String(), "blee"}},
+				{Fields: []string{"10s", "duh"}},
+				{Fields: []string{"1s", "blee"}},
 			},
 			col: 0,
 			asc: true,
 			e: model1.Rows{
-				{Fields: []string{testTime().String(), "blee"}},
-				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
+				{Fields: []string{"1s", "blee"}},
+				{Fields: []string{"10s", "duh"}},
 			},
 		},
 		"durationDesc": {
 			rows: model1.Rows{
-				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
-				{Fields: []string{testTime().String(), "blee"}},
+				{Fields: []string{"1s", "blee"}},
+				{Fields: []string{"10s", "duh"}},
 			},
 			col: 0,
 			e: model1.Rows{
-				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
-				{Fields: []string{testTime().String(), "blee"}},
+				{Fields: []string{"10s", "duh"}},
+				{Fields: []string{"1s", "blee"}},
+			},
+		},
+		"durationEqualValueDiffStringAsc": {
+			// "60s" and "1m" parse to the same number of seconds but are
+			// different strings. Ordering must be deterministic (by ID) and
+			// must not violate strict-weak-ordering.
+			rows: model1.Rows{
+				{ID: "b", Fields: []string{"1m", "duh"}},
+				{ID: "a", Fields: []string{"60s", "blee"}},
+			},
+			col: 0,
+			asc: true,
+			e: model1.Rows{
+				{ID: "a", Fields: []string{"60s", "blee"}},
+				{ID: "b", Fields: []string{"1m", "duh"}},
 			},
 		},
 	}
