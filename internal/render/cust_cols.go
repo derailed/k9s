@@ -208,15 +208,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			vals, err = parser.FindResults(rv.Elem().Interface())
 		}
 		if err != nil {
-			slog.Debug("Custom column value not available",
-				slogs.Name, cc[idx].Header.Name,
-				slogs.Error, err,
-			)
-			cols[idx] = RenderedCol{
-				Header: cc[idx].Header,
-				Value:  MissingValue,
-			}
-			continue
+			return nil, err
 		}
 		values := make([]string, 0, len(vals))
 		if len(vals) == 0 || len(vals[0]) == 0 {
@@ -224,43 +216,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 		}
 		for i := range vals {
 			for j := range vals[i] {
-				var (
-					strVal string
-					v      = vals[i][j].Interface()
-				)
-				switch {
-				case cc[idx].Header.MXC:
-					switch k := v.(type) {
-					case resource.Quantity:
-						strVal = toMc(k.MilliValue())
-					case string:
-						if q, err := resource.ParseQuantity(k); err == nil {
-							strVal = toMc(q.MilliValue())
-						}
-					}
-				case cc[idx].Header.MXM:
-					switch k := v.(type) {
-					case resource.Quantity:
-						strVal = toMi(k.MilliValue())
-					case string:
-						if q, err := resource.ParseQuantity(k); err == nil {
-							strVal = toMi(q.MilliValue())
-						}
-					}
-				case cc[idx].Header.Time:
-					switch k := v.(type) {
-					case string:
-						if t, err := time.Parse(time.RFC3339, k); err == nil {
-							strVal = ToAge(metav1.Time{Time: t})
-						}
-					case metav1.Time:
-						strVal = ToAge(k)
-					}
-				}
-				if strVal == "" {
-					strVal = fmt.Sprintf("%v", v)
-				}
-				values = append(values, strVal)
+				values = append(values, formatColValue(cc[idx].Header, vals[i][j].Interface()))
 			}
 		}
 		cols[idx] = RenderedCol{
@@ -270,6 +226,44 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 	}
 
 	return cols, nil
+}
+
+func formatColValue(h model1.HeaderColumn, v any) string {
+	var strVal string
+	switch {
+	case h.MXC:
+		switch k := v.(type) {
+		case resource.Quantity:
+			strVal = toMc(k.MilliValue())
+		case string:
+			if q, err := resource.ParseQuantity(k); err == nil {
+				strVal = toMc(q.MilliValue())
+			}
+		}
+	case h.MXM:
+		switch k := v.(type) {
+		case resource.Quantity:
+			strVal = toMi(k.MilliValue())
+		case string:
+			if q, err := resource.ParseQuantity(k); err == nil {
+				strVal = toMi(q.MilliValue())
+			}
+		}
+	case h.Time:
+		switch k := v.(type) {
+		case string:
+			if t, err := time.Parse(time.RFC3339, k); err == nil {
+				strVal = ToAge(metav1.Time{Time: t})
+			}
+		case metav1.Time:
+			strVal = ToAge(k)
+		}
+	}
+	if strVal == "" {
+		strVal = fmt.Sprintf("%v", v)
+	}
+
+	return strVal
 }
 
 func isJQSpec(spec string) bool {
