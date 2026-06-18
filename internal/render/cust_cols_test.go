@@ -258,8 +258,7 @@ func TestHydrateNilObject(t *testing.T) {
 	}
 
 	// Test with nil object - should not panic
-	cols, err := hydrate(nil, cc, parsers, rh, row)
-	require.NoError(t, err)
+	cols := hydrate(nil, cc, parsers, rh, row)
 	assert.Len(t, cols, 1)
 	assert.Equal(t, NAValue, cols[0].Value)
 }
