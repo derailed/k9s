@@ -55,10 +55,7 @@ func (c CronJob) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := c.specs.realize(raw, defaultCJHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := c.specs.realize(raw, defaultCJHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

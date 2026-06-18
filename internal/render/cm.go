@@ -41,10 +41,7 @@ func (m ConfigMap) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols, err := m.specs.realize(o.(*unstructured.Unstructured), defaultCMHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := m.specs.realize(o.(*unstructured.Unstructured), defaultCMHeader, row)
 	cols.hydrateRow(row)
 
 	return nil

@@ -50,10 +50,7 @@ func (s StatefulSet) Render(o any, _ string, row *model1.Row) error {
 	if s.specs.isEmpty() {
 		return nil
 	}
-	cols, err := s.specs.realize(raw, defaultSTSHeader, row)
-	if err != nil {
-		return err
-	}
+	cols := s.specs.realize(raw, defaultSTSHeader, row)
 	cols.hydrateRow(row)
 
 	return nil
