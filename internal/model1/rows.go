@@ -47,14 +47,16 @@ func (rr Rows) Find(id string) (int, bool) {
 	return 0, false
 }
 
-// Sort rows based on column index and order.
-func (rr Rows) Sort(col int, asc, isNum, isDur, isCapacity bool) {
+// Sort rows based on column index and order. When isAge is true, the AGE
+// column is sorted using the stashed Row.Age timestamps for stable ordering.
+func (rr Rows) Sort(col int, asc, isNum, isDur, isCapacity, isAge bool) {
 	t := RowSorter{
 		Rows:       rr,
 		Index:      col,
 		IsNumber:   isNum,
 		IsDuration: isDur,
 		IsCapacity: isCapacity,
+		IsAge:      isAge,
 		Asc:        asc,
 	}
 	sort.Sort(t)

@@ -98,6 +98,7 @@ func (p PersistentVolumeClaim) defaultRow(raw *unstructured.Unstructured, r *mod
 		AsStatus(p.diagnose(string(phase))),
 		ToAge(pvc.GetCreationTimestamp()),
 	}
+	stashAge(r, pvc.GetCreationTimestamp())
 
 	return nil
 }
