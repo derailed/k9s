@@ -55,10 +55,10 @@ func (c CronJob) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols := c.specs.realize(raw, defaultCJHeader, row)
+	cols, err := c.specs.realize(raw, defaultCJHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.

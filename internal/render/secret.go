@@ -45,10 +45,10 @@ func (s Secret) Render(o any, _ string, row *model1.Row) error {
 	if s.specs.isEmpty() {
 		return nil
 	}
-	cols := s.specs.realize(raw, defaultSECHeader, row)
+	cols, err := s.specs.realize(raw, defaultSECHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (Secret) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

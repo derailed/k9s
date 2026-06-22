@@ -42,10 +42,10 @@ func (p ClusterRole) Render(o any, _ string, row *model1.Row) error {
 	if p.specs.isEmpty() {
 		return nil
 	}
-	cols := p.specs.realize(raw, defaultCRHeader, row)
+	cols, err := p.specs.realize(raw, defaultCRHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.

@@ -53,10 +53,10 @@ func (p NetworkPolicy) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols := p.specs.realize(raw, defaultNPHeader, row)
+	cols, err := p.specs.realize(raw, defaultNPHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

@@ -40,10 +40,10 @@ func (e Endpoints) Render(o any, ns string, row *model1.Row) error {
 	if e.specs.isEmpty() {
 		return nil
 	}
-	cols := e.specs.realize(o.(*unstructured.Unstructured), defaultEPHeader, row)
+	cols, err := e.specs.realize(o.(*unstructured.Unstructured), defaultEPHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (e Endpoints) defaultRow(o any, ns string, r *model1.Row) error {

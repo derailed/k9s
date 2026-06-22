@@ -103,10 +103,10 @@ func (n Node) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols := n.specs.realize(nwm.Raw, defaultNOHeader, row)
+	cols, err := n.specs.realize(nwm.Raw, defaultNOHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.

@@ -52,10 +52,10 @@ func (c CustomResourceDefinition) Render(o any, _ string, row *model1.Row) error
 	if c.specs.isEmpty() {
 		return nil
 	}
-	cols := c.specs.realize(raw, defaultCRDHeader, row)
+	cols, err := c.specs.realize(raw, defaultCRDHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.

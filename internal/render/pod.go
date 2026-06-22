@@ -140,10 +140,10 @@ func (p *Pod) Render(o any, _ string, row *model1.Row) error {
 	if p.specs.isEmpty() {
 		return nil
 	}
-	cols := p.specs.realize(pwm.Raw.DeepCopy(), defaultPodHeader, row)
+	cols, err := p.specs.realize(pwm.Raw.DeepCopy(), defaultPodHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {

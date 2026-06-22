@@ -109,7 +109,7 @@ func (cc ColumnSpecs) Header(rh model1.Header) model1.Header {
 	return hh
 }
 
-func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Row) RenderedCols {
+func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Row) (RenderedCols, error) {
 	parsers := make([]*jsonpath.JSONPath, len(cc))
 	for ix := range cc {
 		if cc[ix].Spec == "" {
@@ -127,7 +127,7 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 		}
 	}
 
-	vv := hydrate(o, cc, parsers, rh, row)
+	vv, err := hydrate(o, cc, parsers, rh, row)
 	for _, hc := range rh {
 		if vv.HasHeader(hc.Name) {
 			continue
@@ -139,11 +139,12 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 		}
 	}
 
-	return vv
+	return vv, err
 }
 
-func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh model1.Header, row *model1.Row) RenderedCols {
+func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh model1.Header, row *model1.Row) (RenderedCols, error) {
 	cols := make(RenderedCols, len(parsers))
+	var rerr error
 	for idx := range parsers {
 		if idx >= len(cc) {
 			continue
@@ -205,10 +206,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			vals, err = parser.FindResults(rv.Elem().Interface())
 		}
 		if err != nil {
-			slog.Debug("Custom column value not available",
-				slogs.Name, cc[idx].Header.Name,
-				slogs.Error, err,
-			)
+			rerr = errors.Join(rerr, fmt.Errorf("%w: %q: %w", model1.ErrCustomColumn, cc[idx].Header.Name, err))
 			cols[idx] = RenderedCol{
 				Header: cc[idx].Header,
 				Value:  MissingValue,
@@ -230,7 +228,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 		}
 	}
 
-	return cols
+	return cols, rerr
 }
 
 func formatColValue(h model1.HeaderColumn, v any) string {

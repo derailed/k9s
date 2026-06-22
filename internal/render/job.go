@@ -52,10 +52,10 @@ func (j Job) Render(o any, _ string, row *model1.Row) error {
 	if j.specs.isEmpty() {
 		return nil
 	}
-	cols := j.specs.realize(raw, defaultJOBHeader, row)
+	cols, err := j.specs.realize(raw, defaultJOBHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

@@ -52,10 +52,10 @@ func (s Service) Render(o any, _ string, row *model1.Row) error {
 	if s.specs.isEmpty() {
 		return nil
 	}
-	cols := s.specs.realize(raw, defaultSVCHeader, row)
+	cols, err := s.specs.realize(raw, defaultSVCHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (s Service) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
