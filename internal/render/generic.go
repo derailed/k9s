@@ -40,10 +40,10 @@ func (m Generic) Render(o any, _ string, row *model1.Row) error {
 	if m.specs.isEmpty() {
 		return nil
 	}
-	cols := m.specs.realize(o.(*unstructured.Unstructured), defaultGENHeader, row)
+	cols, err := m.specs.realize(o.(*unstructured.Unstructured), defaultGENHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.

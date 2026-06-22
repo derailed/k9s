@@ -53,10 +53,10 @@ func (p PodDisruptionBudget) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols := p.specs.realize(raw, defaultPDBHeader, row)
+	cols, err := p.specs.realize(raw, defaultPDBHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

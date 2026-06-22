@@ -79,10 +79,10 @@ func (p PersistentVolume) Render(o any, _ string, row *model1.Row) error {
 	if p.specs.isEmpty() {
 		return nil
 	}
-	cols := p.specs.realize(raw, defaultPVHeader, row)
+	cols, err := p.specs.realize(raw, defaultPVHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (p PersistentVolume) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

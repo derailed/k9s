@@ -100,10 +100,10 @@ func (t *Table) Render(o any, ns string, r *model1.Row) error {
 	if obj != nil {
 		obj = obj.DeepCopyObject()
 	}
-	cols := t.specs.realize(obj, t.defaultHeader(), r)
+	cols, err := t.specs.realize(obj, t.defaultHeader(), r)
 	cols.hydrateRow(r)
 
-	return nil
+	return err
 }
 
 func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error {

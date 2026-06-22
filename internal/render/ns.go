@@ -68,10 +68,10 @@ func (n Namespace) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 
-	cols := n.specs.realize(raw, defaultNSHeader, row)
+	cols, err := n.specs.realize(raw, defaultNSHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

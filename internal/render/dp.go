@@ -70,10 +70,10 @@ func (d Deployment) Render(o any, _ string, row *model1.Row) error {
 	if d.specs.isEmpty() {
 		return nil
 	}
-	cols := d.specs.realize(raw, defaultDPHeader, row)
+	cols, err := d.specs.realize(raw, defaultDPHeader, row)
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.
