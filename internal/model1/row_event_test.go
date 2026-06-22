@@ -5,7 +5,6 @@ package model1_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
@@ -422,17 +421,32 @@ func TestRowEventsSort(t *testing.T) {
 	}{
 		"age_time": {
 			re: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", testTime().Add(20 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", testTime().Add(10 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", testTime().String()}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "2m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "1m"}}},
 			),
 			col:      2,
 			asc:      true,
 			duration: true,
 			e: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", testTime().String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", testTime().Add(10 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", testTime().Add(20 * time.Second).String()}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "1m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "2m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3m"}}},
+			),
+		},
+		"age_time_equal_value": {
+			// Different strings, identical parsed duration: order must be
+			// deterministic (by ID asc) and must not depend on input order.
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "1m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "60s"}}},
+			),
+			col:      2,
+			asc:      true,
+			duration: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "60s"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "1m"}}},
 			),
 		},
 		"col0": {

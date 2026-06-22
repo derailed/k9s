@@ -83,6 +83,18 @@
                   "name": { "type": "string" }
                 }
               }
+            },
+            "hostPathVolume": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "mountPath": { "type": "string" },
+                  "hostPath": { "type": "string" },
+                  "readOnly": { "type": "boolean" }
+                }
+              }
             }
           },
           "required": ["image", "namespace", "limits"]
@@ -122,7 +134,8 @@
             "textWrap": {"type": "boolean"},
             "disableAutoscroll": {"type": "boolean"},
             "columnLock": {"type": "boolean"},
-            "showTime": {"type": "boolean"}
+            "showTime": {"type": "boolean"},
+            "logBufferSize": {"type": "integer"}
           }
         },
         "thresholds": {

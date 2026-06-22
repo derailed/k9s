@@ -186,35 +186,35 @@ func capacityToNumber(capacity string) int64 {
 	return v
 }
 
-// Less return true if c1 <= c2.
+// Less return true if v1 sorts before v2.
 func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
-	var less bool
+	var less, equal bool
 	switch {
 	case isNumber:
 		less = lessNumber(v1, v2)
 	case isDuration:
-		less = lessDuration(v1, v2)
+		less, equal = lessDuration(v1, v2)
 	case isCapacity:
-		less = lessCapacity(v1, v2)
+		less, equal = lessCapacity(v1, v2)
 	default:
 		less = sortorder.NaturalLess(v1, v2)
 	}
-	if v1 == v2 {
+	if v1 == v2 || equal {
 		return sortorder.NaturalLess(id1, id2)
 	}
 
 	return less
 }
 
-func lessDuration(s1, s2 string) bool {
+func lessDuration(s1, s2 string) (less, equal bool) {
 	d1, d2 := durationToSeconds(s1), durationToSeconds(s2)
-	return d1 <= d2
+	return d1 < d2, d1 == d2
 }
 
-func lessCapacity(s1, s2 string) bool {
+func lessCapacity(s1, s2 string) (less, equal bool) {
 	c1, c2 := capacityToNumber(s1), capacityToNumber(s2)
 
-	return c1 <= c2
+	return c1 < c2, c1 == c2
 }
 
 func lessNumber(s1, s2 string) bool {

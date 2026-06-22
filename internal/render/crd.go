@@ -91,7 +91,7 @@ func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *
 		naStrings(versions),
 		string(crd.Spec.Scope),
 		naStrings(crd.Spec.Names.ShortNames),
-		mapToIfc(crd.GetLabels()),
+		mapToStr(crd.GetLabels()),
 		AsStatus(c.diagnose(crd.Name, crd.Spec.Versions)),
 		ToAge(crd.GetCreationTimestamp()),
 	}

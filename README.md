@@ -237,6 +237,26 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   docker run --rm -it -v ~/.kube/config:/root/.kube/config k9s-docker:0.1
   ```
 
+#### Building a multi-platform image
+
+  The `make imgx` target builds for `linux/amd64` and `linux/arm64` via Docker
+  buildx:
+
+  ```shell
+  make imgx
+  ```
+
+  Cross-architecture builds rely on QEMU emulation. Docker Desktop includes
+  this out of the box. On a plain Docker Engine install, see the
+  [buildx multi-platform docs](https://docs.docker.com/build/building/multi-platform/)
+  for enabling emulation.
+
+  Override the defaults with `BUILD_PLATFORMS`, `IMG_NAME` and `VERSION`:
+
+  ```shell
+  make imgx BUILD_PLATFORMS=linux/amd64,linux/arm64 IMG_NAME=your-org/k9s VERSION=v0.0.1
+  ```
+
 ---
 
 ## PreFlight Checks
@@ -495,7 +515,7 @@ Clipboard behavior can also be controlled via environment variables:
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overridden with K9S_SKIN.
       # Convert dark skins to light, or vice versa, preserving hue. Default: false
       invert: false
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
@@ -524,6 +544,8 @@ Clipboard behavior can also be controlled via environment variables:
       columnLock: false
       # Toggles log line timestamp info. Default false
       showTime: false
+      # Sets the internal log channel buffer size. Increase when log lines are dropped under high throughput. Default 50
+      logBufferSize: 100
     # Provide shell pod customization when nodeShell feature gate is enabled!
     shellPod:
       # The shell pod image to use.
@@ -847,13 +869,15 @@ jumps:
 
 ### Template Syntax
 
-Both `labelSelector` and `fieldSelector` support Go template syntax to dynamically reference fields from the selected resource:
+Both `labelSelector` and `fieldSelector` support Go template syntax to dynamically reference fields from the selected (source) resource. Any field of the source object can be used on the **value** side of a selector:
 
 * `{{.metadata.name}}` - The resource name
 * `{{.metadata.namespace}}` - The resource namespace
 * `{{.metadata.labels.key}}` - A specific label value
-* `{{.spec.fieldName}}` - Any field from the resource spec
-* `{{.status.field}}` - Any field from the resource status
+* `{{.spec.fieldName}}` - Any field from the source resource spec
+* `{{.status.field}}` - Any field from the source resource status
+
+> **Note:** The template above only controls the selector *value* (the right-hand side, computed from the source resource). The selector *key* is still validated by the Kubernetes API server against the **target** resource. Label selector keys can be any label, but **field selector keys are restricted**: for most resources only `metadata.name`/`metadata.namespace` are selectable, and for CRDs the target field must be declared in the CRD's `spec.versions[].selectableFields`. k9s passes the field selector straight to the API server (no local filtering), so referencing a non-selectable field returns `field label not supported`. See the Kubernetes docs on [CRD selectable fields](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#crd-selectable-fields).
 
 ### Examples
 
@@ -1341,6 +1365,7 @@ k9s:
     disableAutoscroll: false
     columnLock: false
     showTime: false
+    logBufferSize: 50
   thresholds:
     cpu:
       critical: 90
