@@ -494,6 +494,9 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		msg := fmt.Sprintf("Delete %s %s?", b.GVR().R(), selections[0])
 		if len(selections) > 1 {
 			msg = fmt.Sprintf("Delete %d marked %s?", len(selections), b.GVR())
+			if hidden := b.countHiddenMarks(selections); hidden > 0 {
+				msg += fmt.Sprintf(" (%d currently hidden by filter)", hidden)
+			}
 		}
 		if !dao.IsK8sMeta(b.meta) {
 			b.simpleDelete(selections, msg)
@@ -503,6 +506,21 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
+}
+
+// countHiddenMarks returns the number of marked items not visible in the current filtered view.
+func (b *Browser) countHiddenMarks(selections []string) int {
+	if b.CmdBuff().Empty() {
+		return 0
+	}
+	filtered := b.GetTable().GetFilteredData()
+	var hidden int
+	for _, sel := range selections {
+		if _, ok := filtered.FindRow(sel); !ok {
+			hidden++
+		}
+	}
+	return hidden
 }
 
 func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
