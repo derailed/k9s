@@ -11,6 +11,7 @@ const (
 	KeyFactory       ContextKey = "factory"
 	KeyLabels        ContextKey = "labels"
 	KeyFields        ContextKey = "fields"
+	KeyServiceName   ContextKey = "serviceName"
 	KeyTable         ContextKey = "table"
 	KeyDir           ContextKey = "dir"
 	KeyPath          ContextKey = "path"
