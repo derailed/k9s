@@ -316,6 +316,12 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, *cm
 	if c.alias == nil {
 		return client.NoGVR, nil, nil, fmt.Errorf("no connection available")
 	}
+
+	// NEW: Check if command matches any registered GVR string before alias resolution
+	if gvr, ok := c.resolveGVRString(p.Cmd()); ok {
+		return c.getViewerForGVR(gvr, p)
+	}
+
 	gvr, ok := c.alias.Resolve(p)
 	if !ok {
 		return client.NoGVR, nil, nil, fmt.Errorf("`%s` command not found", p.Cmd())
@@ -384,4 +390,34 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	slog.Debug("History (exec)", slogs.Stack, strings.Join(c.app.cmdHistory.List(), "|"))
 
 	return
+}
+
+func (c *Command) resolveGVRString(cmd string) (*client.GVR, bool) {
+	// Try to parse the command as a GVR string directly
+	gvr := client.NewGVR(cmd)
+	if !gvr.IsK8sRes() || gvr.IsAlias() {
+		return nil, false
+	}
+
+	// Check if this GVR is registered in customViewers
+	if _, ok := customViewers[gvr]; ok {
+		return gvr, true
+	}
+
+	return nil, false
+}
+
+func (c *Command) getViewerForGVR(gvr *client.GVR, p *cmd.Interpreter) (*client.GVR, *MetaViewer, *cmd.Interpreter, error) {
+	// Check if custom viewer exists
+	if mv, ok := customViewers[gvr]; ok {
+		return gvr, &mv, p, nil
+	}
+
+	// Fallback to default viewer
+	v := MetaViewer{
+		viewerFn: func(gvr *client.GVR) ResourceViewer {
+			return NewBrowser(gvr)
+		},
+	}
+	return gvr, &v, p, nil
 }

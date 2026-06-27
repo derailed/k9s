@@ -63,6 +63,9 @@ func miscViewers(vv MetaViewers) {
 	vv[client.WkGVR] = MetaViewer{
 		viewerFn: NewWorkload,
 	}
+	vv[client.GtwAllGVR] = MetaViewer{
+		viewerFn: NewGatewayAPI,
+	}
 	vv[client.CtGVR] = MetaViewer{
 		viewerFn: NewContext,
 	}

@@ -19,6 +19,10 @@ var Registry = map[*client.GVR]ResourceMeta{
 		DAO:      new(dao.Workload),
 		Renderer: new(render.Workload),
 	},
+	client.GtwAllGVR: {
+		DAO:      new(dao.GatewayAPI),
+		Renderer: new(render.GatewayAPI),
+	},
 	client.RefGVR: {
 		DAO:      new(dao.Reference),
 		Renderer: new(render.Reference),
@@ -157,6 +161,44 @@ var Registry = map[*client.GVR]ResourceMeta{
 	// Extensions...
 	client.NpGVR: {
 		Renderer: &render.NetworkPolicy{},
+	},
+
+	// Gateway API...
+	client.GtwGtwClassGVR: {
+		DAO:      new(dao.GatewayClass),
+		Renderer: new(render.GatewayClass),
+	},
+	client.GtwGVR: {
+		DAO:      new(dao.Gateway),
+		Renderer: new(render.Gateway),
+	},
+	client.GtwHTTPRouteGVR: {
+		DAO:      new(dao.HTTPRoute),
+		Renderer: new(render.HTTPRoute),
+	},
+	client.GtwGRPCRouteGVR: {
+		DAO:      new(dao.GRPCRoute),
+		Renderer: new(render.GRPCRoute),
+	},
+	client.GtwTCPRouteGVR: {
+		DAO:      new(dao.TCPRoute),
+		Renderer: new(render.TCPRoute),
+	},
+	client.GtwUDPRouteGVR: {
+		DAO:      new(dao.UDPRoute),
+		Renderer: new(render.UDPRoute),
+	},
+	client.GtwTLSRouteGVR: {
+		DAO:      new(dao.TLSRoute),
+		Renderer: new(render.TLSRoute),
+	},
+	client.GtwRefGrantGVR: {
+		DAO:      new(dao.ReferenceGrant),
+		Renderer: new(render.ReferenceGrant),
+	},
+	client.GtwBackendTLSPolicyGVR: {
+		DAO:      new(dao.BackendTLSPolicy),
+		Renderer: new(render.BackendTLSPolicy),
 	},
 
 	// Batch...

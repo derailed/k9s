@@ -272,6 +272,15 @@ func loadK9s(m ResourceMetas) {
 		Verbs:        []string{},
 		Categories:   []string{k9sCat},
 	}
+	m[client.GtwAllGVR] = &metav1.APIResource{
+		Name:         client.GtwAllGVR.String(),
+		Kind:         "GatewayAPI",
+		SingularName: "gatewayapi",
+		Namespaced:   true,
+		ShortNames:   []string{"gwapi"},
+		Verbs:        []string{"get", "list"},
+		Categories:   []string{k9sCat},
+	}
 }
 
 func loadHelm(m ResourceMetas) {

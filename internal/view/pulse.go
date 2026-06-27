@@ -116,10 +116,7 @@ func (p *Pulse) Init(ctx context.Context) error {
 	frame := p.app.Styles.Frame()
 	p.SetTitle(ui.SkinTitle(fmt.Sprintf(NSTitleFmt, pulseTitle, ns), &frame))
 
-	index, chartRow := 4, 6
-	if client.IsAllNamespace(ns) {
-		index, chartRow = 0, 8
-	}
+	index, chartRow := 0, 8
 	p.chartGVRs = corpusGVRs[index:]
 
 	p.charts = make(Charts, len(p.chartGVRs))
@@ -256,11 +253,21 @@ func (p *Pulse) PulseChanged(pt model.HealthPoint) {
 		nn[1] = grayC
 	}
 
-	v.SetLegend(cases.Title(language.English).String(pt.GVR.R()))
-	if pt.Faults > 0 {
-		v.SetBorderColor(tcell.ColorDarkRed)
+	if pt.GVR == client.GtwAllGVR {
+		legend := fmt.Sprintf("Gateway [%d/%d]", pt.Total-pt.Faults, pt.Total)
+		v.SetLegend(legend)
+		if pt.Faults > 0 {
+			v.SetBorderColor(tcell.ColorOrangeRed)
+		} else {
+			v.SetBorderColor(tcell.ColorDarkOliveGreen)
+		}
 	} else {
-		v.SetBorderColor(tcell.ColorDarkOliveGreen)
+		v.SetLegend(cases.Title(language.English).String(pt.GVR.R()))
+		if pt.Faults > 0 {
+			v.SetBorderColor(tcell.ColorDarkRed)
+		} else {
+			v.SetBorderColor(tcell.ColorDarkOliveGreen)
+		}
 	}
 	v.Add(pt.Total, pt.Faults)
 }
@@ -423,6 +430,11 @@ func (p *Pulse) enterCmd(*tcell.EventKey) *tcell.EventKey {
 	res := client.NewGVR(s.ID()).R()
 	if res == "cpu" || res == "memory" {
 		res = client.PodGVR.String()
+	}
+	if res == "all" {
+		p.App().SetFocus(p.App().Main)
+		p.App().gotoResource(client.GtwAllGVR.String()+" "+p.model.GetNamespace(), "", false, true)
+		return nil
 	}
 	p.App().SetFocus(p.App().Main)
 	p.App().gotoResource(res+" "+p.model.GetNamespace(), "", false, true)

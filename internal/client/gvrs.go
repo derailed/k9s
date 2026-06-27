@@ -45,6 +45,18 @@ var (
 
 	IngGVR = NewGVR("networking.k8s.io/v1/ingresses")
 
+	// Gateway API...
+	GtwGtwClassGVR       = NewGVR("gateway.networking.k8s.io/v1/gatewayclasses")
+	GtwGVR               = NewGVR("gateway.networking.k8s.io/v1/gateways")
+	GtwHTTPRouteGVR      = NewGVR("gateway.networking.k8s.io/v1/httproutes")
+	GtwGRPCRouteGVR      = NewGVR("gateway.networking.k8s.io/v1/grpcroutes")
+	GtwTCPRouteGVR       = NewGVR("gateway.networking.k8s.io/v1/tcproutes")
+	GtwUDPRouteGVR       = NewGVR("gateway.networking.k8s.io/v1/udproutes")
+	GtwTLSRouteGVR       = NewGVR("gateway.networking.k8s.io/v1/tlsroutes")
+	GtwRefGrantGVR       = NewGVR("gateway.networking.k8s.io/v1/referencegrants")
+	GtwBackendTLSPolicyGVR = NewGVR("gateway.networking.k8s.io/v1/backendlstlpolicies")
+	GtwAllGVR             = NewGVR("gateway.networking.k8s.io/v1/all")
+
 	// Metrics...
 	NmxGVR = NewGVR("metrics.k8s.io/v1beta1/nodes")
 	PmxGVR = NewGVR("metrics.k8s.io/v1beta1/pods")
