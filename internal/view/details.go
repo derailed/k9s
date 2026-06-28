@@ -307,7 +307,7 @@ func (d *Details) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (d *Details) saveCmd(*tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(d.app.Config.K9s.ContextScreenDumpDir(), d.title, d.text.GetText(true)); err != nil {
+	if path, err := saveYAML(d.app.Config.K9s.ContextScreenDumpDir(), d.title, sanitizeEsc(d.text.GetText(true))); err != nil {
 		d.app.Flash().Err(err)
 	} else {
 		d.app.Flash().Infof("Log %s saved successfully!", path)
