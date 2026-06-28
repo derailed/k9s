@@ -121,7 +121,13 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 	for _, gvr := range workloadGVRs(ctx) {
 		table, err := a.fetch(ctx, gvr, ns)
 		if err != nil {
-			return nil, err
+			// A configured GVR may be absent in this cluster (e.g. CRD not
+			// installed) or transiently unavailable. Skip it rather than
+			// failing the whole aggregated view, so the resources that DO
+			// exist still render.
+			slog.Warn("Skipping unavailable workload resource",
+				"gvr", gvr.String(), slogs.Error, err)
+			continue
 		}
 		var (
 			ns string
