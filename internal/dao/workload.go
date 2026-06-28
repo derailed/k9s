@@ -14,6 +14,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -92,10 +93,32 @@ func (a *Workload) fetch(ctx context.Context, gvr *client.GVR, ns string) (*meta
 	return tt, nil
 }
 
+// workloadGVRs resolves the set of GVRs the workload view should aggregate.
+// It prefers a user-configured set (via the view config carried in the
+// context) and falls back to the built-in defaults for backward
+// compatibility.
+func workloadGVRs(ctx context.Context) []*client.GVR {
+	cv, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView)
+	if !ok || cv == nil {
+		return resList
+	}
+	names, ok := cv.WorkloadGVRs(config.DefaultWorkloadGVRs)
+	if !ok {
+		return resList
+	}
+
+	gvrs := make([]*client.GVR, 0, len(names))
+	for _, n := range names {
+		gvrs = append(gvrs, client.NewGVR(n))
+	}
+
+	return gvrs
+}
+
 // List fetch workloads.
 func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo := make([]runtime.Object, 0, 100)
-	for _, gvr := range resList {
+	for _, gvr := range workloadGVRs(ctx) {
 		table, err := a.fetch(ctx, gvr, ns)
 		if err != nil {
 			return nil, err
@@ -116,10 +139,14 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 				}
 			}
 			stat := status(gvr, &r, table.ColumnDefinitions)
+			name := cellAt(&r, table.ColumnDefinitions, "Name")
+			if name == nil {
+				name = render.MissingValue
+			}
 			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []any{
 				gvr.String(),
 				ns,
-				r.Cells[indexOf("Name", table.ColumnDefinitions)],
+				name,
 				stat,
 				readiness(gvr, &r, table.ColumnDefinitions),
 				validity(stat),
@@ -136,11 +163,15 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 func readiness(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
 	case client.PodGVR, client.DpGVR, client.StsGVR:
-		return r.Cells[indexOf("Ready", h)].(string)
+		if s, ok := cellAt(r, h, "Ready").(string); ok {
+			return s
+		}
 	case client.RsGVR, client.DsGVR:
-		c := r.Cells[indexOf("Ready", h)].(int64)
-		d := r.Cells[indexOf("Desired", h)].(int64)
-		return fmt.Sprintf("%d/%d", c, d)
+		c, ok1 := cellAt(r, h, "Ready").(int64)
+		d, ok2 := cellAt(r, h, "Desired").(int64)
+		if ok1 && ok2 {
+			return fmt.Sprintf("%d/%d", c, d)
+		}
 	case client.SvcGVR:
 		return ""
 	}
@@ -151,26 +182,28 @@ func readiness(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefini
 func status(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
 	case client.PodGVR:
-		if status := r.Cells[indexOf("Status", h)]; status == render.PhaseCompleted {
+		ready, _ := cellAt(r, h, "Ready").(string)
+		if status := cellAt(r, h, "Status"); status == render.PhaseCompleted {
 			return StatusOK
-		} else if !isReady(r.Cells[indexOf("Ready", h)].(string)) || status != render.PhaseRunning {
+		} else if !isReady(ready) || status != render.PhaseRunning {
 			return DegradedStatus
 		}
 	case client.DpGVR, client.StsGVR:
-		if !isReady(r.Cells[indexOf("Ready", h)].(string)) {
+		ready, _ := cellAt(r, h, "Ready").(string)
+		if !isReady(ready) {
 			return DegradedStatus
 		}
 	case client.RsGVR, client.DsGVR:
-		rd, ok1 := r.Cells[indexOf("Ready", h)].(int64)
-		de, ok2 := r.Cells[indexOf("Desired", h)].(int64)
+		rd, ok1 := cellAt(r, h, "Ready").(int64)
+		de, ok2 := cellAt(r, h, "Desired").(int64)
 		if ok1 && ok2 {
 			if !isReady(fmt.Sprintf("%d/%d", rd, de)) {
 				return DegradedStatus
 			}
 			break
 		}
-		rds, oks1 := r.Cells[indexOf("Ready", h)].(string)
-		des, oks2 := r.Cells[indexOf("Desired", h)].(string)
+		rds, oks1 := cellAt(r, h, "Ready").(string)
+		des, oks2 := cellAt(r, h, "Desired").(string)
 		if oks1 && oks2 {
 			if !isReady(fmt.Sprintf("%s/%s", rds, des)) {
 				return DegradedStatus
@@ -228,4 +261,16 @@ func indexOf(n string, defs []metav1.TableColumnDefinition) int {
 	}
 
 	return -1
+}
+
+// cellAt safely returns the cell value for the named column or nil when the
+// column is absent or out of range. This guards against resources (notably
+// CRDs) whose printer columns differ from the native workload resources.
+func cellAt(r *metav1.TableRow, defs []metav1.TableColumnDefinition, col string) any {
+	idx := indexOf(col, defs)
+	if idx < 0 || idx >= len(r.Cells) {
+		return nil
+	}
+
+	return r.Cells[idx]
 }
