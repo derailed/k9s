@@ -158,15 +158,15 @@ func TestWorkloadReadiness(t *testing.T) {
 func TestWorkloadGVRs(t *testing.T) {
 	uu := map[string]struct {
 		ctx context.Context
-		e   []*client.GVR
+		e   []workloadGVR
 	}{
 		"no-config-uses-defaults": {
 			ctx: context.Background(),
-			e:   resList,
+			e:   defaultWorkloadGVRs(),
 		},
 		"empty-config-uses-defaults": {
 			ctx: context.WithValue(context.Background(), internal.KeyViewConfig, config.NewCustomView()),
-			e:   resList,
+			e:   defaultWorkloadGVRs(),
 		},
 		"override": {
 			ctx: func() context.Context {
@@ -177,9 +177,23 @@ func TestWorkloadGVRs(t *testing.T) {
 				}
 				return context.WithValue(context.Background(), internal.KeyViewConfig, cv)
 			}(),
-			e: []*client.GVR{
-				client.PodGVR,
-				client.NewGVR("examples.demo.io/v1/foos"),
+			e: []workloadGVR{
+				{gvr: client.PodGVR},
+				{gvr: client.NewGVR("examples.demo.io/v1/foos")},
+			},
+		},
+		"per-namespace-override": {
+			ctx: func() context.Context {
+				cv := config.NewCustomView()
+				cv.Workloads[config.DefaultWorkloadGVRs] = []string{
+					"v1/pods kube-system",
+					"examples.demo.io/v1/foos",
+				}
+				return context.WithValue(context.Background(), internal.KeyViewConfig, cv)
+			}(),
+			e: []workloadGVR{
+				{gvr: client.PodGVR, ns: "kube-system"},
+				{gvr: client.NewGVR("examples.demo.io/v1/foos")},
 			},
 		},
 	}

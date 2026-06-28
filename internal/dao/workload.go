@@ -93,33 +93,66 @@ func (a *Workload) fetch(ctx context.Context, gvr *client.GVR, ns string) (*meta
 	return tt, nil
 }
 
+// workloadGVR pairs a GVR with an optional namespace override. When ns is
+// empty, the aggregated view's active namespace is used for that resource.
+type workloadGVR struct {
+	gvr *client.GVR
+	ns  string
+}
+
 // workloadGVRs resolves the set of GVRs the workload view should aggregate.
 // It prefers a user-configured set (via the view config carried in the
 // context) and falls back to the built-in defaults for backward
-// compatibility.
-func workloadGVRs(ctx context.Context) []*client.GVR {
+// compatibility. Each configured entry is "<gvr>" or "<gvr> <namespace>"
+// (k9s prompt style), so a resource can be pinned to a specific namespace
+// independent of the view's active namespace.
+func workloadGVRs(ctx context.Context) []workloadGVR {
 	cv, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView)
 	if !ok || cv == nil {
-		return resList
+		return defaultWorkloadGVRs()
 	}
 	names, ok := cv.WorkloadGVRs(config.DefaultWorkloadGVRs)
 	if !ok {
-		return resList
+		return defaultWorkloadGVRs()
 	}
 
-	gvrs := make([]*client.GVR, 0, len(names))
+	ww := make([]workloadGVR, 0, len(names))
 	for _, n := range names {
-		gvrs = append(gvrs, client.NewGVR(n))
+		fields := strings.Fields(n)
+		if len(fields) == 0 {
+			continue
+		}
+		w := workloadGVR{gvr: client.NewGVR(fields[0])}
+		if len(fields) > 1 {
+			w.ns = fields[1]
+		}
+		ww = append(ww, w)
 	}
 
-	return gvrs
+	return ww
+}
+
+// defaultWorkloadGVRs wraps the built-in resource list as workloadGVRs with no
+// namespace override.
+func defaultWorkloadGVRs() []workloadGVR {
+	ww := make([]workloadGVR, 0, len(resList))
+	for _, g := range resList {
+		ww = append(ww, workloadGVR{gvr: g})
+	}
+
+	return ww
 }
 
 // List fetch workloads.
 func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo := make([]runtime.Object, 0, 100)
-	for _, gvr := range workloadGVRs(ctx) {
-		table, err := a.fetch(ctx, gvr, ns)
+	for _, w := range workloadGVRs(ctx) {
+		gvr := w.gvr
+		fetchNS := ns
+		if w.ns != "" {
+			fetchNS = w.ns
+		}
+		table, err := a.fetch(ctx, gvr, fetchNS)
 		if err != nil {
 			// A configured GVR may be absent in this cluster (e.g. CRD not
 			// installed) or transiently unavailable. Skip it rather than
