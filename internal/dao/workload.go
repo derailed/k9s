@@ -230,6 +230,12 @@ func readiness(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefini
 		}
 	case client.SvcGVR:
 		return ""
+	default:
+		// CRDs may expose their own "Ready" printer column; surface it when
+		// present instead of defaulting to N/A.
+		if v := cellAt(r, h, "Ready"); v != nil {
+			return fmt.Sprintf("%v", v)
+		}
 	}
 
 	return render.NAValue
