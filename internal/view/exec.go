@@ -24,6 +24,7 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/fatih/color"
+	"github.com/google/shlex"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -136,7 +137,10 @@ func edit(a *App, opts *shellOpts) bool {
 		// followed by some arguments (e.g. "code -w" to make it work with vscode)
 		//
 		// In such cases, the actual binary is only the first token
-		envTokens := strings.Split(env, " ")
+		envTokens, shlexErr := shlex.Split(env)
+		if shlexErr != nil || len(envTokens) == 0 {
+			continue
+		}
 
 		if bin, err = exec.LookPath(envTokens[0]); err == nil {
 			// Make sure the path is at the end (this allows running editors
@@ -167,6 +171,13 @@ func edit(a *App, opts *shellOpts) bool {
 	}
 
 	return status
+}
+
+func shellQuote(s string) string {
+	if !strings.ContainsAny(s, " \t\n\"'\\") {
+		return s
+	}
+	return `"` + strings.ReplaceAll(strings.ReplaceAll(s, `\`, `\\`), `"`, `\"`) + `"`
 }
 
 func execute(opts *shellOpts, statusChan chan<- string) error {
@@ -205,19 +216,22 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 		// followed by some arguments (e.g. "code -w" to make it work with vscode)
 		//
 		// In such cases, the actual binary is only the first token
-		binTokens := strings.Split(env, " ")
-
-		if bin, err := exec.LookPath(binTokens[0]); err == nil {
-			binTokens[0] = bin
-			cmd.Env = append(os.Environ(), fmt.Sprintf("KUBE_EDITOR=%s", strings.Join(binTokens, " ")))
+		if binTokens, err := shlex.Split(env); err == nil && len(binTokens) > 0 {
+			if bin, err := exec.LookPath(binTokens[0]); err == nil {
+				binTokens[0] = bin
+				for i := range binTokens {
+					binTokens[i] = shellQuote(binTokens[i])
+				}
+				cmd.Env = append(os.Environ(), fmt.Sprintf("KUBE_EDITOR=%s", strings.Join(binTokens, " ")))
+			}
 		}
 	}
 
 	cmds = append(cmds, cmd)
 
 	for _, p := range opts.pipes {
-		tokens := strings.Split(p, " ")
-		if len(tokens) < 2 {
+		tokens, err := shlex.Split(p)
+		if err != nil || len(tokens) < 2 {
 			continue
 		}
 		cmd := exec.CommandContext(ctx, tokens[0], tokens[1:]...)

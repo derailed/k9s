@@ -515,7 +515,7 @@ Clipboard behavior can also be controlled via environment variables:
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overridden with K9S_SKIN.
       # Replaces the K9s header logo with custom ascii art. Can be overridden per context.
       logo: |
         MY
@@ -873,13 +873,15 @@ jumps:
 
 ### Template Syntax
 
-Both `labelSelector` and `fieldSelector` support Go template syntax to dynamically reference fields from the selected resource:
+Both `labelSelector` and `fieldSelector` support Go template syntax to dynamically reference fields from the selected (source) resource. Any field of the source object can be used on the **value** side of a selector:
 
 * `{{.metadata.name}}` - The resource name
 * `{{.metadata.namespace}}` - The resource namespace
 * `{{.metadata.labels.key}}` - A specific label value
-* `{{.spec.fieldName}}` - Any field from the resource spec
-* `{{.status.field}}` - Any field from the resource status
+* `{{.spec.fieldName}}` - Any field from the source resource spec
+* `{{.status.field}}` - Any field from the source resource status
+
+> **Note:** The template above only controls the selector *value* (the right-hand side, computed from the source resource). The selector *key* is still validated by the Kubernetes API server against the **target** resource. Label selector keys can be any label, but **field selector keys are restricted**: for most resources only `metadata.name`/`metadata.namespace` are selectable, and for CRDs the target field must be declared in the CRD's `spec.versions[].selectableFields`. k9s passes the field selector straight to the API server (no local filtering), so referencing a non-selectable field returns `field label not supported`. See the Kubernetes docs on [CRD selectable fields](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#crd-selectable-fields).
 
 ### Examples
 

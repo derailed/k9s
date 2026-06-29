@@ -57,11 +57,16 @@ func (e Env) Substitute(arg string) (string, error) {
 			)
 			continue
 		}
-		if b, err := strconv.ParseBool(v); err == nil {
-			if inverse {
-				b = !b
+		// Only treat value as boolean if it is NOT a valid number.
+		// strconv.ParseBool also accepts "0" and "1", which would
+		// corrupt numeric plugin input values like $INPUT_REPLICAS.
+		if _, numErr := strconv.ParseFloat(v, 64); numErr != nil {
+			if b, err := strconv.ParseBool(v); err == nil {
+				if inverse {
+					b = !b
+				}
+				v = fmt.Sprintf("%t", b)
 			}
-			v = fmt.Sprintf("%t", b)
 		}
 		arg = strings.ReplaceAll(arg, m[0], v)
 	}
