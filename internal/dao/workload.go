@@ -78,19 +78,36 @@ func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.
 
 func (a *Workload) fetch(ctx context.Context, gvr *client.GVR, ns string) (*metav1.Table, error) {
 	a.gvr = gvr
-	oo, err := a.Table.List(ctx, ns)
-	if err != nil {
-		return nil, err
+	// ns may be a comma-separated list of namespaces (e.g. "ns1,ns2"); fetch
+	// each and merge their rows so one resource can span several namespaces.
+	// A namespace that fails (typo, no access) is skipped, not fatal.
+	var out *metav1.Table
+	for _, n := range strings.Split(ns, ",") {
+		n = strings.TrimSpace(n)
+		oo, err := a.Table.List(ctx, n)
+		if err != nil {
+			slog.Warn("Skipping namespace for workload resource",
+				"gvr", gvr.String(), "namespace", n, slogs.Error, err)
+			continue
+		}
+		if len(oo) == 0 {
+			continue
+		}
+		tt, ok := oo[0].(*metav1.Table)
+		if !ok {
+			return nil, errors.New("not a metav1.Table")
+		}
+		if out == nil {
+			out = tt
+		} else {
+			out.Rows = append(out.Rows, tt.Rows...)
+		}
 	}
-	if len(oo) == 0 {
+	if out == nil {
 		return nil, fmt.Errorf("no table found for gvr: %s", gvr)
 	}
-	tt, ok := oo[0].(*metav1.Table)
-	if !ok {
-		return nil, errors.New("not a metav1.Table")
-	}
 
-	return tt, nil
+	return out, nil
 }
 
 // workloadGVR pairs a GVR with an optional namespace override. When ns is
