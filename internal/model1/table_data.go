@@ -257,6 +257,9 @@ func (t *TableData) Render(_ context.Context, r Renderer, oo []runtime.Object) e
 			if !ok {
 				return fmt.Errorf("expecting a meta table but got %T", oo[0])
 			}
+			if table == nil {
+				return fmt.Errorf("received nil table for resource %s", t.gvr)
+			}
 			rows = make(Rows, len(table.Rows))
 			if err := GenericHydrate(t.namespace, table, rows, r); err != nil {
 				return err
