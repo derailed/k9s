@@ -141,12 +141,9 @@ func (p *Pod) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := p.specs.realize(pwm.Raw.DeepCopy(), defaultPodHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
