@@ -105,9 +105,22 @@ func run(*cobra.Command, []string) error {
 		TimeFormat: time.RFC3339,
 	})))
 
-	cfg, err := loadConfiguration()
+	cfg, k8sCfg, err := loadConfiguration()
 	if err != nil {
-		// Only warn if there's an actual context configured
+		// A kubeconfig that cannot be parsed/loaded is fatal: no context can be
+		// resolved and the TUI would only loop on the same error. Surface it
+		// loudly on the terminal and bail out instead of entering a broken TUI.
+		if fatal := checkFatalConfigError(k8sCfg); fatal != nil {
+			fatal.err = err
+			slog.Error("Fatal kubeconfig load failure", slogs.Error, err)
+			printConfigError(fatal)
+			// We have already rendered a complete, user-facing error on the
+			// terminal. Exit directly to avoid cobra re-printing the raw error
+			// and the full usage block, which would only bury our message.
+			os.Exit(1)
+		}
+		// Otherwise the error is recoverable (e.g. unreachable cluster). Keep the
+		// existing best-effort warn so users can still switch contexts in-app.
 		if cfg != nil && cfg.K9s.ActiveContextName() != "" {
 			slog.Warn("Fail to load global/context configuration", slogs.Error, err)
 		}
@@ -130,7 +143,7 @@ func run(*cobra.Command, []string) error {
 	return nil
 }
 
-func loadConfiguration() (*config.Config, error) {
+func loadConfiguration() (*config.Config, *client.Config, error) {
 	slog.Info("🐶 K9s starting up...")
 
 	k8sCfg := client.NewConfig(k8sFlags)
@@ -174,7 +187,15 @@ func loadConfiguration() (*config.Config, error) {
 		errs = errors.Join(errs, err)
 	}
 
-	return k9sCfg, errs
+	return k9sCfg, k8sCfg, errs
+}
+
+// printConfigError renders a fatal kubeconfig error prominently on the terminal
+// so the user is not left guessing why k9s refused to start.
+func printConfigError(e *fatalConfigError) {
+	printLogo(color.Red)
+	fmt.Fprintf(out, "%s\n", color.Colorize("💥 K9s startup failed", color.Red))
+	fmt.Fprintf(out, "%s\n", color.Colorize(e.UserMessage(), color.Red))
 }
 
 func parseLevel(level string) slog.Level {
