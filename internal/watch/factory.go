@@ -244,6 +244,11 @@ func (f *Factory) CanForInstance(fqn string, gvr *client.GVR, verbs []string) (i
 		return nil, fmt.Errorf("%v access denied on resource %q:%q", verbs, authNs, gvr)
 	}
 
+	// Namespaces are cluster-scoped; always use cluster scope for the informer.
+	if gvr == client.NsGVR {
+		ns = client.ClusterScope
+	}
+
 	return f.ForResource(ns, gvr)
 }
 
