@@ -107,9 +107,5 @@ func columnIndicator(sort, selected, asc bool, style *config.Table, name string)
 }
 
 func formatCell(field string, padding int) string {
-	if IsASCII(field) {
-		return Pad(field, padding)
-	}
-
-	return field
+	return Pad(field, padding)
 }
