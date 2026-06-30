@@ -96,13 +96,17 @@ func (l *Log) ToggleShowTimestamp(b bool) {
 func (l *Log) Head(ctx context.Context) {
 	l.mx.Lock()
 	l.logOptions.Head = true
+	l.logOptions.SinceTime = ""
 	l.mx.Unlock()
 	l.Restart(ctx)
 }
 
 // SetSinceSeconds sets the logs retrieval time.
+// Clears SinceTime so the stale timestamp from a previous stream
+// does not override the new time-window selection.
 func (l *Log) SetSinceSeconds(ctx context.Context, i int64) {
 	l.logOptions.SinceSeconds, l.logOptions.Head = i, false
+	l.logOptions.SinceTime = ""
 	l.Restart(ctx)
 }
 
