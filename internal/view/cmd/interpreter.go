@@ -286,6 +286,27 @@ func (c *Interpreter) XrayArgs() (cmd, namespace string, ok bool) {
 	return
 }
 
+// OwnersResourceArg returns the partial resource type being typed for an
+// owners command, when the resource type is not yet complete.
+func (c *Interpreter) OwnersResourceArg() (string, bool) {
+	if !c.IsOwnersCmd() {
+		return "", false
+	}
+	// A trailing space or a namespace arg means the resource type is complete.
+	if strings.HasSuffix(c.line, " ") {
+		return "", false
+	}
+	if _, ok := c.args[nsKey]; ok {
+		return "", false
+	}
+	res, ok := c.args[topicKey]
+	if !ok || res == "" {
+		return "", false
+	}
+
+	return res, true
+}
+
 // OwnersArgs returns the gvr and optional namespace for an owners command.
 func (c *Interpreter) OwnersArgs() (cmd, namespace string, ok bool) {
 	if !c.IsOwnersCmd() {
