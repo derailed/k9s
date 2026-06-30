@@ -33,6 +33,7 @@ func (s *ServiceAccount) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyU:        ui.NewKeyAction("UsedBy", s.refCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Rules", s.policyCmd, true),
+		tcell.KeyLF:    ui.NewKeyAction("Rules", s.policyCmd, true),
 	})
 }
 

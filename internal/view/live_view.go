@@ -145,6 +145,7 @@ func (v *LiveView) BufferActive(state bool, k model.BufferKind) {
 func (v *LiveView) bindKeys() {
 	v.actions.Bulk(ui.KeyMap{
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", v.filterCmd, false),
+		tcell.KeyLF:     ui.NewSharedKeyAction("Filter", v.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", v.resetCmd, false),
 		ui.KeyQ:         ui.NewKeyAction("Back", v.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, false),
