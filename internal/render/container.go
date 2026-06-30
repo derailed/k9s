@@ -72,11 +72,10 @@ func (Container) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Container) Header(_ string) model1.Header {
-	return defaultCOHeader
+func (c *Container) Header(_ string) model1.Header {
+	return c.doHeader(defaultCOHeader)
 }
 
-// Header returns a header row.
 var defaultCOHeader = model1.Header{
 	model1.HeaderColumn{Name: "IDX"},
 	model1.HeaderColumn{Name: "NAME"},
@@ -107,7 +106,19 @@ func (c Container) Render(o any, _ string, row *model1.Row) error {
 		return fmt.Errorf("expected ContainerRes, but got %T", o)
 	}
 
-	return c.defaultRow(cr, row)
+	if err := c.defaultRow(cr, row); err != nil {
+		return err
+	}
+	if c.specs.isEmpty() {
+		return nil
+	}
+	cols, err := c.specs.realize(&cr, defaultCOHeader, row)
+	if err != nil {
+		return err
+	}
+	cols.hydrateRow(row)
+
+	return nil
 }
 
 func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {

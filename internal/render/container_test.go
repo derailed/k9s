@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	cfg "github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,36 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
+
+func TestContainerHeader(t *testing.T) {
+	uu := map[string]struct {
+		vs        *cfg.ViewSetting
+		firstCols []string
+	}{
+		"default": {
+			firstCols: []string{"IDX", "NAME", "PF"},
+		},
+		"custom-columns": {
+			vs:        &cfg.ViewSetting{Columns: []string{"NAME", "IMAGE"}},
+			firstCols: []string{"NAME", "IMAGE", "IDX"},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			c := new(render.Container)
+			if u.vs != nil {
+				c.SetViewSetting(u.vs)
+			}
+			h := c.Header("")
+			names := make([]string, len(u.firstCols))
+			for i, col := range h[:len(u.firstCols)] {
+				names[i] = col.Name
+			}
+			assert.Equal(t, u.firstCols, names)
+		})
+	}
+}
 
 func TestContainer(t *testing.T) {
 	var c render.Container
@@ -53,6 +84,43 @@ func TestContainer(t *testing.T) {
 	},
 		r.Fields[:len(r.Fields)-1],
 	)
+}
+
+func TestContainerRenderCustomColumns(t *testing.T) {
+	uu := map[string]struct {
+		vs          *cfg.ViewSetting
+		firstFields model1.Fields
+	}{
+		"no-custom-cols": {
+			firstFields: model1.Fields{"", "fred", "●", "img"},
+		},
+		"custom-cols-reordered": {
+			vs:          &cfg.ViewSetting{Columns: []string{"NAME", "IMAGE"}},
+			firstFields: model1.Fields{"fred", "img"},
+		},
+		"custom-cols-subset": {
+			vs:          &cfg.ViewSetting{Columns: []string{"STATE", "NAME"}},
+			firstFields: model1.Fields{"Running", "fred"},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			c := new(render.Container)
+			if u.vs != nil {
+				c.SetViewSetting(u.vs)
+			}
+			cres := render.ContainerRes{
+				Container: makeContainer(),
+				Status:    makeContainerStatus(),
+				MX:        makeContainerMetrics(),
+				Age:       makeAge(),
+			}
+			var r model1.Row
+			require.NoError(t, c.Render(cres, "", &r))
+			assert.Equal(t, u.firstFields, r.Fields[:len(u.firstFields)])
+		})
+	}
 }
 
 func BenchmarkContainerRender(b *testing.B) {
