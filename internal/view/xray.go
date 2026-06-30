@@ -332,7 +332,7 @@ func (x *Xray) showLogs(spec *xray.NodeSpec, prev bool) {
 		Container: co,
 		Previous:  prev,
 	}
-	if err := x.app.inject(NewLog(client.PodGVR, &opts), false); err != nil {
+	if err := x.app.inject(NewLog(client.PodGVR, &opts, string(x.App().Configurator.Styles.K9s.Views.Log.TimeColor)), false); err != nil {
 		x.app.Flash().Err(err)
 	}
 }

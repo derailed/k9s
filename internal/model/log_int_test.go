@@ -10,13 +10,15 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdateLogs(t *testing.T) {
 	size := 100
-	m := NewLog(client.NewGVR("fred"), makeLogOpts(size), 10*time.Millisecond)
+	timeColor := "gray"
+	m := NewLog(client.NewGVR("fred"), makeLogOpts(size), timeColor, 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newMockLogView()
@@ -36,7 +38,8 @@ func TestUpdateLogs(t *testing.T) {
 
 func BenchmarkUpdateLogs(b *testing.B) {
 	size := 100
-	m := NewLog(client.NewGVR("fred"), makeLogOpts(size), 10*time.Millisecond)
+	timeColor := "gray"
+	m := NewLog(client.NewGVR("fred"), makeLogOpts(size), timeColor, 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newMockLogView()
