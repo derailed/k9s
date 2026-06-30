@@ -190,6 +190,11 @@ func (c *Interpreter) IsXrayCmd() bool {
 	return xrayCmd.Has(c.cmd)
 }
 
+// IsOwnersCmd returns true if owners/owner-tree cmd is detected.
+func (c *Interpreter) IsOwnersCmd() bool {
+	return ownersCmd.Has(c.cmd)
+}
+
 // IsContextCmd returns true if context cmd is detected.
 func (c *Interpreter) IsContextCmd() bool {
 	return contextCmd.Has(c.cmd)
@@ -261,6 +266,50 @@ func (c *Interpreter) RBACArgs() (subject, verb string, ok bool) {
 // XrayArgs return the gvr and ns if any.
 func (c *Interpreter) XrayArgs() (cmd, namespace string, ok bool) {
 	if !c.IsXrayCmd() {
+		return
+	}
+	gvr, ok1 := c.args[topicKey]
+	if !ok1 {
+		return
+	}
+
+	ns, ok2 := c.args[nsKey]
+	switch {
+	case ok1 && ok2:
+		cmd, namespace, ok = gvr, ns, true
+	case ok1 && !ok2:
+		cmd, namespace, ok = gvr, "", true
+	default:
+		return
+	}
+
+	return
+}
+
+// OwnersResourceArg returns the partial resource type being typed for an
+// owners command, when the resource type is not yet complete.
+func (c *Interpreter) OwnersResourceArg() (string, bool) {
+	if !c.IsOwnersCmd() {
+		return "", false
+	}
+	// A trailing space or a namespace arg means the resource type is complete.
+	if strings.HasSuffix(c.line, " ") {
+		return "", false
+	}
+	if _, ok := c.args[nsKey]; ok {
+		return "", false
+	}
+	res, ok := c.args[topicKey]
+	if !ok || res == "" {
+		return "", false
+	}
+
+	return res, true
+}
+
+// OwnersArgs returns the gvr and optional namespace for an owners command.
+func (c *Interpreter) OwnersArgs() (cmd, namespace string, ok bool) {
+	if !c.IsOwnersCmd() {
 		return
 	}
 	gvr, ok1 := c.args[topicKey]
