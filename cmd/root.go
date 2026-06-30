@@ -305,6 +305,13 @@ func initK8sFlags() {
 	)
 
 	rootCmd.Flags().StringVar(
+		k8sFlags.APIServer,
+		"server",
+		"",
+		"The address and port of the Kubernetes API server",
+	)
+
+	rootCmd.Flags().StringVar(
 		k8sFlags.AuthInfoName,
 		"user",
 		"",
@@ -346,6 +353,13 @@ func initCertFlags() {
 		"insecure-skip-tls-verify",
 		false,
 		"If true, the server's caCertFile will not be checked for validity",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.TLSServerName,
+		"tls-server-name",
+		"",
+		"Server name to use for server certificate validation. If it is not provided, the hostname used to contact the server is used",
 	)
 
 	rootCmd.Flags().StringVar(
