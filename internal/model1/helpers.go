@@ -43,6 +43,13 @@ func parallelRender(n int, fn func(i int) error) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer func() {
+				if e := recover(); e != nil {
+					errOnce.Do(func() {
+						firstErr = fmt.Errorf("render panic: %v", e)
+					})
+				}
+			}()
 			for i := lo; i < hi; i++ {
 				if err := fn(i); err != nil {
 					errOnce.Do(func() { firstErr = err })

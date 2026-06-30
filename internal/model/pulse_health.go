@@ -42,7 +42,8 @@ var PulseGVRs = client.GVRs{
 	client.HpaGVR,
 	client.IngGVR,
 	client.NpGVR,
-	client.SaGVR,
+
+	client.GtwAllGVR,
 }
 
 func (g GVRs) First() *client.GVR {
@@ -100,11 +101,20 @@ func (h *PulseHealth) Watch(ctx context.Context, ns string) HealthChan {
 func (h *PulseHealth) checkPulse(ctx context.Context, ns string, c HealthChan) error {
 	slog.Debug("Checking pulses...")
 	for _, gvr := range PulseGVRs {
-		check, err := h.check(ctx, ns, gvr)
-		if err != nil {
-			return err
+		if gvr == client.GtwAllGVR {
+			check, err := h.checkGatewayAPI(ctx, ns)
+			if err != nil {
+				slog.Warn("Gateway API health check failed", slogs.Error, err)
+				check = HealthPoint{GVR: client.GtwAllGVR, Total: 0, Faults: 0}
+			}
+			c <- check
+		} else {
+			check, err := h.check(ctx, ns, gvr)
+			if err != nil {
+				return err
+			}
+			c <- check
 		}
-		c <- check
 	}
 	return nil
 }
@@ -154,4 +164,35 @@ func isTable(oo []runtime.Object) bool {
 	_, ok := oo[0].(*metav1.Table)
 
 	return ok
+}
+
+func (h *PulseHealth) checkGatewayAPI(ctx context.Context, ns string) (HealthPoint, error) {
+	gatewayGVRs := []*client.GVR{
+		client.GtwGVR,
+		client.GtwGtwClassGVR,
+		client.GtwHTTPRouteGVR,
+		client.GtwGRPCRouteGVR,
+		client.GtwTCPRouteGVR,
+		client.GtwUDPRouteGVR,
+		client.GtwTLSRouteGVR,
+	}
+
+	total, faults := 0, 0
+	for _, gvr := range gatewayGVRs {
+		check, err := h.check(ctx, ns, gvr)
+		if err != nil {
+			slog.Warn("Gateway API resource check failed", slogs.GVR, gvr, slogs.Error, err)
+			continue
+		}
+		total += check.Total
+		faults += check.Faults
+		slog.Debug("Gateway API resource health", slogs.GVR, gvr, "total", check.Total, "faults", check.Faults)
+	}
+
+	slog.Info("Gateway API health check complete", "total", total, "faults", faults)
+	return HealthPoint{
+		GVR:   client.GtwAllGVR,
+		Total: total,
+		Faults: faults,
+	}, nil
 }

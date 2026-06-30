@@ -119,7 +119,8 @@ func (t *Table) RemoveListener(l TableListener) {
 
 // Watch initiates model updates.
 func (t *Table) Watch(ctx context.Context) error {
-	if err := t.refresh(ctx); err != nil {
+	err := t.silentRefresh(ctx)
+	if err != nil {
 		return err
 	}
 	go t.updater(ctx)
@@ -129,7 +130,7 @@ func (t *Table) Watch(ctx context.Context) error {
 
 // Refresh updates the table content.
 func (t *Table) Refresh(ctx context.Context) error {
-	return t.refresh(ctx)
+	return t.safeRefresh(ctx)
 }
 
 // Get returns a resource instance if found, else an error.
@@ -201,6 +202,15 @@ func (t *Table) Peek() *model1.TableData {
 }
 
 func (t *Table) updater(ctx context.Context) {
+	defer func() {
+		if e := recover(); e != nil {
+			slog.Error("Reconciler panic recovered",
+				slogs.GVR, t.gvr,
+				slogs.Error, e,
+			)
+			t.fireTableLoadFailed(fmt.Errorf("internal error during refresh"))
+		}
+	}()
 	bf := backoff.NewExponentialBackOff()
 	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxReaderRetryInterval
 	rate := initRefreshRate
@@ -210,7 +220,16 @@ func (t *Table) updater(ctx context.Context) {
 			return
 		case <-time.After(rate):
 			rate = t.refreshRate
-			err := backoff.Retry(func() error {
+			err := backoff.Retry(func() (perr error) {
+				defer func() {
+					if e := recover(); e != nil {
+						slog.Error("Refresh panic recovered",
+							slogs.GVR, t.gvr,
+							slogs.Error, e,
+						)
+						perr = fmt.Errorf("refresh panic: %v", e)
+					}
+				}()
 				if err := t.refresh(ctx); err != nil {
 					slog.Error("Refresh failed", slogs.GVR, t.gvr)
 					return err
@@ -244,6 +263,44 @@ func (t *Table) refresh(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (t *Table) safeRefresh(ctx context.Context) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			slog.Error("Refresh panic recovered",
+				slogs.GVR, t.gvr,
+				slogs.Error, e,
+			)
+			err = fmt.Errorf("refresh panic: %v", e)
+		}
+	}()
+
+	return t.refresh(ctx)
+}
+
+// silentRefresh loads data via reconcile without firing UI events.
+// This is used by Watch to avoid deadlocking the event loop when
+// QueueUpdateDraw is called from within the event handler.
+// The updater goroutine handles firing events on its first tick.
+func (t *Table) silentRefresh(ctx context.Context) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			slog.Error("Silent refresh panic recovered",
+				slogs.GVR, t.gvr,
+				slogs.Error, e,
+			)
+			err = fmt.Errorf("refresh panic: %v", e)
+		}
+	}()
+
+	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
+		slog.Debug("Dropping update...")
+		return nil
+	}
+	defer atomic.StoreInt32(&t.inUpdate, 0)
+
+	return t.reconcile(ctx)
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
@@ -283,6 +340,9 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 	if err != nil {
 		return err
+	}
+	if len(oo) == 0 || oo[0] == nil {
+		return fmt.Errorf("no data found for resource %s", t.gvr)
 	}
 	r := meta.Renderer
 	r.SetViewSetting(t.vs)

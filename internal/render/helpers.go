@@ -23,6 +23,291 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
+func getTimestampAge(ts any) string {
+	if ts == nil {
+		return "-"
+	}
+	var t metav1.Time
+	switch v := ts.(type) {
+	case string:
+		parsed, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			return "-"
+		}
+		t = metav1.Time{Time: parsed}
+	case metav1.Time:
+		t = v
+	default:
+		return "-"
+	}
+	return duration.HumanDuration(time.Since(t.Time))
+}
+
+func formatGatewayAddresses(addresses any) string {
+	if addresses == nil {
+		return "-"
+	}
+	addrSlice, ok := addresses.([]any)
+	if !ok || len(addrSlice) == 0 {
+		return "-"
+	}
+	result := make([]string, 0, len(addrSlice))
+	for _, addr := range addrSlice {
+		addrMap, ok := addr.(map[string]any)
+		if !ok {
+			continue
+		}
+		if val, exists := addrMap["value"]; exists {
+			if valStr, ok := val.(string); ok && valStr != "" {
+				result = append(result, valStr)
+			}
+		}
+	}
+	if len(result) == 0 {
+		return "-"
+	}
+	if len(result) <= 3 {
+		return strings.Join(result, ", ")
+	}
+	return strings.Join(result[:3], ", ") + "..."
+}
+
+func formatGatewayPorts(ports any) string {
+	if ports == nil {
+		return "-"
+	}
+	portSlice, ok := ports.([]any)
+	if !ok || len(portSlice) == 0 {
+		return "-"
+	}
+	result := make([]string, 0, len(portSlice))
+	for _, port := range portSlice {
+		portMap, ok := port.(map[string]any)
+		if !ok {
+			continue
+		}
+		var portNum string
+		if val, exists := portMap["port"]; exists {
+			switch v := val.(type) {
+			case int64:
+				portNum = strconv.FormatInt(v, 10)
+			case float64:
+				portNum = strconv.FormatInt(int64(v), 10)
+			case string:
+				portNum = v
+			}
+		}
+		if val, exists := portMap["protocol"]; exists {
+			if protocol, ok := val.(string); ok && protocol != "" {
+				if portNum != "" {
+					result = append(result, portNum+"/"+protocol)
+				}
+			}
+		}
+	}
+	if len(result) == 0 {
+		return "-"
+	}
+	if len(result) <= 3 {
+		return strings.Join(result, ", ")
+	}
+	return strings.Join(result[:3], ", ") + "..."
+}
+
+func getGatewayReadyStatus(conditions any) string {
+	if conditions == nil {
+		return "-"
+	}
+	condSlice, ok := conditions.([]any)
+	if !ok || len(condSlice) == 0 {
+		return "-"
+	}
+	for _, cond := range condSlice {
+		condMap, ok := cond.(map[string]any)
+		if !ok {
+			continue
+		}
+		if typ, exists := condMap["type"]; exists {
+			if typeStr, ok := typ.(string); ok && typeStr == "Ready" {
+				if status, exists := condMap["status"]; exists {
+					if statusStr, ok := status.(string); ok {
+						if statusStr == "True" {
+							return "✓"
+						}
+						return "✗"
+					}
+				}
+			}
+		}
+	}
+	return "-"
+}
+
+func formatRouteHostnames(hostnames any) string {
+	if hostnames == nil {
+		return "-"
+	}
+	hostnameSlice, ok := hostnames.([]any)
+	if !ok || len(hostnameSlice) == 0 {
+		return "-"
+	}
+	result := make([]string, 0, len(hostnameSlice))
+	for _, hostname := range hostnameSlice {
+		if hostnameStr, ok := hostname.(string); ok && hostnameStr != "" {
+			result = append(result, hostnameStr)
+		}
+	}
+	if len(result) == 0 {
+		return "-"
+	}
+	if len(result) <= 2 {
+		return strings.Join(result, ", ")
+	}
+	return strings.Join(result[:2], ", ") + "..."
+}
+
+func formatRouteServices(rules any) string {
+	if rules == nil {
+		return "-"
+	}
+	ruleSlice, ok := rules.([]any)
+	if !ok || len(ruleSlice) == 0 {
+		return "-"
+	}
+	services := make(map[string]bool)
+	for _, rule := range ruleSlice {
+		ruleMap, ok := rule.(map[string]any)
+		if !ok {
+			continue
+		}
+		if backendRefs, exists := ruleMap["backendRefs"]; exists {
+			refSlice, ok := backendRefs.([]any)
+			if !ok {
+				continue
+			}
+			for _, ref := range refSlice {
+				refMap, ok := ref.(map[string]any)
+				if !ok {
+					continue
+				}
+				if kind, exists := refMap["kind"]; exists {
+					if kindStr, ok := kind.(string); ok && kindStr == "Service" {
+						if name, exists := refMap["name"]; exists {
+							if nameStr, ok := name.(string); ok && nameStr != "" {
+								services[nameStr] = true
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	if len(services) == 0 {
+		return "-"
+	}
+	serviceNames := make([]string, 0, len(services))
+	for service := range services {
+		serviceNames = append(serviceNames, service)
+	}
+	if len(serviceNames) <= 2 {
+		return strings.Join(serviceNames, ", ")
+	}
+	return strings.Join(serviceNames[:2], ", ") + "..."
+}
+
+func formatRouteParents(parents any) string {
+	if parents == nil {
+		return "-"
+	}
+	parentSlice, ok := parents.([]any)
+	if !ok || len(parentSlice) == 0 {
+		return "-"
+	}
+	result := make([]string, 0, len(parentSlice))
+	for _, parent := range parentSlice {
+		parentMap, ok := parent.(map[string]any)
+		if !ok {
+			continue
+		}
+		if parentName, exists := parentMap["parentRef"]; exists {
+			if refMap, ok := parentName.(map[string]any); ok {
+				if name, exists := refMap["name"]; exists {
+					if nameStr, ok := name.(string); ok && nameStr != "" {
+						result = append(result, nameStr)
+					}
+				}
+			}
+		}
+	}
+	if len(result) == 0 {
+		return "-"
+	}
+	if len(result) <= 2 {
+		return strings.Join(result, ", ")
+	}
+	return strings.Join(result[:2], ", ") + "..."
+}
+
+func getStatusMessage(conditions any, conditionType string) string {
+	if conditions == nil {
+		return "-"
+	}
+	condSlice, ok := conditions.([]any)
+	if !ok || len(condSlice) == 0 {
+		return "-"
+	}
+	for _, cond := range condSlice {
+		condMap, ok := cond.(map[string]any)
+		if !ok {
+			continue
+		}
+		if typ, exists := condMap["type"]; exists {
+			if typeStr, ok := typ.(string); ok && typeStr == conditionType {
+				if status, exists := condMap["status"]; exists {
+					if statusStr, ok := status.(string); ok && statusStr == "True" {
+						if msg, exists := condMap["message"]; exists {
+							if msgStr, ok := msg.(string); ok && msgStr != "" {
+								return msgStr
+							}
+						}
+						return "✓"
+					}
+					if msg, exists := condMap["message"]; exists {
+						if msgStr, ok := msg.(string); ok && msgStr != "" {
+							return msgStr
+						}
+					}
+					return "✗"
+				}
+			}
+		}
+	}
+	return "-"
+}
+
+func joinStrings(items any) string {
+	if items == nil {
+		return "-"
+	}
+	itemSlice, ok := items.([]any)
+	if !ok || len(itemSlice) == 0 {
+		return "-"
+	}
+	result := make([]string, 0, len(itemSlice))
+	for _, item := range itemSlice {
+		if itemStr, ok := item.(string); ok && itemStr != "" {
+			result = append(result, itemStr)
+		}
+	}
+	if len(result) == 0 {
+		return "-"
+	}
+	if len(result) <= 3 {
+		return strings.Join(result, ", ")
+	}
+	return strings.Join(result[:3], ", ") + "..."
+}
+
 // ExtractImages returns a collection of container images.
 // !!BOZO!! If this has any legs?? enable scans on other container types.
 func ExtractImages(spec *v1.PodSpec) []string {
