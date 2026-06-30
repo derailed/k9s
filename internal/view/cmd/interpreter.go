@@ -185,6 +185,11 @@ func (c *Interpreter) IsAliasCmd() bool {
 	return aliasCmd.Has(c.cmd)
 }
 
+// IsPluginCmd returns true if plugin cmd is detected.
+func (c *Interpreter) IsPluginCmd() bool {
+	return pluginCmd.Has(c.cmd)
+}
+
 // IsXrayCmd returns true if xray cmd is detected.
 func (c *Interpreter) IsXrayCmd() bool {
 	return xrayCmd.Has(c.cmd)
