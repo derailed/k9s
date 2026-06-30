@@ -33,7 +33,7 @@ func TestTableReconcile(t *testing.T) {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, f)
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
-	err := ta.reconcile(ctx)
+	_, err := ta.reconcile(ctx)
 	require.NoError(t, err)
 	data := ta.Peek()
 	assert.Equal(t, 26, data.HeaderCount())
