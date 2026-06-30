@@ -150,6 +150,13 @@ func (t *Table) defaultEnv() Env {
 	if env["FILTER"] == "" {
 		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)
 	}
+	// Without a selection (e.g. an empty namespace), fall back to the viewer's
+	// namespace so plugins relying on $NAMESPACE still work.
+	if env["NAMESPACE"] == "" {
+		if ns := t.GetModel().GetNamespace(); !client.IsAllNamespaces(ns) {
+			env["NAMESPACE"] = client.CleanseNamespace(ns)
+		}
+	}
 	env["RESOURCE_GROUP"] = t.GVR().G()
 	env["RESOURCE_VERSION"] = t.GVR().V()
 	env["RESOURCE_NAME"] = t.GVR().R()
