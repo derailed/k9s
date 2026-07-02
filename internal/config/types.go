@@ -44,6 +44,14 @@ type UI struct {
 	// Can be overridden per context.
 	Skin string `json:"skin" yaml:"skin,omitempty"`
 
+	// DarkSkin is the skin to use when the OS is in dark mode.
+	// Takes priority over Skin and context skins when set.
+	DarkSkin string `json:"darkSkin" yaml:"darkSkin,omitempty"`
+
+	// LightSkin is the skin to use when the OS is in light mode.
+	// Takes priority over Skin and context skins when set.
+	LightSkin string `json:"lightSkin" yaml:"lightSkin,omitempty"`
+
 	// DefaultsToFullScreen toggles fullscreen on views like logs, yaml, details.
 	DefaultsToFullScreen bool `json:"defaultsToFullScreen" yaml:"defaultsToFullScreen"`
 
