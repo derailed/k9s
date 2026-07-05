@@ -224,6 +224,34 @@ func TestLogTimedout(t *testing.T) {
 	assert.Equal(t, e, string(v.data[0]))
 }
 
+func TestLogSetSinceSecondsClearsSinceTime(t *testing.T) {
+	opts := makeLogOpts(4)
+	opts.SinceTime = "2024-01-01T00:00:00Z"
+	m := model.NewLog(client.NewGVR("fred"), opts, 10*time.Millisecond)
+	m.Init(makeFactory())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	m.SetSinceSeconds(ctx, 60)
+	assert.Empty(t, m.LogOptions().SinceTime, "SetSinceSeconds must clear SinceTime")
+	assert.Equal(t, int64(60), m.SinceSeconds())
+}
+
+func TestLogHeadClearsSinceTime(t *testing.T) {
+	opts := makeLogOpts(4)
+	opts.SinceTime = "2024-01-01T00:00:00Z"
+	m := model.NewLog(client.NewGVR("fred"), opts, 10*time.Millisecond)
+	m.Init(makeFactory())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	m.Head(ctx)
+	assert.Empty(t, m.LogOptions().SinceTime, "Head must clear SinceTime")
+	assert.True(t, m.IsHead())
+}
+
 func TestToggleAllContainers(t *testing.T) {
 	opts := makeLogOpts(1)
 	opts.DefaultContainer = "duh"
