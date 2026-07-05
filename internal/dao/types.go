@@ -169,10 +169,13 @@ type ContainsPodSpec interface {
 	SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error
 }
 
+// SanitizeProgressFn reports sanitize progress.
+type SanitizeProgressFn func(total, processed int, current string)
+
 // Sanitizer represents a resource sanitizer.
 type Sanitizer interface {
 	// Sanitize nukes all resources in unhappy state.
-	Sanitize(context.Context, string) (int, error)
+	Sanitize(context.Context, string, SanitizeProgressFn) (int, error)
 }
 
 // Valuer represents a resource with values.
