@@ -82,9 +82,21 @@ func newArgs(p *Interpreter, aa []string) args {
 
 func (a args) String() string {
 	ss := make([]string, 0, len(a))
-	kk := maps.Keys(a)
-	for _, k := range slices.Sorted(kk) {
-		v := a[k]
+	ordered := []string{
+		contextKey,
+		filterKey,
+		fuzzyKey,
+		labelKey,
+		topicKey,
+		nsKey,
+	}
+	seen := make(map[string]struct{}, len(ordered))
+
+	appendKey := func(k string) {
+		v, ok := a[k]
+		if !ok || v == "" {
+			return
+		}
 		switch k {
 		case labelKey:
 			v = "'" + v + "'"
@@ -94,6 +106,19 @@ func (a args) String() string {
 			v = contextFlag + v
 		}
 		ss = append(ss, v)
+	}
+
+	for _, k := range ordered {
+		appendKey(k)
+		seen[k] = struct{}{}
+	}
+
+	kk := maps.Keys(a)
+	for _, k := range slices.Sorted(kk) {
+		if _, ok := seen[k]; ok {
+			continue
+		}
+		appendKey(k)
 	}
 
 	return strings.Join(ss, " ")
