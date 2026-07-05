@@ -6,8 +6,11 @@ package dao
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -30,7 +33,44 @@ func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error
 		lsel = sel
 	}
 
-	return r.getFactory().List(r.gvr, ns, false, lsel)
+	oo, err := r.getFactory().List(r.gvr, ns, false, lsel)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterByFieldSelector(ctx, oo)
+}
+
+// filterByFieldSelector applies a client-side field selector if present in the context.
+func filterByFieldSelector(ctx context.Context, oo []runtime.Object) ([]runtime.Object, error) {
+	sel, ok := ctx.Value(internal.KeyFields).(string)
+	if !ok || sel == "" {
+		return oo, nil
+	}
+	fsel, err := fields.ParseSelector(sel)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]runtime.Object, 0, len(oo))
+	for _, o := range oo {
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			// Cannot evaluate a field selector on a non-unstructured object.
+			res = append(res, o)
+			continue
+		}
+		set := make(fields.Set, len(fsel.Requirements()))
+		for _, req := range fsel.Requirements() {
+			val, _, _ := unstructured.NestedString(u.Object, strings.Split(req.Field, ".")...)
+			set[req.Field] = val
+		}
+		if fsel.Matches(set) {
+			res = append(res, o)
+		}
+	}
+
+	return res, nil
 }
 
 // Get returns a resource instance if found, else an error.
