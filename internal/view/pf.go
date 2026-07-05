@@ -54,6 +54,7 @@ func (p *PortForward) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftS)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("View Benchmarks", p.showBenchCmd, true),
+		tcell.KeyLF:    ui.NewKeyAction("View Benchmarks", p.showBenchCmd, true),
 		ui.KeyB:        ui.NewKeyAction("Benchmark Run/Stop", p.toggleBenchCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),
 		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.GetTable().SortColCmd("PORTS", true), false),

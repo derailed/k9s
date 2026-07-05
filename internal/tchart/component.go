@@ -66,7 +66,7 @@ func (c *Component) SetLegend(l string) {
 func (c *Component) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return c.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		switch key := event.Key(); key {
-		case tcell.KeyEnter:
+		case tcell.KeyEnter, tcell.KeyLF:
 		case tcell.KeyBacktab, tcell.KeyTab:
 			if c.blur != nil {
 				c.blur(key)

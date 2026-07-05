@@ -87,6 +87,7 @@ func (d *Dir) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyY:        ui.NewKeyAction(yamlAction, d.viewCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", d.gotoCmd, true),
+		tcell.KeyLF:    ui.NewKeyAction("Goto", d.gotoCmd, true),
 	})
 }
 

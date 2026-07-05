@@ -261,6 +261,7 @@ func (a *App) bindKeys() {
 		ui.KeyDash:         ui.NewSharedKeyAction("Last View", a.lastCommand, false),
 		tcell.KeyCtrlA:     ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter:     ui.NewKeyAction("Goto", a.gotoCmd, false),
+		tcell.KeyLF:        ui.NewKeyAction("Goto", a.gotoCmd, false),
 		tcell.KeyCtrlC:     ui.NewKeyAction("Quit", a.quitCmd, false),
 	}))
 }

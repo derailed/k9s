@@ -152,6 +152,7 @@ func (b *Browser) bindKeys(aa *ui.KeyActions) {
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
 		ui.KeyQ:         ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
+		tcell.KeyLF:     ui.NewSharedKeyAction("Filter", b.filterCmd, false),
 		tcell.KeyHelp:   ui.NewSharedKeyAction("Help", b.helpCmd, false),
 	})
 }
@@ -650,6 +651,7 @@ func (b *Browser) refreshActions() {
 	aa := ui.NewKeyActionsFromMap(ui.KeyMap{
 		ui.KeyC:        ui.NewKeyAction("Copy", b.cpCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("View", b.enterCmd, false),
+		tcell.KeyLF:    ui.NewKeyAction("View", b.enterCmd, false),
 		tcell.KeyCtrlR: ui.NewKeyAction("Refresh", b.refreshCmd, false),
 	})
 
