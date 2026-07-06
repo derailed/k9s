@@ -295,8 +295,8 @@ func TestConfigRestConfigUserAgent(t *testing.T) {
 		e       string
 	}{
 		"release": {
-			version: "v0.51.0",
-			e:       fmt.Sprintf("k9s/v0.51.0 (%s/%s)", runtime.GOOS, runtime.GOARCH),
+			version: "v1.2.3-test",
+			e:       fmt.Sprintf("k9s/v1.2.3-test (%s/%s)", runtime.GOOS, runtime.GOARCH),
 		},
 		"dev": {
 			version: "dev",
