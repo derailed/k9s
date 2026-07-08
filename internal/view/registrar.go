@@ -16,6 +16,7 @@ func loadCustomViewers() MetaViewers {
 	batchViewers(m)
 	crdViewers(m)
 	helmViewers(m)
+	monitoringViewers(m)
 
 	return m
 }
@@ -143,5 +144,17 @@ func batchViewers(vv MetaViewers) {
 func crdViewers(vv MetaViewers) {
 	vv[client.CrdGVR] = MetaViewer{
 		viewerFn: NewCRD,
+	}
+}
+
+func monitoringViewers(vv MetaViewers) {
+	vv[client.SmonGVR] = MetaViewer{
+		viewerFn: NewServiceMonitor,
+	}
+	vv[client.PmonGVR] = MetaViewer{
+		viewerFn: NewPodMonitor,
+	}
+	vv[client.PrbGVR] = MetaViewer{
+		viewerFn: NewProbe,
 	}
 }
