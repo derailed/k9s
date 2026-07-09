@@ -40,7 +40,16 @@ func (r *Resource) Get(_ context.Context, path string) (runtime.Object, error) {
 
 // ToYAML returns a resource yaml.
 func (r *Resource) ToYAML(path string, showManaged bool) (string, error) {
-	o, err := r.Get(context.Background(), path)
+	var (
+		o   runtime.Object
+		err error
+	)
+	if showManaged {
+		// The informer cache strips managed fields: fetch the live resource.
+		o, err = r.Generic.Get(context.Background(), path)
+	} else {
+		o, err = r.Get(context.Background(), path)
+	}
 	if err != nil {
 		return "", err
 	}
