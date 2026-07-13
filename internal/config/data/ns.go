@@ -63,7 +63,7 @@ func (n *Namespace) Validate(conn client.Connection) {
 	n.mx.RLock()
 	defer n.mx.RUnlock()
 
-	if conn == nil || !conn.IsValidNamespace(n.Active) {
+	if conn == nil || !isValidNamespace(conn, n.Active) {
 		return
 	}
 	for _, ns := range n.Favorites {
@@ -93,11 +93,28 @@ func (n *Namespace) SetActive(ns string, _ KubeSettings) error {
 	}
 	n.Active = ns
 
-	if ns != "" && !n.LockFavorites {
+	// A multi-namespace selection (e.g. "ns1,ns2") is persisted as the active
+	// namespace but never stored as a single favorite entry.
+	if ns != "" && !n.LockFavorites && !client.IsMultiNamespace(ns) {
 		n.addFavNS(ns)
 	}
 
 	return nil
+}
+
+// isValidNamespace reports whether ns is valid, treating a comma-delimited
+// selector as valid only when every namespace in it is valid.
+func isValidNamespace(conn client.Connection, ns string) bool {
+	if !client.IsMultiNamespace(ns) {
+		return conn.IsValidNamespace(ns)
+	}
+	for _, n := range client.Namespaces(ns) {
+		if !conn.IsValidNamespace(n) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (n *Namespace) isAllNamespaces() bool {
