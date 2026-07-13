@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -613,6 +614,67 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// toggleNamespaceCmd adds/removes the favorite namespace bound to the pressed
+// Shift+<number> to/from the current (possibly multi-namespace) view.
+func (b *Browser) toggleNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
+	key := tcell.Key(evt.Rune())
+	index := -1
+	for i := range b.namespaces {
+		if sk, ok := ui.ShiftNumKeys[i]; ok && sk == key {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		return evt
+	}
+	ns := b.namespaces[index]
+	if ns == "" || ns == client.NamespaceAll {
+		return nil
+	}
+
+	// Start from the current selection, treating all/cluster-wide as empty.
+	var set []string
+	if cur := b.GetModel().GetNamespace(); !client.IsClusterWide(cur) {
+		set = client.Namespaces(cur)
+	}
+
+	if pos := slices.Index(set, ns); pos >= 0 {
+		if len(set) == 1 {
+			b.app.Flash().Warnf("Cannot remove the last namespace `%s` from the view", ns)
+			return nil
+		}
+		set = slices.Delete(set, pos, pos+1)
+	} else {
+		auth, err := b.App().factory.Client().CanI(ns, b.GVR(), "", client.ListAccess)
+		if !auth {
+			if err == nil {
+				err = fmt.Errorf("access denied for user on: %s/%s", ns, b.GVR())
+			}
+			b.App().Flash().Err(err)
+			return nil
+		}
+		set = append(set, ns)
+	}
+
+	joined := strings.Join(set, client.NamespaceDelimiter)
+	if err := b.app.switchNS(joined); err != nil {
+		b.App().Flash().Err(err)
+		return nil
+	}
+	b.setNamespace(joined)
+	b.app.Flash().Infof("Viewing %s in namespaces `%s`...", b.GVR(), joined)
+	b.refresh()
+	b.UpdateTitle()
+	b.SelectRow(1, 0, true)
+	b.app.CmdBuff().Reset()
+	if err := b.app.Config.SetActiveNamespace(b.GetModel().GetNamespace()); err != nil {
+		slog.Error("Unable to set active namespace during ns toggle", slogs.Error, err)
+	}
+
+	return nil
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
@@ -703,6 +765,10 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 		aa.Add(ui.KeyW, ui.NewKeyAction("Warp To Namespace", b.nsWarpCmd, true))
 	}
 
+	// Namespaces currently included in the (possibly multi-namespace) view; used
+	// to highlight their menu entries.
+	sel := client.Namespaces(client.CleanseNamespace(b.GetModel().GetNamespace()))
+
 	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
 	var index int
 	if ok, _ := b.app.Conn().CanI(client.NamespaceAll, client.NsGVR, "", client.ListAccess); ok {
@@ -716,7 +782,13 @@ func (b *Browser) namespaceActions(aa *ui.KeyActions) {
 			continue
 		}
 		if numKey, ok := ui.NumKeys[index]; ok {
-			aa.Add(numKey, ui.NewKeyAction(ns, b.switchNamespaceCmd, true))
+			aa.Add(numKey, ui.NewKeyActionWithOpts(ns, b.switchNamespaceCmd,
+				ui.ActionOpts{Visible: true, Active: slices.Contains(sel, ns)}))
+			// Shift+<number> toggles the favorite in/out of a multi-namespace
+			// view. Registered hidden to avoid doubling the menu.
+			if shiftKey, ok := ui.ShiftNumKeys[index]; ok {
+				aa.Add(shiftKey, ui.NewKeyAction("Toggle "+ns, b.toggleNamespaceCmd, false))
+			}
 			b.namespaces[index] = ns
 			index++
 		} else {

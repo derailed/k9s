@@ -12,6 +12,7 @@ type MenuHint struct {
 	Mnemonic    string
 	Description string
 	Visible     bool
+	Active      bool
 }
 
 // IsBlank checks if menu hint is a place holder.
