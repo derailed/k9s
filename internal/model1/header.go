@@ -178,7 +178,7 @@ func (h Header) FilterColIndices(ns string, wide bool) sets.Set[int] {
 	if len(h) == 0 {
 		return nil
 	}
-	nsed := client.IsNamespaced(ns)
+	nsed := client.IsNamespaced(ns) && !client.IsMultiNamespace(ns)
 
 	cc := sets.New[int]()
 	for i, c := range h {
