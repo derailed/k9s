@@ -132,6 +132,10 @@ type Connection interface {
 	// CheckConnectivity checks if api server connection is happy or not.
 	CheckConnectivity() bool
 
+	// ConnectivityError returns the error from the last failed connectivity
+	// check, or nil if the last check succeeded.
+	ConnectivityError() error
+
 	// ActiveContext returns the current context name.
 	ActiveContext() string
 
