@@ -314,10 +314,10 @@ func gatherPodMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metri
 	cc = append(cc, filterSidecarCO(spec.InitContainers)...)
 	cc = append(cc, spec.Containers...)
 
-	rcpu, rmem, rgpu := cosRequests(cc)
+	rcpu, rmem, rgpu := cosRequests(cc, spec.Resources)
 	r.cpu, r.mem, r.gpu = rcpu.MilliValue(), rmem.Value(), rgpu.Value()
 
-	lcpu, lmem, lgpu := cosLimits(cc)
+	lcpu, lmem, lgpu := cosLimits(cc, spec.Resources)
 	r.lcpu, r.lmem, r.lgpu = lcpu.MilliValue(), lmem.Value(), lgpu.Value()
 
 	ccpu, cmem := currentRes(ccmx)
@@ -326,8 +326,24 @@ func gatherPodMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metri
 	return
 }
 
-func cosLimits(cc []v1.Container) (cpuQ, memQ, gpuQ *resource.Quantity) {
+func cosLimits(cc []v1.Container, resources *v1.ResourceRequirements) (cpuQ, memQ, gpuQ *resource.Quantity) {
 	cpuQ, gpuQ, memQ = new(resource.Quantity), new(resource.Quantity), new(resource.Quantity)
+
+	// Check pod-level resources first
+	if resources != nil && len(resources.Limits) > 0 {
+		if q := resources.Limits.Cpu(); q != nil {
+			cpuQ.Add(*q)
+		}
+		if q := resources.Limits.Memory(); q != nil {
+			memQ.Add(*q)
+		}
+		if q := extractGPU(resources.Limits); q != nil {
+			gpuQ.Add(*q)
+		}
+		return
+	}
+
+	// Fallback to container-level resources
 	for i := range cc {
 		limits := cc[i].Resources.Limits
 		if len(limits) == 0 {
@@ -347,8 +363,24 @@ func cosLimits(cc []v1.Container) (cpuQ, memQ, gpuQ *resource.Quantity) {
 	return
 }
 
-func cosRequests(cc []v1.Container) (cpuQ, memQ, gpuQ *resource.Quantity) {
+func cosRequests(cc []v1.Container, resources *v1.ResourceRequirements) (cpuQ, memQ, gpuQ *resource.Quantity) {
 	cpuQ, gpuQ, memQ = new(resource.Quantity), new(resource.Quantity), new(resource.Quantity)
+
+	// Check pod-level resources first
+	if resources != nil && len(resources.Requests) > 0 {
+		if q := resources.Requests.Cpu(); q != nil {
+			cpuQ.Add(*q)
+		}
+		if q := resources.Requests.Memory(); q != nil {
+			memQ.Add(*q)
+		}
+		if q := extractGPU(resources.Requests); q != nil {
+			gpuQ.Add(*q)
+		}
+		return
+	}
+
+	// Fallback to container-level resources
 	for i := range cc {
 		co := cc[i]
 		rl := containerRequests(&co)
