@@ -20,6 +20,23 @@ func TestNewLogoView(t *testing.T) {
 	assert.Empty(t, v.Status().GetText(false))
 }
 
+func TestLogoCustomArt(t *testing.T) {
+	v := ui.NewLogo(config.NewStyles())
+	v.SetLogo("AB\n C")
+
+	assert.Equal(t, "[#ffa500::b]AB\n[#ffa500::b] C\n", v.Logo().GetText(false))
+	assert.Equal(t, 2, v.Width())
+	assert.Equal(t, 3, v.Height())
+}
+
+func TestLogoCustomArtFallsBack(t *testing.T) {
+	v := ui.NewLogo(config.NewStyles())
+	v.SetLogo(" \n\t\n")
+
+	const elogo = "[#ffa500::b] ____  __ ________       \n[#ffa500::b]|    |/  /   __   \\______\n[#ffa500::b]|       /\\____    /  ___/\n[#ffa500::b]|    \\   \\  /    /\\___  \\\n[#ffa500::b]|____|\\__ \\/____//____  /\n[#ffa500::b]         \\/           \\/ \n"
+	assert.Equal(t, elogo, v.Logo().GetText(false))
+}
+
 func TestLogoStatus(t *testing.T) {
 	uu := map[string]struct {
 		logo, msg, e string
