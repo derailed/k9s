@@ -639,6 +639,7 @@ func (b *Browser) defaultContext() context.Context {
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, b.app.factory.Client().HasMetrics())
+	ctx = context.WithValue(ctx, internal.KeyViewConfig, b.app.CustomView())
 
 	return ctx
 }
