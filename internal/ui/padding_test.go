@@ -75,7 +75,27 @@ func TestMaxColumn(t *testing.T) {
 				),
 			),
 			"A",
-			MaxyPad{32, 6},
+			MaxyPad{30, 6},
+		},
+		"wide_cjk": {
+			model1.NewTableDataWithRows(
+				client.NewGVR("test"),
+				model1.Header{model1.HeaderColumn{Name: "A"}, model1.HeaderColumn{Name: "B"}},
+				model1.NewRowEventsWithEvts(
+					model1.RowEvent{
+						Row: model1.Row{
+							Fields: model1.Fields{"결제-서비스", "world"},
+						},
+					},
+					model1.RowEvent{
+						Row: model1.Row{
+							Fields: model1.Fields{"o", "mama"},
+						},
+					},
+				),
+			),
+			"B",
+			MaxyPad{12, 6},
 		},
 	}
 
