@@ -39,6 +39,15 @@ type Suggester interface {
 	ClearSuggestions()
 }
 
+// SuggestionState exposes current suggestion state.
+type SuggestionState interface {
+	// Suggestions returns the current suggestions.
+	Suggestions() []string
+
+	// SuggestionIndex returns the selected suggestion index.
+	SuggestionIndex() int
+}
+
 // PromptModel represents a prompt buffer.
 type PromptModel interface {
 	// SetText sets the model text.
@@ -85,6 +94,8 @@ type Prompt struct {
 	prefix  rune
 	styles  *config.Styles
 	model   PromptModel
+	kind    model.BufferKind
+	drop    *SuggestionDropdown
 	spacer  int
 	mx      sync.RWMutex
 }
@@ -101,6 +112,7 @@ func NewPrompt(app *App, noIcons bool, styles *config.Styles) *Prompt {
 	if noIcons {
 		p.spacer--
 	}
+	p.drop = NewSuggestionDropdown(&p, styles)
 	p.SetWordWrap(true)
 	p.SetWrap(true)
 	p.SetDynamicColors(true)
@@ -110,6 +122,11 @@ func NewPrompt(app *App, noIcons bool, styles *config.Styles) *Prompt {
 	p.SetInputCapture(p.keyboard)
 
 	return &p
+}
+
+// SuggestionDropdown returns the command suggestion overlay.
+func (p *Prompt) SuggestionDropdown() *SuggestionDropdown {
+	return p.drop
 }
 
 // SendKey sends a keyboard event (testing only!).
@@ -166,35 +183,44 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		p.model.SetActive(false)
 
 	case tcell.KeyEnter, tcell.KeyCtrlE:
-		p.model.SetText(p.model.GetText(), "", true)
+		p.acceptSuggestion(m, true)
 		p.model.SetActive(false)
 
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
 		p.model.ClearText(true)
 
 	case tcell.KeyUp:
-		if s, ok := m.NextSuggestion(); ok {
-			p.model.SetText(p.model.GetText(), s, true)
-		}
-
-	case tcell.KeyDown:
 		if s, ok := m.PrevSuggestion(); ok {
 			p.model.SetText(p.model.GetText(), s, true)
 		}
 
-	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
-		if s, ok := m.CurrentSuggestion(); ok {
-			p.model.SetText(p.model.GetText()+s, "", true)
-			m.ClearSuggestions()
+	case tcell.KeyDown:
+		if s, ok := m.NextSuggestion(); ok {
+			p.model.SetText(p.model.GetText(), s, true)
 		}
+
+	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
+		p.acceptSuggestion(m, false)
 	}
 
 	return nil
 }
 
+func (p *Prompt) acceptSuggestion(m Suggester, commandOnly bool) {
+	if s, ok := m.CurrentSuggestion(); ok && (!commandOnly || p.kind == model.CommandBuffer) {
+		p.model.SetText(p.model.GetText()+s, "", true)
+		m.ClearSuggestions()
+		return
+	}
+	p.model.SetText(p.model.GetText(), "", true)
+}
+
 // StylesChanged notifies skin changed.
 func (p *Prompt) StylesChanged(s *config.Styles) {
 	p.styles = s
+	if p.drop != nil {
+		p.drop.styles = s
+	}
 	p.SetBackgroundColor(s.K9s.Prompt.BgColor.Color())
 	p.SetTextColor(s.K9s.Prompt.FgColor.Color())
 }
@@ -210,7 +236,7 @@ func (p *Prompt) InCmdMode() bool {
 func (p *Prompt) activate() {
 	p.Clear()
 	p.SetCursorIndex(len(p.model.GetText()))
-	p.write(p.model.GetText(), p.model.GetSuggestion())
+	p.update(p.model.GetText(), p.model.GetSuggestion())
 	p.model.Notify(false)
 }
 
@@ -230,6 +256,9 @@ func (p *Prompt) Draw(sc tcell.Screen) {
 
 func (p *Prompt) update(text, suggestion string) {
 	p.Clear()
+	if p.showDropdown(text, suggestion) {
+		suggestion = ""
+	}
 	p.write(text, suggestion)
 }
 
@@ -266,6 +295,7 @@ func (p *Prompt) SuggestionChanged(text, suggestion string) {
 // BufferActive indicates the buff activity changed.
 func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	if activate {
+		p.kind = kind
 		p.ShowCursor(true)
 		p.SetBorder(true)
 		p.SetTextColor(p.styles.FgColor())
@@ -278,7 +308,33 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	p.ShowCursor(false)
 	p.SetBorder(false)
 	p.SetBackgroundColor(p.styles.BgColor())
+	if p.drop != nil {
+		p.drop.Clear()
+	}
 	p.Clear()
+}
+
+func (p *Prompt) showDropdown(text, suggestion string) bool {
+	if p.drop == nil || !p.model.IsActive() || p.kind != model.CommandBuffer || suggestion == "" {
+		if p.drop != nil {
+			p.drop.Clear()
+		}
+		return false
+	}
+
+	state, ok := p.model.(SuggestionState)
+	if !ok {
+		p.drop.Clear()
+		return false
+	}
+	suggestions := state.Suggestions()
+	if len(suggestions) == 0 {
+		p.drop.Clear()
+		return false
+	}
+
+	p.drop.Update(text, suggestions, state.SuggestionIndex())
+	return true
 }
 
 func (p *Prompt) prefixesFor(k model.BufferKind) (ic, prefix rune) {
