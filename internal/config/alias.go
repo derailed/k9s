@@ -196,6 +196,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare(client.PuGVR, "pulse", "pu", "hz")
 	a.declare(client.XGVR, "xray", "x")
 	a.declare(client.WkGVR, "workload", "wk")
+	a.declare(client.ExplainGVR, "explain", "exp")
 }
 
 // Save alias to disk.
