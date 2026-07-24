@@ -57,6 +57,7 @@ func init() {
 		fmt.Printf("Fail to init k9s logs location %s\n", err)
 	}
 
+	initVersion()
 	rootCmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return flagError{err: err}
 	})
@@ -64,6 +65,16 @@ func init() {
 	rootCmd.AddCommand(versionCmd(), infoCmd())
 	initK9sFlags()
 	initK8sFlags()
+}
+
+func initVersion() {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return
+	}
+	if v := bi.Main.Version; v != "" && v != "(devel)" {
+		version = v
+	}
 }
 
 // Execute root command.
