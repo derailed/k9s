@@ -113,7 +113,12 @@ func (v *CustomView) Load(path string) error {
 	if err := yaml.Unmarshal(bb, &in); err != nil {
 		return err
 	}
-	v.Views = in.Views
+	if v.Views == nil {
+		v.Views = make(map[string]ViewSetting)
+	}
+	for k, vs := range in.Views {
+		v.Views[k] = vs
+	}
 	v.fireConfigChanged()
 
 	return nil
