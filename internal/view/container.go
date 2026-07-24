@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -24,18 +25,18 @@ const containerTitle = "Containers"
 // Container represents a container view.
 type Container struct {
 	ResourceViewer
+	showFullImage bool
 }
 
 // NewContainer returns a new container view.
 func NewContainer(gvr *client.GVR) ResourceViewer {
-	c := Container{}
+	c := Container{showFullImage: true}
 	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.logOptions)
 	c.SetEnvFn(c.k9sEnv)
 	c.GetTable().SetEnterFn(c.viewLogs)
 	c.GetTable().SetDecorateFn(c.decorateRows)
 	c.GetTable().SetSortCol("IDX", true)
 	c.AddBindKeysFn(c.bindKeys)
-	c.GetTable().SetDecorateFn(c.portForwardIndicator)
 
 	return &c
 }
@@ -55,7 +56,39 @@ func (c *Container) portForwardIndicator(data *model1.TableData) {
 }
 
 func (c *Container) decorateRows(data *model1.TableData) {
+	c.portForwardIndicator(data)
+	c.decorateImageNames(data)
 	decorateCpuMemHeaderRows(c.App(), data)
+}
+
+func (c *Container) decorateImageNames(data *model1.TableData) {
+	if c.showFullImage {
+		return
+	}
+	col, ok := data.IndexOfHeader("IMAGE")
+	if !ok {
+		return
+	}
+
+	data.RowsRange(func(_ int, re model1.RowEvent) bool {
+		if col >= len(re.Row.Fields) {
+			return true
+		}
+		re.Row.Fields[col] = ShortContainerImageName(re.Row.Fields[col])
+
+		return true
+	})
+}
+
+func ShortContainerImageName(img string) string {
+	if idx := strings.Index(img, "@"); idx >= 0 {
+		img = img[:idx]
+	}
+	if idx := strings.LastIndex(img, "/"); idx >= 0 {
+		img = img[idx+1:]
+	}
+
+	return img
 }
 
 // Name returns the component name.
@@ -90,7 +123,19 @@ func (c *Container) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
+		ui.KeyI:      ui.NewKeyAction("Toggle Full Image", c.toggleImageNameCmd, true),
 	})
+}
+
+func (c *Container) toggleImageNameCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if c.App().InCmdMode() {
+		return evt
+	}
+
+	c.showFullImage = !c.showFullImage
+	c.GetTable().Refresh()
+
+	return nil
 }
 
 func (c *Container) k9sEnv() Env {
