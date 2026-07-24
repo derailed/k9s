@@ -150,10 +150,10 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 		return td
 	}
 	if f, ok := internal.IsFuzzySelector(f.Filter); ok {
-		td.rowEvents = t.fuzzyFilter(f)
+		td.rowEvents = td.fuzzyFilter(f)
 		return td
 	}
-	rr, err := t.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
+	rr, err := td.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
 	if err == nil {
 		td.rowEvents = rr
 	} else {
