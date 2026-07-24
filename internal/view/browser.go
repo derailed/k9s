@@ -683,9 +683,11 @@ func (b *Browser) refreshActions() {
 	}
 	b.Actions().Merge(aa)
 
-	if err := pluginActions(b, b.Actions()); err != nil {
-		slog.Warn("Plugins load failed", slogs.Error, err)
-		b.app.Logo().Warn("Plugins load failed!")
+	if b.GVR() != client.PlgGVR {
+		if err := pluginActions(b, b.Actions()); err != nil {
+			slog.Warn("Plugins load failed", slogs.Error, err)
+			b.app.Logo().Warn("Plugins load failed!")
+		}
 	}
 	if err := hotKeyActions(b, b.Actions()); err != nil {
 		slog.Warn("Hotkeys load failed", slogs.Error, err)

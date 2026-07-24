@@ -225,6 +225,14 @@ func loadK9s(m ResourceMetas) {
 		Verbs:        []string{},
 		Categories:   []string{k9sCat},
 	}
+	m[client.PlgGVR] = &metav1.APIResource{
+		Name:         "plugins",
+		Kind:         "Plugins",
+		SingularName: "plugin",
+		ShortNames:   []string{"plg"},
+		Verbs:        []string{},
+		Categories:   []string{k9sCat},
+	}
 	m[client.CtGVR] = &metav1.APIResource{
 		Name:         client.CtGVR.String(),
 		Kind:         "Contexts",

@@ -193,6 +193,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare(client.PfGVR, "portforward", "pf")
 	a.declare(client.BeGVR, "benchmark", "bench")
 	a.declare(client.SdGVR, "screendump", "sd")
+	a.declare(client.PlgGVR, "plugin", "plugins", "plg")
 	a.declare(client.PuGVR, "pulse", "pu", "hz")
 	a.declare(client.XGVR, "xray", "x")
 	a.declare(client.WkGVR, "workload", "wk")
