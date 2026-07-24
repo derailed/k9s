@@ -66,13 +66,20 @@ func WriteYAML(content any) ([]byte, error) {
 }
 
 // SaveYAML writes a yaml file to disk.
-func SaveYAML(path string, content any) error {
+func SaveYAML(path string, content any) (err error) {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_TRUNC, DefaultFileMod)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		err = errors.Join(err, f.Close())
+	}()
+
 	ec := yaml.NewEncoder(f)
 	ec.SetIndent(2)
+	if err = ec.Encode(content); err != nil {
+		return err
+	}
 
-	return ec.Encode(content)
+	return ec.Close()
 }
