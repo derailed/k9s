@@ -72,7 +72,8 @@
               "properties": {
                 "fgColor": {"type": "string"},
                 "keyColor": {"type": "string"},
-                "numKeyColor": {"type": "string"}
+                "numKeyColor": {"type": "string"},
+                "activeColor": {"type": "string"}
               }
             },
             "crumbs": {

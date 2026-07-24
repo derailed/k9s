@@ -127,7 +127,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		ns = client.NamespaceAll
 		c.ResetActiveView()
 	case isStringSet(flags.Namespace):
-		ns = *flags.Namespace
+		ns = client.NormalizeNamespaces(*flags.Namespace)
 		c.ResetActiveView()
 	default:
 		nss, err := c.K9s.ActiveContextNamespace()
