@@ -4,18 +4,23 @@
 package model1
 
 import (
+	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"runtime"
 	"sort"
 	"strings"
 	"sync"
 
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/fvbommel/sortorder"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 )
+
+var ErrCustomColumn = errors.New("custom column resolution error")
 
 // parallelRender fans work across NumCPU batch workers.
 func parallelRender(n int, fn func(i int) error) error {
@@ -57,7 +62,7 @@ func parallelRender(n int, fn func(i int) error) error {
 
 func Hydrate(ns string, oo []k8sruntime.Object, rr Rows, re Renderer) error {
 	return parallelRender(len(oo), func(i int) error {
-		return re.Render(oo[i], ns, &rr[i])
+		return handleRenderErr(re.Render(oo[i], ns, &rr[i]))
 	})
 }
 
@@ -69,8 +74,20 @@ func GenericHydrate(ns string, table *metav1.Table, rr Rows, re Renderer) error 
 	gr.SetTable(ns, table)
 
 	return parallelRender(len(table.Rows), func(i int) error {
-		return gr.Render(table.Rows[i], ns, &rr[i])
+		return handleRenderErr(gr.Render(table.Rows[i], ns, &rr[i]))
 	})
+}
+
+func handleRenderErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, ErrCustomColumn) {
+		slog.Warn("Unable to resolve custom column; rendering partial row", slogs.Error, err)
+		return nil
+	}
+
+	return err
 }
 
 // IsValid returns true if resource is valid, false otherwise.

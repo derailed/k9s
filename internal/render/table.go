@@ -101,12 +101,9 @@ func (t *Table) Render(o any, ns string, r *model1.Row) error {
 		obj = obj.DeepCopyObject()
 	}
 	cols, err := t.specs.realize(obj, t.defaultHeader(), r)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(r)
 
-	return nil
+	return err
 }
 
 func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error {

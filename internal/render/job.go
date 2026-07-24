@@ -53,12 +53,9 @@ func (j Job) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := j.specs.realize(raw, defaultJOBHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

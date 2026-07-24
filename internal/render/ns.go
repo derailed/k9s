@@ -69,12 +69,9 @@ func (n Namespace) Render(o any, _ string, row *model1.Row) error {
 	}
 
 	cols, err := n.specs.realize(raw, defaultNSHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
