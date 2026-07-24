@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRbacCmd(t *testing.T) {
@@ -704,4 +705,115 @@ func Test_grokLabels(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSortArg(t *testing.T) {
+	uu := map[string]struct {
+		cmd string
+		ok  bool
+		col string
+		asc bool
+	}{
+		"empty": {},
+
+		"none": {
+			cmd: "pods",
+		},
+
+		"desc": {
+			cmd: "pods sort:AGE:desc",
+			ok:  true,
+			col: "AGE",
+			asc: false,
+		},
+
+		"asc": {
+			cmd: "pods sort:age:asc",
+			ok:  true,
+			col: "AGE",
+			asc: true,
+		},
+
+		"default-asc": {
+			cmd: "pods sort:name",
+			ok:  true,
+			col: "NAME",
+			asc: true,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			col, asc, ok := p.SortArg()
+			assert.Equal(t, u.ok, ok)
+			if u.ok {
+				assert.Equal(t, u.col, col)
+				assert.Equal(t, u.asc, asc)
+			}
+		})
+	}
+}
+
+func TestSetSortArg(t *testing.T) {
+	p := cmd.NewInterpreter("pods app=frontend")
+	p.SetSortArg("AGE", false)
+
+	col, asc, ok := p.SortArg()
+	assert.True(t, ok)
+	assert.Equal(t, "AGE", col)
+	assert.False(t, asc)
+	assert.Contains(t, p.GetLine(), "sort:AGE:desc")
+	assert.Contains(t, p.GetLine(), "'app=frontend'")
+
+	// Replacing a prior sort.
+	p.SetSortArg("NAME", true)
+	col, asc, ok = p.SortArg()
+	assert.True(t, ok)
+	assert.Equal(t, "NAME", col)
+	assert.True(t, asc)
+	assert.Contains(t, p.GetLine(), "sort:NAME:asc")
+	assert.NotContains(t, p.GetLine(), "sort:AGE")
+}
+
+func TestSetFilterArg(t *testing.T) {
+	p := cmd.NewInterpreter("pods app=frontend")
+	p.SetFilterArg("nginx")
+
+	f, ok := p.FilterArg()
+	assert.True(t, ok)
+	assert.Equal(t, "nginx", f)
+
+	// Label must be cleared (mutual exclusivity).
+	sel, err := p.LabelsSelector()
+	require.NoError(t, err)
+	assert.True(t, sel.Empty())
+	assert.Contains(t, p.GetLine(), "/nginx")
+	assert.NotContains(t, p.GetLine(), "app=frontend")
+
+	// Empty filter clears it.
+	p.SetFilterArg("")
+	_, ok = p.FilterArg()
+	assert.False(t, ok)
+}
+
+func TestSetLabelArg(t *testing.T) {
+	p := cmd.NewInterpreter("pods /nginx")
+	p.SetLabelArg("app=frontend")
+
+	sel, err := p.LabelsSelector()
+	require.NoError(t, err)
+	assert.Equal(t, "app=frontend", sel.String())
+
+	// Filter must be cleared (mutual exclusivity).
+	_, ok := p.FilterArg()
+	assert.False(t, ok)
+	assert.NotContains(t, p.GetLine(), "/nginx")
+
+	// Empty selector clears it.
+	p.SetLabelArg("")
+	sel, err = p.LabelsSelector()
+	require.NoError(t, err)
+	assert.True(t, sel.Empty())
 }
