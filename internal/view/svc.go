@@ -68,12 +68,8 @@ func (s *Service) showPods(a *App, _ ui.Tabular, _ *client.GVR, path string) {
 		a.Flash().Warnf("No matching pods. Service %s is an external service.", path)
 		return
 	}
-	if svc.Spec.Selector == nil {
-		a.Flash().Warnf("No matching pods. Service %s does not provide any selectors", path)
-		return
-	}
 
-	showPods(a, path, labels.SelectorFromSet(svc.Spec.Selector), "")
+	showPodsForService(a, path)
 }
 
 func (*Service) checkSvc(svc *v1.Service) error {
