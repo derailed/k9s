@@ -63,6 +63,22 @@ plugins:
       - helmreleases
     command: bash
     background: false
+    inputs:
+      - name: force
+        label: Force install/upgrade
+        type: bool
+        required: true
+        default: false
+      - name: reset
+        label: Reset failure count
+        type: bool
+        required: true
+        default: false
+      - name: source
+        label: Reconcile source as well
+        type: bool
+        required: true
+        default: false
     args:
       - -c
       - >-
@@ -70,6 +86,9 @@ plugins:
         reconcile helmrelease
         --context $CONTEXT
         -n $NAMESPACE $NAME
+        $([ "$INPUT_FORCE" = "true" ] && echo "--force")
+        $([ "$INPUT_RESET" = "true" ] && echo "--reset")
+        $([ "$INPUT_SOURCE" = "true" ] && echo "--with-source")
         | less -K
   reconcile-helm-repo:
     shortCut: Shift-Z
@@ -111,6 +130,12 @@ plugins:
       - kustomizations
     command: bash
     background: false
+    inputs:
+      - name: source
+        label: Reconcile source as well
+        type: bool
+        required: true
+        default: false
     args:
       - -c
       - >-
@@ -118,6 +143,7 @@ plugins:
         reconcile kustomization
         --context $CONTEXT
         -n $NAMESPACE $NAME
+        $([ "$INPUT_SOURCE" = "true" ] && echo "--with-source")
         | less -K
   reconcile-ir:
     shortCut: Shift-R
