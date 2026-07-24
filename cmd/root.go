@@ -53,6 +53,8 @@ type flagError struct{ err error }
 func (e flagError) Error() string { return e.err.Error() }
 
 func init() {
+	client.Version = version
+
 	if err := config.InitLogLoc(); err != nil {
 		fmt.Printf("Fail to init k9s logs location %s\n", err)
 	}
