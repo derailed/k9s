@@ -639,6 +639,9 @@ func (b *Browser) defaultContext() context.Context {
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, b.app.factory.Client().HasMetrics())
+	if b.GVR() == client.NodeGVR {
+		ctx = context.WithValue(ctx, internal.KeyPodCounting, !b.app.Config.K9s.DisablePodCounting)
+	}
 
 	return ctx
 }
