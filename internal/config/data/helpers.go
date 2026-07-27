@@ -77,7 +77,7 @@ func SaveYAML(path string, content any) (err error) {
 
 	ec := yaml.NewEncoder(f)
 	ec.SetIndent(2)
-	if err = ec.Encode(content); err != nil {
+	if err := ec.Encode(content); err != nil {
 		return err
 	}
 
