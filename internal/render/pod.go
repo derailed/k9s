@@ -161,9 +161,11 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 
 	dt := pwm.Raw.GetDeletionTimestamp()
 	cReady, _, cRestarts, lastRestart := p.ContainerStats(st.ContainerStatuses)
+	declaredReady, _, _, _ := p.declaredContainerStats(spec.Containers, st.ContainerStatuses)
 
 	iReady, iTotal, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cReady += iReady
+	declaredReady += iReady
 	allCounts := len(spec.Containers) + iTotal
 	rgr, rgt := p.readinessGateStats(spec, &st)
 	ready := hasPodReadyCondition(st.Conditions)
@@ -203,7 +205,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		asReadinessGate(spec, &st),
 		p.mapQOS(st.QOSClass),
 		mapToStr(pwm.Raw.GetLabels()),
-		AsStatus(p.diagnose(phase, cReady, allCounts, ready, rgr, rgt)),
+		AsStatus(p.diagnose(phase, declaredReady, allCounts, ready, rgr, rgt)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
@@ -229,8 +231,8 @@ func (p *Pod) Healthy(_ context.Context, o any) error {
 	}
 	dt := pwm.Raw.GetDeletionTimestamp()
 	phase := p.Phase(dt, spec, &st)
-	cr, _, _, _ := p.ContainerStats(st.ContainerStatuses)
-	ct := len(st.ContainerStatuses)
+	cr, _, _, _ := p.declaredContainerStats(spec.Containers, st.ContainerStatuses)
+	ct := len(spec.Containers)
 
 	icr, ict, _ := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cr += icr
@@ -405,7 +407,25 @@ func (*Pod) mapQOS(class v1.PodQOSClass) string {
 
 // ContainerStats reports pod container stats.
 func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, restartCnt int, latest metav1.Time) {
+	return containerStats(cc, nil)
+}
+
+func (*Pod) declaredContainerStats(containers []v1.Container, statuses []v1.ContainerStatus) (readyCnt, terminatedCnt, restartCnt int, latest metav1.Time) {
+	declared := make(map[string]struct{}, len(containers))
+	for i := range containers {
+		declared[containers[i].Name] = struct{}{}
+	}
+
+	return containerStats(statuses, declared)
+}
+
+func containerStats(cc []v1.ContainerStatus, declared map[string]struct{}) (readyCnt, terminatedCnt, restartCnt int, latest metav1.Time) {
 	for i := range cc {
+		if declared != nil {
+			if _, ok := declared[cc[i].Name]; !ok {
+				continue
+			}
+		}
 		if cc[i].State.Terminated != nil {
 			terminatedCnt++
 		}
