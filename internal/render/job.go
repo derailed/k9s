@@ -22,7 +22,7 @@ var defaultJOBHeader = model1.Header{
 	model1.HeaderColumn{Name: "NAME"},
 	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
 	model1.HeaderColumn{Name: "COMPLETIONS"},
-	model1.HeaderColumn{Name: "DURATION"},
+	model1.HeaderColumn{Name: "DURATION", Attrs: model1.Attrs{Time: true}},
 	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
