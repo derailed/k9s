@@ -164,7 +164,18 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 
 	iReady, iTotal, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cReady += iReady
+	// allCounts reflects the containers declared in the spec, so status-only
+	// entries injected by some providers (e.g. a virtual-node logging sidecar
+	// that never appears in spec.containers) still show up in the displayed
+	// ready count, e.g. "3/2".
 	allCounts := len(spec.Containers) + iTotal
+	// hr/ht are used for the health check below instead of cReady/allCounts:
+	// they only count status entries that match a container declared in the
+	// spec, so provider-injected status-only containers can't make an
+	// otherwise-healthy pod (all declared containers ready) show as unhealthy.
+	hr, ht := p.matchedContainerStats(spec.Containers, st.ContainerStatuses)
+	hr += iReady
+	ht += iTotal
 	rgr, rgt := p.readinessGateStats(spec, &st)
 	ready := hasPodReadyCondition(st.Conditions)
 
@@ -203,7 +214,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		asReadinessGate(spec, &st),
 		p.mapQOS(st.QOSClass),
 		mapToStr(pwm.Raw.GetLabels()),
-		AsStatus(p.diagnose(phase, cReady, allCounts, ready, rgr, rgt)),
+		AsStatus(p.diagnose(phase, hr, ht, ready, rgr, rgt)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
@@ -229,8 +240,10 @@ func (p *Pod) Healthy(_ context.Context, o any) error {
 	}
 	dt := pwm.Raw.GetDeletionTimestamp()
 	phase := p.Phase(dt, spec, &st)
-	cr, _, _, _ := p.ContainerStats(st.ContainerStatuses)
-	ct := len(st.ContainerStatuses)
+	// Only count status entries that match a container declared in the spec,
+	// so status-only containers injected by some providers can't make an
+	// otherwise-healthy pod show as unhealthy.
+	cr, ct := p.matchedContainerStats(spec.Containers, st.ContainerStatuses)
 
 	icr, ict, _ := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cr += icr
@@ -419,6 +432,31 @@ func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, re
 			if latest.IsZero() || ts.After(latest.Time) {
 				latest = ts
 			}
+		}
+	}
+
+	return
+}
+
+// matchedContainerStats reports ready/total counts for status entries that
+// match a container declared in the spec. Some providers (e.g. virtual-node
+// implementations) report extra status-only containers that never appear in
+// spec.containers; ignoring those here keeps pod health based on the
+// containers the user actually declared, regardless of what else a provider
+// injects into status.
+func (*Pod) matchedContainerStats(cc []v1.Container, cos []v1.ContainerStatus) (readyCnt, total int) {
+	mm := make(sets.Set[string], len(cc))
+	for i := range cc {
+		mm.Insert(cc[i].Name)
+	}
+
+	for i := range cos {
+		if !mm.Has(cos[i].Name) {
+			continue
+		}
+		total++
+		if cos[i].Ready {
+			readyCnt++
 		}
 	}
 
