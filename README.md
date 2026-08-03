@@ -608,7 +608,6 @@ k9s:
     active: po
   featureGates:
     nodeShell: true # => Enable this feature gate to make nodeShell available on this cluster
-  portForwardAddress: localhost
 ```
 
 ### Customizing the Shell Pod
@@ -1315,7 +1314,6 @@ k9s:
     active: po
   featureGates:
     nodeShell: false
-  portForwardAddress: localhost
 ```
 
 You can also specify a default skin for all contexts in the root k9s config file as so:
