@@ -64,6 +64,7 @@ var (
 	BeGVR  = NewGVR("benchmarks")
 	AliGVR = NewGVR("aliases")
 	XGVR   = NewGVR("xrays")
+	OwnGVR = NewGVR("owners")
 	HlpGVR = NewGVR("help")
 	QGVR   = NewGVR("quit")
 
@@ -97,6 +98,7 @@ var reservedGVRs = sets.New(
 	BeGVR,
 	AliGVR,
 	XGVR,
+	OwnGVR,
 	HlpGVR,
 	QGVR,
 	HmGVR,
