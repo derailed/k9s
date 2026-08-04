@@ -41,6 +41,7 @@ type TableListener interface {
 type Table struct {
 	gvr           *client.GVR
 	data          *model1.TableData
+	prevData      *model1.TableData
 	listeners     []TableListener
 	inUpdate      int32
 	refreshRate   time.Duration
@@ -240,7 +241,15 @@ func (t *Table) refresh(ctx context.Context) error {
 	if data.RowCount() == 0 {
 		t.fireNoData(data)
 	} else {
-		t.fireTableChanged(data)
+		t.mx.RLock()
+		prev := t.prevData
+		t.mx.RUnlock()
+		if prev == nil || data.Diff(prev) {
+			t.mx.Lock()
+			t.prevData = data.Clone()
+			t.mx.Unlock()
+			t.fireTableChanged(data)
+		}
 	}
 
 	return nil

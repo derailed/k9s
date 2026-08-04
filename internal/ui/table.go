@@ -144,7 +144,15 @@ func (t *Table) getSelectedColIdx() int {
 
 // initSelectedColumn initializes the selected column index based on current sort column.
 func (t *Table) initSelectedColumn() {
-	data := t.GetFilteredData()
+	t.initSelectedColumnWith(nil)
+}
+
+// initSelectedColumnWith initializes the selected column index using the provided data,
+// avoiding an extra clone when data is already available.
+func (t *Table) initSelectedColumnWith(data *model1.TableData) {
+	if data == nil {
+		data = t.GetFilteredData()
+	}
 	if data == nil || data.HeaderCount() == 0 {
 		return
 	}
@@ -208,7 +216,7 @@ func (t *Table) moveSelectedColumn(delta int) {
 	}
 	t.mx.Unlock()
 
-	t.Refresh()
+	t.refreshHeaders(data)
 }
 
 // SelectNextColumn moves the column selection to the right.
@@ -456,7 +464,7 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	// This ensures the highlight starts at the sorted column
 	newSortCol := t.getSortCol()
 	if oldSortCol.Name != newSortCol.Name {
-		t.initSelectedColumn()
+		t.initSelectedColumnWith(data)
 	}
 
 	return data
@@ -639,6 +647,26 @@ func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 	c.SetSelectable(false)
 	c.SetAlign(h.Align)
 	t.SetCell(0, col, c)
+}
+
+// refreshHeaders updates only the header row cells without rebuilding the entire table.
+func (t *Table) refreshHeaders(data *model1.TableData) {
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+	fg := t.styles.Table().Header.FgColor.Color()
+	bg := t.styles.Table().Header.BgColor.Color()
+	var col int
+	for _, h := range data.Header() {
+		if t.shouldExcludeColumn(h) {
+			continue
+		}
+		t.AddHeaderCell(col, h)
+		c := t.GetCell(0, col)
+		c.SetBackgroundColor(bg)
+		c.SetTextColor(fg)
+		col++
+	}
 }
 
 func (t *Table) filtered(data *model1.TableData) *model1.TableData {
