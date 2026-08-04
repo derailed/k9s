@@ -242,6 +242,9 @@ type metric struct {
 	lcpu, lmem     int64
 	gpu, gpuShared int64
 	lgpu           int64
+	// lcpuOK, lmemOK indicate whether every container of a pod declares a
+	// limit for the given resource, ie the limit sum covers the full pod.
+	lcpuOK, lmemOK bool
 }
 
 func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c, a metric) {

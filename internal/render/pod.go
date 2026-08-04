@@ -190,11 +190,11 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		toMc(c.cpu),
 		toMc(r.cpu) + ":" + toMc(r.lcpu),
 		client.ToPercentageStr(c.cpu, r.cpu),
-		client.ToPercentageStr(c.cpu, r.lcpu),
+		toLimitPct(c.cpu, r.lcpu, r.lcpuOK),
 		toMi(c.mem),
 		toMi(r.mem) + ":" + toMi(r.lmem),
 		client.ToPercentageStr(c.mem, r.mem),
-		client.ToPercentageStr(c.mem, r.lmem),
+		toLimitPct(c.mem, r.lmem, r.lmemOK),
 		toMc(r.gpu) + ":" + toMc(r.lgpu),
 		na(st.PodIP),
 		na(spec.NodeName),
@@ -309,6 +309,17 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 	return p
 }
 
+// toLimitPct renders a usage/limit ratio. The ratio is only meaningful when
+// every container of the pod declares a limit for the resource; otherwise it
+// renders as n/a since the pod can outrun the displayed value (#881 plan A).
+func toLimitPct(v, dv int64, allLimited bool) string {
+	if !allLimited {
+		return client.NA
+	}
+
+	return client.ToPercentageStr(v, dv)
+}
+
 func gatherPodMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
 	cc := make([]v1.Container, 0, len(spec.InitContainers)+len(spec.Containers))
 	cc = append(cc, filterSidecarCO(spec.InitContainers)...)
@@ -317,8 +328,9 @@ func gatherPodMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metri
 	rcpu, rmem, rgpu := cosRequests(cc)
 	r.cpu, r.mem, r.gpu = rcpu.MilliValue(), rmem.Value(), rgpu.Value()
 
-	lcpu, lmem, lgpu := cosLimits(cc)
+	lcpu, lmem, lgpu, lcpuOK, lmemOK := cosLimits(cc)
 	r.lcpu, r.lmem, r.lgpu = lcpu.MilliValue(), lmem.Value(), lgpu.Value()
+	r.lcpuOK, r.lmemOK = lcpuOK, lmemOK
 
 	ccpu, cmem := currentRes(ccmx)
 	c.cpu, c.mem = ccpu.MilliValue(), cmem.Value()
@@ -326,10 +338,17 @@ func gatherPodMX(spec *v1.PodSpec, ccmx []mv1beta1.ContainerMetrics) (c, r metri
 	return
 }
 
-func cosLimits(cc []v1.Container) (cpuQ, memQ, gpuQ *resource.Quantity) {
+func cosLimits(cc []v1.Container) (cpuQ, memQ, gpuQ *resource.Quantity, allCPU, allMem bool) {
 	cpuQ, gpuQ, memQ = new(resource.Quantity), new(resource.Quantity), new(resource.Quantity)
+	allCPU, allMem = true, true
 	for i := range cc {
 		limits := cc[i].Resources.Limits
+		if _, ok := limits[v1.ResourceCPU]; !ok {
+			allCPU = false
+		}
+		if _, ok := limits[v1.ResourceMemory]; !ok {
+			allMem = false
+		}
 		if len(limits) == 0 {
 			continue
 		}
