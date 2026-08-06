@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -106,7 +108,7 @@ func (p *Pod) ListImages(_ context.Context, path string) ([]string, error) {
 	return render.ExtractImages(&pod.Spec), nil
 }
 
-// List returns a collection of nodes.
+// List returns a collection of pods.
 func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo, err := p.Resource.List(ctx, ns)
 	if err != nil {
@@ -117,12 +119,12 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetricsMap(ctx, ns)
 	}
+
 	sel, _ := ctx.Value(internal.KeyFields).(string)
-	fsel, err := labels.ConvertSelectorToLabelsMap(sel)
+	fieldSel, err := fields.ParseSelector(sel)
 	if err != nil {
 		return nil, err
 	}
-	nodeName := fsel["spec.nodeName"]
 
 	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
@@ -130,22 +132,32 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		if !ok {
 			return res, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 		}
-		fqn := extractFQN(o)
-		if nodeName == "" {
-			res = append(res, &render.PodWithMetrics{Raw: u, MX: pmx[fqn]})
+		if !matchesFieldSelector(u, fieldSel) {
 			continue
 		}
-
-		spec, ok := u.Object["spec"].(map[string]any)
-		if !ok {
-			return res, fmt.Errorf("expecting interface map but got `%T", o)
-		}
-		if spec["nodeName"] == nodeName {
-			res = append(res, &render.PodWithMetrics{Raw: u, MX: pmx[fqn]})
-		}
+		fqn := extractFQN(o)
+		res = append(res, &render.PodWithMetrics{Raw: u, MX: pmx[fqn]})
 	}
 
 	return res, nil
+}
+
+// matchesFieldSelector reports whether u satisfies sel. A nil or empty
+// selector always matches. Each requirement's dotted field path (e.g.
+// "metadata.name", "spec.nodeName", "status.phase") is resolved against u
+// via NestedString; unresolved or non-string paths compare against "".
+func matchesFieldSelector(u *unstructured.Unstructured, sel fields.Selector) bool {
+	if sel == nil || sel.Empty() {
+		return true
+	}
+
+	set := fields.Set{}
+	for _, req := range sel.Requirements() {
+		v, _, _ := unstructured.NestedString(u.Object, strings.Split(req.Field, ".")...)
+		set[req.Field] = v
+	}
+
+	return sel.Matches(set)
 }
 
 // Logs fetch container logs for a given pod and container.
