@@ -57,7 +57,9 @@ func init() {
 		fmt.Printf("Fail to init k9s logs location %s\n", err)
 	}
 
-	initVersion()
+	if version == "dev" {
+		initVersion()
+	}
 	rootCmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return flagError{err: err}
 	})
