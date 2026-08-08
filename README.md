@@ -1448,6 +1448,7 @@ k9s:
     logs:
       fgColor: lightskyblue
       bgColor: black
+      timeColor: gray
       indicator:
         fgColor: dodgerblue
         bgColor: black
