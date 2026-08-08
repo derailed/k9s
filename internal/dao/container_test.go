@@ -57,6 +57,7 @@ func (*conn) MXDial() (*versioned.Clientset, error)                    { return 
 func (*conn) DynDial() (dynamic.Interface, error)                      { return nil, nil }
 func (*conn) HasMetrics() bool                                         { return false }
 func (*conn) CheckConnectivity() bool                                  { return false }
+func (*conn) ConnectivityError() error                                 { return nil }
 func (*conn) IsNamespaced(string) bool                                 { return false }
 func (*conn) SupportsResource(string) bool                             { return false }
 func (*conn) ValidNamespaces() ([]v1.Namespace, error)                 { return nil, nil }
