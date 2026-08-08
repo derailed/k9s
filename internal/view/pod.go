@@ -40,6 +40,7 @@ const (
 	pfIndicator      = "[orange::b]Ⓕ"
 	defaultTxRetries = 999
 	magicPrompt      = "Yes Please!"
+	sanitizeProgressKey = "sanitize-progress"
 )
 
 // Pod represents a pod viewer.
@@ -269,18 +270,84 @@ func (p *Pod) sanitizeCmd(*tcell.EventKey) *tcell.EventKey {
 
 	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", magicPrompt)
 	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, magicPrompt, true, "Sanitize", msg, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*p.App().Conn().Config().CallTimeout())
-		defer cancel()
-		total, err := s.Sanitize(ctx, p.GetTable().GetModel().GetNamespace())
-		if err != nil {
-			p.App().Flash().Err(err)
-			return
-		}
-		p.App().Flash().Infof("Sanitized %d %s", total, p.GVR())
-		p.Refresh()
+		ns := p.GetTable().GetModel().GetNamespace()
+		styles := p.App().Styles.Dialog()
+		progress := ui.NewModalProgress("<Sanitize>", &styles, sanitizeProgressText(-1, 0, ""))
+		p.App().Content.Pages.RemovePage(sanitizeProgressKey)
+		p.App().Content.Pages.AddPage(sanitizeProgressKey, progress, false, true)
+		p.App().Content.Pages.ShowPage(sanitizeProgressKey)
+		p.App().SetFocus(progress)
+		p.App().Status(model.FlashWarn, sanitizeStatusText(-1, 0))
+
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*p.App().Conn().Config().CallTimeout())
+			defer cancel()
+
+			total, err := s.Sanitize(ctx, ns, func(total, processed int, current string) {
+				p.App().QueueUpdateDraw(func() {
+					progress.SetText(sanitizeProgressText(total, processed, current))
+					p.App().Status(model.FlashWarn, sanitizeStatusText(total, processed))
+				})
+			})
+
+			p.App().QueueUpdateDraw(func() {
+				p.App().Content.Pages.RemovePage(sanitizeProgressKey)
+				p.App().ClearStatus(false)
+				if err != nil {
+					p.App().Flash().Err(err)
+					return
+				}
+				p.App().Flash().Infof("Sanitized %d %s", total, p.GVR())
+				p.Refresh()
+			})
+		}()
 	}, func() {})
 
 	return nil
+}
+
+func sanitizeStatusText(total, processed int) string {
+	switch {
+	case total < 0:
+		return "Sanitize scanning pods..."
+	case total == 0:
+		return "Sanitize found nothing to delete"
+	default:
+		return fmt.Sprintf("Sanitize %d/%d", min(processed, total), total)
+	}
+}
+
+func sanitizeProgressText(total, processed int, current string) string {
+	switch {
+	case total < 0:
+		return "Scanning pods in completed/error state...\n\n[........................]"
+	case total == 0:
+		return "Scanning complete.\n\n[########################] 0/0\nNothing to sanitize."
+	default:
+		msg := fmt.Sprintf("Deleting pods in completed/error state...\n\n%s %d/%d", sanitizeProgressBar(24, processed, total), min(processed, total), total)
+		if current != "" {
+			msg += fmt.Sprintf("\nCurrent: %s", current)
+		}
+
+		return msg
+	}
+}
+
+func sanitizeProgressBar(width, processed, total int) string {
+	if width < 1 {
+		width = 1
+	}
+	if total <= 0 {
+		return "[" + strings.Repeat(".", width) + "]"
+	}
+
+	processed = max(0, min(processed, total))
+	filled := processed * width / total
+	if processed == total {
+		filled = width
+	}
+
+	return "[" + strings.Repeat("#", filled) + strings.Repeat("-", width-filled) + "]"
 }
 
 func (p *Pod) transferCmd(*tcell.EventKey) *tcell.EventKey {
