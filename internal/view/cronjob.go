@@ -61,8 +61,8 @@ func (*CronJob) showJobs(app *App, _ ui.Tabular, gvr *client.GVR, fqn string) {
 	}
 
 	ns, _ := client.Namespaced(fqn)
-	if err := app.Config.SetActiveNamespace(ns); err != nil {
-		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
+	if err := app.switchNS(ns); err != nil {
+		slog.Error("Unable to switch namespace during show pods", slogs.Error, err)
 	}
 	v := NewJob(client.JobGVR)
 	v.SetContextFn(jobCtx(fqn, string(cj.UID)))
