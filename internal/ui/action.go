@@ -27,6 +27,7 @@ type (
 		Plugin    bool
 		HotKey    bool
 		Dangerous bool
+		Active    bool
 	}
 
 	// KeyAction represents a keyboard action.
@@ -209,6 +210,7 @@ func (a *KeyActions) Hints() model.MenuHints {
 					Mnemonic:    name,
 					Description: a.actions[k].Description,
 					Visible:     a.actions[k].Opts.Visible,
+					Active:      a.actions[k].Opts.Active,
 				},
 			)
 		} else {

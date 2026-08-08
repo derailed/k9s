@@ -226,8 +226,22 @@ func (m *MetricsServer) FetchPodsMetricsMap(ctx context.Context, ns string) (Pod
 	return hh, nil
 }
 
-// FetchPodsMetrics return all metrics for pods in a given namespace.
+// FetchPodsMetrics return all metrics for pods in a given namespace. A
+// comma-delimited selector fetches and merges metrics across each namespace,
+// skipping any the user cannot access.
 func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1beta1.PodMetricsList, error) {
+	if IsMultiNamespace(ns) {
+		out := &mv1beta1.PodMetricsList{}
+		for _, n := range Namespaces(ns) {
+			mm, err := m.FetchPodsMetrics(ctx, n)
+			if err != nil {
+				continue
+			}
+			out.Items = append(out.Items, mm.Items...)
+		}
+		return out, nil
+	}
+
 	mx := new(mv1beta1.PodMetricsList)
 	const msg = "user is not authorized to list pods metrics"
 
