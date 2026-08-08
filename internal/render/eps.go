@@ -43,12 +43,9 @@ func (e EndpointSlice) Render(o any, ns string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := e.specs.realize(o.(*unstructured.Unstructured), defaultEPsHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (e EndpointSlice) defaultRow(o any, ns string, r *model1.Row) error {
