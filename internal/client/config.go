@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -28,6 +29,17 @@ const (
 	defaultQPS   float32 = 50
 	defaultBurst         = 100
 )
+
+// Version is the k9s build version. It is wired up from the cmd package at
+// startup and reported to the API server through the client User-Agent header
+// so k9s traffic is identifiable in API server logs, audit events and metrics.
+var Version = "dev"
+
+// userAgent returns the User-Agent k9s reports to the API server, e.g.
+// "k9s/v0.40.0 (linux/amd64)".
+func userAgent() string {
+	return fmt.Sprintf("k9s/%s (%s/%s)", Version, runtime.GOOS, runtime.GOARCH)
+}
 
 // Config tracks a kubernetes configuration.
 type Config struct {
@@ -60,6 +72,9 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 	cfg, err := c.clientConfig().ClientConfig()
 	if err != nil {
 		return nil, err
+	}
+	if cfg.UserAgent == "" {
+		cfg.UserAgent = userAgent()
 	}
 	if c.proxy != nil {
 		cfg.Proxy = c.proxy
