@@ -58,12 +58,9 @@ func (r ReplicaSet) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := r.specs.realize(raw, defaultRSHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (r ReplicaSet) defaultRow(raw *unstructured.Unstructured, row *model1.Row) error {
