@@ -105,7 +105,7 @@ func (t *TableData) RowsRange(f ReRangeFn) {
 }
 
 func (t *TableData) Sort(sc SortColumn) {
-	col, idx := t.HeadCol(sc.Name, false)
+	col, idx := t.HeadCol(sc.Name, true)
 	if idx < 0 {
 		return
 	}

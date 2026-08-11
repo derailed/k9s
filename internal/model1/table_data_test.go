@@ -17,6 +17,51 @@ func init() {
 	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
+func TestTableDataSortWideColumn(t *testing.T) {
+	newTableData := func() *TableData {
+		return NewTableDataWithRows(
+			client.NewGVR("test"),
+			Header{
+				HeaderColumn{Name: "NAME"},
+				HeaderColumn{Name: "OWNER_KIND", Attrs: Attrs{Wide: true}},
+			},
+			NewRowEventsWithEvts(
+				RowEvent{Row: Row{ID: "statefulset", Fields: Fields{"statefulset", "StatefulSet"}}},
+				RowEvent{Row: Row{ID: "daemonset", Fields: Fields{"daemonset", "DaemonSet"}}},
+				RowEvent{Row: Row{ID: "job", Fields: Fields{"job", "Job"}}},
+			),
+		)
+	}
+	assertOrder := func(t *testing.T, data *TableData) {
+		t.Helper()
+		var ids []string
+		data.RowsRange(func(_ int, re RowEvent) bool {
+			ids = append(ids, re.Row.ID)
+			return true
+		})
+		assert.Equal(t, []string{"daemonset", "job", "statefulset"}, ids)
+	}
+
+	t.Run("sorts selected wide column", func(t *testing.T) {
+		data := newTableData()
+		data.Sort(SortColumn{Name: "OWNER_KIND", ASC: true})
+		assertOrder(t, data)
+	})
+
+	t.Run("keeps manual sort after wide view is hidden", func(t *testing.T) {
+		data := newTableData()
+		sortCol := data.ComputeSortCol(
+			&config.ViewSetting{Columns: []string{"NAME", "OWNER_KIND"}, SortColumn: "NAME:asc"},
+			SortColumn{Name: "OWNER_KIND", ASC: true},
+			true,
+		)
+		assert.Equal(t, SortColumn{Name: "OWNER_KIND", ASC: true}, sortCol)
+
+		data.Sort(sortCol)
+		assertOrder(t, data)
+	})
+}
+
 func TestTableDataComputeSortCol(t *testing.T) {
 	uu := map[string]struct {
 		t1           *TableData
