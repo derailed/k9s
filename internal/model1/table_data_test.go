@@ -18,48 +18,75 @@ func init() {
 }
 
 func TestTableDataSortWideColumn(t *testing.T) {
+	const (
+		nameColumn      = "NAME"
+		ownerKindColumn = "OWNER_KIND"
+		statefulSetID   = "statefulset"
+		daemonSetID     = "daemonset"
+		jobID           = "job"
+	)
+
+	wideSortColumn := SortColumn{Name: ownerKindColumn, ASC: true}
+	expectedIDs := []string{daemonSetID, jobID, statefulSetID}
 	newTableData := func() *TableData {
 		return NewTableDataWithRows(
 			client.NewGVR("test"),
 			Header{
-				HeaderColumn{Name: "NAME"},
-				HeaderColumn{Name: "OWNER_KIND", Attrs: Attrs{Wide: true}},
+				HeaderColumn{Name: nameColumn},
+				HeaderColumn{Name: ownerKindColumn, Attrs: Attrs{Wide: true}},
 			},
 			NewRowEventsWithEvts(
-				RowEvent{Row: Row{ID: "statefulset", Fields: Fields{"statefulset", "StatefulSet"}}},
-				RowEvent{Row: Row{ID: "daemonset", Fields: Fields{"daemonset", "DaemonSet"}}},
-				RowEvent{Row: Row{ID: "job", Fields: Fields{"job", "Job"}}},
+				RowEvent{Row: Row{ID: statefulSetID, Fields: Fields{statefulSetID, "StatefulSet"}}},
+				RowEvent{Row: Row{ID: daemonSetID, Fields: Fields{daemonSetID, "DaemonSet"}}},
+				RowEvent{Row: Row{ID: jobID, Fields: Fields{jobID, "Job"}}},
 			),
 		)
 	}
-	assertOrder := func(t *testing.T, data *TableData) {
-		t.Helper()
-		var ids []string
-		data.RowsRange(func(_ int, re RowEvent) bool {
-			ids = append(ids, re.Row.ID)
-			return true
-		})
-		assert.Equal(t, []string{"daemonset", "job", "statefulset"}, ids)
+
+	tests := map[string]struct {
+		viewSetting        *config.ViewSetting
+		initialSortColumn  SortColumn
+		manual             bool
+		expectedSortColumn SortColumn
+		expectedIDs        []string
+	}{
+		"sorts selected wide column": {
+			initialSortColumn:  wideSortColumn,
+			expectedSortColumn: wideSortColumn,
+			expectedIDs:        expectedIDs,
+		},
+		"keeps manual sort after wide view is hidden": {
+			viewSetting: &config.ViewSetting{
+				Columns:    []string{nameColumn, ownerKindColumn},
+				SortColumn: "NAME:asc",
+			},
+			initialSortColumn:  wideSortColumn,
+			manual:             true,
+			expectedSortColumn: wideSortColumn,
+			expectedIDs:        expectedIDs,
+		},
 	}
 
-	t.Run("sorts selected wide column", func(t *testing.T) {
-		data := newTableData()
-		data.Sort(SortColumn{Name: "OWNER_KIND", ASC: true})
-		assertOrder(t, data)
-	})
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			data := newTableData()
+			sortColumn := test.initialSortColumn
+			if test.viewSetting != nil {
+				sortColumn = data.ComputeSortCol(test.viewSetting, sortColumn, test.manual)
+			}
+			if !assert.Equal(t, test.expectedSortColumn, sortColumn, "unexpected resolved sort column") {
+				return
+			}
 
-	t.Run("keeps manual sort after wide view is hidden", func(t *testing.T) {
-		data := newTableData()
-		sortCol := data.ComputeSortCol(
-			&config.ViewSetting{Columns: []string{"NAME", "OWNER_KIND"}, SortColumn: "NAME:asc"},
-			SortColumn{Name: "OWNER_KIND", ASC: true},
-			true,
-		)
-		assert.Equal(t, SortColumn{Name: "OWNER_KIND", ASC: true}, sortCol)
-
-		data.Sort(sortCol)
-		assertOrder(t, data)
-	})
+			data.Sort(sortColumn)
+			var ids []string
+			data.RowsRange(func(_ int, re RowEvent) bool {
+				ids = append(ids, re.Row.ID)
+				return true
+			})
+			assert.Equal(t, test.expectedIDs, ids, "unexpected row order after sorting by %q", sortColumn.Name)
+		})
+	}
 }
 
 func TestTableDataComputeSortCol(t *testing.T) {
