@@ -43,12 +43,9 @@ func (p ClusterRole) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := p.specs.realize(raw, defaultCRHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.

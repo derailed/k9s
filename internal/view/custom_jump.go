@@ -37,8 +37,20 @@ func customJump(app *App, sourceGVR *client.GVR, sourcePath string, rule *config
 		return err
 	}
 
-	// Create new view for target resource
-	v := NewBrowser(targetGVR)
+	// Use the registered viewer so built-in enter-chains (e.g. deploy -> pods -> logs) still work.
+	var v ResourceViewer
+	if mv, ok := customViewers[targetGVR]; ok {
+		if mv.viewerFn != nil {
+			v = mv.viewerFn(targetGVR)
+		} else {
+			v = NewBrowser(targetGVR)
+			if mv.enterFn != nil {
+				v.GetTable().SetEnterFn(mv.enterFn)
+			}
+		}
+	} else {
+		v = NewScaleExtender(NewOwnerExtender(NewBrowser(targetGVR)))
+	}
 
 	// Build label selector if specified
 	var labelSel labels.Selector

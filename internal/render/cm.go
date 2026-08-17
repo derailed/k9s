@@ -42,12 +42,9 @@ func (m ConfigMap) Render(o any, _ string, row *model1.Row) error {
 	}
 
 	cols, err := m.specs.realize(o.(*unstructured.Unstructured), defaultCMHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.

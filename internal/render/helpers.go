@@ -233,39 +233,6 @@ func mapToStr(m map[string]string) string {
 	return string(bb)
 }
 
-func mapToIfc(m any) (s string) {
-	if m == nil {
-		return ""
-	}
-
-	mm, ok := m.(map[string]any)
-	if !ok {
-		return ""
-	}
-	if len(mm) == 0 {
-		return ""
-	}
-
-	kk := make([]string, 0, len(mm))
-	for k := range mm {
-		kk = append(kk, k)
-	}
-	sort.Strings(kk)
-
-	for i, k := range kk {
-		str, ok := mm[k].(string)
-		if !ok {
-			continue
-		}
-		s += k + "=" + str
-		if i < len(kk)-1 {
-			s += " "
-		}
-	}
-
-	return
-}
-
 func toMu(v int64) string {
 	if v == 0 {
 		return NAValue

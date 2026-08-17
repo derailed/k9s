@@ -237,6 +237,26 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   docker run --rm -it -v ~/.kube/config:/root/.kube/config k9s-docker:0.1
   ```
 
+#### Building a multi-platform image
+
+  The `make imgx` target builds for `linux/amd64` and `linux/arm64` via Docker
+  buildx:
+
+  ```shell
+  make imgx
+  ```
+
+  Cross-architecture builds rely on QEMU emulation. Docker Desktop includes
+  this out of the box. On a plain Docker Engine install, see the
+  [buildx multi-platform docs](https://docs.docker.com/build/building/multi-platform/)
+  for enabling emulation.
+
+  Override the defaults with `BUILD_PLATFORMS`, `IMG_NAME` and `VERSION`:
+
+  ```shell
+  make imgx BUILD_PLATFORMS=linux/amd64,linux/arm64 IMG_NAME=your-org/k9s VERSION=v0.0.1
+  ```
+
 ---
 
 ## PreFlight Checks
@@ -495,7 +515,7 @@ Clipboard behavior can also be controlled via environment variables:
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overridden with K9S_SKIN.
       # Convert dark skins to light, or vice versa, preserving hue. Default: false
       invert: false
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
@@ -506,8 +526,6 @@ Clipboard behavior can also be controlled via environment variables:
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
     skipLatestRevCheck: false
-    # When altering kubeconfig or using multiple kube configs, k9s will clean up clusters configurations that are no longer in use. Setting this flag to true will keep k9s from cleaning up inactive cluster configs. Defaults to false.
-    keepMissingClusters: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
@@ -849,13 +867,15 @@ jumps:
 
 ### Template Syntax
 
-Both `labelSelector` and `fieldSelector` support Go template syntax to dynamically reference fields from the selected resource:
+Both `labelSelector` and `fieldSelector` support Go template syntax to dynamically reference fields from the selected (source) resource. Any field of the source object can be used on the **value** side of a selector:
 
 * `{{.metadata.name}}` - The resource name
 * `{{.metadata.namespace}}` - The resource namespace
 * `{{.metadata.labels.key}}` - A specific label value
-* `{{.spec.fieldName}}` - Any field from the resource spec
-* `{{.status.field}}` - Any field from the resource status
+* `{{.spec.fieldName}}` - Any field from the source resource spec
+* `{{.status.field}}` - Any field from the source resource status
+
+> **Note:** The template above only controls the selector *value* (the right-hand side, computed from the source resource). For label selectors, the *key* can be any label and is matched server side. For **field selectors**, k9s applies the selector as a **local (client-side) filter** on the target resources, so the key may be any field path present in the target object (e.g. `metadata.name`, `spec.volumeName`), not just the API-selectable fields. This means field-selector jumps work even for resources whose fields are not server-side selectable. Field values are compared as strings, and the path is matched against the target object's manifest. For background on which fields the API server itself treats as selectable, see the Kubernetes docs on [CRD selectable fields](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#crd-selectable-fields).
 
 ### Examples
 

@@ -53,12 +53,9 @@ func (s Service) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := s.specs.realize(raw, defaultSVCHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (s Service) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

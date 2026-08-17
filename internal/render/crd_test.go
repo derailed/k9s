@@ -20,4 +20,10 @@ func TestCustomResourceDefinitionRender(t *testing.T) {
 	assert.Equal(t, "-/adapters.config.istio.io", r.ID)
 	assert.Equal(t, "adapters", r.Fields[0])
 	assert.Equal(t, "config.istio.io", r.Fields[1])
+	// LABELS column (index 6) must render the CRD labels, not be empty.
+	assert.Equal(
+		t,
+		"addonmanager.kubernetes.io/mode=Reconcile,app=mixer,istio=mixer-adapter,k8s-app=istio,package=adapter",
+		r.Fields[6],
+	)
 }
