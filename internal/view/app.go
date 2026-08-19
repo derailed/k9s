@@ -52,6 +52,7 @@ type App struct {
 	clusterModel  *model.ClusterInfo
 	cmdHistory    *model.History
 	filterHistory *model.History
+	tabManager    *TabManager
 	conRetry      int32
 	showHeader    bool
 	showLogo      bool
@@ -132,6 +133,18 @@ func (a *App) Init(version string, _ int) error {
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
 
+	// Wrap the initial page stack, command and histories into the first
+	// TabSession, then hand control to the TabManager.  From here on layout()
+	// must reference tabManager.contentArea instead of a.Content directly.
+	initialSess := &TabSession{
+		Content:       a.Content,
+		command:       a.command,
+		cmdHistory:    a.cmdHistory,
+		filterHistory: a.filterHistory,
+	}
+	a.tabManager = newTabManager(a)
+	a.tabManager.initWithSession(initialSess)
+
 	a.layout(ctx)
 	a.initSignals()
 
@@ -169,7 +182,7 @@ func (a *App) layout(ctx context.Context) {
 
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
-	main.AddItem(a.Content, 0, 10, true)
+	main.AddItem(a.tabManager.contentArea, 0, 10, true)
 	if !a.Config.K9s.IsCrumbsless() {
 		main.AddItem(a.Crumbs(), 1, 1, false)
 	}
@@ -262,6 +275,10 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlA:     ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter:     ui.NewKeyAction("Goto", a.gotoCmd, false),
 		tcell.KeyCtrlC:     ui.NewKeyAction("Quit", a.quitCmd, false),
+		tcell.KeyCtrlT:     ui.NewSharedKeyAction("NewTab", a.newTabCmd, false),
+		tcell.KeyCtrlX:     ui.NewSharedKeyAction("CloseTab", a.closeTabCmd, false),
+		tcell.KeyCtrlN:     ui.NewSharedKeyAction("NextTab", a.nextTabCmd, false),
+		tcell.KeyCtrlB:     ui.NewSharedKeyAction("PrevTab", a.prevTabCmd, false),
 	}))
 }
 
@@ -456,6 +473,8 @@ func (a *App) switchNS(ns string) error {
 		return err
 	}
 
+	a.tabManager.switchNS(ns)
+
 	return a.factory.SetActiveNS(ns)
 }
 
@@ -514,6 +533,9 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 			slogs.View, a.Config.ActiveView(),
 		)
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
+		if a.tabManager != nil {
+			a.tabManager.CloseOtherTabs()
+		}
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		if a.clusterModel != nil {
@@ -788,12 +810,13 @@ func (a *App) aliasCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(c, path string, clearStack, pushCmd bool) {
+func (a *App) gotoResource(c, path string, clearStack, pushCmd bool) error {
 	err := a.command.run(cmd.NewInterpreter(c), path, clearStack, pushCmd)
 	if err != nil {
 		d := a.Styles.Dialog()
 		dialog.ShowError(&d, a.Content.Pages, err.Error())
 	}
+	return err
 }
 
 func (a *App) inject(c model.Component, clearStack bool) error {
@@ -810,6 +833,64 @@ func (a *App) inject(c model.Component, clearStack bool) error {
 	}
 	a.Content.Push(c)
 
+	// Keep the tab label in sync with the top-level resource being browsed.
+	if clearStack && a.tabManager != nil {
+		a.tabManager.updateActiveLabel(c.Name())
+	}
+
+	return nil
+}
+
+// newTabCmd opens a new tab pre-loaded with the resource currently on screen.
+func (a *App) newTabCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.InCmdMode() {
+		return evt
+	}
+	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
+	if err := a.tabManager.newTab(ctx); err != nil {
+		a.Flash().Err(err)
+		return nil
+	}
+	// Navigate the new tab to the resource that was active in the source tab.
+	// gotoResource shows its own error dialog; if navigation fails we still
+	// have to unwind the empty tab we just created so the user isn't left
+	// staring at a blank page after dismissing the dialog.
+	if err := a.gotoResource(a.Config.ActiveView(), "", true, false); err != nil {
+		if closeErr := a.tabManager.closeActive(); closeErr != nil {
+			slog.Warn("Failed to close new tab after navigation error",
+				slogs.Error, closeErr,
+			)
+		}
+	}
+	return nil
+}
+
+// closeTabCmd closes the active tab.  Closing the last tab is a no-op.
+func (a *App) closeTabCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.InCmdMode() {
+		return evt
+	}
+	if err := a.tabManager.closeActive(); err != nil {
+		a.Flash().Warn(err.Error())
+	}
+	return nil
+}
+
+// nextTabCmd switches focus to the next tab (wraps around).
+func (a *App) nextTabCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.InCmdMode() {
+		return evt
+	}
+	a.tabManager.NextTab()
+	return nil
+}
+
+// prevTabCmd switches focus to the previous tab (wraps around).
+func (a *App) prevTabCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.InCmdMode() {
+		return evt
+	}
+	a.tabManager.PrevTab()
 	return nil
 }
 
