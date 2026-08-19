@@ -318,6 +318,16 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, *cm
 	}
 	gvr, ok := c.alias.Resolve(p)
 	if !ok {
+		// A resolution failure is frequently a symptom of a dead connection
+		// rather than a bad command. When the api server rejected us for auth
+		// reasons, surface that instead of a misleading "command not found".
+		if c.app != nil {
+			if conn := c.app.Conn(); conn != nil {
+				if err := conn.ConnectivityError(); client.IsAuthError(err) {
+					return client.NoGVR, nil, nil, fmt.Errorf("authentication failed — credentials may be expired; check your kubeconfig/token (%w)", err)
+				}
+			}
+		}
 		return client.NoGVR, nil, nil, fmt.Errorf("`%s` command not found", p.Cmd())
 	}
 

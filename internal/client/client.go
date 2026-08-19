@@ -16,6 +16,7 @@ import (
 
 	"github.com/derailed/k9s/internal/slogs"
 	authorizationv1 "k8s.io/api/authorization/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/cache"
 	"k8s.io/apimachinery/pkg/version"
@@ -51,7 +52,27 @@ type APIClient struct {
 	mx                sync.RWMutex
 	cache             *cache.LRUExpireCache
 	connOK            bool
+	connErr           error
 	log               *slog.Logger
+}
+
+// IsAuthError returns true if the given error indicates the api server
+// rejected the request due to missing/expired/insufficient credentials
+// (HTTP 401/403 or a token-refresh style credentials failure).
+func IsAuthError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if apierrors.IsUnauthorized(err) || apierrors.IsForbidden(err) {
+		return true
+	}
+	// Some auth failures (e.g. exec/token credential-plugin refresh errors)
+	// surface as a plain error rather than a typed api status.
+	msg := strings.ToLower(err.Error())
+
+	return strings.Contains(msg, "provide credentials") ||
+		strings.Contains(msg, "unauthorized") ||
+		strings.Contains(msg, "the server has asked for the client")
 }
 
 // NewTestAPIClient for testing ONLY!!
@@ -317,6 +338,7 @@ func (a *APIClient) CheckConnectivity() bool {
 	cfg, err := a.config.RESTConfig()
 	if err != nil {
 		slog.Error("RestConfig load failed", slogs.Error, err)
+		a.setConnErr(err)
 		a.connOK = false
 		return a.connOK
 	}
@@ -324,21 +346,41 @@ func (a *APIClient) CheckConnectivity() bool {
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		slog.Error("Unable to connect to api server", slogs.Error, err)
+		a.setConnErr(err)
 		a.setConnOK(false)
 		return a.getConnOK()
 	}
 
 	if _, err := client.ServerVersion(); err == nil {
+		a.setConnErr(nil)
 		a.setClient(client)
 		if !a.getConnOK() {
 			a.reset()
 		}
 	} else {
 		slog.Error("Unable to fetch server version", slogs.Error, err)
+		a.setConnErr(err)
 		a.setConnOK(false)
 	}
 
 	return a.getConnOK()
+}
+
+// ConnectivityError returns the error from the most recent failed connectivity
+// check, or nil if the last check succeeded. It is used to surface actionable
+// messages (e.g. authentication failures) to the user.
+func (a *APIClient) ConnectivityError() error {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.connErr
+}
+
+func (a *APIClient) setConnErr(err error) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.connErr = err
 }
 
 // Config return a kubernetes configuration.
