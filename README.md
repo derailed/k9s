@@ -530,8 +530,6 @@ Clipboard behavior can also be controlled via environment variables:
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
     skipLatestRevCheck: false
-    # When altering kubeconfig or using multiple kube configs, k9s will clean up clusters configurations that are no longer in use. Setting this flag to true will keep k9s from cleaning up inactive cluster configs. Defaults to false.
-    keepMissingClusters: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
@@ -881,7 +879,7 @@ Both `labelSelector` and `fieldSelector` support Go template syntax to dynamical
 * `{{.spec.fieldName}}` - Any field from the source resource spec
 * `{{.status.field}}` - Any field from the source resource status
 
-> **Note:** The template above only controls the selector *value* (the right-hand side, computed from the source resource). The selector *key* is still validated by the Kubernetes API server against the **target** resource. Label selector keys can be any label, but **field selector keys are restricted**: for most resources only `metadata.name`/`metadata.namespace` are selectable, and for CRDs the target field must be declared in the CRD's `spec.versions[].selectableFields`. k9s passes the field selector straight to the API server (no local filtering), so referencing a non-selectable field returns `field label not supported`. See the Kubernetes docs on [CRD selectable fields](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#crd-selectable-fields).
+> **Note:** The template above only controls the selector *value* (the right-hand side, computed from the source resource). For label selectors, the *key* can be any label and is matched server side. For **field selectors**, k9s applies the selector as a **local (client-side) filter** on the target resources, so the key may be any field path present in the target object (e.g. `metadata.name`, `spec.volumeName`), not just the API-selectable fields. This means field-selector jumps work even for resources whose fields are not server-side selectable. Field values are compared as strings, and the path is matched against the target object's manifest. For background on which fields the API server itself treats as selectable, see the Kubernetes docs on [CRD selectable fields](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#crd-selectable-fields).
 
 ### Examples
 

@@ -105,7 +105,7 @@ func (t *TableData) RowsRange(f ReRangeFn) {
 }
 
 func (t *TableData) Sort(sc SortColumn) {
-	col, idx := t.HeadCol(sc.Name, false)
+	col, idx := t.HeadCol(sc.Name, true)
 	if idx < 0 {
 		return
 	}
@@ -150,10 +150,10 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 		return td
 	}
 	if f, ok := internal.IsFuzzySelector(f.Filter); ok {
-		td.rowEvents = t.fuzzyFilter(f)
+		td.rowEvents = td.fuzzyFilter(f)
 		return td
 	}
-	rr, err := t.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
+	rr, err := td.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
 	if err == nil {
 		td.rowEvents = rr
 	} else {

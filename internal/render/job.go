@@ -22,7 +22,7 @@ var defaultJOBHeader = model1.Header{
 	model1.HeaderColumn{Name: "NAME"},
 	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
 	model1.HeaderColumn{Name: "COMPLETIONS"},
-	model1.HeaderColumn{Name: "DURATION"},
+	model1.HeaderColumn{Name: "DURATION", Attrs: model1.Attrs{Time: true}},
 	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
@@ -53,12 +53,9 @@ func (j Job) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := j.specs.realize(raw, defaultJOBHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
