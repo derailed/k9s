@@ -25,6 +25,7 @@ type TransferArgs struct {
 type TransferDialogOpts struct {
 	Containers     []string
 	Pod            string
+	LocalPath      string
 	Title, Message string
 	Retries        int
 	Ack            TransferFn
@@ -46,20 +47,15 @@ func ShowUploads(styles *config.Dialog, pages *ui.Pages, opts *TransferDialogOpt
 
 	modal := tview.NewModalForm("<"+opts.Title+">", f)
 
-	args := TransferArgs{
-		From:    opts.Pod,
-		Retries: opts.Retries,
-	}
+	args := newTransferArgs(opts)
 	var fromField, toField *tview.InputField
-	args.Download = true
 	f.AddCheckbox("Download:", args.Download, func(_ string, flag bool) {
 		if flag {
 			modal.SetText(strings.Replace(opts.Message, "Upload", "Download", 1))
 		} else {
 			modal.SetText(strings.Replace(opts.Message, "Download", "Upload", 1))
 		}
-		args.Download = flag
-		args.From, args.To = args.To, args.From
+		args.setDownload(flag)
 		fromField.SetText(args.From)
 		toField.SetText(args.To)
 	})
@@ -120,6 +116,24 @@ func ShowUploads(styles *config.Dialog, pages *ui.Pages, opts *TransferDialogOpt
 	})
 	pages.AddPage(confirmKey, modal, false, false)
 	pages.ShowPage(confirmKey)
+}
+
+func newTransferArgs(opts *TransferDialogOpts) TransferArgs {
+	return TransferArgs{
+		From:     opts.Pod,
+		To:       opts.LocalPath,
+		Download: true,
+		Retries:  opts.Retries,
+	}
+}
+
+func (a *TransferArgs) setDownload(download bool) {
+	if a.Download == download {
+		return
+	}
+
+	a.From, a.To = a.To, a.From
+	a.Download = download
 }
 
 func dismissConfirm(pages *ui.Pages) {
