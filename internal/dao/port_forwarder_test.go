@@ -113,17 +113,6 @@ func makePortForwardFactoryWithAuth(phase v1.PodPhase, cfg authConfig) Factory {
 	return &pfFactory{authCfg: cfg, podPhase: phase}
 }
 
-func makePortForwardFactory(phase v1.PodPhase) Factory {
-	return &pfFactory{
-		authCfg: authConfig{
-			canGetPod:            true,
-			canCreatePortForward: true,
-			canGetPortForward:    true,
-		},
-		podPhase: phase,
-	}
-}
-
 type pfFactory struct {
 	authCfg  authConfig
 	podPhase v1.PodPhase
@@ -134,27 +123,27 @@ func (f *pfFactory) Client() client.Connection { return &pfConn{cfg: f.authCfg, 
 func (f *pfFactory) Get(_ *client.GVR, path string, _ bool, _ labels.Selector) (runtime.Object, error) {
 	ns, n := client.Namespaced(path)
 	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": "v1",
 			"kind":       "Pod",
-			"metadata": map[string]interface{}{
+			"metadata": map[string]any{
 				"name":      n,
 				"namespace": ns,
 			},
-			"status": map[string]interface{}{
+			"status": map[string]any{
 				"phase": string(f.podPhase),
 			},
 		},
 	}, nil
 }
 
-func (f *pfFactory) List(_ *client.GVR, _ string, _ bool, _ labels.Selector) ([]runtime.Object, error) {
+func (*pfFactory) List(_ *client.GVR, _ string, _ bool, _ labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }
-func (f *pfFactory) ForResource(_ string, _ *client.GVR) (informers.GenericInformer, error) {
+func (*pfFactory) ForResource(_ string, _ *client.GVR) (informers.GenericInformer, error) {
 	return nil, nil
 }
-func (f *pfFactory) CanForResource(_ string, _ *client.GVR, _ []string) (informers.GenericInformer, error) {
+func (*pfFactory) CanForResource(_ string, _ *client.GVR, _ []string) (informers.GenericInformer, error) {
 	return nil, nil
 }
 func (_ *pfFactory) WaitForCacheSync()            {}
@@ -196,7 +185,7 @@ func (*pfConn) IsValidNamespace(string) bool                             { retur
 func (*pfConn) ValidNamespaceNames() (client.NamespaceNames, error)      { return nil, nil }
 func (*pfConn) IsActiveNamespace(string) bool                            { return false }
 
-func (c *pfConn) CanI(ns string, gvr *client.GVR, name string, verbs []string) (bool, error) {
+func (c *pfConn) CanI(_ string, gvr *client.GVR, _ string, verbs []string) (bool, error) {
 	gvrStr := gvr.String()
 
 	if gvrStr == client.PodGVR.String() {
