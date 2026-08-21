@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
+	runewidth "github.com/mattn/go-runewidth"
 )
 
 // MaxyPad tracks uniform column padding.
@@ -19,7 +20,7 @@ func ComputeMaxColumns(pads MaxyPad, sortColName string, t *model1.TableData) {
 	const colPadding = 1
 
 	for i, n := range t.ColumnNames(true) {
-		pads[i] = len(n)
+		pads[i] = runewidth.StringWidth(n)
 		if n == sortColName {
 			pads[i] += 2
 		}
@@ -28,7 +29,7 @@ func ComputeMaxColumns(pads MaxyPad, sortColName string, t *model1.TableData) {
 	var row int
 	t.RowsRange(func(_ int, re model1.RowEvent) bool {
 		for index, field := range re.Row.Fields {
-			width := len(field) + colPadding
+			width := runewidth.StringWidth(field) + colPadding
 			if index < len(pads) && width > pads[index] {
 				pads[index] = width
 			}
@@ -48,13 +49,16 @@ func IsASCII(s string) bool {
 	return true
 }
 
-// Pad a string up to the given length or truncates if greater than length.
+// Pad a string up to the given display width or truncates if greater than
+// width. Width is measured in terminal cells so wide (CJK) runes align
+// correctly.
 func Pad(s string, width int) string {
-	if len(s) == width {
+	sw := runewidth.StringWidth(s)
+	if sw == width {
 		return s
 	}
-	if len(s) > width {
+	if sw > width {
 		return render.Truncate(s, width)
 	}
-	return s + strings.Repeat(" ", width-len(s))
+	return s + strings.Repeat(" ", width-sw)
 }
