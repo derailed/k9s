@@ -30,6 +30,30 @@ type Plugins struct {
 	Plugins plugins `yaml:"plugins"`
 }
 
+// PluginSource identifies where a plugin was loaded from.
+type PluginSource string
+
+const (
+	PluginSourceGlobal      PluginSource = "global"
+	PluginSourceContext     PluginSource = "context"
+	PluginSourceXDGConfig   PluginSource = "xdg-config"
+	PluginSourceXDGDataHome PluginSource = "xdg-data-home"
+	PluginSourceXDGDataDir  PluginSource = "xdg-data-dir"
+)
+
+// PluginEntry tracks the effective plugin plus the file it came from.
+type PluginEntry struct {
+	Name   string
+	Path   string
+	Source PluginSource
+	Plugin Plugin
+}
+
+// PluginCatalog represents all effective plugins keyed by name.
+type PluginCatalog struct {
+	Entries map[string]PluginEntry
+}
+
 // PluginInputType represents the type of input field.
 type PluginInputType string
 
@@ -118,28 +142,57 @@ func NewPlugins() Plugins {
 	}
 }
 
+// NewPluginCatalog returns a new plugin catalog.
+func NewPluginCatalog() PluginCatalog {
+	return PluginCatalog{
+		Entries: make(map[string]PluginEntry),
+	}
+}
+
 // Load K9s plugins.
 func (p Plugins) Load(path string, loadExtra bool) error {
+	return loadPlugins(path, loadExtra, func(name string, plugin Plugin, _ string, _ PluginSource) {
+		p.Plugins[name] = plugin
+	})
+}
+
+// Load loads the effective plugin catalog including source metadata.
+func (p PluginCatalog) Load(path string, loadExtra bool) error {
+	return loadPlugins(path, loadExtra, func(name string, plugin Plugin, path string, source PluginSource) {
+		p.Entries[name] = PluginEntry{
+			Name:   name,
+			Path:   path,
+			Source: source,
+			Plugin: plugin,
+		}
+	})
+}
+
+type pluginSink func(name string, plugin Plugin, path string, source PluginSource)
+
+type pluginRoot struct {
+	path   string
+	source PluginSource
+}
+
+func loadPlugins(path string, loadExtra bool, sink pluginSink) error {
 	var errs error
 
 	// Load from global config file
-	if err := p.load(AppPluginsFile); err != nil {
+	if err := loadPluginFile(AppPluginsFile, PluginSourceGlobal, sink); err != nil {
 		errs = errors.Join(errs, err)
 	}
 
 	// Load from cluster/context config
-	if err := p.load(path); err != nil {
+	if err := loadPluginFile(path, PluginSourceContext, sink); err != nil {
 		errs = errors.Join(errs, err)
 	}
 
 	if !loadExtra {
 		return errs
 	}
-	// Load from XDG dirs
-	const k9sPluginsDir = "k9s/plugins"
-	for _, dir := range append(xdg.DataDirs, xdg.DataHome, xdg.ConfigHome) {
-		path := filepath.Join(dir, k9sPluginsDir)
-		if err := p.loadDir(path); err != nil {
+	for _, root := range xdgPluginRoots() {
+		if err := loadPluginDir(root.path, root.source, sink); err != nil {
 			errs = errors.Join(errs, err)
 		}
 	}
@@ -147,7 +200,39 @@ func (p Plugins) Load(path string, loadExtra bool) error {
 	return errs
 }
 
-func (p *Plugins) load(path string) error {
+func xdgPluginRoots() []pluginRoot {
+	const k9sPluginsDir = "k9s/plugins"
+
+	roots := make([]pluginRoot, 0, len(xdg.DataDirs)+2)
+	for _, dir := range xdg.DataDirs {
+		if dir == "" {
+			continue
+		}
+		roots = append(roots, pluginRoot{
+			path:   filepath.Join(dir, k9sPluginsDir),
+			source: PluginSourceXDGDataDir,
+		})
+	}
+	if xdg.DataHome != "" {
+		roots = append(roots, pluginRoot{
+			path:   filepath.Join(xdg.DataHome, k9sPluginsDir),
+			source: PluginSourceXDGDataHome,
+		})
+	}
+	if xdg.ConfigHome != "" {
+		roots = append(roots, pluginRoot{
+			path:   filepath.Join(xdg.ConfigHome, k9sPluginsDir),
+			source: PluginSourceXDGConfig,
+		})
+	}
+
+	return roots
+}
+
+func loadPluginFile(path string, source PluginSource, sink pluginSink) error {
+	if path == "" {
+		return nil
+	}
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
@@ -176,7 +261,7 @@ func (p *Plugins) load(path string) error {
 		if err := o.Validate(); err != nil {
 			return fmt.Errorf("plugin validation failed for %s: %w", path, err)
 		}
-		p.Plugins[strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))] = o
+		sink(strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)), o, path, source)
 	case json.PluginsSchema:
 		var oo Plugins
 		if err := yaml.Unmarshal(bb, &oo); err != nil {
@@ -187,7 +272,7 @@ func (p *Plugins) load(path string) error {
 			if err := plug.Validate(); err != nil {
 				return fmt.Errorf("plugin %q validation failed for %s: %w", k, path, err)
 			}
-			p.Plugins[k] = plug
+			sink(k, plug, path, source)
 		}
 	case json.PluginMultiSchema:
 		var oo plugins
@@ -199,14 +284,17 @@ func (p *Plugins) load(path string) error {
 			if err := plug.Validate(); err != nil {
 				return fmt.Errorf("plugin %q validation failed for %s: %w", k, path, err)
 			}
-			p.Plugins[k] = plug
+			sink(k, plug, path, source)
 		}
 	}
 
 	return nil
 }
 
-func (p Plugins) loadDir(dir string) error {
+func loadPluginDir(dir string, source PluginSource, sink pluginSink) error {
+	if dir == "" {
+		return nil
+	}
 	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
@@ -218,7 +306,7 @@ func (p Plugins) loadDir(dir string) error {
 			if de.IsDir() || !isYamlFile(de.Name()) {
 				return nil
 			}
-			errs = errors.Join(errs, p.load(path))
+			errs = errors.Join(errs, loadPluginFile(path, source, sink))
 			return nil
 		},
 		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
@@ -228,4 +316,16 @@ func (p Plugins) loadDir(dir string) error {
 	}))
 
 	return errs
+}
+
+func (p *Plugins) load(path string) error {
+	return loadPluginFile(path, PluginSourceGlobal, func(name string, plugin Plugin, _ string, _ PluginSource) {
+		p.Plugins[name] = plugin
+	})
+}
+
+func (p Plugins) loadDir(dir string) error {
+	return loadPluginDir(dir, PluginSourceXDGDataDir, func(name string, plugin Plugin, _ string, _ PluginSource) {
+		p.Plugins[name] = plugin
+	})
 }
