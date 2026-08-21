@@ -123,14 +123,14 @@ func (f *pfFactory) Client() client.Connection { return &pfConn{cfg: f.authCfg, 
 func (f *pfFactory) Get(_ *client.GVR, path string, _ bool, _ labels.Selector) (runtime.Object, error) {
 	ns, n := client.Namespaced(path)
 	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": "v1",
 			"kind":       "Pod",
-			"metadata": map[string]interface{}{
+			"metadata": map[string]any{
 				"name":      n,
 				"namespace": ns,
 			},
-			"status": map[string]interface{}{
+			"status": map[string]any{
 				"phase": string(f.podPhase),
 			},
 		},
