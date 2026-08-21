@@ -228,4 +228,13 @@ const (
 
 	// Minimum tracks a minimum value logger key.
 	Minimum = "minimum"
+
+	// Entries tracks an entries logger key.
+	Entries = "entries"
+
+	// UID tracks a UID logger key.
+	UID = "uid"
+
+	// ChildrenInIndex tracks a children in index logger key.
+	ChildrenInIndex = "childrenInIndex"
 )
