@@ -185,7 +185,7 @@ func (*pfConn) IsValidNamespace(string) bool                             { retur
 func (*pfConn) ValidNamespaceNames() (client.NamespaceNames, error)      { return nil, nil }
 func (*pfConn) IsActiveNamespace(string) bool                            { return false }
 
-func (c *pfConn) CanI(_ string, gvr *client.GVR, name string, verbs []string) (bool, error) {
+func (c *pfConn) CanI(_ string, gvr *client.GVR, _ string, verbs []string) (bool, error) {
 	gvrStr := gvr.String()
 
 	if gvrStr == client.PodGVR.String() {
