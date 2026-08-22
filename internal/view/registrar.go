@@ -90,6 +90,9 @@ func miscViewers(vv MetaViewers) {
 	vv[client.PuGVR] = MetaViewer{
 		viewerFn: NewPulse,
 	}
+	vv[client.ExplainGVR] = MetaViewer{
+		viewerFn: NewExplain,
+	}
 }
 
 func appsViewers(vv MetaViewers) {
