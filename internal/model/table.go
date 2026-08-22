@@ -65,7 +65,7 @@ func (t *Table) SetViewSetting(ctx context.Context, vs *config.ViewSetting) {
 	t.mx.Unlock()
 
 	if ctx != context.Background() {
-		if err := t.reconcile(ctx); err != nil {
+		if _, err := t.reconcile(ctx); err != nil {
 			slog.Error("Refresh failed", slogs.GVR, t.gvr)
 		}
 	}
@@ -233,8 +233,12 @@ func (t *Table) refresh(ctx context.Context) error {
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)
 
-	if err := t.reconcile(ctx); err != nil {
+	changed, err := t.reconcile(ctx)
+	if err != nil {
 		return err
+	}
+	if !changed && !t.data.Empty() {
+		return nil
 	}
 	data := t.Peek()
 	if data.RowCount() == 0 {
@@ -265,7 +269,7 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	return a.List(ctx, ns)
 }
 
-func (t *Table) reconcile(ctx context.Context) error {
+func (t *Table) reconcile(ctx context.Context) (bool, error) {
 	var (
 		oo  []runtime.Object
 		err error
@@ -282,7 +286,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 		oo, err = []runtime.Object{o}, e
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 	r := meta.Renderer
 	r.SetViewSetting(t.vs)
