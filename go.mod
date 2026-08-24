@@ -18,7 +18,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/itchyny/gojq v0.12.19
 	github.com/karrick/godirwalk v1.17.0
-	github.com/lmittmann/tint v1.1.3
+	github.com/lmittmann/tint v1.2.0
 	github.com/lucasb-eyer/go-colorful v1.4.1
 	github.com/mattn/go-colorable v0.1.15
 	github.com/mattn/go-runewidth v0.0.27
