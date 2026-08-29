@@ -16,8 +16,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -261,6 +263,23 @@ func (f *Factory) ForResource(ns string, gvr *client.GVR) (informers.GenericInfo
 		)
 		return inf, nil
 	}
+	// Reflector failures are logged via klog which k9s silences. Surface them
+	// so stalled cache syncs are diagnosable. Errors once started are expected.
+	_ = inf.Informer().SetWatchErrorHandler(func(_ *cache.Reflector, err error) {
+		slog.Warn("Informer list/watch failed",
+			slogs.GVR, gvr,
+			slogs.Namespace, ns,
+			slogs.Error, err,
+		)
+	})
+	// Managed fields are server-side bookkeeping k9s never renders and can
+	// account for a third of an object's footprint on large clusters.
+	_ = inf.Informer().SetTransform(func(o any) (any, error) {
+		if u, ok := o.(*unstructured.Unstructured); ok {
+			u.SetManagedFields(nil)
+		}
+		return o, nil
+	})
 
 	f.mx.RLock()
 	defer f.mx.RUnlock()
@@ -279,7 +298,7 @@ func (f *Factory) ensureFactory(ns string) (di.DynamicSharedInformerFactory, err
 		return fac, nil
 	}
 
-	dial, err := f.client.DynDial()
+	dial, err := f.dynDialLongOps()
 	if err != nil {
 		return nil, err
 	}
@@ -291,6 +310,23 @@ func (f *Factory) ensureFactory(ns string) (di.DynamicSharedInformerFactory, err
 	)
 
 	return f.factories[ns], nil
+}
+
+// dynDialLongOps returns a dynamic client with no per-request timeout for
+// informer use. Reflectors manage their own list/watch lifecycles: on large
+// clusters the initial cluster-wide pod list can exceed the configured api
+// call timeout, endlessly aborting the sync and leaving views forever empty.
+func (f *Factory) dynDialLongOps() (dynamic.Interface, error) {
+	cfg, err := f.client.RestConfig()
+	if err != nil {
+		return nil, err
+	}
+	if cfg == nil {
+		return f.client.DynDial()
+	}
+	cfg.Timeout = 0
+
+	return dynamic.NewForConfig(cfg)
 }
 
 // AddForwarder registers a new portforward for a given container.
