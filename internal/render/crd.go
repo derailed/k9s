@@ -53,12 +53,9 @@ func (c CustomResourceDefinition) Render(o any, _ string, row *model1.Row) error
 		return nil
 	}
 	cols, err := c.specs.realize(raw, defaultCRDHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.
@@ -91,7 +88,7 @@ func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *
 		naStrings(versions),
 		string(crd.Spec.Scope),
 		naStrings(crd.Spec.Names.ShortNames),
-		mapToIfc(crd.GetLabels()),
+		mapToStr(crd.GetLabels()),
 		AsStatus(c.diagnose(crd.Name, crd.Spec.Versions)),
 		ToAge(crd.GetCreationTimestamp()),
 	}

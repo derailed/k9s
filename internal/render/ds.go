@@ -52,12 +52,9 @@ func (d DaemonSet) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := d.specs.realize(raw, defaultDSHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.

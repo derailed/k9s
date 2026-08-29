@@ -1,0 +1,38 @@
+plugins:
+  # Leverage lnav (https://lnav.org) for powerful log viewing with
+  # filtering, searching, SQL queries, and timeline support.
+  # Requires lnav to be installed: https://lnav.org/downloads
+  lnav-pod:
+    shortCut: Ctrl-L
+    confirm: false
+    description: "Logs (lnav)"
+    scopes:
+      - pods
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        kubectl logs --follow --all-containers --tail=5000
+        $NAME
+        -n $NAMESPACE
+        --context $CONTEXT
+        --kubeconfig $KUBECONFIG
+        2>&1 | lnav
+  lnav-container:
+    shortCut: Ctrl-L
+    confirm: false
+    description: "Logs (lnav)"
+    scopes:
+      - containers
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        kubectl logs --follow --tail=5000
+        -c $NAME $POD
+        -n $NAMESPACE
+        --context $CONTEXT
+        --kubeconfig $KUBECONFIG
+        2>&1 | lnav

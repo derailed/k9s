@@ -86,6 +86,7 @@ func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOpti
 		Lines:         cfg.TailCount,
 		Previous:      prevLogs,
 		ShowTimestamp: cfg.ShowTime,
+		LogBufferSize: cfg.LogBufferSize,
 	}
 	if opts.Container == "" {
 		opts.AllContainers = true
@@ -105,6 +106,7 @@ func podLogOptions(app *App, fqn string, prev bool, m *metav1.ObjectMeta, spec *
 			SingleContainer: len(cc) == 1,
 			ShowTimestamp:   cfg.ShowTime,
 			Previous:        prev,
+			LogBufferSize:   cfg.LogBufferSize,
 		}
 	)
 	if c, ok := dao.GetDefaultContainer(m, spec); ok {
