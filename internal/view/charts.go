@@ -87,7 +87,7 @@ func (c *ContainerCharts) Init(ctx context.Context) error {
 	c.cpu.SetLegend(fmt.Sprintf(" %s ", cases.Title(language.English).String(client.CpuGVR.R())))
 	c.mem.SetLegend(fmt.Sprintf(" %s ", cases.Title(language.English).String(client.MemGVR.R())))
 
-	c.applyStyles(c.app.Styles.Charts())
+	c.applyStyles(c.app.Styles)
 
 	c.AddItem(c.cpu, 0, 1, true)
 	c.AddItem(c.mem, 0, 1, false)
@@ -99,7 +99,8 @@ func (c *ContainerCharts) Init(ctx context.Context) error {
 	return nil
 }
 
-func (c *ContainerCharts) applyStyles(styles config.Charts) {
+func (c *ContainerCharts) applyStyles(s *config.Styles) {
+	styles := s.Charts()
 	for _, sp := range []*tchart.SparkLine{c.cpu, c.mem} {
 		sp.SetBackgroundColor(styles.ChartBgColor.Color())
 		sp.SetFocusColorNames(styles.FocusFgColor.String(), styles.FocusBgColor.String())
@@ -114,7 +115,7 @@ func (c *ContainerCharts) applyStyles(styles config.Charts) {
 // StylesChanged responds to skin changes.
 func (c *ContainerCharts) StylesChanged(s *config.Styles) {
 	c.SetBackgroundColor(s.Charts().BgColor.Color())
-	c.applyStyles(s.Charts())
+	c.applyStyles(s)
 }
 
 func (c *ContainerCharts) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -203,7 +204,7 @@ func (c *ContainerCharts) fetchAndUpdate(ctx context.Context) {
 	if err != nil {
 		slog.Warn("Fetch container metrics failed",
 			slogs.Error, err,
-			"path", c.path,
+			slogs.Path, c.path,
 		)
 		return
 	}
