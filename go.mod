@@ -21,7 +21,7 @@ require (
 	github.com/lmittmann/tint v1.2.0
 	github.com/lucasb-eyer/go-colorful v1.4.1
 	github.com/mattn/go-colorable v0.1.15
-	github.com/mattn/go-runewidth v0.0.27
+	github.com/mattn/go-runewidth v0.0.28
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.5
