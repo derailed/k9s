@@ -33,6 +33,11 @@ var (
 	CjGVR  = NewGVR("batch/v1/cronjobs")
 	JobGVR = NewGVR("batch/v1/jobs")
 
+	// Monitoring (Prometheus Operator)...
+	SmonGVR = NewGVR("monitoring.coreos.com/v1/servicemonitors")
+	PmonGVR = NewGVR("monitoring.coreos.com/v1/podmonitors")
+	PrbGVR  = NewGVR("monitoring.coreos.com/v1/probes")
+
 	// Misc...
 	CrdGVR = NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")
 	PcGVR  = NewGVR("scheduling.k8s.io/v1/priorityclasses")
