@@ -340,6 +340,9 @@ func (*Command) componentFor(gvr *client.GVR, fqn string, v *MetaViewer) Resourc
 	} else {
 		view = NewBrowser(gvr)
 	}
+	// Copying is opt-out: the extender self-gates on namespaced resources that
+	// support creation, so pseudo and cluster scoped resources are left alone.
+	view = NewCopyExtender(view)
 
 	view.SetInstance(fqn)
 	if v.enterFn != nil {
