@@ -54,11 +54,11 @@ type Log struct {
 }
 
 // NewLog returns a new model.
-func NewLog(gvr *client.GVR, opts *dao.LogOptions, flushTimeout time.Duration) *Log {
+func NewLog(gvr *client.GVR, opts *dao.LogOptions, timeColor string, flushTimeout time.Duration) *Log {
 	return &Log{
 		gvr:          gvr,
 		logOptions:   opts,
-		lines:        dao.NewLogItems(),
+		lines:        dao.NewLogItems(timeColor),
 		flushTimeout: flushTimeout,
 	}
 }

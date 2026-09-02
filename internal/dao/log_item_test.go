@@ -14,6 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	timeColor = "gray"
+)
+
 func TestLogItemEmpty(t *testing.T) {
 	uu := map[string]struct {
 		s string
@@ -99,7 +103,7 @@ func TestLogItemRender(t *testing.T) {
 			i.Pod, i.Container = n, u.opts.Container
 
 			bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-			i.Render("yellow", u.opts.ShowTimestamp, bb)
+			i.Render("yellow", u.opts.ShowTimestamp, timeColor, bb)
 			assert.Equal(t, u.e, bb.String())
 		})
 	}
@@ -114,7 +118,7 @@ func BenchmarkLogItemRenderTS(b *testing.B) {
 	b.ReportAllocs()
 	for range b.N {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-		i.Render("yellow", true, bb)
+		i.Render("yellow", true, timeColor, bb)
 	}
 }
 
@@ -127,6 +131,6 @@ func BenchmarkLogItemRenderNoTS(b *testing.B) {
 	b.ReportAllocs()
 	for range b.N {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-		i.Render("yellow", false, bb)
+		i.Render("yellow", false, timeColor, bb)
 	}
 }
