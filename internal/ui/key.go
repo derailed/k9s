@@ -129,6 +129,20 @@ var NumKeys = map[int]tcell.Key{
 	9: Key9,
 }
 
+// ShiftNumKeys tracks shifted number keys (Shift+0..Shift+9).
+var ShiftNumKeys = map[int]tcell.Key{
+	0: KeyShift0,
+	1: KeyShift1,
+	2: KeyShift2,
+	3: KeyShift3,
+	4: KeyShift4,
+	5: KeyShift5,
+	6: KeyShift6,
+	7: KeyShift7,
+	8: KeyShift8,
+	9: KeyShift9,
+}
+
 func initNumbKeys() {
 	tcell.KeyNames[Key0] = "0"
 	tcell.KeyNames[Key1] = "1"

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal"
@@ -22,7 +23,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const maxTruncate = 50
+const (
+	maxTruncate = 50
+	// maxNSTruncate caps how wide a multi-namespace selector renders in a title.
+	maxNSTruncate = 40
+)
 
 type (
 	// ColorerFunc represents a row colorer.
@@ -440,7 +445,7 @@ func (t *Table) GetNamespace() string {
 }
 
 func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
-	if client.IsAllNamespaces(data.GetNamespace()) {
+	if client.IsAllNamespaces(data.GetNamespace()) || client.IsMultiNamespace(data.GetNamespace()) {
 		t.actions.Add(
 			KeyShiftP,
 			NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false),
@@ -464,7 +469,7 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 
 func (t *Table) shouldExcludeColumn(h model1.HeaderColumn) bool {
 	return (h.Hide || (!t.wide && h.Wide)) ||
-		(h.Name == "NAMESPACE" && !t.GetModel().ClusterWide()) ||
+		(h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() && !client.IsMultiNamespace(t.GetModel().GetNamespace())) ||
 		(h.MX && !t.hasMetrics) ||
 		(h.VS && vul.ImgScanner == nil)
 }
@@ -632,7 +637,9 @@ func (t *Table) NameColIndex() int {
 func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 	sc := t.getSortCol()
 	sortCol := h.Name == sc.Name
-	selectedCol := col == t.getSelectedColIdx()
+	// The NAMESPACE column is a prepended informational column; keep it rendered
+	// with the standard header color rather than the selected-column highlight.
+	selectedCol := col == t.getSelectedColIdx() && !strings.EqualFold(h.Name, "NAMESPACE")
 	styles := t.styles.Table()
 	c := tview.NewTableCell(columnIndicator(sortCol, selectedCol, sc.ASC, &styles, h.Name))
 	c.SetExpansion(1)
@@ -688,6 +695,9 @@ func (t *Table) styleTitle() string {
 	}
 	if t.Extras != "" {
 		ns = t.Extras
+	}
+	if client.IsMultiNamespace(ns) {
+		ns = render.Truncate(ns, maxNSTruncate)
 	}
 
 	resource := t.gvr.R()

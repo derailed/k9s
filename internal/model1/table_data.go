@@ -314,7 +314,7 @@ func (t *TableData) Labelize(labels []string) *TableData {
 		return t
 	}
 	cols := []int{0, 1}
-	if client.IsNamespaced(t.namespace) {
+	if client.IsNamespaced(t.namespace) && !client.IsMultiNamespace(t.namespace) {
 		cols = cols[1:]
 	}
 	data := TableData{
@@ -358,7 +358,7 @@ func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {
 		psc.Name, psc.ASC = name, order
 		return psc, nil
 	}
-	if client.IsAllNamespaces(t.GetNamespace()) {
+	if client.IsAllNamespaces(t.GetNamespace()) || client.IsMultiNamespace(t.GetNamespace()) {
 		if _, ok := t.header.IndexOf("NAMESPACE", false); ok {
 			psc.Name = "NAMESPACE"
 		} else if _, ok := t.header.IndexOf("NAME", false); ok {
