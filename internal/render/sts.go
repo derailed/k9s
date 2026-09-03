@@ -15,17 +15,17 @@ import (
 )
 
 var defaultSTSHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
-	model1.HeaderColumn{Name: "READY"},
-	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colVS, Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: colReady},
+	model1.HeaderColumn{Name: colSelector, Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "SERVICE"},
-	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colContainers, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colImages, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // StatefulSet renders a K8s StatefulSet to screen.
