@@ -211,6 +211,13 @@ func loadK9s(m ResourceMetas) {
 		SingularName: "xray",
 		Categories:   []string{k9sCat},
 	}
+	m[client.OwnGVR] = &metav1.APIResource{
+		Name:         "owners",
+		Kind:         "Owners",
+		SingularName: "owner",
+		ShortNames:   []string{"own", "ot"},
+		Categories:   []string{k9sCat},
+	}
 	m[client.RefGVR] = &metav1.APIResource{
 		Name:         "references",
 		Kind:         "References",
