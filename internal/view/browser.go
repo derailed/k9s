@@ -43,6 +43,7 @@ type Browser struct {
 	mx         sync.RWMutex
 	updating   bool
 	firstView  atomic.Int32
+	syncStall  syncStallTracker
 }
 
 // NewBrowser returns a new browser.
@@ -173,6 +174,7 @@ func (b *Browser) Start() {
 
 	b.Stop()
 	b.firstView.Store(0) // Reset first view counter on each start
+	b.syncStall.reset()
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -313,15 +315,33 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 	// While the informer cache hasn't synced yet, show a neutral status
 	// instead of a misleading "no resources found" warning.
 	if synced, err := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
+		gvr, ns := b.GVR(), b.GetNamespace()
+		// A sync that never completes reports no error at all, so a wait this
+		// long is surfaced rather than left as an endless spinner.
+		stalled, first := false, false
+		if err == nil {
+			stalled, first = b.syncStall.stalled(gvr.String()+"@"+ns, time.Now())
+		}
+		if first {
+			slog.Warn("Informer cache is still out of sync",
+				slogs.GVR, gvr,
+				slogs.Namespace, ns,
+				slogs.Duration, syncStallDelay,
+			)
+		}
 		b.app.QueueUpdateDraw(func() {
-			if err != nil {
-				b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
-				return
+			switch {
+			case err != nil:
+				b.app.Flash().Warnf("Unable to sync %s: %s", gvr, err)
+			case stalled:
+				b.app.Flash().Warnf(syncStallMsg, gvr, syncStallDelay)
+			default:
+				b.app.Flash().Infof("Synchronizing %s in %q namespace...", gvr, client.PrintNamespace(ns))
 			}
-			b.app.Flash().Infof("Synchronizing %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace()))
 		})
 		return
 	}
+	b.syncStall.reset()
 
 	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
