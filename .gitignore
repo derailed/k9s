@@ -6,6 +6,7 @@ cov.out
 execs
 /k9s
 /k8s
+k9s-dev
 dist
 notes
 vendor
