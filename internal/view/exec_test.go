@@ -6,7 +6,9 @@ package view
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestShellQuote(t *testing.T) {
@@ -45,4 +47,26 @@ func TestShellQuote(t *testing.T) {
 			assert.Equal(t, u.e, shellQuote(u.input))
 		})
 	}
+}
+
+func TestAsResource(t *testing.T) {
+	t.Run("valid-limits", func(t *testing.T) {
+		res := asResource(config.Limits{
+			v1.ResourceCPU:    "500m",
+			v1.ResourceMemory: "100Mi",
+		})
+		assert.Equal(t, "500m", res.Limits.Cpu().String())
+		assert.Equal(t, "100Mi", res.Limits.Memory().String())
+	})
+
+	t.Run("empty-or-invalid-limits-do-not-panic", func(t *testing.T) {
+		res := asResource(config.Limits{
+			v1.ResourceCPU:    "",
+			v1.ResourceMemory: "invalid-memory",
+		})
+		_, cpuFound := res.Limits[v1.ResourceCPU]
+		assert.False(t, cpuFound)
+		_, memFound := res.Limits[v1.ResourceMemory]
+		assert.False(t, memFound)
+	})
 }
