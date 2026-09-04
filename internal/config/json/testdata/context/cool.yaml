@@ -2,6 +2,9 @@ k9s:
   cluster: kind-dashb
   readOnly: false
   skin: nightfox
+  logo: |
+    COOL
+    CTX
   namespace:
     active: default
     lockFavorites: false

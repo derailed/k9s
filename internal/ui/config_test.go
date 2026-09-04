@@ -74,6 +74,7 @@ func (synchronizer) Flash() *model.Flash {
 	return model.NewFlash(100 * time.Millisecond)
 }
 func (synchronizer) Logo() *ui.Logo         { return nil }
+func (synchronizer) RefreshHeader()         {}
 func (synchronizer) UpdateClusterInfo()     {}
 func (synchronizer) QueueUpdateDraw(func()) {}
 func (synchronizer) QueueUpdate(func())     {}
