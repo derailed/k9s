@@ -176,7 +176,7 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		path := r.GetSelectedItem()
-		if path == "" {
+		if path == "" && !p.RunWithNoSelection {
 			return evt
 		}
 		if r.EnvFn() == nil {
