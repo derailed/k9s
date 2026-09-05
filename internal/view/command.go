@@ -28,7 +28,7 @@ const (
 
 var (
 	customViewers MetaViewers
-	contextRX     = regexp.MustCompile(`\s+@([\w-]+)`)
+	contextRX     = regexp.MustCompile(`\s+@(?:'[^']+'|"[^"]+"|[\w-]+)`)
 )
 
 // Command represents a user command.
@@ -372,7 +372,12 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	comp.SetCommand(p)
 
 	if clearStack {
-		v := contextRX.ReplaceAllString(p.GetLine(), "")
+		v := p.GetLine()
+		if ctx, ok := p.HasContext(); ok {
+			v = stripContextFromLine(v, ctx)
+		} else {
+			v = contextRX.ReplaceAllString(v, "")
+		}
 		c.app.Config.SetActiveView(v)
 	}
 	if err := c.app.inject(comp, clearStack); err != nil {
@@ -384,4 +389,24 @@ func (c *Command) exec(p *cmd.Interpreter, gvr *client.GVR, comp model.Component
 	slog.Debug("History (exec)", slogs.Stack, strings.Join(c.app.cmdHistory.List(), "|"))
 
 	return
+}
+
+func stripContextFromLine(line, ctx string) string {
+	if ctx == "" {
+		return strings.TrimSpace(line)
+	}
+
+	candidates := []string{
+		" @\"" + ctx + "\"",
+		" @'" + ctx + "'",
+		" @" + ctx,
+	}
+	for _, c := range candidates {
+		if strings.Contains(line, c) {
+			line = strings.Replace(line, c, "", 1)
+			return strings.TrimSpace(line)
+		}
+	}
+
+	return strings.TrimSpace(line)
 }
