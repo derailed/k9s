@@ -94,9 +94,15 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 
 * Via [snap](https://snapcraft.io/k9s) for Linux
 
-  ```shell
-  snap install k9s --devmode
-  ```
+> [!WARNING]
+> The published snap is out of date and has several bugs.
+> If you want to use this method, clone the repository and build the snap locally:
+
+   ```shell
+   snap install snapcraft --classic
+   snapcraft pack
+   snap install ./k9s*.snap --classic --dangerous
+   ```
 
 * On Arch Linux
 
