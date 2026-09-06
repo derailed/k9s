@@ -278,7 +278,10 @@ func (t *Tree) getMeta(ctx context.Context, gvr *client.GVR) (ResourceMeta, erro
 // Helpers...
 
 func rxMatch(q, path string) bool {
-	rx := regexp.MustCompile(`(?i)` + q)
+	rx, err := regexp.Compile(`(?i)` + q)
+	if err != nil {
+		return false
+	}
 
 	tokens := strings.Split(path, "::")
 	for _, t := range tokens {
