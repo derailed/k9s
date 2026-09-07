@@ -22,15 +22,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	timeColor = "gray"
+)
+
 func TestLog(t *testing.T) {
 	opts := dao.LogOptions{
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := view.NewLog(client.PodGVR, &opts)
+	v := view.NewLog(client.PodGVR, &opts, timeColor)
 	require.NoError(t, v.Init(makeContext(t)))
 
-	ii := dao.NewLogItems()
+	ii := dao.NewLogItems(timeColor)
 	ii.Add(dao.NewLogItemFromString("blee\n"), dao.NewLogItemFromString("bozo\n"))
 	ll := make([][]byte, ii.Len())
 	ii.Lines(0, false, ll)
@@ -44,10 +48,10 @@ func TestLogFlush(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := view.NewLog(client.PodGVR, &opts)
+	v := view.NewLog(client.PodGVR, &opts, timeColor)
 	require.NoError(t, v.Init(makeContext(t)))
 
-	items := dao.NewLogItems()
+	items := dao.NewLogItems(timeColor)
 	items.Add(
 		dao.NewLogItemFromString("\033[0;30mblee\n"),
 		dao.NewLogItemFromString("\033[0;32mBozo\n"),
@@ -64,10 +68,10 @@ func BenchmarkLogFlush(b *testing.B) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := view.NewLog(client.PodGVR, &opts)
+	v := view.NewLog(client.PodGVR, &opts, timeColor)
 	_ = v.Init(makeContext(b))
 
-	items := dao.NewLogItems()
+	items := dao.NewLogItems(timeColor)
 	items.Add(
 		dao.NewLogItemFromString("\033[0;30mblee\n"),
 		dao.NewLogItemFromString("\033[0;101mBozo\n"),
@@ -102,11 +106,11 @@ func TestLogViewSave(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := view.NewLog(client.PodGVR, &opts)
+	v := view.NewLog(client.PodGVR, &opts, timeColor)
 	require.NoError(t, v.Init(makeContext(t)))
 
 	app := makeApp(t)
-	ii := dao.NewLogItems()
+	ii := dao.NewLogItems(timeColor)
 	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
 	ll := make([][]byte, ii.Len())
 	ii.Lines(0, false, ll)
@@ -140,7 +144,7 @@ func TestAllContainerKeyBinding(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			v := view.NewLog(client.PodGVR, u.opts)
+			v := view.NewLog(client.PodGVR, u.opts, timeColor)
 			require.NoError(t, v.Init(makeContext(t)))
 			_, got := v.Logs().Actions().Get(ui.KeyA)
 			assert.Equal(t, u.e, got)

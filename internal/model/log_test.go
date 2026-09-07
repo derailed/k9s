@@ -21,19 +21,23 @@ import (
 	"k8s.io/client-go/informers"
 )
 
+const (
+	timeColor = "gray"
+)
+
 func init() {
 	slog.SetDefault(slog.New(slog.DiscardHandler))
 }
 
 func TestLogFullBuffer(t *testing.T) {
 	size := 4
-	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(size), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(size), timeColor, 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
 	m.AddListener(v)
 
-	data := dao.NewLogItems()
+	data := dao.NewLogItems(timeColor)
 	for i := range 2 * size {
 		data.Add(dao.NewLogItemFromString("line" + strconv.Itoa(i)))
 		m.Append(data.Items()[i])
@@ -72,14 +76,14 @@ func TestLogFilter(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			m := model.NewLog(client.NewGVR("fred"), makeLogOpts(size), 10*time.Millisecond)
+			m := model.NewLog(client.NewGVR("fred"), makeLogOpts(size), timeColor, 10*time.Millisecond)
 			m.Init(makeFactory())
 
 			v := newTestView()
 			m.AddListener(v)
 
 			m.Filter(u.q)
-			data := dao.NewLogItems()
+			data := dao.NewLogItems(timeColor)
 			for i := range size {
 				data.Add(dao.NewLogItemFromString(fmt.Sprintf("pod-line-%d", i+1)))
 				m.Append(data.Items()[i])
@@ -101,7 +105,7 @@ func TestLogFilter(t *testing.T) {
 }
 
 func TestLogStartStop(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), timeColor, 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
@@ -110,7 +114,7 @@ func TestLogStartStop(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	m.Start(ctx)
-	data := dao.NewLogItems()
+	data := dao.NewLogItems(timeColor)
 	data.Add(dao.NewLogItemFromString("line1"), dao.NewLogItemFromString("line2"))
 	for _, d := range data.Items() {
 		m.Append(d)
@@ -125,7 +129,7 @@ func TestLogStartStop(t *testing.T) {
 }
 
 func TestLogClear(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), timeColor, 10*time.Millisecond)
 	m.Init(makeFactory())
 	assert.Equal(t, "fred", m.GetPath())
 	assert.Equal(t, "blee", m.GetContainer())
@@ -133,7 +137,7 @@ func TestLogClear(t *testing.T) {
 	v := newTestView()
 	m.AddListener(v)
 
-	data := dao.NewLogItems()
+	data := dao.NewLogItems(timeColor)
 	data.Add(dao.NewLogItemFromString("line1"), dao.NewLogItemFromString("line2"))
 	for _, d := range data.Items() {
 		m.Append(d)
@@ -148,13 +152,13 @@ func TestLogClear(t *testing.T) {
 }
 
 func TestLogBasic(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(2), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(2), timeColor, 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
 	m.AddListener(v)
 
-	data := dao.NewLogItems()
+	data := dao.NewLogItems(timeColor)
 	data.Add(dao.NewLogItemFromString("line1"), dao.NewLogItemFromString("line2"))
 	m.Set(data)
 
@@ -167,19 +171,19 @@ func TestLogBasic(t *testing.T) {
 }
 
 func TestLogAppend(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), 5*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), timeColor, 5*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
 	m.AddListener(v)
-	items := dao.NewLogItems()
+	items := dao.NewLogItems(timeColor)
 	items.Add(dao.NewLogItemFromString("blah blah"))
 	m.Set(items)
 	ll := make([][]byte, items.Len())
 	items.Lines(0, false, ll)
 	assert.Equal(t, ll, v.data)
 
-	data := dao.NewLogItems()
+	data := dao.NewLogItems(timeColor)
 	data.Add(
 		dao.NewLogItemFromString("line1"),
 		dao.NewLogItemFromString("line2"),
@@ -199,14 +203,14 @@ func TestLogAppend(t *testing.T) {
 }
 
 func TestLogTimedout(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), timeColor, 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
 	m.AddListener(v)
 
 	m.Filter("line1")
-	data := dao.NewLogItems()
+	data := dao.NewLogItems(timeColor)
 	data.Add(
 		dao.NewLogItemFromString("line1"),
 		dao.NewLogItemFromString("line2"),
@@ -227,7 +231,7 @@ func TestLogTimedout(t *testing.T) {
 func TestToggleAllContainers(t *testing.T) {
 	opts := makeLogOpts(1)
 	opts.DefaultContainer = "duh"
-	m := model.NewLog(client.NewGVR(""), opts, 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR(""), opts, timeColor, 10*time.Millisecond)
 	m.Init(makeFactory())
 	assert.Equal(t, "blee", m.GetContainer())
 	ctx, cancel := context.WithCancel(context.Background())

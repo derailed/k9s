@@ -14,15 +14,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	timeColor = "gray"
+)
+
 func TestLogAutoScroll(t *testing.T) {
 	opts := dao.LogOptions{
 		Path:            "fred/p1",
 		Container:       "blee",
 		SingleContainer: true,
 	}
-	v := NewLog(client.PodGVR, &opts)
+	v := NewLog(client.PodGVR, &opts, timeColor)
 	require.NoError(t, v.Init(makeContext(t)))
-	ii := dao.NewLogItems()
+	ii := dao.NewLogItems(timeColor)
 	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
 	v.GetModel().Set(ii)
 	v.GetModel().Notify()
@@ -38,10 +42,10 @@ func TestLogColumnLock(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := NewLog(client.PodGVR, &opts)
+	v := NewLog(client.PodGVR, &opts, timeColor)
 	require.NoError(t, v.Init(makeContext(t)))
 
-	buff := dao.NewLogItems()
+	buff := dao.NewLogItems(timeColor)
 	for i := range 100 {
 		buff.Add(dao.NewLogItemFromString(fmt.Sprintf("line-%d\n", i)))
 	}
@@ -62,10 +66,10 @@ func TestLogViewNav(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := NewLog(client.PodGVR, &opts)
+	v := NewLog(client.PodGVR, &opts, timeColor)
 	require.NoError(t, v.Init(makeContext(t)))
 
-	buff := dao.NewLogItems()
+	buff := dao.NewLogItems(timeColor)
 	for i := range 100 {
 		buff.Add(dao.NewLogItemFromString(fmt.Sprintf("line-%d\n", i)))
 	}
@@ -81,7 +85,7 @@ func TestLogViewClear(t *testing.T) {
 		Path:      "fred/p1",
 		Container: "blee",
 	}
-	v := NewLog(client.PodGVR, &opts)
+	v := NewLog(client.PodGVR, &opts, timeColor)
 	require.NoError(t, v.Init(makeContext(t)))
 
 	v.toggleAutoScrollCmd(nil)
@@ -96,9 +100,9 @@ func TestLogTimestamp(t *testing.T) {
 		Path:      "fred/blee",
 		Container: "c1",
 	}
-	l := NewLog(client.NewGVR("test"), &opts)
+	l := NewLog(client.NewGVR("test"), &opts, timeColor)
 	require.NoError(t, l.Init(makeContext(t)))
-	ii := dao.NewLogItems()
+	ii := dao.NewLogItems(timeColor)
 	ii.Add(
 		&dao.LogItem{
 			Pod:       "fred/blee",
@@ -126,9 +130,9 @@ func TestLogFilter(t *testing.T) {
 		Path:      "fred/blee",
 		Container: "c1",
 	}
-	l := NewLog(client.NewGVR("test"), &opts)
+	l := NewLog(client.NewGVR("test"), &opts, timeColor)
 	require.NoError(t, l.Init(makeContext(t)))
-	buff := dao.NewLogItems()
+	buff := dao.NewLogItems(timeColor)
 	buff.Add(
 		dao.NewLogItemFromString("duh"),
 		dao.NewLogItemFromString("zorg"),

@@ -67,10 +67,10 @@ func (l *LogItem) Size() int {
 }
 
 // Render returns a log line as string.
-func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+func (l *LogItem) Render(paint string, showTime bool, timeColor string, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if showTime && index > 0 {
-		bb.WriteString("[gray::b]")
+		bb.WriteString("[" + timeColor + "::b]")
 		bb.Write(l.Bytes[:index])
 		bb.WriteString(" ")
 		if l := 30 - len(l.Bytes[:index]); l > 0 {

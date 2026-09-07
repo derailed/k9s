@@ -56,10 +56,10 @@ type Log struct {
 var _ model.Component = (*Log)(nil)
 
 // NewLog returns a new viewer.
-func NewLog(gvr *client.GVR, opts *dao.LogOptions) *Log {
+func NewLog(gvr *client.GVR, opts *dao.LogOptions, timeColor string) *Log {
 	return &Log{
 		Flex:  tview.NewFlex(),
-		model: model.NewLog(gvr, opts, defaultFlushTimeout),
+		model: model.NewLog(gvr, opts, timeColor, defaultFlushTimeout),
 	}
 }
 
