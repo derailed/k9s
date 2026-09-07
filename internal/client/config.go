@@ -6,8 +6,11 @@ package client
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -25,15 +28,24 @@ const (
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true
 
+	// InClusterContext names the synthesized context when running in a pod
+	// with no kubeconfig, using the mounted service account credentials.
+	InClusterContext = "in-cluster"
+
 	defaultQPS   float32 = 50
 	defaultBurst         = 100
 )
 
+// saDir is a var so tests can point at a fake service account mount.
+var saDir = "/var/run/secrets/kubernetes.io/serviceaccount"
+
 // Config tracks a kubernetes configuration.
 type Config struct {
-	flags *genericclioptions.ConfigFlags
-	mx    sync.RWMutex
-	proxy func(*http.Request) (*url.URL, error)
+	flags  *genericclioptions.ConfigFlags
+	mx     sync.RWMutex
+	proxy  func(*http.Request) (*url.URL, error)
+	icOnce sync.Once
+	ic     bool
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
@@ -82,7 +94,67 @@ func (c *Config) RawConfig() (api.Config, error) {
 }
 
 func (c *Config) clientConfig() clientcmd.ClientConfig {
+	if c.inCluster() {
+		return clientcmd.NewNonInteractiveClientConfig(
+			*inClusterKubeConfig(),
+			InClusterContext,
+			&clientcmd.ConfigOverrides{},
+			&clientcmd.ClientConfigLoadingRules{},
+		)
+	}
+
 	return c.flags.ToRawKubeConfigLoader()
+}
+
+// inCluster reports whether no kubeconfig nor api credentials were provided
+// and the pod's service account is mounted, mirroring clientcmd's in-cluster
+// fallback detection.
+func (c *Config) inCluster() bool {
+	c.icOnce.Do(func() {
+		if c.flags == nil || isSet(c.flags.APIServer) || isSet(c.flags.BearerToken) {
+			return
+		}
+		cfg, err := c.flags.ToRawKubeConfigLoader().RawConfig()
+		if err != nil || len(cfg.Contexts) > 0 {
+			return
+		}
+		fi, err := os.Stat(filepath.Join(saDir, "token"))
+		c.ic = err == nil && !fi.IsDir() &&
+			os.Getenv("KUBERNETES_SERVICE_HOST") != "" &&
+			os.Getenv("KUBERNETES_SERVICE_PORT") != ""
+	})
+
+	return c.ic
+}
+
+// inClusterKubeConfig synthesizes a single-context kubeconfig from the pod's
+// service account mount so the context machinery works without a kubeconfig.
+func inClusterKubeConfig() *api.Config {
+	ns := "default"
+	if b, err := os.ReadFile(filepath.Join(saDir, "namespace")); err == nil {
+		if s := strings.TrimSpace(string(b)); s != "" {
+			ns = s
+		}
+	}
+	cfg := api.NewConfig()
+	cfg.Clusters[InClusterContext] = &api.Cluster{
+		Server: "https://" + net.JoinHostPort(
+			os.Getenv("KUBERNETES_SERVICE_HOST"),
+			os.Getenv("KUBERNETES_SERVICE_PORT"),
+		),
+		CertificateAuthority: filepath.Join(saDir, "ca.crt"),
+	}
+	cfg.AuthInfos[InClusterContext] = &api.AuthInfo{
+		TokenFile: filepath.Join(saDir, "token"),
+	}
+	cfg.Contexts[InClusterContext] = &api.Context{
+		Cluster:   InClusterContext,
+		AuthInfo:  InClusterContext,
+		Namespace: ns,
+	}
+	cfg.CurrentContext = InClusterContext
+
+	return cfg
 }
 
 func (*Config) reset() {}
