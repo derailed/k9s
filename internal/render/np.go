@@ -16,8 +16,8 @@ import (
 )
 
 var defaultNPHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "POD-SELECTOR"},
 	model1.HeaderColumn{Name: "ING-SELECTOR", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "ING-PORTS", Attrs: model1.Attrs{Wide: true}},
@@ -25,9 +25,9 @@ var defaultNPHeader = model1.Header{
 	model1.HeaderColumn{Name: "EGR-SELECTOR", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "EGR-PORTS", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "EGR-BLOCK", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // NetworkPolicy renders a K8s NetworkPolicy to screen.

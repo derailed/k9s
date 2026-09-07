@@ -18,15 +18,15 @@ import (
 )
 
 var defaultCRDHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "GROUP"},
-	model1.HeaderColumn{Name: "KIND"},
+	model1.HeaderColumn{Name: colKind},
 	model1.HeaderColumn{Name: "VERSIONS"},
 	model1.HeaderColumn{Name: "SCOPE"},
 	model1.HeaderColumn{Name: "ALIASES", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // CustomResourceDefinition renders a K8s CustomResourceDefinition to screen.

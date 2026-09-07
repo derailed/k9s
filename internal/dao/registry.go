@@ -27,6 +27,8 @@ const (
 	k9sCat   = "k9s"
 	helmCat  = "helm"
 	scaleCat = "scale"
+
+	verbDelete = "delete"
 )
 
 var stdGroups = sets.New[string](
@@ -238,7 +240,7 @@ func loadK9s(m ResourceMetas) {
 		Kind:         "ScreenDumps",
 		SingularName: "screendump",
 		ShortNames:   []string{"sd"},
-		Verbs:        []string{"delete"},
+		Verbs:        []string{verbDelete},
 		Categories:   []string{k9sCat},
 	}
 	m[client.BeGVR] = &metav1.APIResource{
@@ -246,7 +248,7 @@ func loadK9s(m ResourceMetas) {
 		Kind:         "Benchmarks",
 		SingularName: "benchmark",
 		ShortNames:   []string{"be"},
-		Verbs:        []string{"delete"},
+		Verbs:        []string{verbDelete},
 		Categories:   []string{k9sCat},
 	}
 	m[client.PfGVR] = &metav1.APIResource{
@@ -255,7 +257,7 @@ func loadK9s(m ResourceMetas) {
 		Kind:         "PortForwards",
 		SingularName: "portforward",
 		ShortNames:   []string{"pf"},
-		Verbs:        []string{"delete"},
+		Verbs:        []string{verbDelete},
 		Categories:   []string{k9sCat},
 	}
 	m[client.CoGVR] = &metav1.APIResource{
@@ -279,14 +281,14 @@ func loadHelm(m ResourceMetas) {
 		Name:       "helm",
 		Kind:       "Helm",
 		Namespaced: true,
-		Verbs:      []string{"delete"},
+		Verbs:      []string{verbDelete},
 		Categories: []string{helmCat},
 	}
 	m[client.HmhGVR] = &metav1.APIResource{
 		Name:       "history",
 		Kind:       "History",
 		Namespaced: true,
-		Verbs:      []string{"delete"},
+		Verbs:      []string{verbDelete},
 		Categories: []string{helmCat},
 	}
 }

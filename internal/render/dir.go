@@ -40,7 +40,7 @@ func (Dir) SetViewSetting(*config.ViewSetting) {}
 // Header returns a header row.
 func (Dir) Header(string) model1.Header {
 	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: colName},
 	}
 }
 
