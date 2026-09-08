@@ -101,7 +101,8 @@ func TestGetEditableYAML(t *testing.T) {
 			factory: makeFactory(),
 			path:    "kube-system/bootstrap-token-abcdef",
 			contains: []string{
-				"token-secret: 0123456789abcdef",
+				"token-secret-f: 0123456789abcdef",
+				"stringData:",
 				"kind: Secret",
 				"name: bootstrap-token-abcdef",
 			},
@@ -222,7 +223,7 @@ func TestEncodeDecodeRoundtrip(t *testing.T) {
 	require.NoError(t, err)
 
 	y := string(raw)
-	assert.Contains(t, y, "token-secret: 0123456789abcdef")
+	assert.Contains(t, y, "token-secret-f: 0123456789abcdef")
 	assert.Contains(t, y, "stringData:")
 }
 
