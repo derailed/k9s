@@ -169,29 +169,30 @@ func (s *Secret) GetEditableYAML(path string) ([]byte, error) {
 	}
 
 	var secret v1.Secret
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret); err == nil {
-		// UTF-8 goes in stringData so Kubernetes encodes it on apply.
-		// Non-UTF-8 stays in data as base64. EncodeSecretData must not
-		// encode those again (see #3982).
-		stringData := make(map[string]any)
-		binaryData := make(map[string]any)
-		for k, val := range secret.Data {
-			if utf8.Valid(val) {
-				stringData[k] = string(val)
-			} else {
-				binaryData[k] = base64.StdEncoding.EncodeToString(val)
-			}
-		}
-		if len(binaryData) > 0 {
-			u.Object["data"] = binaryData
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret); err != nil {
+		return nil, fmt.Errorf("failed to convert secret for decoded edit: %w", err)
+	}
+	// UTF-8 goes in stringData so Kubernetes encodes it on apply.
+	// Non-UTF-8 stays in data as base64. EncodeSecretData must not
+	// encode those again (see #3982).
+	stringData := make(map[string]any)
+	binaryData := make(map[string]any)
+	for k, val := range secret.Data {
+		if utf8.Valid(val) {
+			stringData[k] = string(val)
 		} else {
-			delete(u.Object, "data")
+			binaryData[k] = base64.StdEncoding.EncodeToString(val)
 		}
-		if len(stringData) > 0 {
-			u.Object["stringData"] = stringData
-		} else {
-			delete(u.Object, "stringData")
-		}
+	}
+	if len(binaryData) > 0 {
+		u.Object["data"] = binaryData
+	} else {
+		delete(u.Object, "data")
+	}
+	if len(stringData) > 0 {
+		u.Object["stringData"] = stringData
+	} else {
+		delete(u.Object, "stringData")
 	}
 
 	var (
@@ -205,21 +206,40 @@ func (s *Secret) GetEditableYAML(path string) ([]byte, error) {
 	return buff.Bytes(), nil
 }
 
-// UpdateFromEditedYAML parses edited YAML (with decoded plaintext data values),
-// re-encodes data values to base64, and updates the Secret via the K8s API.
-func (s *Secret) UpdateFromEditedYAML(editedYAML []byte) error {
+// PrepareEditedSecret parses edited YAML, re-encodes data values, and
+// forces metadata name/namespace to path so the editor cannot retarget
+// another Secret.
+func PrepareEditedSecret(path string, editedYAML []byte) (*unstructured.Unstructured, error) {
 	var obj unstructured.Unstructured
 	dec := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(editedYAML), len(editedYAML))
 	if err := dec.Decode(&obj.Object); err != nil {
-		return fmt.Errorf("failed to parse edited YAML: %w", err)
+		return nil, fmt.Errorf("failed to parse edited YAML: %w", err)
 	}
-
+	ns, n := client.Namespaced(path)
+	if n == "" {
+		return nil, fmt.Errorf("missing resource name in path %q", path)
+	}
+	if client.IsClusterScoped(ns) {
+		ns = client.BlankNamespace
+	}
+	obj.SetNamespace(ns)
+	obj.SetName(n)
 	if data, ok := obj.Object["data"].(map[string]any); ok {
 		EncodeSecretData(data)
 	}
+	return &obj, nil
+}
+
+// UpdateFromEditedYAML parses edited YAML (with decoded plaintext data values),
+// re-encodes data values to base64, and updates the Secret via the K8s API.
+func (s *Secret) UpdateFromEditedYAML(path string, editedYAML []byte) error {
+	obj, err := PrepareEditedSecret(path, editedYAML)
+	if err != nil {
+		return err
+	}
 
 	ns, n := obj.GetNamespace(), obj.GetName()
-	auth, err := s.Client().CanI(ns, s.gvr, n, []string{client.UpdateVerb})
+	auth, err := s.Client().CanI(ns, s.gvr, n, client.UpdateAccess)
 	if err != nil {
 		return err
 	}
@@ -236,9 +256,9 @@ func (s *Secret) UpdateFromEditedYAML(editedYAML []byte) error {
 	defer cancel()
 
 	if client.IsClusterScoped(ns) {
-		_, err = dial.Update(ctx, &obj, metav1.UpdateOptions{})
+		_, err = dial.Update(ctx, obj, metav1.UpdateOptions{})
 	} else {
-		_, err = dial.Namespace(ns).Update(ctx, &obj, metav1.UpdateOptions{})
+		_, err = dial.Namespace(ns).Update(ctx, obj, metav1.UpdateOptions{})
 	}
 
 	return err

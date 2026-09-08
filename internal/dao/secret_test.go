@@ -96,6 +96,7 @@ func TestGetEditableYAML(t *testing.T) {
 		path        string
 		contains    []string
 		notContains []string
+		wantErr     string
 	}{
 		"basic-decode": {
 			factory: makeFactory(),
@@ -144,6 +145,25 @@ func TestGetEditableYAML(t *testing.T) {
 				"password: s3cr3t",
 			},
 		},
+		"convert-error": {
+			factory: &testFactory{
+				inventory: map[string]map[*client.GVR][]runtime.Object{
+					"default": {
+						client.SecGVR: {&unstructured.Unstructured{Object: map[string]any{
+							"apiVersion": "v1",
+							"kind":       "Secret",
+							"metadata": map[string]any{
+								"name":      "bad-secret",
+								"namespace": "default",
+							},
+							"data": "not-a-map",
+						}}},
+					},
+				},
+			},
+			path:    "default/bad-secret",
+			wantErr: "failed to convert secret for decoded edit",
+		},
 	}
 
 	for k := range uu {
@@ -152,6 +172,11 @@ func TestGetEditableYAML(t *testing.T) {
 			var s dao.Secret
 			s.Init(u.factory, client.SecGVR)
 			raw, err := s.GetEditableYAML(u.path)
+			if u.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), u.wantErr)
+				return
+			}
 			require.NoError(t, err)
 			y := string(raw)
 			for _, c := range u.contains {
@@ -231,7 +256,28 @@ func TestUpdateFromEditedYAML_ParseError(t *testing.T) {
 	var s dao.Secret
 	s.Init(makeFactory(), client.SecGVR)
 
-	err := s.UpdateFromEditedYAML([]byte("not: valid: yaml: {{{}"))
+	err := s.UpdateFromEditedYAML("default/empty-secret", []byte("not: valid: yaml: {{{}"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to parse edited YAML")
+}
+
+func TestPrepareEditedSecret_pinsOpenedPath(t *testing.T) {
+	edited := []byte(`apiVersion: v1
+kind: Secret
+metadata:
+  name: other-secret
+  namespace: other-ns
+stringData:
+  k: v
+`)
+	obj, err := dao.PrepareEditedSecret("default/empty-secret", edited)
+	require.NoError(t, err)
+	assert.Equal(t, "empty-secret", obj.GetName())
+	assert.Equal(t, "default", obj.GetNamespace())
+}
+
+func TestPrepareEditedSecret_missingName(t *testing.T) {
+	_, err := dao.PrepareEditedSecret("default/", []byte("kind: Secret"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "missing resource name")
 }

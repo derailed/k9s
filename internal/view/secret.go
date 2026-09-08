@@ -37,11 +37,15 @@ func (s *Secret) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyX: ui.NewKeyAction("Decode", s.decodeCmd, true),
 		ui.KeyU: ui.NewKeyAction("UsedBy", s.refCmd, true),
-		ui.KeyE: ui.NewKeyActionWithOpts("Edit Decoded", s.editDecodedCmd,
-			ui.ActionOpts{Visible: true, Dangerous: true}),
-		ui.KeyShiftE: ui.NewKeyActionWithOpts("Edit Raw", s.editRawCmd,
-			ui.ActionOpts{Visible: true, Dangerous: true}),
 	})
+	if !s.App().Config.IsReadOnly() {
+		aa.Bulk(ui.KeyMap{
+			ui.KeyE: ui.NewKeyActionWithOpts("Edit Decoded", s.editDecodedCmd,
+				ui.ActionOpts{Visible: true, Dangerous: true}),
+			ui.KeyShiftE: ui.NewKeyActionWithOpts("Edit Raw", s.editRawCmd,
+				ui.ActionOpts{Visible: true, Dangerous: true}),
+		})
+	}
 }
 
 func (s *Secret) refCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -87,8 +91,11 @@ func editDecodedSecret(app *App, path string) error {
 		ns = client.BlankNamespace
 	}
 
-	ok, err := app.Conn().CanI(ns, client.SecGVR, n, client.PatchAccess)
-	if !ok || err != nil {
+	ok, err := app.Conn().CanI(ns, client.SecGVR, n, client.UpdateAccess)
+	if err != nil {
+		return fmt.Errorf("current user can't edit secret %s: %w", path, err)
+	}
+	if !ok {
 		return fmt.Errorf("current user can't edit secret %s", path)
 	}
 
@@ -130,7 +137,7 @@ func editDecodedSecret(app *App, path string) error {
 		return nil
 	}
 
-	if err := sec.UpdateFromEditedYAML(edited); err != nil {
+	if err := sec.UpdateFromEditedYAML(path, edited); err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
