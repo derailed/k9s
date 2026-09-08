@@ -148,9 +148,8 @@ func ExtractSecrets(o runtime.Object) (map[string]string, error) {
 	return secretData, nil
 }
 
-// GetEditableYAML returns the full Secret as YAML with data values decoded from
-// base64 to plaintext. Values that are not valid UTF-8 (binary) are kept as
-// base64 to prevent data corruption.
+// GetEditableYAML returns the full Secret as YAML with UTF-8 values in
+// stringData (plaintext) and non-UTF-8 values left in data as base64.
 func (s *Secret) GetEditableYAML(path string) ([]byte, error) {
 	o, err := s.Get(context.Background(), path)
 	if err != nil {
@@ -171,16 +170,27 @@ func (s *Secret) GetEditableYAML(path string) ([]byte, error) {
 
 	var secret v1.Secret
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret); err == nil {
-		decoded := make(map[string]any, len(secret.Data))
+		// UTF-8 goes in stringData so Kubernetes encodes it on apply.
+		// Non-UTF-8 stays in data as base64. EncodeSecretData must not
+		// encode those again (see #3982).
+		stringData := make(map[string]any)
+		binaryData := make(map[string]any)
 		for k, val := range secret.Data {
 			if utf8.Valid(val) {
-				decoded[k] = string(val)
+				stringData[k] = string(val)
 			} else {
-				decoded[k] = base64.StdEncoding.EncodeToString(val)
+				binaryData[k] = base64.StdEncoding.EncodeToString(val)
 			}
 		}
-		if len(decoded) > 0 {
-			u.Object["data"] = decoded
+		if len(binaryData) > 0 {
+			u.Object["data"] = binaryData
+		} else {
+			delete(u.Object, "data")
+		}
+		if len(stringData) > 0 {
+			u.Object["stringData"] = stringData
+		} else {
+			delete(u.Object, "stringData")
 		}
 	}
 
@@ -234,13 +244,17 @@ func (s *Secret) UpdateFromEditedYAML(editedYAML []byte) error {
 	return err
 }
 
-// EncodeSecretData base64-encodes all string values in a secret data map
-// in-place. This converts decoded plaintext values back to the base64 format
-// expected by the Kubernetes API.
+// EncodeSecretData base64-encodes plaintext string values in a secret data
+// map in-place. Values that are already standard base64 of non-UTF-8 bytes
+// are left unchanged. GetEditableYAML keeps binary keys in that form, so
+// re-encoding them would double-encode (AAEB//7wgA== becomes QUFFQi8vN3dnQT09).
 func EncodeSecretData(data map[string]any) {
 	for k, v := range data {
 		s, ok := v.(string)
 		if !ok {
+			continue
+		}
+		if raw, err := base64.StdEncoding.DecodeString(s); err == nil && !utf8.Valid(raw) {
 			continue
 		}
 		data[k] = base64.StdEncoding.EncodeToString([]byte(s))
