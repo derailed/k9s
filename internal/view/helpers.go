@@ -168,6 +168,26 @@ func podCtx(_ *App, path, fieldSel string) ContextFunc {
 	}
 }
 
+func showPodsForService(app *App, path string) {
+	v := NewPod(client.PodGVR)
+	ns, svcName := client.Namespaced(path)
+	v.SetContextFn(servicePodCtx(path, svcName))
+
+	if err := app.Config.SetActiveNamespace(ns); err != nil {
+		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
+	}
+	if err := app.inject(v, false); err != nil {
+		app.Flash().Err(err)
+	}
+}
+
+func servicePodCtx(path, svcName string) ContextFunc {
+	return func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		return context.WithValue(ctx, internal.KeyServiceName, svcName)
+	}
+}
+
 func extractApp(ctx context.Context) (*App, error) {
 	app, ok := ctx.Value(internal.KeyApp).(*App)
 	if !ok {
