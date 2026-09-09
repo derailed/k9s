@@ -392,13 +392,22 @@ func loadCRDs(f Factory, m ResourceMetas) {
 			slog.Error("CRD conversion failed", slogs.Error, err)
 			continue
 		}
-		for gvr, version := range client.NewGVRFromCRD(&crd) {
-			if meta, ok := m[gvr]; ok && version.Subresources != nil && version.Subresources.Scale != nil {
-				if !slices.Contains(meta.Categories, scaleCat) {
-					meta.Categories = append(meta.Categories, scaleCat)
-					m[gvr] = meta
-				}
-			}
+		addCRDProperties(m, &crd)
+	}
+}
+
+func addCRDProperties(m ResourceMetas, crd *apiext.CustomResourceDefinition) {
+	for gvr, version := range client.NewGVRFromCRD(crd) {
+		meta, ok := m[gvr]
+		if !ok {
+			continue
 		}
+		if !slices.Contains(meta.Categories, crdCat) {
+			meta.Categories = append(meta.Categories, crdCat)
+		}
+		if version.Subresources != nil && version.Subresources.Scale != nil && !slices.Contains(meta.Categories, scaleCat) {
+			meta.Categories = append(meta.Categories, scaleCat)
+		}
+		m[gvr] = meta
 	}
 }

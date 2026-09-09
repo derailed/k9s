@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/util/jsonpath"
 )
 
@@ -262,4 +263,36 @@ func TestHydrateNilObject(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, cols, 1)
 	assert.Equal(t, NAValue, cols[0].Value)
+}
+
+func TestHydrateArrayIndexOutOfBounds(t *testing.T) {
+	// Simulate a custom column like "LAST SEEN:.status.conditions[4].lastHeartbeatTime"
+	// on an object whose conditions array has fewer than 5 elements.
+	spec := "{.status.conditions[4].lastHeartbeatTime}"
+	cc := ColumnSpecs{
+		{
+			Header: model1.HeaderColumn{Name: "LAST SEEN"},
+			Spec:   spec,
+		},
+	}
+
+	parser := jsonpath.New(fmt.Sprintf("column%d", 0)).AllowMissingKeys(true)
+	require.NoError(t, parser.Parse(spec))
+
+	parsers := []*jsonpath.JSONPath{parser}
+	rh := model1.Header{{Name: "LAST SEEN"}}
+	row := &model1.Row{Fields: model1.Fields{""}}
+
+	obj := &unstructured.Unstructured{Object: map[string]any{
+		"status": map[string]any{
+			"conditions": []any{
+				map[string]any{"lastHeartbeatTime": "2026-04-22T12:00:00Z"},
+			},
+		},
+	}}
+
+	cols, err := hydrate(obj, cc, parsers, rh, row)
+	require.ErrorIs(t, err, model1.ErrCustomColumn)
+	assert.Len(t, cols, 1)
+	assert.Equal(t, MissingValue, cols[0].Value)
 }

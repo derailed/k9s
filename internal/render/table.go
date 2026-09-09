@@ -17,9 +17,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const ageTableCol = "Age"
+const ageTableCol = "age"
 
-var ageCols = sets.New("Last Seen", "First Seen", "Age")
+var ageCols = sets.New("last seen", "first seen", "age")
 
 // Table renders a tabular resource to screen.
 type Table struct {
@@ -69,11 +69,11 @@ func (t *Table) defaultHeader() model1.Header {
 	}
 	h := make(model1.Header, 0, len(t.table.ColumnDefinitions))
 	for i, c := range t.table.ColumnDefinitions {
-		if c.Name == ageTableCol {
+		if strings.EqualFold(c.Name, ageTableCol) {
 			t.setAgeIndex(i)
 			continue
 		}
-		timeCol := ageCols.Has(c.Name)
+		timeCol := ageCols.Has(strings.ToLower(c.Name))
 		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name), Attrs: model1.Attrs{Time: timeCol, Wide: c.Priority > 0}})
 	}
 	if t.getAgeIndex() > 0 {
@@ -101,12 +101,9 @@ func (t *Table) Render(o any, ns string, r *model1.Row) error {
 		obj = obj.DeepCopyObject()
 	}
 	cols, err := t.specs.realize(obj, t.defaultHeader(), r)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(r)
 
-	return nil
+	return err
 }
 
 func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error {

@@ -49,12 +49,9 @@ func (s StorageClass) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := s.specs.realize(raw, defaultSCHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (s StorageClass) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

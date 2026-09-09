@@ -54,12 +54,9 @@ func (p NetworkPolicy) Render(o any, _ string, row *model1.Row) error {
 	}
 
 	cols, err := p.specs.realize(raw, defaultNPHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (NetworkPolicy) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
