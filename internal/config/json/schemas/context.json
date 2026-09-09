@@ -10,6 +10,7 @@
         "cluster": { "type": "string" },
         "readOnly": {"type": "boolean"},
         "skin": { "type": "string" },
+        "logo": { "type": "string" },
         "proxy": {
           "oneOf": [
             { "type": "null" },
