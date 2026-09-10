@@ -4,12 +4,59 @@
 package client
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	authorizationv1 "k8s.io/api/authorization/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+func TestIsAuthError(t *testing.T) {
+	uu := map[string]struct {
+		err error
+		e   bool
+	}{
+		"nil": {
+			err: nil,
+			e:   false,
+		},
+		"unauthorized": {
+			err: apierrors.NewUnauthorized("the server has asked for the client to provide credentials"),
+			e:   true,
+		},
+		"wrapped-unauthorized": {
+			err: fmt.Errorf("dial failed: %w", apierrors.NewUnauthorized("nope")),
+			e:   true,
+		},
+		"forbidden": {
+			err: apierrors.NewForbidden(schema.GroupResource{Resource: "pods"}, "", errors.New("nope")),
+			e:   true,
+		},
+		"credentials-plugin": {
+			err: errors.New("getting credentials: exec: executable failed; the server has asked for the client to provide credentials"),
+			e:   true,
+		},
+		"generic": {
+			err: errors.New("boom"),
+			e:   false,
+		},
+		"not-found": {
+			err: apierrors.NewNotFound(schema.GroupResource{Resource: "pods"}, "fred"),
+			e:   false,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, IsAuthError(u.err))
+		})
+	}
+}
 
 func TestMakeSAR(t *testing.T) {
 	uu := map[string]struct {
