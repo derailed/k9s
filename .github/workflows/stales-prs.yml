@@ -14,6 +14,7 @@ jobs:
         with:
           days-before-pr-stale: 30
           days-before-pr-close: 14
+          exempt-pr-labels: "accepted"
           stale-pr-label: "stale"
           stale-pr-message: "This PR is stale because it has been open for 30 days with no activity."
           close-pr-message: "This PR was closed because it has been inactive for 14 days since being marked as stale."
