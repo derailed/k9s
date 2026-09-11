@@ -64,7 +64,7 @@ func newArgs(p *Interpreter, aa []string) args {
 					arguments[topicKey] = a
 				}
 
-			case p.IsXrayCmd():
+			case p.IsXrayCmd(), p.IsOwnersCmd():
 				if _, ok := arguments[topicKey]; ok {
 					arguments[nsKey] = strings.ToLower(a)
 				} else {
