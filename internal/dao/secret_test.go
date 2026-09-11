@@ -190,51 +190,42 @@ func TestGetEditableYAML(t *testing.T) {
 }
 
 func TestEncodeSecretData(t *testing.T) {
+	utf8B64 := base64.StdEncoding.EncodeToString([]byte("my-password"))
 	tests := []struct {
-		name     string
-		input    string
-		expected string
+		name    string
+		input   any
+		want    string
+		wantErr string
 	}{
-		{
-			name:     "simple text",
-			input:    "my-password",
-			expected: base64.StdEncoding.EncodeToString([]byte("my-password")),
-		},
-		{
-			name:     "empty string",
-			input:    "",
-			expected: base64.StdEncoding.EncodeToString([]byte("")),
-		},
-		{
-			name:     "special characters",
-			input:    "p@$$w0rd!#%",
-			expected: base64.StdEncoding.EncodeToString([]byte("p@$$w0rd!#%")),
-		},
-		{
-			name:     "multiline",
-			input:    "line1\nline2\nline3",
-			expected: base64.StdEncoding.EncodeToString([]byte("line1\nline2\nline3")),
-		},
+		{name: "utf8-already-base64", input: utf8B64, want: utf8B64},
+		{name: "empty-string", input: "", want: ""},
+		{name: "binary-already-base64", input: "AAEB//7wgA==", want: "AAEB//7wgA=="},
+		{name: "plaintext", input: "my-password", wantErr: "not valid base64"},
+		{name: "non-string", input: 42, wantErr: "base64 string"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			data := map[string]any{"key": tt.input}
-			dao.EncodeSecretData(data)
-			assert.Equal(t, tt.expected, data["key"])
+			err := dao.EncodeSecretData(data)
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, data["key"])
 		})
 	}
 }
 
-// uozalp on #3982: GetEditableYAML leaves non-UTF-8 as base64. Save must
-// not encode that string again (AAEB//7wgA== -> QUFFQi8vN3dnQT09).
 func TestEncodeSecretData_binarySiblingUnchanged(t *testing.T) {
 	const binaryB64 = "AAEB//7wgA=="
 	data := map[string]any{
 		"binary": binaryB64,
-		"other":  "changed",
+		"other":  base64.StdEncoding.EncodeToString([]byte("changed")),
 	}
-	dao.EncodeSecretData(data)
+	require.NoError(t, dao.EncodeSecretData(data))
 	assert.Equal(t, binaryB64, data["binary"])
 	assert.NotEqual(t, "QUFFQi8vN3dnQT09", data["binary"])
 	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("changed")), data["other"])
@@ -280,4 +271,227 @@ func TestPrepareEditedSecret_missingName(t *testing.T) {
 	_, err := dao.PrepareEditedSecret("default/", []byte("kind: Secret"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "missing resource name")
+}
+
+func secretMaps(t *testing.T, obj *unstructured.Unstructured) (data, stringData map[string]any) {
+	t.Helper()
+	data, _ = obj.Object["data"].(map[string]any)
+	stringData, _ = obj.Object["stringData"].(map[string]any)
+	if data == nil {
+		data = map[string]any{}
+	}
+	if stringData == nil {
+		stringData = map[string]any{}
+	}
+	return data, stringData
+}
+
+// data: values are already base64 (kubectl apply semantics). stringData is plaintext.
+func TestPrepareEditedSecret_dataStaysBase64(t *testing.T) {
+	plain := "password" + "2"
+	plainB64 := base64.StdEncoding.EncodeToString([]byte(plain))
+	doubleB64 := base64.StdEncoding.EncodeToString([]byte(plainB64))
+	const binaryB64 = "AAEB//7wgA=="
+
+	tests := []struct {
+		name       string
+		yaml       string
+		wantData   map[string]string
+		wantString map[string]string
+		wantErr    string
+		notData    []string
+	}{
+		{
+			name: "uozalp-utf8-base64-in-data",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: k9s-secret-encoding-repro
+  namespace: default
+data:
+  rotated-key: cGFzc3dvcmQy
+stringData:
+  password: password2
+`,
+			wantData:   map[string]string{"rotated-key": plainB64},
+			wantString: map[string]string{"password": "password2"},
+			notData:    []string{doubleB64},
+		},
+		{
+			name: "leave-binary-edit-stringdata",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: mixed-secret
+data:
+  binary: AAEB//7wgA==
+stringData:
+  other: changed
+`,
+			wantData:   map[string]string{"binary": binaryB64},
+			wantString: map[string]string{"other": "changed"},
+		},
+		{
+			name: "replace-binary-with-new-binary",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: mixed-secret
+data:
+  binary: /wAB/g==
+`,
+			wantData: map[string]string{"binary": "/wAB/g=="},
+		},
+		{
+			name: "stringdata-only",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: text-secret
+stringData:
+  username: admin
+  password: s3cr3t
+`,
+			wantString: map[string]string{"username": "admin", "password": "s3cr3t"},
+		},
+		{
+			name: "empty-data-value",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: empty-val
+data:
+  blank: ""
+`,
+			wantData: map[string]string{"blank": ""},
+		},
+		{
+			name:     "wrapped-base64",
+			yaml:     "apiVersion: v1\nkind: Secret\nmetadata:\n  name: wrap\ndata:\n  k: cGFz\n    c3dvcmQy\n",
+			wantData: map[string]string{"k": plainB64},
+		},
+		{
+			name: "token-looks-like-base64-in-data",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: token
+data:
+  token-secret-f: MDEyMzQ1Njc4OWFiY2RlZg==
+`,
+			wantData: map[string]string{"token-secret-f": "MDEyMzQ1Njc4OWFiY2RlZg=="},
+		},
+		{
+			name: "token-plaintext-in-stringdata",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: token
+stringData:
+  token-secret-f: 0123456789abcdef
+`,
+			wantString: map[string]string{"token-secret-f": "0123456789abcdef"},
+		},
+		{
+			name: "same-key-in-both",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: both
+data:
+  k: cGFzc3dvcmQy
+stringData:
+  k: password2
+`,
+			wantData:   map[string]string{"k": plainB64},
+			wantString: map[string]string{"k": "password2"},
+		},
+		{
+			name: "add-new-data-key",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: add
+data:
+  rotated-key: AAEB//7wgA==
+  extra: cGFzc3dvcmQy
+stringData:
+  password: password2
+`,
+			wantData:   map[string]string{"rotated-key": binaryB64, "extra": plainB64},
+			wantString: map[string]string{"password": "password2"},
+		},
+		{
+			name: "delete-data-key",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: del
+stringData:
+  password: password2
+`,
+			wantString: map[string]string{"password": "password2"},
+		},
+		{
+			name:    "plaintext-in-data",
+			yaml:    "apiVersion: v1\nkind: Secret\nmetadata:\n  name: bad\ndata:\n  k: password2\n",
+			wantErr: "not valid base64",
+		},
+		{
+			name:    "invalid-base64-in-data",
+			yaml:    "apiVersion: v1\nkind: Secret\nmetadata:\n  name: bad\ndata:\n  k: not!!!base64\n",
+			wantErr: "not valid base64",
+		},
+		{
+			name:    "non-string-data-value",
+			yaml:    "apiVersion: v1\nkind: Secret\nmetadata:\n  name: bad\ndata:\n  k: 12345\n",
+			wantErr: "base64 string",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			obj, err := dao.PrepareEditedSecret("default/"+tt.name, []byte(tt.yaml))
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			data, stringData := secretMaps(t, obj)
+			for k, v := range tt.wantData {
+				assert.Equal(t, v, data[k], "data.%s", k)
+			}
+			for k, v := range tt.wantString {
+				assert.Equal(t, v, stringData[k], "stringData.%s", k)
+			}
+			for _, bad := range tt.notData {
+				for _, v := range data {
+					assert.NotEqual(t, bad, v)
+				}
+			}
+			if len(tt.wantData) == 0 {
+				_, ok := obj.Object["data"]
+				assert.False(t, ok, "data map should be absent")
+			}
+		})
+	}
+}
+
+func TestPrepareEditedSecret_roundtripUneditedMixed(t *testing.T) {
+	var s dao.Secret
+	s.Init(secretFactory("mixed-secret", map[string]any{
+		"other":  base64.StdEncoding.EncodeToString([]byte("plain")),
+		"binary": "AAEB//7wgA==",
+	}), client.SecGVR)
+
+	raw, err := s.GetEditableYAML("default/mixed-secret")
+	require.NoError(t, err)
+
+	obj, err := dao.PrepareEditedSecret("default/mixed-secret", raw)
+	require.NoError(t, err)
+	data, stringData := secretMaps(t, obj)
+	assert.Equal(t, "AAEB//7wgA==", data["binary"])
+	assert.NotContains(t, data, "other")
+	assert.Equal(t, "plain", stringData["other"])
 }

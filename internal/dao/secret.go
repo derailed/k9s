@@ -173,8 +173,7 @@ func (s *Secret) GetEditableYAML(path string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to convert secret for decoded edit: %w", err)
 	}
 	// UTF-8 goes in stringData so Kubernetes encodes it on apply.
-	// Non-UTF-8 stays in data as base64. EncodeSecretData must not
-	// encode those again (see #3982).
+	// Non-UTF-8 stays in data as already-base64 (kubectl apply semantics).
 	stringData := make(map[string]any)
 	binaryData := make(map[string]any)
 	for k, val := range secret.Data {
@@ -206,9 +205,9 @@ func (s *Secret) GetEditableYAML(path string) ([]byte, error) {
 	return buff.Bytes(), nil
 }
 
-// PrepareEditedSecret parses edited YAML, re-encodes data values, and
-// forces metadata name/namespace to path so the editor cannot retarget
-// another Secret.
+// PrepareEditedSecret parses edited YAML, validates data values as
+// already-base64, and forces metadata name/namespace to path so the
+// editor cannot retarget another Secret.
 func PrepareEditedSecret(path string, editedYAML []byte) (*unstructured.Unstructured, error) {
 	var obj unstructured.Unstructured
 	dec := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(editedYAML), len(editedYAML))
@@ -224,14 +223,20 @@ func PrepareEditedSecret(path string, editedYAML []byte) (*unstructured.Unstruct
 	}
 	obj.SetNamespace(ns)
 	obj.SetName(n)
-	if data, ok := obj.Object["data"].(map[string]any); ok {
-		EncodeSecretData(data)
+	if raw, exists := obj.Object["data"]; exists && raw != nil {
+		data, ok := raw.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("data must be a map of base64 strings")
+		}
+		if err := EncodeSecretData(data); err != nil {
+			return nil, err
+		}
 	}
 	return &obj, nil
 }
 
-// UpdateFromEditedYAML parses edited YAML (with decoded plaintext data values),
-// re-encodes data values to base64, and updates the Secret via the K8s API.
+// UpdateFromEditedYAML parses edited YAML and updates the Secret via
+// the K8s API. data values must already be base64; stringData is plaintext.
 func (s *Secret) UpdateFromEditedYAML(path string, editedYAML []byte) error {
 	obj, err := PrepareEditedSecret(path, editedYAML)
 	if err != nil {
@@ -264,19 +269,26 @@ func (s *Secret) UpdateFromEditedYAML(path string, editedYAML []byte) error {
 	return err
 }
 
-// EncodeSecretData base64-encodes plaintext string values in a secret data
-// map in-place. Values that are already standard base64 of non-UTF-8 bytes
-// are left unchanged. GetEditableYAML keeps binary keys in that form, so
-// re-encoding them would double-encode (AAEB//7wgA== becomes QUFFQi8vN3dnQT09).
-func EncodeSecretData(data map[string]any) {
+// EncodeSecretData treats each data value as already-base64 (the same
+// contract as kubectl apply). It strips whitespace, rejects values that
+// are not valid standard base64, and never encodes again. Put plaintext
+// in stringData.
+func EncodeSecretData(data map[string]any) error {
 	for k, v := range data {
 		s, ok := v.(string)
 		if !ok {
-			continue
+			return fmt.Errorf("data.%s must be a base64 string", k)
 		}
-		if raw, err := base64.StdEncoding.DecodeString(s); err == nil && !utf8.Valid(raw) {
-			continue
+		compact := strings.Map(func(r rune) rune {
+			if r == ' ' || r == '\n' || r == '\r' || r == '\t' {
+				return -1
+			}
+			return r
+		}, s)
+		if _, err := base64.StdEncoding.DecodeString(compact); err != nil {
+			return fmt.Errorf("data.%s is not valid base64; put plaintext in stringData", k)
 		}
-		data[k] = base64.StdEncoding.EncodeToString([]byte(s))
+		data[k] = compact
 	}
+	return nil
 }
