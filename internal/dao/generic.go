@@ -5,6 +5,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
@@ -43,6 +44,38 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 	if !ok {
 		labelSel = labels.Everything()
 	}
+	if client.IsMultiNamespace(ns) {
+		return g.listMulti(ctx, ns, labelSel)
+	}
+
+	return g.listInNamespace(ctx, ns, labelSel)
+}
+
+// listMulti lists a resource across several namespaces and merges the results,
+// skipping namespaces that error out unless every namespace fails.
+func (g *Generic) listMulti(ctx context.Context, ns string, labelSel labels.Selector) ([]runtime.Object, error) {
+	var (
+		oo    []runtime.Object
+		errs  error
+		anyOK bool
+	)
+	for _, n := range client.Namespaces(ns) {
+		nsoo, err := g.listInNamespace(ctx, n, labelSel)
+		if err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		anyOK = true
+		oo = append(oo, nsoo...)
+	}
+	if !anyOK && errs != nil {
+		return nil, errs
+	}
+
+	return oo, nil
+}
+
+func (g *Generic) listInNamespace(ctx context.Context, ns string, labelSel labels.Selector) ([]runtime.Object, error) {
 	if client.IsAllNamespace(ns) {
 		ns = client.BlankNamespace
 	}

@@ -163,7 +163,7 @@ func (m *Menu) formatMenu(h model.MenuHint, size int) string {
 	styles := m.styles.Frame()
 	i, err := strconv.Atoi(h.Mnemonic)
 	if err == nil {
-		return formatNSMenu(i, h.Description, &styles)
+		return formatNSMenu(i, h.Description, h.Active, &styles)
 	}
 
 	return formatPlainMenu(h, size, &styles)
@@ -196,10 +196,15 @@ func ToMnemonic(s string) string {
 	return "<" + keyConv(strings.ToLower(s)) + ">"
 }
 
-func formatNSMenu(i int, name string, styles *config.Frame) string {
+func formatNSMenu(i int, name string, active bool, styles *config.Frame) string {
+	// Highlight the namespace name when it is part of the current (multi-)namespace view.
+	fgColor := styles.Menu.FgColor
+	if active {
+		fgColor = styles.Menu.ActiveColor
+	}
 	fmat := strings.Replace(menuIndexFmt, "[key", "["+styles.Menu.NumKeyColor.String(), 1)
 	fmat = strings.ReplaceAll(fmat, ":bg:", ":"+styles.Title.BgColor.String()+":")
-	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor.String(), 1)
+	fmat = strings.Replace(fmat, "[fg", "["+fgColor.String(), 1)
 	fmat = strings.Replace(fmat, "fgstyle]", styles.Menu.FgStyle.ToShortString()+"]", 1)
 
 	return fmt.Sprintf(fmat, i, name)

@@ -236,6 +236,7 @@ type (
 		FgStyle     TextStyle `json:"fgStyle" yaml:"fgStyle"`
 		KeyColor    Color     `json:"keyColor" yaml:"keyColor"`
 		NumKeyColor Color     `json:"numKeyColor" yaml:"numKeyColor"`
+		ActiveColor Color     `json:"activeColor" yaml:"activeColor"`
 	}
 
 	// Charts tracks charts styles.
@@ -463,6 +464,7 @@ func newMenu() Menu {
 		FgColor:     "white",
 		KeyColor:    "dodgerblue",
 		NumKeyColor: "fuchsia",
+		ActiveColor: "aqua",
 	}
 }
 
