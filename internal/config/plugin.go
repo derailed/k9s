@@ -52,18 +52,22 @@ type PluginInput struct {
 
 // Plugin describes a K9s plugin.
 type Plugin struct {
-	Scopes          []string      `yaml:"scopes"`
-	Args            []string      `yaml:"args"`
-	ShortCut        string        `yaml:"shortCut"`
-	Override        bool          `yaml:"override"`
-	Pipes           []string      `yaml:"pipes"`
-	Description     string        `yaml:"description"`
-	Command         string        `yaml:"command"`
-	Confirm         *bool         `yaml:"confirm"`
-	Background      bool          `yaml:"background"`
-	Dangerous       bool          `yaml:"dangerous"`
-	OverwriteOutput bool          `yaml:"overwriteOutput"`
-	Inputs          []PluginInput `yaml:"inputs"`
+	Scopes          []string `yaml:"scopes"`
+	Args            []string `yaml:"args"`
+	ShortCut        string   `yaml:"shortCut"`
+	Override        bool     `yaml:"override"`
+	Pipes           []string `yaml:"pipes"`
+	Description     string   `yaml:"description"`
+	Command         string   `yaml:"command"`
+	Confirm         *bool    `yaml:"confirm"`
+	Background      bool     `yaml:"background"`
+	Dangerous       bool     `yaml:"dangerous"`
+	OverwriteOutput bool     `yaml:"overwriteOutput"`
+	// RunWithNoSelection allows the plugin to run even when no resource is
+	// selected (e.g. when viewing an empty namespace). Defaults to false so
+	// existing plugins keep requiring a selection.
+	RunWithNoSelection bool          `yaml:"runWithNoSelection"`
+	Inputs             []PluginInput `yaml:"inputs"`
 }
 
 func (p Plugin) String() string {

@@ -1,0 +1,6 @@
+shortCut: Shift-B
+description: debug
+scopes:
+  - po
+command: bash
+runWithNoSelection: true
