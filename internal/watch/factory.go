@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	defaultResync   = 10 * time.Minute
-	defaultWaitTime = 500 * time.Millisecond
+	defaultResync = 10 * time.Minute
 )
 
 // Factory tracks various resource informers.
@@ -91,7 +90,9 @@ func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Select
 		return oo, err
 	}
 
-	f.waitForCacheSync(ns)
+	if !f.waitForCacheSync(ns, gvr) {
+		return nil, fmt.Errorf("cache sync timeout for %s in namespace %s", gvr, ns)
+	}
 	if client.IsClusterScoped(ns) {
 		return inf.Lister().List(lbls)
 	}
@@ -129,7 +130,9 @@ func (f *Factory) Get(gvr *client.GVR, fqn string, wait bool, _ labels.Selector)
 		return o, err
 	}
 
-	f.waitForCacheSync(ns)
+	if !f.waitForCacheSync(ns, gvr) {
+		return nil, fmt.Errorf("cache sync timeout for %s in namespace %s", fqn, ns)
+	}
 	if client.IsClusterScoped(ns) {
 		return inf.Lister().Get(n)
 	}
@@ -137,25 +140,53 @@ func (f *Factory) Get(gvr *client.GVR, fqn string, wait bool, _ labels.Selector)
 	return inf.Lister().ByNamespace(ns).Get(n)
 }
 
-func (f *Factory) waitForCacheSync(ns string) {
+func (f *Factory) waitForCacheSync(ns string, gvr *client.GVR) bool {
 	if client.IsClusterWide(ns) {
 		ns = client.BlankNamespace
 	}
 
 	f.mx.RLock()
-	defer f.mx.RUnlock()
 	fac, ok := f.factories[ns]
+	f.mx.RUnlock()
 	if !ok {
-		return
+		return false
 	}
 
-	// Hang for a sec for the cache to refresh if still not done bail out!
-	c := make(chan struct{})
-	go func(c chan struct{}) {
-		<-time.After(defaultWaitTime)
-		close(c)
-	}(c)
-	_ = fac.WaitForCacheSync(c)
+	// Get the specific informer for this GVR
+	inf := fac.ForResource(gvr.GVR())
+	if inf == nil {
+		slog.Warn("No informer found for GVR",
+			slogs.GVR, gvr,
+			slogs.Namespace, ns,
+		)
+		return false
+	}
+
+	// Sync verification only for this specific informer
+	maxWait := 10 * time.Second
+	pollInterval := 50 * time.Millisecond
+	maxPollInterval := 500 * time.Millisecond
+	deadline := time.Now().Add(maxWait)
+	startTime := time.Now()
+
+	for time.Now().Before(deadline) {
+		// Check if this specific informer has synced
+		if inf.Informer().HasSynced() {
+			duration := time.Since(startTime)
+			slog.Debug("Cache synced for resource", slogs.GVR, gvr, slogs.Namespace, ns, slogs.Duration, duration)
+			return true
+		}
+
+		// Wait with exponential backoff
+		time.Sleep(pollInterval)
+		pollInterval *= 2
+		if pollInterval > maxPollInterval {
+			pollInterval = maxPollInterval
+		}
+	}
+
+	slog.Warn("Cache sync timeout for resource", slogs.GVR, gvr, slogs.Namespace, ns, slogs.Duration, maxWait)
+	return false
 }
 
 // WaitForCacheSync waits for all factories to update their cache.
