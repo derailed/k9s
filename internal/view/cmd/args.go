@@ -16,6 +16,7 @@ const (
 	fuzzyKey   = "fuzzy"
 	labelKey   = "labels"
 	contextKey = "context"
+	sortKey    = "sort"
 )
 
 type args map[string]string
@@ -50,6 +51,9 @@ func newArgs(p *Interpreter, aa []string) args {
 
 		case strings.Index(a, contextFlag) == 0:
 			arguments[contextKey] = a[1:]
+
+		case strings.HasPrefix(a, sortFlag):
+			arguments[sortKey] = a[len(sortFlag):] // "<COLUMN>:<asc|desc>"
 
 		case isLabelArg(a):
 			arguments[labelKey] = strings.ToLower(a)
@@ -92,6 +96,8 @@ func (a args) String() string {
 			v = filterFlag + v
 		case contextKey:
 			v = contextFlag + v
+		case sortKey:
+			v = sortFlag + v
 		}
 		ss = append(ss, v)
 	}

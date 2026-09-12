@@ -313,3 +313,58 @@ func (c *Interpreter) HasContext() (string, bool) {
 func (c *Interpreter) LabelsSelector() (labels.Selector, error) {
 	return labels.Parse(c.args[labelKey])
 }
+
+// SortArg returns the persisted sort column and direction if any.
+func (c *Interpreter) SortArg() (col string, asc, ok bool) {
+	v, found := c.args[sortKey]
+	if !found || v == "" {
+		return "", false, false
+	}
+	name, dir, _ := strings.Cut(v, ":")
+	if name == "" {
+		return "", false, false
+	}
+
+	return strings.ToUpper(name), dir != "desc", true
+}
+
+func (c *Interpreter) rebuild() {
+	if c.args == nil {
+		c.args = make(args)
+	}
+	c.line = strings.TrimSpace(c.cmd + " " + c.args.String())
+}
+
+// SetSortArg records the sort column/direction, replacing any prior sort.
+func (c *Interpreter) SetSortArg(col string, asc bool) {
+	dir := "asc"
+	if !asc {
+		dir = "desc"
+	}
+	c.args[sortKey] = col + ":" + dir
+	c.rebuild()
+}
+
+// SetFilterArg records a regex filter, clearing label/fuzzy (mutually exclusive).
+func (c *Interpreter) SetFilterArg(f string) {
+	delete(c.args, labelKey)
+	delete(c.args, fuzzyKey)
+	if f == "" {
+		delete(c.args, filterKey)
+	} else {
+		c.args[filterKey] = strings.ToLower(f)
+	}
+	c.rebuild()
+}
+
+// SetLabelArg records a label selector, clearing filter/fuzzy (mutually exclusive).
+func (c *Interpreter) SetLabelArg(sel string) {
+	delete(c.args, filterKey)
+	delete(c.args, fuzzyKey)
+	if sel == "" {
+		delete(c.args, labelKey)
+	} else {
+		c.args[labelKey] = strings.ToLower(sel)
+	}
+	c.rebuild()
+}
