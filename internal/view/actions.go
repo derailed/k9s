@@ -147,9 +147,13 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 			errs = errors.Join(errs, err)
 			continue
 		}
-		if _, ok := aa.Get(key); ok {
+		if existingAction, ok := aa.Get(key); ok {
 			if !pp.Plugins[k].Override {
-				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", pp.Plugins[k].ShortCut, k))
+				if existingAction.Opts.Plugin {
+					errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", pp.Plugins[k].ShortCut, k))
+				} else {
+					errs = errors.Join(errs, fmt.Errorf("plugin %q key %q conflicts with built-in shortcut (use 'override: true' to force)", k, pp.Plugins[k].ShortCut))
+				}
 				continue
 			}
 			slog.Debug("Plugin overrode action shortcut",
