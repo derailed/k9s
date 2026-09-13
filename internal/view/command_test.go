@@ -6,10 +6,52 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/stretchr/testify/assert"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
+
+// Test_viewMetaForAuthError ensures that when a command can't be resolved and
+// the api server rejected us for auth reasons, we surface an authentication
+// error instead of the misleading "command not found" (issue #3730).
+func Test_viewMetaForAuthError(t *testing.T) {
+	app := NewApp(mock.NewMockConfig(t))
+	authErr := apierrors.NewUnauthorized("the server has asked for the client to provide credentials")
+	app.Config.SetConnection(mock.NewMockConnectionWithError(authErr))
+
+	c := &Command{
+		app: app,
+		alias: &dao.Alias{
+			Aliases: config.NewAliases(),
+		},
+	}
+
+	_, _, _, err := c.viewMetaFor(cmd.NewInterpreter("v1/pods"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "authentication failed")
+	assert.NotContains(t, err.Error(), "command not found")
+	assert.ErrorIs(t, err, authErr)
+}
+
+// Test_viewMetaForNoAuthError ensures a genuinely unknown command still
+// reports "command not found" when the connection is healthy.
+func Test_viewMetaForNoAuthError(t *testing.T) {
+	app := NewApp(mock.NewMockConfig(t))
+	app.Config.SetConnection(mock.NewMockConnection())
+
+	c := &Command{
+		app: app,
+		alias: &dao.Alias{
+			Aliases: config.NewAliases(),
+		},
+	}
+
+	_, _, _, err := c.viewMetaFor(cmd.NewInterpreter("v1/bogus"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "command not found")
+}
 
 func Test_viewMetaFor(t *testing.T) {
 	uu := map[string]struct {
