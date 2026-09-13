@@ -4,6 +4,7 @@
 package watch
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -73,6 +74,9 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Selector) ([]runtime.Object, error) {
+	if client.IsMultiNamespace(ns) {
+		return f.listMulti(gvr, ns, wait, lbls)
+	}
 	if client.IsAllNamespace(ns) {
 		ns = client.BlankNamespace
 	}
@@ -98,8 +102,52 @@ func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Select
 	return inf.Lister().ByNamespace(ns).List(lbls)
 }
 
+// listMulti lists a resource across several namespaces and merges the results.
+// Namespaces the user cannot access (or that error out) are skipped so the
+// remaining namespaces still render; an error is only surfaced when every
+// namespace fails.
+func (f *Factory) listMulti(gvr *client.GVR, ns string, wait bool, lbls labels.Selector) ([]runtime.Object, error) {
+	var (
+		oo    []runtime.Object
+		errs  error
+		anyOK bool
+	)
+	for _, n := range client.Namespaces(ns) {
+		nsoo, err := f.List(gvr, n, wait, lbls)
+		if err != nil {
+			slog.Warn("Unable to list resource in namespace; skipping",
+				slogs.GVR, gvr,
+				slogs.Namespace, n,
+				slogs.Error, err,
+			)
+			errs = errors.Join(errs, err)
+			continue
+		}
+		anyOK = true
+		oo = append(oo, nsoo...)
+	}
+	if !anyOK && errs != nil {
+		return nil, errs
+	}
+
+	return oo, nil
+}
+
 // HasSynced checks if given informer is up to date.
 func (f *Factory) HasSynced(gvr *client.GVR, ns string) (bool, error) {
+	if client.IsMultiNamespace(ns) {
+		for _, n := range client.Namespaces(ns) {
+			ok, err := f.HasSynced(gvr, n)
+			if err != nil {
+				return false, err
+			}
+			if !ok {
+				return false, nil
+			}
+		}
+		return true, nil
+	}
+
 	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
 	if err != nil {
 		return false, err
@@ -187,6 +235,14 @@ func (f *Factory) SetActiveNS(ns string) error {
 	if f.isClusterWide() {
 		return nil
 	}
+	if client.IsMultiNamespace(ns) {
+		for _, n := range client.Namespaces(ns) {
+			if _, err := f.ensureFactory(n); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	_, err := f.ensureFactory(ns)
 	return err
 }
@@ -201,6 +257,22 @@ func (f *Factory) isClusterWide() bool {
 
 // CanForResource return an informer is user has access.
 func (f *Factory) CanForResource(ns string, gvr *client.GVR, verbs []string) (informers.GenericInformer, error) {
+	// For a multi-namespace selector, return an informer for the first
+	// accessible namespace; error only when access is denied for all of them.
+	// This mirrors the partial-access semantics of listMulti.
+	if client.IsMultiNamespace(ns) {
+		var lastErr error
+		for _, n := range client.Namespaces(ns) {
+			inf, err := f.CanForResource(n, gvr, verbs)
+			if err != nil {
+				lastErr = err
+				continue
+			}
+			return inf, nil
+		}
+		return nil, lastErr
+	}
+
 	var resName string
 	if gvr == client.NsGVR {
 		resName = ns

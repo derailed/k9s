@@ -75,3 +75,16 @@ func TestNSValidateRmFavs(t *testing.T) {
 
 	assert.Equal(t, []string{"default", "fred"}, ns.Favorites)
 }
+
+func TestNSSetActiveMulti(t *testing.T) {
+	mk := mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1"))
+	ns := data.NewNamespace()
+
+	// A multi-namespace selection persists as the active namespace but must
+	// not pollute the favorites list with the combined entry.
+	err := ns.SetActive("ns1,ns2", mk)
+	require.NoError(t, err)
+	assert.Equal(t, "ns1,ns2", ns.Active)
+	assert.NotContains(t, ns.Favorites, "ns1,ns2")
+	assert.Equal(t, []string{"default"}, ns.Favorites)
+}

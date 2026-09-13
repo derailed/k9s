@@ -32,6 +32,9 @@ const (
 	// NotNamespaced designates a non resource namespace.
 	NotNamespaced = "*"
 
+	// NamespaceDelimiter separates multiple namespaces in a namespace selector.
+	NamespaceDelimiter = ","
+
 	// CreateVerb represents create access on a resource.
 	CreateVerb = "create"
 

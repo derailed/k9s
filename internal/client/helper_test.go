@@ -226,3 +226,64 @@ func TestFQN(t *testing.T) {
 		assert.Equal(t, u.e, client.FQN(u.ns, u.n))
 	}
 }
+
+func TestIsMultiNamespace(t *testing.T) {
+	uu := map[string]struct {
+		ns string
+		e  bool
+	}{
+		"empty":          {ns: client.BlankNamespace},
+		"single":         {ns: "ns1"},
+		"all":            {ns: client.NamespaceAll},
+		"cluster":        {ns: client.ClusterScope},
+		"multi":          {ns: "ns1,ns2", e: true},
+		"trailing-comma": {ns: "ns1,", e: true},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, client.IsMultiNamespace(u.ns))
+		})
+	}
+}
+
+func TestNamespaces(t *testing.T) {
+	uu := map[string]struct {
+		ns string
+		e  []string
+	}{
+		"single":  {ns: "ns1", e: []string{"ns1"}},
+		"multi":   {ns: "ns1,ns2", e: []string{"ns1", "ns2"}},
+		"spaces":  {ns: " ns1 , ns2 ", e: []string{"ns1", "ns2"}},
+		"empties": {ns: "ns1,,ns2,", e: []string{"ns1", "ns2"}},
+		"blank":   {ns: client.BlankNamespace, e: []string{}},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, client.Namespaces(u.ns))
+		})
+	}
+}
+
+func TestNormalizeNamespaces(t *testing.T) {
+	uu := map[string]struct {
+		ns string
+		e  string
+	}{
+		"single":     {ns: "ns1", e: "ns1"},
+		"all":        {ns: client.NamespaceAll, e: client.NamespaceAll},
+		"multi":      {ns: "ns1,ns2", e: "ns1,ns2"},
+		"dedup":      {ns: "ns1,ns2,ns1", e: "ns1,ns2"},
+		"trim-empty": {ns: " ns1 , , ns2 ,", e: "ns1,ns2"},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, client.NormalizeNamespaces(u.ns))
+		})
+	}
+}

@@ -59,6 +59,47 @@ func IsClusterScoped(ns string) bool {
 	return ns == ClusterScope
 }
 
+// IsMultiNamespace returns true if ns designates more than one namespace.
+func IsMultiNamespace(ns string) bool {
+	return strings.Contains(ns, NamespaceDelimiter)
+}
+
+// Namespaces splits a (possibly comma-delimited) namespace selector into its
+// individual namespaces, trimming blanks and dropping empties. A single
+// namespace yields a one element slice.
+func Namespaces(ns string) []string {
+	nss := strings.Split(ns, NamespaceDelimiter)
+	oo := make([]string, 0, len(nss))
+	for _, n := range nss {
+		if n = strings.TrimSpace(n); n != "" {
+			oo = append(oo, n)
+		}
+	}
+
+	return oo
+}
+
+// NormalizeNamespaces canonicalizes a (possibly comma-delimited) namespace
+// selector: trims blanks, drops empties and duplicates, and preserves order.
+// A single namespace is returned unchanged.
+func NormalizeNamespaces(ns string) string {
+	if !IsMultiNamespace(ns) {
+		return ns
+	}
+	nss := Namespaces(ns)
+	seen := make(map[string]struct{}, len(nss))
+	oo := make([]string, 0, len(nss))
+	for _, n := range nss {
+		if _, ok := seen[n]; ok {
+			continue
+		}
+		seen[n] = struct{}{}
+		oo = append(oo, n)
+	}
+
+	return strings.Join(oo, NamespaceDelimiter)
+}
+
 // Namespaced converts a resource path to namespace and resource name.
 func Namespaced(p string) (ns, name string) {
 	ns, name = path.Split(p)

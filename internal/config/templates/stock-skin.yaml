@@ -39,6 +39,7 @@ k9s:
       fgColor: white
       keyColor: dodgerblue
       numKeyColor: fuchsia
+      activeColor: aqua
     crumbs:
       fgColor: black
       bgColor: aqua
