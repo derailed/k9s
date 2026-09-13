@@ -1,0 +1,72 @@
+# Karpenter (https://karpenter.sh) plugins for k9s
+# Requires: kubectl
+#
+# <Shift-N> (nodepools)  View the nodes owned by the NodePool
+# <Shift-C> (nodepools)  View the nodeclaims owned by the NodePool
+# <Shift-P> (nodes)      View the nodepool that owns the node
+# <n>       (nodeclaims) View the node backing the nodeclaim
+#
+# Node/NodePool association is resolved via the `karpenter.sh/nodepool`
+# label Karpenter sets on every node it provisions.
+plugins:
+  karpenter-nodepool-nodes:
+    shortCut: Shift-N
+    confirm: false
+    description: View nodes
+    scopes:
+      - nodepools
+    command: bash
+    background: false
+    args:
+      - -c
+      - "kubectl get nodes --context $CONTEXT -l karpenter.sh/nodepool=$NAME -o wide | less -K"
+
+  karpenter-nodepool-nodeclaims:
+    shortCut: Shift-C
+    confirm: false
+    description: View nodeclaims
+    scopes:
+      - nodepools
+    command: bash
+    background: false
+    args:
+      - -c
+      - "kubectl get nodeclaims --context $CONTEXT -l karpenter.sh/nodepool=$NAME -o wide | less -K"
+
+  karpenter-node-nodepool:
+    shortCut: Shift-P
+    confirm: false
+    description: View nodepool
+    scopes:
+      - nodes
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        np=$(kubectl get node --context $CONTEXT $NAME -o jsonpath='{.metadata.labels.karpenter\.sh/nodepool}')
+        if [ -z "$np" ]; then
+          echo "Node $NAME has no karpenter.sh/nodepool label (not Karpenter-managed?)"
+          read -p "Press Enter to return to k9s..."
+        else
+          kubectl get nodepool --context $CONTEXT "$np" -o yaml | less -K
+        fi
+
+  karpenter-nodeclaim-node:
+    shortCut: n
+    confirm: false
+    description: View node
+    scopes:
+      - nodeclaims
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        node=$(kubectl get nodeclaim --context $CONTEXT $NAME -o jsonpath='{.status.nodeName}')
+        if [ -z "$node" ]; then
+          echo "NodeClaim $NAME has no node yet (still provisioning?)"
+          read -p "Press Enter to return to k9s..."
+        else
+          kubectl get node --context $CONTEXT "$node" -o wide | less -K
+        fi
