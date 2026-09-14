@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var (
@@ -28,25 +29,30 @@ type Service struct {
 
 // TailLogs tail logs for all pods represented by this Service.
 func (s *Service) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
-	svc, err := s.GetInstance(opts.Path)
+	ns, n := client.Namespaced(opts.Path)
+	pods, err := podsForService(s.Factory, ns, n)
 	if err != nil {
 		return nil, err
 	}
-	if len(svc.Spec.Selector) == 0 {
-		return nil, fmt.Errorf("no valid selector found on Service %s", opts.Path)
+	if pods.Len() == 0 {
+		return nil, fmt.Errorf("no pods backing Service %s", opts.Path)
 	}
 
-	return podLogs(ctx, svc.Spec.Selector, opts)
+	return tailPodsLogs(ctx, s.Factory, sets.List(pods), opts)
 }
 
 // Pod returns a pod victim by name.
 func (s *Service) Pod(fqn string) (string, error) {
-	svc, err := s.GetInstance(fqn)
+	ns, n := client.Namespaced(fqn)
+	pods, err := podsForService(s.Factory, ns, n)
 	if err != nil {
 		return "", err
 	}
+	if pods.Len() == 0 {
+		return "", fmt.Errorf("no matching pods for Service %s", fqn)
+	}
 
-	return podFromSelector(s.Factory, svc.Namespace, svc.Spec.Selector)
+	return sets.List(pods)[0], nil
 }
 
 // GetInstance returns a service instance.
@@ -63,26 +69,4 @@ func (s *Service) GetInstance(fqn string) (*v1.Service, error) {
 	}
 
 	return &svc, nil
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func podFromSelector(f Factory, ns string, sel map[string]string) (string, error) {
-	oo, err := f.List(client.PodGVR, ns, true, labels.Set(sel).AsSelector())
-	if err != nil {
-		return "", err
-	}
-
-	if len(oo) == 0 {
-		return "", fmt.Errorf("no matching pods for %v", sel)
-	}
-
-	var pod v1.Pod
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(oo[0].(*unstructured.Unstructured).Object, &pod)
-	if err != nil {
-		return "", err
-	}
-
-	return client.FQN(pod.Namespace, pod.Name), nil
 }
