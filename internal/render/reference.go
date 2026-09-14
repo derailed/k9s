@@ -28,8 +28,8 @@ func (Reference) ColorerFunc() model1.ColorerFunc {
 // Header returns a header row.
 func (Reference) Header(string) model1.Header {
 	return model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: colNamespace},
+		model1.HeaderColumn{Name: colName},
 		model1.HeaderColumn{Name: "GVR"},
 	}
 }

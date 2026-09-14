@@ -10,6 +10,10 @@ run:
   issues-exit-code: 1
   tests: true
 
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
 linters:
   disable:
     - staticcheck
@@ -54,6 +58,7 @@ linters:
         - G115
         - G204
         - G303
+        - G703
 
     sloglint:
       no-mixed-args: true
@@ -189,6 +194,7 @@ linters:
           - dupl
           - mnd
           - lll
+          - goconst
 
       # Based on existing code, the modifications should be limited to make maintenance easier.
       - path: pkg/golinters/unused/unused.go

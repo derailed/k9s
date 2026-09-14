@@ -99,6 +99,6 @@ func (t *Threshold) SeverityColor(k string, v int) string {
 	case SeverityMedium:
 		return "orangered"
 	default:
-		return "green"
+		return colorGreen
 	}
 }
