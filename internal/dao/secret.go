@@ -6,16 +6,21 @@ package dao
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"maps"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/printers"
 )
 
@@ -141,4 +146,149 @@ func ExtractSecrets(o runtime.Object) (map[string]string, error) {
 	}
 
 	return secretData, nil
+}
+
+// GetEditableYAML returns the full Secret as YAML with UTF-8 values in
+// stringData (plaintext) and non-UTF-8 values left in data as base64.
+func (s *Secret) GetEditableYAML(path string) ([]byte, error) {
+	o, err := s.Get(context.Background(), path)
+	if err != nil {
+		return nil, err
+	}
+	o = o.DeepCopyObject()
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("expecting unstructured but got %T", o)
+	}
+	if u.Object == nil {
+		return nil, fmt.Errorf("expecting unstructured object but got nil")
+	}
+
+	if meta, ok := u.Object["metadata"].(map[string]any); ok {
+		delete(meta, "managedFields")
+	}
+
+	var secret v1.Secret
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &secret); err != nil {
+		return nil, fmt.Errorf("failed to convert secret for decoded edit: %w", err)
+	}
+	// UTF-8 goes in stringData so Kubernetes encodes it on apply.
+	// Non-UTF-8 stays in data as already-base64 (kubectl apply semantics).
+	stringData := make(map[string]any)
+	binaryData := make(map[string]any)
+	for k, val := range secret.Data {
+		if utf8.Valid(val) {
+			stringData[k] = string(val)
+		} else {
+			binaryData[k] = base64.StdEncoding.EncodeToString(val)
+		}
+	}
+	if len(binaryData) > 0 {
+		u.Object["data"] = binaryData
+	} else {
+		delete(u.Object, "data")
+	}
+	if len(stringData) > 0 {
+		u.Object["stringData"] = stringData
+	} else {
+		delete(u.Object, "stringData")
+	}
+
+	var (
+		buff bytes.Buffer
+		p    printers.YAMLPrinter
+	)
+	if err := p.PrintObj(o, &buff); err != nil {
+		return nil, err
+	}
+
+	return buff.Bytes(), nil
+}
+
+// PrepareEditedSecret parses edited YAML, validates data values as
+// already-base64, and forces metadata name/namespace to path so the
+// editor cannot retarget another Secret.
+func PrepareEditedSecret(path string, editedYAML []byte) (*unstructured.Unstructured, error) {
+	var obj unstructured.Unstructured
+	dec := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(editedYAML), len(editedYAML))
+	if err := dec.Decode(&obj.Object); err != nil {
+		return nil, fmt.Errorf("failed to parse edited YAML: %w", err)
+	}
+	ns, n := client.Namespaced(path)
+	if n == "" {
+		return nil, fmt.Errorf("missing resource name in path %q", path)
+	}
+	if client.IsClusterScoped(ns) {
+		ns = client.BlankNamespace
+	}
+	obj.SetNamespace(ns)
+	obj.SetName(n)
+	if raw, exists := obj.Object["data"]; exists && raw != nil {
+		data, ok := raw.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("data must be a map of base64 strings")
+		}
+		if err := EncodeSecretData(data); err != nil {
+			return nil, err
+		}
+	}
+	return &obj, nil
+}
+
+// UpdateFromEditedYAML parses edited YAML and updates the Secret via
+// the K8s API. data values must already be base64; stringData is plaintext.
+func (s *Secret) UpdateFromEditedYAML(path string, editedYAML []byte) error {
+	obj, err := PrepareEditedSecret(path, editedYAML)
+	if err != nil {
+		return err
+	}
+
+	ns, n := obj.GetNamespace(), obj.GetName()
+	auth, err := s.Client().CanI(ns, s.gvr, n, client.UpdateAccess)
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to update secret %s/%s", ns, n)
+	}
+
+	dial, err := s.dynClient()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), s.Client().Config().CallTimeout())
+	defer cancel()
+
+	if client.IsClusterScoped(ns) {
+		_, err = dial.Update(ctx, obj, metav1.UpdateOptions{})
+	} else {
+		_, err = dial.Namespace(ns).Update(ctx, obj, metav1.UpdateOptions{})
+	}
+
+	return err
+}
+
+// EncodeSecretData treats each data value as already-base64 (the same
+// contract as kubectl apply). It strips whitespace, rejects values that
+// are not valid standard base64, and never encodes again. Put plaintext
+// in stringData.
+func EncodeSecretData(data map[string]any) error {
+	for k, v := range data {
+		s, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("data.%s must be a base64 string", k)
+		}
+		compact := strings.Map(func(r rune) rune {
+			if r == ' ' || r == '\n' || r == '\r' || r == '\t' {
+				return -1
+			}
+			return r
+		}, s)
+		if _, err := base64.StdEncoding.DecodeString(compact); err != nil {
+			return fmt.Errorf("data.%s is not valid base64; put plaintext in stringData", k)
+		}
+		data[k] = compact
+	}
+	return nil
 }
