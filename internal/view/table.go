@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
@@ -63,6 +64,15 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	}
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
+	t.SetSortChangeFn(func(sc model1.SortColumn) {
+		if t.command == nil {
+			return
+		}
+		t.command.SetSortArg(sc.Name, sc.ASC)
+		if t.app != nil {
+			t.app.cmdHistory.Update(t.command.GetLine())
+		}
+	})
 	t.GetModel().SetRefreshRate(t.app.Config.K9s.RefreshDuration())
 	t.CmdBuff().AddListener(t)
 
@@ -72,6 +82,19 @@ func (t *Table) Init(ctx context.Context) (err error) {
 // SetCommand sets the current command.
 func (t *Table) SetCommand(i *cmd.Interpreter) {
 	t.command = i
+}
+
+// syncHistory consolidates the view's current filter/label + sort into the
+// current navigation-history entry.
+func (t *Table) syncHistory() {
+	if t.command == nil || t.app == nil {
+		return
+	}
+	sc := t.GetSortCol()
+	if sc.Name != "" {
+		t.command.SetSortArg(sc.Name, sc.ASC)
+	}
+	t.app.cmdHistory.Update(t.command.GetLine())
 }
 
 var stripHeaderRX = regexp.MustCompile(`\[.+\](\w+)\[.+\]`)
@@ -177,6 +200,17 @@ func (t *Table) Start() {
 		}
 	}
 	t.App().CustomView().AddListeners(t.Table, cmds...)
+
+	// Re-assert any sort carried on the command (e.g. restored from
+	// navigation history) so it wins over a custom-view default sort.
+	// AddListeners above fires ViewSettingsChanged which resets the manual
+	// sort flag, so this must run afterwards.
+	if t.command != nil {
+		if col, asc, ok := t.command.SortArg(); ok {
+			t.SetSortCol(col, asc)
+			t.SetManualSort(true)
+		}
+	}
 }
 
 // Stop terminates the component.

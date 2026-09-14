@@ -41,6 +41,7 @@ type Table struct {
 	gvr            *client.GVR
 	sortCol        model1.SortColumn
 	selectedColIdx int
+	selColInit     bool
 	manualSort     bool
 	Path           string
 	Extras         string
@@ -58,6 +59,7 @@ type Table struct {
 	readOnly       bool
 	noIcon         bool
 	fullGVR        bool
+	sortChangeFn   func(sc model1.SortColumn)
 }
 
 // NewTable returns a new table view.
@@ -121,6 +123,11 @@ func (t *Table) getSortCol() model1.SortColumn {
 	return t.sortCol
 }
 
+// GetSortCol returns the active sort column and direction.
+func (t *Table) GetSortCol() model1.SortColumn {
+	return t.getSortCol()
+}
+
 func (t *Table) setMSort(b bool) {
 	t.mx.Lock()
 	defer t.mx.Unlock()
@@ -142,11 +149,18 @@ func (t *Table) getSelectedColIdx() int {
 	return t.selectedColIdx
 }
 
+func (t *Table) GetSelectedColIdx() int {
+	return t.getSelectedColIdx()
+}
+
 // initSelectedColumn initializes the selected column index based on current sort column.
-func (t *Table) initSelectedColumn() {
-	data := t.GetFilteredData()
+func (t *Table) initSelectedColumn() bool {
+	return t.initSelectedColumnFor(t.GetFilteredData())
+}
+
+func (t *Table) initSelectedColumnFor(data *model1.TableData) bool {
 	if data == nil || data.HeaderCount() == 0 {
-		return
+		return false
 	}
 
 	sc := t.getSortCol()
@@ -154,7 +168,7 @@ func (t *Table) initSelectedColumn() {
 		t.mx.Lock()
 		t.selectedColIdx = 0
 		t.mx.Unlock()
-		return
+		return true
 	}
 
 	// Find the visual column index for the current sort column
@@ -168,7 +182,7 @@ func (t *Table) initSelectedColumn() {
 			t.mx.Lock()
 			t.selectedColIdx = visibleCol
 			t.mx.Unlock()
-			return
+			return true
 		}
 		visibleCol++
 	}
@@ -177,6 +191,8 @@ func (t *Table) initSelectedColumn() {
 	t.mx.Lock()
 	t.selectedColIdx = 0
 	t.mx.Unlock()
+
+	return true
 }
 
 // moveSelectedColumn moves the column selection by delta (-1 for left, +1 for right).
@@ -264,6 +280,7 @@ func (t *Table) SortSelectedColumn() {
 	t.SetSortCol(colName, asc)
 	t.setMSort(true)
 	t.Refresh()
+	t.fireSortChange()
 }
 
 // SetViewSetting sets custom view config is present.
@@ -421,6 +438,22 @@ func (t *Table) SetSortCol(name string, asc bool) {
 	t.setSortCol(model1.SortColumn{Name: name, ASC: asc})
 }
 
+// SetManualSort flags the sort as user-driven so config defaults don't override it.
+func (t *Table) SetManualSort(b bool) {
+	t.setMSort(b)
+}
+
+// SetSortChangeFn registers a callback invoked after an interactive sort change.
+func (t *Table) SetSortChangeFn(fn func(model1.SortColumn)) {
+	t.sortChangeFn = fn
+}
+
+func (t *Table) fireSortChange() {
+	if t.sortChangeFn != nil {
+		t.sortChangeFn(t.getSortCol())
+	}
+}
+
 // Update table content.
 func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableData {
 	if t.decorateFn != nil {
@@ -452,11 +485,15 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	oldSortCol := t.getSortCol()
 	t.setSortCol(data.ComputeSortCol(t.GetViewSetting(), t.getSortCol(), t.getMSort()))
 
-	// Initialize selected column index to match the current sort column
-	// This ensures the highlight starts at the sorted column
+	// Initialize selected column index to match the current sort column so the
+	// highlight follows the sorted column. Run on the first render (e.g. when a
+	// sort is restored from navigation history before any data arrives) and
+	// whenever the sort column changes.
 	newSortCol := t.getSortCol()
-	if oldSortCol.Name != newSortCol.Name {
-		t.initSelectedColumn()
+	if !t.selColInit || oldSortCol.Name != newSortCol.Name {
+		if t.initSelectedColumnFor(data) {
+			t.selColInit = true
+		}
 	}
 
 	return data
@@ -576,6 +613,7 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 		t.initSelectedColumn()
 
 		t.Refresh()
+		t.fireSortChange()
 		return nil
 	}
 }
@@ -584,6 +622,7 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 func (t *Table) SortInvertCmd(*tcell.EventKey) *tcell.EventKey {
 	t.toggleSortCol()
 	t.Refresh()
+	t.fireSortChange()
 
 	return nil
 }
