@@ -1,61 +1,230 @@
+# ArgoCD Application operations from inside k9s.
+#
+# Everything goes through the Kubernetes API with your normal kubeconfig: no
+# `argocd` CLI and no `argocd login` per instance. This is the same
+# Kubernetes-native path the ArgoCD UI, Lens and Headlamp use, so all it needs
+# is RBAC you most likely already have: get/patch on applications.argoproj.io.
+#
+# Dependencies: kubectl, jq, column, less.
+#
+# Every command passes `--context $CONTEXT`, and that is load-bearing:
+# switching context inside k9s only changes k9s's in-process flags, it never
+# rewrites the kubeconfig `current-context`. A plugin without `--context`
+# therefore runs against whatever the kubeconfig happens to point at, not the
+# cluster on screen. With more than one ArgoCD instance that is a "synced prod
+# thinking I was on staging" waiting to happen.
+#
+# The mutating actions are `dangerous: true`, so k9s hides them entirely on a
+# context marked read-only, which is worth doing for production:
+#
+#   # <k9s config dir>/clusters/<cluster>/<context>/config.yaml
+#   k9s:
+#     cluster: <cluster>
+#     readOnly: true
+#
+# Optional but recommended -- put the ArgoCD state in the table itself rather
+# than behind a YAML dive, via `views.yaml`:
+#
+#   views:
+#     argoproj.io/v1alpha1/applications:
+#       columns:
+#         - NAMESPACE
+#         - NAME
+#         - SYNC STATUS
+#         - HEALTH STATUS
+#         - OP:.status.operationState.phase
+#         - MESSAGE:.status.operationState.message
+#         - AUTO:.spec.syncPolicy.automated.selfHeal
+#         - REVISION:.status.sync.revision|W
+#         - AGE:.metadata.creationTimestamp|T
+#       sortColumn: SYNC STATUS:asc
+#
+# Reuse the CRD's own column names (SYNC STATUS, HEALTH STATUS) verbatim: the
+# custom header is a superset of the default one, so inventing SYNC gets you
+# both SYNC and SYNC STATUS, each rendering the same value.
+#
+# Per-resource health is only inline in `.status.resources[].health` when the
+# Application reports `resourceHealthSource: app`. Where it reports `appTree`,
+# health lives in the controller's cached resource tree, which is served by the
+# ArgoCD API server and is NOT reachable through the Kubernetes API -- so that
+# column is blank and the app-level rollup in `.status.health` is the health
+# answer. Both views lead with that rollup for exactly this reason.
 plugins:
-  argocd:
-    shortCut: "s"
-    description: Sync ArgoCD Application
+  argocd-out-of-sync:
+    shortCut: Shift-D
+    description: Argo drift + app health
     scopes:
-      - application
-    command: argocd
-    args: 
-    - app
-    - sync
-    - $NAME
-    - --app-namespace
-    - $NAMESPACE
-    background: true
-    confirm: true
-
-  refresh-apps:
-    shortCut: Shift-R
+      - applications
+    command: sh
+    background: false
     confirm: false
+    args:
+      - -c
+      - |-
+        a=$(kubectl --context $CONTEXT -n $NAMESPACE get application $NAME -o json) || exit 1
+        {
+          echo "$a" | jq -r '"sync: \(.status.sync.status // "-")   health: \(.status.health.status // "-")   \(.status.health.message // "")"'
+          echo
+          echo "$a" | jq -r '.status.resources[]? | select(.status != "Synced") | "\(.kind)/\(.name)\t\(.status)\t\(.health.status // "-")"' | column -t
+          echo "$a" | jq -r 'if .status.resourceHealthSource == "appTree" and ([.status.resources[]? | select(.status != "Synced")] | length) > 0 then "\n(per-resource health is served from the app tree, not from the Application object, so the third column stays blank on this instance)" else empty end'
+        } | less -K
+
+  argocd-why:
+    shortCut: Shift-G
+    description: Argo health, conditions + last sync error
     scopes:
-      - apps
-    description: Refresh a argocd app hard
-    command: bash
+      - applications
+    command: sh
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |-
+        kubectl --context $CONTEXT -n $NAMESPACE get application $NAME -o json |
+          jq -r '"== health ==", "status: \(.status.health.status // "-")", "message: \(.status.health.message // "-")", "source: \(.status.resourceHealthSource // "-")", "", "== conditions ==", (if (.status.conditions | length) > 0 then (.status.conditions[] | "\(.type): \(.message)") else "(none)" end), "", "== last operation ==", "phase: \(.status.operationState.phase // "-")", "message: \(.status.operationState.message // "-")", "revision: \(.status.sync.revision // "-")"' |
+          less -K
+
+  argocd-history:
+    shortCut: Shift-H
+    description: Argo sync history
+    scopes:
+      - applications
+    command: sh
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |-
+        kubectl --context $CONTEXT -n $NAMESPACE get application $NAME -o json |
+          jq -r '.status.history[]? | "\(.id)\t\(.deployedAt)\t\(.revision[0:12])"' |
+          column -t | less -K
+
+  argocd-refresh:
+    shortCut: Shift-R
+    description: Argo refresh (re-compare against git)
+    confirm: true
+    scopes:
+      - applications
+    command: kubectl
+    background: false
+    args:
+      - --context
+      - $CONTEXT
+      - -n
+      - $NAMESPACE
+      - annotate
+      - --overwrite
+      - application
+      - $NAME
+      - argocd.argoproj.io/refresh=normal
+
+  argocd-hard-refresh:
+    shortCut: Shift-Y
+    description: Argo HARD refresh (drop the manifest cache)
+    confirm: true
+    dangerous: true
+    scopes:
+      - applications
+    command: kubectl
+    background: false
+    args:
+      - --context
+      - $CONTEXT
+      - -n
+      - $NAMESPACE
+      - annotate
+      - --overwrite
+      - application
+      - $NAME
+      - argocd.argoproj.io/refresh=hard
+
+  # Patching `.operation` is how the ArgoCD UI triggers a sync; the application
+  # controller runs it and clears the field when it is done. Omitting `revision`
+  # syncs to the resolved target revision, i.e. the branch HEAD.
+  #
+  # `initiatedBy.username` comes from `kubectl auth whoami` so the history entry
+  # names a person. Do NOT use k9s's own $USER here: it resolves to the
+  # kubeconfig *user* entry name, not to a human.
+  argocd-sync:
+    shortCut: Shift-Z
+    description: Argo SYNC (mutation)
+    confirm: true
+    dangerous: true
+    scopes:
+      - applications
+    command: sh
     background: false
     args:
       - -c
-      - "kubectl annotate applications -n argocd $NAME argocd.argoproj.io/refresh=hard"
+      - |-
+        u=$(kubectl --context $CONTEXT auth whoami -o jsonpath='{.status.userInfo.username}')
+        kubectl --context $CONTEXT -n $NAMESPACE patch application $NAME --type=merge -p "{\"operation\":{\"initiatedBy\":{\"username\":\"$u\"},\"sync\":{}}}" || exit 1
+        echo
+        echo 'Sync triggered. Watch the OP/MESSAGE columns.'
+        sleep 3
+        kubectl --context $CONTEXT -n $NAMESPACE get application $NAME -o json |
+          jq -r '"phase: \(.status.operationState.phase)", "message: \(.status.operationState.message)"' |
+          less -K
 
-  disable-auto-sync:
+  # Both auto-sync plugins patch ONLY `syncPolicy.automated` and deliberately
+  # leave `syncPolicy.syncOptions` alone. A merge patch replaces an array
+  # wholesale and `replace /spec/syncPolicy` drops the whole object, so touching
+  # syncOptions here would silently rewrite settings the Application's owner
+  # chose. `automated: null` removes the key and is idempotent -- it succeeds on
+  # an Application that already has auto-sync off, where a JSON-patch `remove`
+  # would fail.
+  #
+  # prune and selfHeal are the two knobs people genuinely disagree on, and prune
+  # deletes live resources, so they are inputs rather than baked-in values. k9s
+  # shows the resolved command in the confirm dialog, so you see what you are
+  # about to apply.
+  argocd-disable-auto-sync:
     shortCut: Shift-J
-    confirm: false
+    description: Argo disable auto-sync
+    confirm: true
+    dangerous: true
     scopes:
-      - apps
-    description: Disable argocd sync
+      - applications
     command: kubectl
     background: false
     args:
-      - patch
-      - applications
+      - --context
+      - $CONTEXT
       - -n
-      - argocd
-      - $NAME
-      - "--type=json"
-      - '-p=[{"op":"replace", "path": "/spec/syncPolicy", "value": {}}]'
-
-  enable-auto-sync:
-    shortCut: Shift-B
-    confirm: false
-    scopes:
-      - apps
-    description: Enable argocd sync
-    command: kubectl
-    background: false
-    args:
+      - $NAMESPACE
       - patch
-      - applications
-      - -n
-      - argocd
+      - application
       - $NAME
       - --type=merge
-      - '-p={"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true},"syncOptions":["ApplyOutOfSyncOnly=true","CreateNamespace=true","PruneLast=true","PrunePropagationPolicy=foreground"]}}}'
+      - '-p={"spec":{"syncPolicy":{"automated":null}}}'
+
+  argocd-enable-auto-sync:
+    shortCut: Shift-B
+    description: Argo enable auto-sync
+    confirm: true
+    dangerous: true
+    scopes:
+      - applications
+    inputs:
+      - name: prune
+        label: Prune (delete live resources absent from git)
+        type: bool
+        required: true
+        default: "true"
+      - name: selfHeal
+        label: Self-heal (revert drift on the live resources)
+        type: bool
+        required: true
+        default: "true"
+    command: kubectl
+    background: false
+    args:
+      - --context
+      - $CONTEXT
+      - -n
+      - $NAMESPACE
+      - patch
+      - application
+      - $NAME
+      - --type=merge
+      - '-p={"spec":{"syncPolicy":{"automated":{"prune":$INPUT_PRUNE,"selfHeal":$INPUT_SELFHEAL}}}}'
