@@ -25,6 +25,7 @@ import (
 const (
 	liveViewTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
 	yamlAction       = "YAML"
+	kyamlAction      = "KYAML"
 )
 
 // LiveView represents a live text viewer.
@@ -160,7 +161,7 @@ func (v *LiveView) bindKeys() {
 	if !v.app.Config.IsReadOnly() {
 		v.actions.Add(ui.KeyE, ui.NewKeyAction("Edit", v.editCmd, true))
 	}
-	if v.title == yamlAction {
+	if v.title == yamlAction || v.title == kyamlAction {
 		v.actions.Add(ui.KeyM, ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true))
 	}
 	if _, ok := v.model.(model.EncDecResourceViewer); ok {
