@@ -16,6 +16,7 @@ type Context struct {
 	ClusterName  string       `yaml:"cluster,omitempty"`
 	ReadOnly     *bool        `yaml:"readOnly,omitempty"`
 	Skin         string       `yaml:"skin,omitempty"`
+	Logo         string       `yaml:"logo,omitempty"`
 	Namespace    *Namespace   `yaml:"namespace"`
 	View         *View        `yaml:"view"`
 	FeatureGates FeatureGates `yaml:"featureGates"`
