@@ -42,10 +42,17 @@
 # Reuse the CRD's own column names (SYNC STATUS, HEALTH STATUS) verbatim: the
 # custom header is a superset of the default one, so inventing SYNC gets you
 # both SYNC and SYNC STATUS, each rendering the same value.
+#
+# Per-resource health is only inline in `.status.resources[].health` when the
+# Application reports `resourceHealthSource: app`. Where it reports `appTree`,
+# health lives in the controller's cached resource tree, which is served by the
+# ArgoCD API server and is NOT reachable through the Kubernetes API -- so that
+# column is blank and the app-level rollup in `.status.health` is the health
+# answer. Both views lead with that rollup for exactly this reason.
 plugins:
   argocd-out-of-sync:
     shortCut: Shift-D
-    description: Argo out-of-sync resources
+    description: Argo drift + app health
     scopes:
       - applications
     command: sh
@@ -54,13 +61,17 @@ plugins:
     args:
       - -c
       - |-
-        kubectl --context $CONTEXT -n $NAMESPACE get application $NAME -o json |
-          jq -r '.status.resources[]? | select(.status != "Synced") | "\(.kind)/\(.name)\t\(.status)\t\(.health.status // "-")"' |
-          column -t | less -K
+        a=$(kubectl --context $CONTEXT -n $NAMESPACE get application $NAME -o json) || exit 1
+        {
+          echo "$a" | jq -r '"sync: \(.status.sync.status // "-")   health: \(.status.health.status // "-")   \(.status.health.message // "")"'
+          echo
+          echo "$a" | jq -r '.status.resources[]? | select(.status != "Synced") | "\(.kind)/\(.name)\t\(.status)\t\(.health.status // "-")"' | column -t
+          echo "$a" | jq -r 'if .status.resourceHealthSource == "appTree" and ([.status.resources[]? | select(.status != "Synced")] | length) > 0 then "\n(per-resource health is served from the app tree, not from the Application object, so the third column stays blank on this instance)" else empty end'
+        } | less -K
 
   argocd-why:
     shortCut: Shift-G
-    description: Argo conditions + last sync error
+    description: Argo health, conditions + last sync error
     scopes:
       - applications
     command: sh
@@ -70,7 +81,7 @@ plugins:
       - -c
       - |-
         kubectl --context $CONTEXT -n $NAMESPACE get application $NAME -o json |
-          jq -r '"== conditions ==", (.status.conditions[]? | "\(.type): \(.message)"), "", "== last operation ==", "phase: \(.status.operationState.phase // "-")", "message: \(.status.operationState.message // "-")", "revision: \(.status.sync.revision // "-")"' |
+          jq -r '"== health ==", "status: \(.status.health.status // "-")", "message: \(.status.health.message // "-")", "source: \(.status.resourceHealthSource // "-")", "", "== conditions ==", (if (.status.conditions | length) > 0 then (.status.conditions[] | "\(.type): \(.message)") else "(none)" end), "", "== last operation ==", "phase: \(.status.operationState.phase // "-")", "message: \(.status.operationState.message // "-")", "revision: \(.status.sync.revision // "-")"' |
           less -K
 
   argocd-history:
