@@ -412,6 +412,20 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (b *Browser) viewKYAMLCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := b.GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	v := NewLiveView(b.app, kyamlAction, model.NewKYAML(b.GVR(), path))
+	if err := v.app.inject(v, false); err != nil {
+		v.app.Flash().Err(err)
+	}
+
+	return nil
+}
+
 func (b *Browser) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.CmdBuff().InCmdMode() {
 		return nil
@@ -680,6 +694,7 @@ func (b *Browser) refreshActions() {
 	}
 	if !dao.IsK9sMeta(b.meta) {
 		aa.Add(ui.KeyY, ui.NewKeyAction(yamlAction, b.viewCmd, true))
+		aa.Add(ui.KeyShiftY, ui.NewKeyAction(kyamlAction, b.viewKYAMLCmd, true))
 		aa.Add(ui.KeyD, ui.NewKeyAction("Describe", b.describeCmd, true))
 	}
 	for _, f := range b.bindKeysFn {

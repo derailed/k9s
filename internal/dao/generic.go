@@ -106,6 +106,20 @@ func (g *Generic) ToYAML(path string, showManaged bool) (string, error) {
 	return raw, nil
 }
 
+// ToKYAML returns a resource kyaml.
+func (g *Generic) ToKYAML(path string, showManaged bool) (string, error) {
+	o, err := g.Get(context.Background(), path)
+	if err != nil {
+		return "", err
+	}
+
+	raw, err := ToKYAML(o, showManaged)
+	if err != nil {
+		return "", fmt.Errorf("unable to marshal resource %w", err)
+	}
+	return raw, nil
+}
+
 // Delete deletes a resource.
 func (g *Generic) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, grace Grace) error {
 	ns, n := client.Namespaced(path)
