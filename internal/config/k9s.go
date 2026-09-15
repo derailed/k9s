@@ -37,6 +37,7 @@ type K9s struct {
 	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
 	GPUVendors          gpuVendors `json:"gpuVendors" yaml:"gpuVendors"`
 	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
+	DefaultTransferDir  string     `json:"defaultTransferDir" yaml:"defaultTransferDir,omitempty"`
 	RefreshRate         float32    `json:"refreshRate" yaml:"refreshRate"`
 	APIServerTimeout    string     `json:"apiServerTimeout" yaml:"apiServerTimeout"`
 	MaxConnRetry        int32      `json:"maxConnRetry" yaml:"maxConnRetry"`
@@ -138,6 +139,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.LiveViewAutoRefresh = k1.LiveViewAutoRefresh
 	k.DefaultView = k1.DefaultView
 	k.ScreenDumpDir = k1.ScreenDumpDir
+	k.DefaultTransferDir = k1.DefaultTransferDir
 	k.RefreshRate = k1.RefreshRate
 	k.APIServerTimeout = k1.APIServerTimeout
 	k.MaxConnRetry = k1.MaxConnRetry

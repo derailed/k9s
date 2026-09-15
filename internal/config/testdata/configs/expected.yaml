@@ -3,6 +3,7 @@ k9s:
   gpuVendors:
     bozo: bozo/gpu.com
   screenDumpDir: /tmp/k9s-test/screen-dumps
+  defaultTransferDir: /tmp/k9s-test/downloads
   refreshRate: 100
   apiServerTimeout: 30s
   maxConnRetry: 5
