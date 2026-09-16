@@ -154,6 +154,17 @@ func (d *Details) bindKeys() {
 }
 
 func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	// Shift+Down/Up page the view, matching vi's terminal keymap
+	// (<S-Down> == <PageDown>, <S-Up> == <PageUp>).
+	if evt.Modifiers()&tcell.ModShift != 0 {
+		if evt.Key() == tcell.KeyDown {
+			return tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone)
+		}
+		if evt.Key() == tcell.KeyUp {
+			return tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone)
+		}
+	}
+
 	if a, ok := d.actions.Get(ui.AsKey(evt)); ok {
 		return a.Action(evt)
 	}
