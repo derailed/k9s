@@ -174,12 +174,15 @@ plugins:
   # an Application that already has auto-sync off, where a JSON-patch `remove`
   # would fail.
   #
+  # Avoid Shift-J and Shift-N/A/S/O here: k9s already binds them. A plugin that
+  # claims a bound key is rejected and the whole file fails to load.
+  #
   # prune and selfHeal are the two knobs people genuinely disagree on, and prune
   # deletes live resources, so they are inputs rather than baked-in values. k9s
   # shows the resolved command in the confirm dialog, so you see what you are
   # about to apply.
   argocd-disable-auto-sync:
-    shortCut: Shift-J
+    shortCut: Shift-K
     description: Argo disable auto-sync
     confirm: true
     dangerous: true
