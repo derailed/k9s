@@ -1,16 +1,19 @@
 # Karpenter (https://karpenter.sh) plugins for k9s
 # Requires: kubectl
 #
-# <Shift-N> (nodepools)  View the nodes owned by the NodePool
+# <Shift-V> (nodepools)  View the nodes owned by the NodePool
 # <Shift-C> (nodepools)  View the nodeclaims owned by the NodePool
 # <Shift-P> (nodes)      View the nodepool that owns the node
 # <n>       (nodeclaims) View the node backing the nodeclaim
 #
 # Node/NodePool association is resolved via the `karpenter.sh/nodepool`
 # label Karpenter sets on every node it provisions.
+#
+# Avoid Shift-N/A/S/O here: k9s already binds them on every resource view. A
+# plugin that claims a bound key is rejected and the whole file fails to load.
 plugins:
   karpenter-nodepool-nodes:
-    shortCut: Shift-N
+    shortCut: Shift-V
     confirm: false
     description: View nodes
     scopes:

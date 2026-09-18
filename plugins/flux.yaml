@@ -2,6 +2,10 @@
 # move selected line to chosen resource in K9s, then:
 # Shift-T (with confirmation) to toggle helm releases or kustomizations suspend and resume
 # Shift-R (no confirmation) to reconcile a git source or a helm release or a kustomization
+# Shift-U to list suspended helm releases or kustomizations
+#
+# Avoid Shift-N/A/S/O here: k9s already binds them on every resource view. A
+# plugin that claims a bound key is rejected and the whole file fails to load.
 plugins:
   toggle-helmrelease:
     shortCut: Shift-T
@@ -302,7 +306,7 @@ plugins:
         |& less -K
   # credits: https://github.com/fluxcd/flux2/discussions/2494
   get-suspended-helmreleases:
-    shortCut: Shift-S
+    shortCut: Shift-U
     confirm: false
     description: Suspended Helm Releases
     scopes:
@@ -319,7 +323,7 @@ plugins:
         | jq -r '.items[] | select(.spec.suspend==true) | [.metadata.namespace,.metadata.name,.spec.suspend] | @tsv'
         | less -K
   get-suspended-kustomizations:
-    shortCut: Shift-S
+    shortCut: Shift-U
     confirm: false
     description: Suspended Kustomizations
     scopes:
