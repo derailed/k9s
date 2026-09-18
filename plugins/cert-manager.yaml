@@ -1,8 +1,11 @@
 # Manage cert-manager Certificate resources via cmctl.
 # See: https://github.com/cert-manager/cmctl
+#
+# Avoid Shift-N/A/S/O here: k9s already binds them on every resource view. A
+# plugin that claims a bound key is rejected and the whole file fails to load.
 plugins:
   cert-status:
-    shortCut: Shift-S
+    shortCut: Shift-C
     confirm: false
     description: Certificate status
     scopes:
