@@ -2,6 +2,7 @@ plugins:
   # Suspends/Resumes a cronjob
   toggleCronjob:
     shortCut: Ctrl-S
+    override: true
     confirm: true
     dangerous: true
     scopes:
