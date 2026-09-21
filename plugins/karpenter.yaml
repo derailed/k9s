@@ -11,6 +11,7 @@
 plugins:
   karpenter-nodepool-nodes:
     shortCut: Shift-N
+    override: true
     confirm: false
     description: View nodes
     scopes:
