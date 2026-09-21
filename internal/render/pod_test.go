@@ -4,6 +4,7 @@
 package render_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/derailed/k9s/internal/model1"
@@ -213,6 +214,44 @@ func TestPodSidecarRender(t *testing.T) {
 	assert.Equal(t, "default/sleep", r.ID)
 	e := model1.Fields{"default", "sleep", "n/a", "●", "2/2", "Running", "0", "<unknown>", "100", "50:250", "200", "40", "40", "50:80", "80", "50", "0:0", "10.244.0.8", "kind-control-plane", "default", "<none>"}
 	assert.Equal(t, e, r.Fields[:21])
+}
+
+// TestPodExtraStatusContainerRender is a regression test for
+// https://github.com/derailed/k9s/issues/4145: a provider (e.g. a
+// virtual-node implementation) can report a container in
+// status.containerStatuses that has no corresponding entry in
+// spec.containers. The READY column should still surface this (e.g.
+// "3/2"), but the pod must not be marked unhealthy on account of a
+// container the user never declared, as long as the containers actually
+// declared in the spec are all ready and the pod's Ready condition holds.
+func TestPodExtraStatusContainerRender(t *testing.T) {
+	pom := render.PodWithMetrics{
+		Raw: load(t, "po_extra_status_container"),
+	}
+
+	po := render.NewPod()
+	r := model1.NewRow(26)
+	err := po.Render(&pom, "", &r)
+	require.NoError(t, err)
+
+	assert.Equal(t, "default/virtual-node-pod", r.ID)
+	assert.Equal(t, "3/2", r.Fields[4], "READY should still surface the extra status-only container")
+	assert.Equal(t, "", r.Fields[24], "STATUS should not flag the pod unhealthy solely because of an undeclared, ready status container")
+}
+
+// TestPodHealthyIgnoresExtraStatusContainer is a regression test for
+// https://github.com/derailed/k9s/issues/4145, exercising the Healthy()
+// path directly (used e.g. by the pulse view) rather than the rendered
+// row: a pod whose declared containers are all ready must not be reported
+// unhealthy just because status carries an extra, undeclared container -
+// even when that undeclared container isn't itself ready.
+func TestPodHealthyIgnoresExtraStatusContainer(t *testing.T) {
+	pom := render.PodWithMetrics{
+		Raw: load(t, "po_extra_status_container_not_ready"),
+	}
+
+	po := render.NewPod()
+	assert.NoError(t, po.Healthy(context.Background(), &pom))
 }
 
 func TestCheckPodStatus(t *testing.T) {
