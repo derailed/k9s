@@ -33,6 +33,10 @@
             "favorites": {
               "type": "array",
               "items": {"type": "string"}
+            },
+            "recent": {
+              "type": "array",
+              "items": {"type": "string"}
             }
           }
         },
