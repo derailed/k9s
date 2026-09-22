@@ -4,6 +4,7 @@
 package data
 
 import (
+	"fmt"
 	"log/slog"
 	"slices"
 	"sync"
@@ -17,11 +18,15 @@ const (
 	MaxFavoritesNS = 9
 )
 
-// Namespace tracks active and favorites namespaces.
+// Namespace tracks active, favorites and recently used namespaces.
+// Favorites are user managed and own the first slots. Recent ones fill in the
+// leftovers and get recycled oldest first.
 type Namespace struct {
-	Active        string   `yaml:"active"`
-	LockFavorites bool     `yaml:"lockFavorites"`
+	Active string `yaml:"active"`
+	// Deprecated: only read to migrate legacy configurations.
+	LockFavorites *bool    `yaml:"lockFavorites,omitempty"`
 	Favorites     []string `yaml:"favorites"`
+	Recent        []string `yaml:"recent"`
 	mx            sync.RWMutex
 }
 
@@ -36,23 +41,35 @@ func NewActiveNamespace(n string) *Namespace {
 	}
 
 	return &Namespace{
-		Active:    n,
-		Favorites: []string{client.DefaultNamespace},
+		Active: n,
+		Recent: []string{client.DefaultNamespace},
 	}
+}
+
+// migrate tracks legacy auto-assigned favorites as recent namespaces.
+func (n *Namespace) migrate() {
+	if n.LockFavorites == nil {
+		return
+	}
+	if !*n.LockFavorites {
+		n.Favorites, n.Recent = nil, n.Favorites
+	}
+	n.LockFavorites = nil
 }
 
 func (n *Namespace) merge(old *Namespace) {
 	n.mx.Lock()
 	defer n.mx.Unlock()
 
-	if n.LockFavorites {
-		return
-	}
 	for _, fav := range old.Favorites {
-		if slices.Contains(n.Favorites, fav) {
-			continue
+		if !slices.Contains(n.Favorites, fav) {
+			n.Favorites = append(n.Favorites, fav)
 		}
-		n.Favorites = append(n.Favorites, fav)
+	}
+	for _, ns := range old.Recent {
+		if !slices.Contains(n.Favorites, ns) && !slices.Contains(n.Recent, ns) {
+			n.Recent = append(n.Recent, ns)
+		}
 	}
 
 	n.trimFavNs()
@@ -60,13 +77,13 @@ func (n *Namespace) merge(old *Namespace) {
 
 // Validate validates a namespace is setup correctly.
 func (n *Namespace) Validate(conn client.Connection) {
-	n.mx.RLock()
-	defer n.mx.RUnlock()
+	n.mx.Lock()
+	defer n.mx.Unlock()
 
 	if conn == nil || !conn.IsValidNamespace(n.Active) {
 		return
 	}
-	for _, ns := range n.Favorites {
+	for _, ns := range slices.Concat(n.Favorites, n.Recent) {
 		if !conn.IsValidNamespace(ns) {
 			slog.Debug("Invalid favorite found",
 				slogs.Namespace, ns,
@@ -93,8 +110,8 @@ func (n *Namespace) SetActive(ns string, _ KubeSettings) error {
 	}
 	n.Active = ns
 
-	if ns != "" && !n.LockFavorites {
-		n.addFavNS(ns)
+	if ns != "" {
+		n.addRecentNS(ns)
 	}
 
 	return nil
@@ -104,27 +121,39 @@ func (n *Namespace) isAllNamespaces() bool {
 	return n.Active == client.NamespaceAll || n.Active == ""
 }
 
+// FavNamespaces returns the favorite namespaces in slot order.
+func (n *Namespace) FavNamespaces() []string {
+	n.mx.RLock()
+	defer n.mx.RUnlock()
+
+	return slices.Concat(n.Favorites, n.Recent)
+}
+
 // AddFavNS adds a namespace to favorites if not already present.
-func (n *Namespace) AddFavNS(ns string) {
+func (n *Namespace) AddFavNS(ns string) error {
 	n.mx.Lock()
 	defer n.mx.Unlock()
 
-	n.addFavNS(ns)
+	if slices.Contains(n.Favorites, ns) {
+		return nil
+	}
+	if len(n.Favorites) >= MaxFavoritesNS {
+		return fmt.Errorf("unable to fav %q. Only %d favorites are allowed", ns, MaxFavoritesNS)
+	}
+	n.Favorites = append(n.Favorites, ns)
+	n.rmRecentNS(ns)
+	n.trimFavNs()
+
+	return nil
 }
 
-func (n *Namespace) addFavNS(ns string) {
-	if slices.Contains(n.Favorites, ns) {
+func (n *Namespace) addRecentNS(ns string) {
+	if slices.Contains(n.Favorites, ns) || slices.Contains(n.Recent, ns) {
 		return
 	}
 
-	nfv := make([]string, 0, MaxFavoritesNS)
-	nfv = append(nfv, ns)
-	for i := range n.Favorites {
-		if i+1 < MaxFavoritesNS {
-			nfv = append(nfv, n.Favorites[i])
-		}
-	}
-	n.Favorites = nfv
+	n.Recent = append([]string{ns}, n.Recent...)
+	n.trimFavNs()
 }
 
 // RmFavNS removes a namespace from favorites.
@@ -136,26 +165,16 @@ func (n *Namespace) RmFavNS(ns string) {
 }
 
 func (n *Namespace) rmFavNS(ns string) {
-	victim := -1
-	for i, f := range n.Favorites {
-		if f == ns {
-			victim = i
-			break
-		}
+	if i := slices.Index(n.Favorites, ns); i >= 0 {
+		n.Favorites = slices.Delete(n.Favorites, i, i+1)
 	}
-	if victim < 0 {
-		return
-	}
-
-	n.Favorites = append(n.Favorites[:victim], n.Favorites[victim+1:]...)
+	n.rmRecentNS(ns)
 }
 
-// SetLockFavorites enables or disables the lock on favorites.
-func (n *Namespace) SetLockFavorites(lock bool) {
-	n.mx.Lock()
-	defer n.mx.Unlock()
-
-	n.LockFavorites = lock
+func (n *Namespace) rmRecentNS(ns string) {
+	if i := slices.Index(n.Recent, ns); i >= 0 {
+		n.Recent = slices.Delete(n.Recent, i, i+1)
+	}
 }
 
 // IsFav checks if a namespace is in the favorites list.
@@ -166,9 +185,14 @@ func (n *Namespace) IsFav(ns string) bool {
 	return slices.Contains(n.Favorites, ns)
 }
 
+// trimFavNs caps favorites and recycles the oldest recent namespaces to fit in
+// the leftover slots.
 func (n *Namespace) trimFavNs() {
 	if len(n.Favorites) > MaxFavoritesNS {
 		slog.Debug("Number of favorite exceeds hard limit. Trimming.", slogs.Max, MaxFavoritesNS)
 		n.Favorites = n.Favorites[:MaxFavoritesNS]
+	}
+	if free := MaxFavoritesNS - len(n.Favorites); len(n.Recent) > free {
+		n.Recent = n.Recent[:free]
 	}
 }

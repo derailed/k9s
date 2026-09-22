@@ -13,6 +13,7 @@ import (
 
 const (
 	favNSIndicator     = "+"
+	recentNSIndicator  = "~"
 	defaultNSIndicator = "(*)"
 )
 
@@ -38,7 +39,6 @@ func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 		ui.KeyU:        ui.NewKeyAction("Use", n.useNsCmd, true),
 		tcell.KeyCtrlF: ui.NewKeyAction("Toggle Favorites", n.toggleFavsCmd, true),
 		ui.KeyF:        ui.NewKeyAction("Fav/Unfav", n.toggleFavCmd, true),
-		tcell.KeyCtrlL: ui.NewKeyAction("Unlock Favorites", n.unlockFavsCmd, true),
 	})
 }
 
@@ -53,6 +53,10 @@ func (n *Namespace) toggleFavCmd(*tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	_, ns := client.Namespaced(path)
+	if ns == client.NamespaceAll {
+		n.App().Flash().Warn("Namespace \"all\" is always mapped to slot 0. It can't be favorited")
+		return nil
+	}
 	if n.App().Config.IsFavNamespace(ns) {
 		if err := n.App().Config.RemoveFavNamespace(ns); err != nil {
 			n.App().Flash().Err(err)
@@ -64,19 +68,9 @@ func (n *Namespace) toggleFavCmd(*tcell.EventKey) *tcell.EventKey {
 			n.App().Flash().Err(err)
 			return nil
 		}
-		n.App().Flash().Infof("Added %q to favorites (auto-locked)", ns)
+		n.App().Flash().Infof("Added %q to favorites", ns)
 	}
 	n.Refresh()
-
-	return nil
-}
-
-func (n *Namespace) unlockFavsCmd(*tcell.EventKey) *tcell.EventKey {
-	if err := n.App().Config.UnlockFavNamespaces(); err != nil {
-		n.App().Flash().Err(err)
-		return nil
-	}
-	n.App().Flash().Info("Favorites unlocked - dynamic assignment enabled")
 
 	return nil
 }
@@ -129,13 +123,19 @@ func (n *Namespace) decorate(td *model1.TableData) {
 	}
 
 	var (
-		favs     = sets.New(n.App().Config.FavNamespaces()...)
-		activeNS = n.App().Config.ActiveNamespace()
+		cfg      = n.App().Config
+		all      = sets.New(cfg.FavNamespaces()...) // favorites+recent, ie slotted
+		activeNS = cfg.ActiveNamespace()
 	)
 	td.RowsRange(func(i int, re model1.RowEvent) bool {
 		_, n := client.Namespaced(re.Row.ID)
-		if favs.Has(n) {
+		switch {
+		case n == client.NamespaceAll:
+			// Always slot 0. Not part of favorites/recent.
+		case cfg.IsFavNamespace(n):
 			re.Row.Fields[0] += favNSIndicator
+		case all.Has(n):
+			re.Row.Fields[0] += recentNSIndicator
 		}
 		if n == activeNS {
 			re.Row.Fields[0] += defaultNSIndicator
