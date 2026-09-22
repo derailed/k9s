@@ -241,7 +241,8 @@ func (t *TableData) filterToast() *RowEvents {
 func (t *TableData) filterFavs() *RowEvents {
 	rr := NewRowEvents(10)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
-		if len(re.Row.Fields) > 0 && strings.HasSuffix(re.Row.Fields[0], "+") {
+		// Favs may carry additional decorations ie the active ns marker.
+		if len(re.Row.Fields) > 0 && strings.Contains(re.Row.Fields[0], "+") {
 			rr.Add(re)
 		}
 		return true

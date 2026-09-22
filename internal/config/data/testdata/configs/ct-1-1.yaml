@@ -4,7 +4,6 @@ k9s:
   readOnly: false
   namespace:
     active: ns-1
-    lockFavorites: true
     favorites:
     - default
     - ns-1
