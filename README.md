@@ -415,6 +415,8 @@ K9s uses aliases to navigate most K8s resources.
 | Toggle breadcrumbs                                                              | `ctrl-g`                       |                                                                        |
 | Move selected column left                                                       | `shift-left arrow`             |                                                                        |
 | Move selected column right                                                      | `shift-right arrow`            |                                                                        |
+| Page down                                                                       | `shift-down arrow`             | Matches vi's terminal keymap (`<S-Down>` == `<PageDown>`)              |
+| Page up                                                                         | `shift-up arrow`               | Matches vi's terminal keymap (`<S-Up>` == `<PageUp>`)                  |
 | Sort by selected column                                                         | `shift-o`                      |                                                                        |
 | Sort by Name                                                                    | `shift-n`                      |                                                                        |
 | Sort by Age                                                                     | `shift-a`                      |                                                                        |
