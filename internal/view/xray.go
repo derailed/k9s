@@ -773,7 +773,10 @@ func fuzzyFilter(q, path string) bool {
 }
 
 func rxFilter(q, path string) bool {
-	rx := regexp.MustCompile(`(?i)` + q)
+	rx, err := regexp.Compile(`(?i)` + q)
+	if err != nil {
+		return false
+	}
 	tokens := strings.Split(path, xray.PathSeparator)
 	for _, t := range tokens {
 		if rx.MatchString(t) {
@@ -786,7 +789,10 @@ func rxFilter(q, path string) bool {
 
 func rxInverseFilter(q, path string) bool {
 	q = strings.TrimSpace(q[1:])
-	rx := regexp.MustCompile(`(?i)` + q)
+	rx, err := regexp.Compile(`(?i)` + q)
+	if err != nil {
+		return true
+	}
 	tokens := strings.Split(path, xray.PathSeparator)
 	for _, t := range tokens {
 		if rx.MatchString(t) {
