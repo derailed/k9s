@@ -86,6 +86,14 @@ func (a *App) UpdateClusterInfo() {
 	}
 }
 
+// RefreshHeader rebuilds the header layout.
+func (a *App) RefreshHeader() {
+	if a.Main.GetPrimitive("main") == nil {
+		return
+	}
+	a.toggleHeader(a.showHeader, a.showLogo)
+}
+
 // ConOK checks the connection is cool, returns false otherwise.
 func (a *App) ConOK() bool {
 	return atomic.LoadInt32(&a.conRetry) == 0
@@ -279,7 +287,7 @@ func (a *App) toggleHeader(header, logo bool) {
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
+		flex.AddItemAtIndex(0, a.buildHeader(), a.headerHeight(), 1, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
@@ -324,10 +332,22 @@ func (a *App) buildHeader() tview.Primitive {
 	header.AddItem(a.Menu(), 0, 1, false)
 
 	if a.showLogo {
-		header.AddItem(a.Logo(), 26, 1, false)
+		header.AddItem(a.Logo(), a.logoWidth(), 1, false)
 	}
 
 	return header
+}
+
+func (a *App) headerHeight() int {
+	if !a.showLogo {
+		return 7
+	}
+
+	return max(7, a.Logo().Height())
+}
+
+func (a *App) logoWidth() int {
+	return max(26, a.Logo().Width())
 }
 
 // Halt stop the application event loop.
@@ -515,6 +535,7 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		)
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
 		a.ReloadStyles()
+		a.toggleHeader(a.showHeader, a.showLogo)
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		if a.clusterModel != nil {
 			go a.clusterModel.Reset(a.factory)

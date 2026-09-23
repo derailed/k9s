@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -391,6 +392,18 @@ func (k *K9s) IsInvert() bool {
 	}
 
 	return k.UI.Invert
+}
+
+// Logo returns the configured header logo ascii art.
+func (k *K9s) Logo() string {
+	if cfg := k.getActiveConfig(); cfg != nil && cfg.Context != nil && strings.TrimSpace(cfg.Context.Logo) != "" {
+		return cfg.Context.Logo
+	}
+	if strings.TrimSpace(k.UI.Logo) == "" {
+		return ""
+	}
+
+	return k.UI.Logo
 }
 
 // GetRefreshRate returns the current refresh rate.
