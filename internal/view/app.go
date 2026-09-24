@@ -481,7 +481,8 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 			a.Config.SetActiveView(client.PodGVR.String())
 		}
 		ns := a.Config.ActiveNamespace()
-		if !a.Conn().IsValidNamespace(ns) {
+		_, nsExplicit := ci.NSArg()
+		if !nsExplicit && !a.Conn().IsValidNamespace(ns) {
 			slog.Warn("Unable to validate namespace", slogs.Namespace, ns)
 			if err := a.Config.SetActiveNamespace(ns); err != nil {
 				return err
