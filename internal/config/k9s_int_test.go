@@ -120,6 +120,39 @@ func Test_k9sOverrides(t *testing.T) {
 	}
 }
 
+func Test_toggleReadOnly(t *testing.T) {
+	uu := map[string]struct {
+		k      *K9s
+		expect []bool
+	}{
+		"from-rw": {
+			k:      &K9s{ReadOnly: false},
+			expect: []bool{true, false, true},
+		},
+		"from-ro": {
+			k:      &K9s{ReadOnly: true},
+			expect: []bool{false, true, false},
+		},
+		"from-manual-override": {
+			k: func() *K9s {
+				v := true
+				return &K9s{ReadOnly: false, manualReadOnly: &v}
+			}(),
+			expect: []bool{false, true, false},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			for i, expected := range u.expect {
+				u.k.ToggleReadOnly()
+				assert.Equal(t, expected, u.k.IsReadOnly(), "toggle #%d", i+1)
+			}
+		})
+	}
+}
+
 func Test_screenDumpDirOverride(t *testing.T) {
 	uu := map[string]struct {
 		dir string
