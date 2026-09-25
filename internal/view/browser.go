@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
 package view
@@ -42,13 +42,15 @@ type Browser struct {
 	cancelFn   context.CancelFunc
 	mx         sync.RWMutex
 	updating   bool
+	spinner    *ui.Spinner
 	firstView  atomic.Int32
 }
 
 // NewBrowser returns a new browser.
 func NewBrowser(gvr *client.GVR) ResourceViewer {
 	return &Browser{
-		Table: NewTable(gvr),
+		Table:   NewTable(gvr),
+		spinner: ui.NewSpinner(),
 	}
 }
 
@@ -176,6 +178,10 @@ func (b *Browser) Start() {
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
+
+	// Show loading spinner while resources are being fetched
+	b.showSpinner(fmt.Sprintf("Loading %s...", b.GVR().R()))
+
 	if err := b.GetModel().Watch(b.prepareContext()); err != nil {
 		go func() {
 			time.Sleep(500 * time.Millisecond)
@@ -185,8 +191,6 @@ func (b *Browser) Start() {
 		}()
 	}
 }
-
-// Stop terminates browser updates.
 func (b *Browser) Stop() {
 	b.mx.Lock()
 	if b.cancelFn != nil {
@@ -313,15 +317,19 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 	// While the informer cache hasn't synced yet, show a neutral status
 	// instead of a misleading "no resources found" warning.
 	if synced, err := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
+		b.showSpinner(fmt.Sprintf("Loading %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace())))
 		b.app.QueueUpdateDraw(func() {
 			if err != nil {
+				b.hideSpinner()
 				b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
 				return
 			}
-			b.app.Flash().Infof("Synchronizing %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace()))
 		})
 		return
 	}
+
+	// Data is synced but empty - hide spinner and show empty state
+	b.hideSpinner()
 
 	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
@@ -349,6 +357,9 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 		return
 	}
 
+	// Hide spinner when data is loaded
+	b.hideSpinner()
+
 	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		if b.getUpdating() {
@@ -369,7 +380,11 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 }
 
 // TableLoadFailed notifies view something went south.
+// TableLoadFailed notifies view something went south.
 func (b *Browser) TableLoadFailed(err error) {
+	// Hide spinner on load failure
+	b.hideSpinner()
+
 	b.app.QueueUpdateDraw(func() {
 		b.app.Flash().Err(err)
 		b.App().ClearStatus(false)
@@ -785,3 +800,25 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 	d := b.app.Styles.Dialog()
 	dialog.ShowDelete(&d, b.app.Content.Pages, msg, okFn, func() {})
 }
+
+
+// showSpinner displays a loading spinner with the given message.
+func (b *Browser) showSpinner(message string) {
+	if b.spinner == nil {
+		return
+	}
+	b.spinner.Start(message)
+
+	// 使用 Flash 消息显示加载状态
+	b.app.Flash().Info(message)
+}
+
+// hideSpinner removes the loading spinner.
+func (b *Browser) hideSpinner() {
+	if b.spinner == nil {
+		return
+	}
+	b.spinner.Stop()
+	b.app.Flash().Clear()
+}
+
