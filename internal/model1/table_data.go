@@ -461,24 +461,17 @@ func (t *TableData) Delete(newKeys sets.Set[string]) {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	victims := sets.New[string]()
+	victims := make([]string, 0)
 	t.rowEvents.Range(func(_ int, e RowEvent) bool {
 		if newKeys.Has(e.Row.ID) {
 			delete(newKeys, e.Row.ID)
 		} else {
-			victims.Insert(e.Row.ID)
+			victims = append(victims, e.Row.ID)
 		}
 		return true
 	})
 
-	for _, id := range victims.UnsortedList() {
-		if err := t.rowEvents.Delete(id); err != nil {
-			slog.Error("Table delete failed",
-				slogs.Error, err,
-				slogs.Message, id,
-			)
-		}
-	}
+	t.rowEvents.DeleteBatch(victims)
 }
 
 // Diff checks if two tables are equal.
