@@ -87,20 +87,30 @@ func podLogs(ctx context.Context, sel map[string]string, opts *LogOptions) ([]Lo
 	if err != nil {
 		return nil, err
 	}
-	opts.MultiPods = true
 
-	var po Pod
-	po.Init(f, client.PodGVR)
-
-	outs := make([]LogChan, 0, len(oo))
+	fqns := make([]string, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
 			return nil, fmt.Errorf("expected unstructured got %t", o)
 		}
-		opts = opts.Clone()
-		opts.Path = client.FQN(u.GetNamespace(), u.GetName())
-		cc, err := po.TailLogs(ctx, opts)
+		fqns = append(fqns, client.FQN(u.GetNamespace(), u.GetName()))
+	}
+
+	return tailPodsLogs(ctx, f, fqns, opts)
+}
+
+func tailPodsLogs(ctx context.Context, f Factory, fqns []string, opts *LogOptions) ([]LogChan, error) {
+	opts.MultiPods = true
+
+	var po Pod
+	po.Init(f, client.PodGVR)
+
+	outs := make([]LogChan, 0, len(fqns))
+	for _, fqn := range fqns {
+		o := opts.Clone()
+		o.Path = fqn
+		cc, err := po.TailLogs(ctx, o)
 		if err != nil {
 			return nil, err
 		}
@@ -108,6 +118,25 @@ func podLogs(ctx context.Context, sel map[string]string, opts *LogOptions) ([]Lo
 	}
 
 	return outs, nil
+}
+
+func podFromSelector(f Factory, ns string, sel map[string]string) (string, error) {
+	oo, err := f.List(client.PodGVR, ns, true, labels.Set(sel).AsSelector())
+	if err != nil {
+		return "", err
+	}
+
+	if len(oo) == 0 {
+		return "", fmt.Errorf("no matching pods for %v", sel)
+	}
+
+	var pod v1.Pod
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(oo[0].(*unstructured.Unstructured).Object, &pod)
+	if err != nil {
+		return "", err
+	}
+
+	return client.FQN(pod.Namespace, pod.Name), nil
 }
 
 // Pod returns a pod victim by name.
