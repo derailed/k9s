@@ -113,6 +113,16 @@ func (h *HelmHistory) ToYAML(path string, _ bool) (string, error) {
 	return resp.Release.Manifest, nil
 }
 
+// ToKYAML returns the chart manifest as kyaml.
+func (h *HelmHistory) ToKYAML(path string, showManaged bool) (string, error) {
+	raw, err := h.ToYAML(path, showManaged)
+	if err != nil {
+		return "", err
+	}
+
+	return YAMLToKYAML(raw)
+}
+
 // GetValues return the config for this chart.
 func (h *HelmHistory) GetValues(path string, allValues bool) ([]byte, error) {
 	rel, err := h.Get(context.Background(), path)
