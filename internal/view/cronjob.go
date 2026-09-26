@@ -16,17 +16,10 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/derailed/tview"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-)
-
-const (
-	suspendDialogKey     = "suspend"
-	lastScheduledCol     = "LAST_SCHEDULE"
-	defaultSuspendStatus = "true"
 )
 
 // CronJob represents a cronjob viewer.
@@ -120,55 +113,67 @@ func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (c *CronJob) toggleSuspendCmd(evt *tcell.EventKey) *tcell.EventKey {
-	table := c.GetTable()
-	sel := table.GetSelectedItem()
-
-	if sel == "" {
+	fqns := c.GetTable().GetSelectedItems()
+	if len(fqns) == 0 {
 		return evt
 	}
 
-	cell := table.GetCell(c.GetTable().GetSelectedRowIndex(), c.GetTable().NameColIndex()+2)
-
-	if cell == nil {
-		c.App().Flash().Errf("Unable to assert current status")
+	res, err := dao.AccessorFor(c.App().factory, c.GVR())
+	if err != nil {
+		c.App().Flash().Err(fmt.Errorf("no accessor for %q", c.GVR()))
 		return nil
+	}
+	cronJob, ok := res.(*dao.CronJob)
+	if !ok {
+		c.App().Flash().Errf("expecting a cron job for %q", c.GVR())
+		return nil
+	}
+
+	// Resume only when every selected cronjob is already suspended, otherwise suspend them all.
+	suspend := false
+	for _, fqn := range fqns {
+		cj, err := cronJob.GetInstance(fqn)
+		if err != nil {
+			c.App().Flash().Err(err)
+			return nil
+		}
+		if cj.Spec.Suspend == nil || !*cj.Spec.Suspend {
+			suspend = true
+		}
 	}
 
 	c.Stop()
 	defer c.Start()
 
-	c.showSuspendDialog(cell, sel)
+	c.showSuspendDialog(cronJob, fqns, suspend)
 
 	return nil
 }
 
-func (c *CronJob) showSuspendDialog(cell *tview.TableCell, sel string) {
-	title := "Suspend"
-
-	if strings.TrimSpace(cell.Text) == defaultSuspendStatus {
-		title = "Resume"
+func (c *CronJob) showSuspendDialog(cronJob *dao.CronJob, fqns []string, suspend bool) {
+	title, done := "Suspend", "Suspended"
+	if !suspend {
+		title, done = "Resume", "Resumed"
+	}
+	target := fqns[0]
+	if len(fqns) > 1 {
+		target = fmt.Sprintf("%d CronJobs", len(fqns))
 	}
 
 	d := c.App().Styles.Dialog()
-	dialog.ShowConfirm(&d, c.App().Content.Pages, title, sel, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
-		defer cancel()
-
-		res, err := dao.AccessorFor(c.App().factory, c.GVR())
-		if err != nil {
-			c.App().Flash().Err(fmt.Errorf("no accessor for %q", c.GVR()))
-			return
+	dialog.ShowConfirm(&d, c.App().Content.Pages, title, target, func() {
+		var failed int
+		for _, fqn := range fqns {
+			ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
+			err := cronJob.SetSuspend(ctx, fqn, suspend)
+			cancel()
+			if err != nil {
+				c.App().Flash().Errf("Cronjob %s failed for %s: %v", strings.ToLower(title), fqn, err)
+				failed++
+			}
 		}
-
-		cronJob, ok := res.(*dao.CronJob)
-		if !ok {
-			c.App().Flash().Errf("expecting a cron job for %q", c.GVR())
-			return
-		}
-
-		if err := cronJob.ToggleSuspend(ctx, sel); err != nil {
-			c.App().Flash().Errf("Cronjob %s failed for %v", strings.ToLower(title), err)
-			return
+		if failed == 0 {
+			c.App().Flash().Infof("%s %s", done, target)
 		}
 	}, func() {})
 }
