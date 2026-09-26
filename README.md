@@ -407,6 +407,7 @@ K9s uses aliases to navigate most K8s resources.
 | Launch Popeye view                                                              | `:`popeye or pop⏎              | See [popeye](#popeye)                                                  |
 | Mark resource                                                                   | `space`                        |                                                                        |
 | Mark range of resources                                                         | `ctrl-space`                   |                                                                        |
+| Mark all visible resources (press again to unmark them)                         | `ctrl-x`                       |                                                                        |
 | Clear all marks                                                                 | `ctrl-\`                       |                                                                        |
 | Save resources to file                                                          | `ctrl-s`                       |                                                                        |
 | Toggle faults/error display                                                     | `ctrl-z`                       |                                                                        |
