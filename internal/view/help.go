@@ -291,6 +291,10 @@ func (*Help) showGeneral() model.MenuHints {
 			Description: "Mark Range",
 		},
 		{
+			Mnemonic:    "Ctrl-x",
+			Description: "Mark All",
+		},
+		{
 			Mnemonic:    "Ctrl-\\",
 			Description: "Mark Clear",
 		},
