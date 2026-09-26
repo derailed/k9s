@@ -4,6 +4,7 @@
 package model_test
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/derailed/k9s/internal/model"
@@ -146,4 +147,34 @@ func TestCmdBuffEmpty(t *testing.T) {
 		assert.Equal(t, u.empty, b.Empty())
 		b.Reset()
 	}
+}
+
+type noopListener struct{}
+
+func (*noopListener) BufferChanged(string, string)        {}
+func (*noopListener) BufferCompleted(string, string)      {}
+func (*noopListener) BufferActive(bool, model.BufferKind) {}
+
+func TestCmdBuffConcurrentListeners(_ *testing.T) {
+	b := model.NewCmdBuff('>', model.CommandBuffer)
+	b.AddListener(&noopListener{})
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for range 1_000 {
+			l := &noopListener{}
+			b.AddListener(l)
+			b.RemoveListener(l)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for range 1_000 {
+			b.SetText("a", "", true)
+			b.SetActive(true)
+		}
+	}()
+	wg.Wait()
 }
