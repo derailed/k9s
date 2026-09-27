@@ -63,7 +63,7 @@ func TestSecretListRequestsPartialObjectMetadata(t *testing.T) {
 	assert.Contains(t, request.Header.Get("Accept"), "as=PartialObjectMetadataList")
 	assert.Equal(t, "app=db", request.URL.Query().Get("labelSelector"))
 	assert.Equal(t, "metadata.name=database-credentials", request.URL.Query().Get("fieldSelector"))
-	assert.False(t, strings.Contains(fmt.Sprintf("%#v", metadata), "c2VjcmV0"))
+	assert.NotContains(t, fmt.Sprintf("%#v", metadata), "c2VjcmV0")
 }
 
 func TestEncodedSecretDescribe(t *testing.T) {
