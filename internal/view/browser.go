@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -45,6 +46,8 @@ type Browser struct {
 	cancelFn   context.CancelFunc
 	mx         sync.RWMutex
 	updating   bool
+	actionsLoaded atomic.Bool
+	firstView     atomic.Int32
 	spinner    *ui.Spinner
 }
 
@@ -176,6 +179,8 @@ func (b *Browser) Start() {
 	}
 
 	b.Stop()
+	b.firstView.Store(0) // Reset first view counter on each start
+	b.actionsLoaded.Store(false)
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -697,13 +702,20 @@ func (b *Browser) refreshActions() {
 	}
 	b.Actions().Merge(aa)
 
-	if err := pluginActions(b, b.Actions()); err != nil {
-		slog.Warn("Plugins load failed", slogs.Error, err)
-		b.app.Logo().Warn("Plugins load failed!")
-	}
-	if err := hotKeyActions(b, b.Actions()); err != nil {
-		slog.Warn("Hotkeys load failed", slogs.Error, err)
-		b.app.Logo().Warn("HotKeys load failed!")
+	if !b.actionsLoaded.Load() {
+		// pluginActions no-ops without a live connection: don't cache until one actually loads.
+		connOK := b.app.Conn() != nil && b.app.Conn().ConnectionOK()
+		if err := pluginActions(b, b.Actions()); err != nil {
+			slog.Warn("Plugins load failed", slogs.Error, err)
+			b.app.Logo().Warn("Plugins load failed!")
+		}
+		if err := hotKeyActions(b, b.Actions()); err != nil {
+			slog.Warn("Hotkeys load failed", slogs.Error, err)
+			b.app.Logo().Warn("HotKeys load failed!")
+		}
+		if connOK {
+			b.actionsLoaded.Store(true)
+		}
 	}
 	b.app.Menu().HydrateMenu(b.Hints())
 }
