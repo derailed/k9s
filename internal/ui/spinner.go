@@ -5,6 +5,7 @@ package ui
 
 import (
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -15,13 +16,14 @@ import (
 type Spinner struct {
 	*tview.TextView
 
-	message   string
-	frames    []string
-	frameIdx  int
-	active    bool
-	cancel    chan struct{}
-	mx        sync.Mutex
-	fgColor   string
+	message  string
+	frames   []string
+	frameIdx int
+	active   bool
+	cancel   chan struct{}
+	mx       sync.Mutex
+	fgColor  string
+	app      *tview.Application
 }
 
 // NewSpinner returns a new spinner widget.
@@ -35,6 +37,13 @@ func NewSpinner() *Spinner {
 	s.SetTextAlign(tview.AlignCenter)
 	s.SetDynamicColors(true)
 	return s
+}
+
+// SetApp sets the tview application reference for thread-safe UI updates.
+func (s *Spinner) SetApp(app *tview.Application) {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+	s.app = app
 }
 
 // SetMessage sets the spinner message.
@@ -51,17 +60,21 @@ func (s *Spinner) SetColor(color string) {
 	s.fgColor = color
 }
 
-// Start begins the spinner animation.
+// Start begins the spinner animation (idempotent - safe to call multiple times).
 func (s *Spinner) Start(message string) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
 	if s.active {
+		// Already active, just update the message
+		s.message = message
+		
 		return
 	}
 	s.active = true
 	s.message = message
 	s.cancel = make(chan struct{})
+	
 	go s.animate()
 }
 
@@ -75,6 +88,7 @@ func (s *Spinner) Stop() {
 	}
 	s.active = false
 	close(s.cancel)
+	
 }
 
 // IsActive returns whether the spinner is currently animating.
@@ -91,17 +105,24 @@ func (s *Spinner) animate() {
 	for {
 		select {
 		case <-s.cancel:
+			
 			return
 		case <-ticker.C:
+			
 			s.mx.Lock()
 			frame := s.frames[s.frameIdx]
 			msg := s.message
 			color := s.fgColor
+			app := s.app
 			s.frameIdx = (s.frameIdx + 1) % len(s.frames)
 			s.mx.Unlock()
 
 			display := fmt.Sprintf("[%s::b]%s [-::]%s", color, frame, msg)
-			s.SetText(display)
+			if app != nil {
+				app.QueueUpdateDraw(func() {
+					s.SetText(display)
+				})
+			}
 		}
 	}
 }

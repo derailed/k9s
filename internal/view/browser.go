@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -31,6 +30,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+// spinnerPage is the page name the loading spinner is registered under
+// in the app's page stack.
+const spinnerPage = "browserSpinner"
+
 // Browser represents a generic resource browser.
 type Browser struct {
 	*Table
@@ -43,7 +46,6 @@ type Browser struct {
 	mx         sync.RWMutex
 	updating   bool
 	spinner    *ui.Spinner
-	firstView  atomic.Int32
 }
 
 // NewBrowser returns a new browser.
@@ -174,7 +176,6 @@ func (b *Browser) Start() {
 	}
 
 	b.Stop()
-	b.firstView.Store(0) // Reset first view counter on each start
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -186,6 +187,7 @@ func (b *Browser) Start() {
 		go func() {
 			time.Sleep(500 * time.Millisecond)
 			b.app.QueueUpdateDraw(func() {
+				b.hideSpinner()
 				b.App().Flash().Errf("Watcher failed for %s -- %s", b.GVR(), err)
 			})
 		}()
@@ -198,6 +200,7 @@ func (b *Browser) Stop() {
 		b.cancelFn = nil
 	}
 	b.mx.Unlock()
+	b.hideSpinner()
 	b.GetModel().RemoveListener(b)
 	b.CmdBuff().RemoveListener(b)
 	b.Table.Stop()
@@ -308,27 +311,19 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 	if !b.app.ConOK() || cancel == nil || !b.app.IsRunning() {
 		return
 	}
-	// Skip warning on first view (likely during initialization)
-	if b.firstView.Load() == 0 || mdata.HeaderCount() == 0 {
-		b.firstView.Add(1)
-		return
-	}
 
-	// While the informer cache hasn't synced yet, show a neutral status
-	// instead of a misleading "no resources found" warning.
+	// Check if informer cache has synced
 	if synced, err := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
+		// Not synced yet - show spinner
 		b.showSpinner(fmt.Sprintf("Loading %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace())))
-		b.app.QueueUpdateDraw(func() {
-			if err != nil {
-				b.hideSpinner()
-				b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
-				return
-			}
-		})
+		if err != nil {
+			b.hideSpinner()
+			b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
+		}
 		return
 	}
 
-	// Data is synced but empty - hide spinner and show empty state
+	// Data synced but empty - hide spinner and show empty state
 	b.hideSpinner()
 
 	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
@@ -348,6 +343,7 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(mdata *model1.TableData) {
+	
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -379,7 +375,6 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 	})
 }
 
-// TableLoadFailed notifies view something went south.
 // TableLoadFailed notifies view something went south.
 func (b *Browser) TableLoadFailed(err error) {
 	// Hide spinner on load failure
@@ -801,24 +796,43 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 	dialog.ShowDelete(&d, b.app.Content.Pages, msg, okFn, func() {})
 }
 
+// in the app's page stack.
 
 // showSpinner displays a loading spinner with the given message.
 func (b *Browser) showSpinner(message string) {
-	if b.spinner == nil {
+	
+	if b.spinner == nil || b.app == nil {
 		return
 	}
+	// Set app reference for thread-safe UI updates
+	b.spinner.SetApp(b.app.Application)
+	b.spinner.SetMessage(message)
 	b.spinner.Start(message)
 
-	// 使用 Flash 消息显示加载状态
+	// Display loading status using a Flash message
 	b.app.Flash().Info(message)
+
+	// Add spinner to the page stack and show it
+    if b.app.Content != nil && b.app.Content.Pages != nil {
+        b.app.Content.Pages.AddPage(spinnerPage, b.spinner, true, true)
+        // ↑ resize=true, visible=true
+    }
 }
 
 // hideSpinner removes the loading spinner.
 func (b *Browser) hideSpinner() {
+	
 	if b.spinner == nil {
 		return
 	}
 	b.spinner.Stop()
-	b.app.Flash().Clear()
+	if b.app != nil && b.app.Content != nil && b.app.Content.Pages != nil {
+        if b.app.Content.Pages.HasPage(spinnerPage) {
+            b.app.Content.Pages.RemovePage(spinnerPage)
+        }
+    }
 }
+
+
+
 
