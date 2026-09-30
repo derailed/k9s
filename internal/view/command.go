@@ -226,16 +226,21 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) 
 	co := c.componentFor(gvr, fqn, v)
 	co.SetFilter("", true)
 	co.SetLabelSelector(labels.Everything(), true)
-	if f, ok := p.FilterArg(); ok {
+
+	// Filter and label selector are mutually exclusive; label wins if both present.
+	if sel, err := p.LabelsSelector(); err != nil {
+		slog.Error("Unable to grok labels selector", slogs.Error, err)
+	} else if !sel.Empty() {
+		co.SetLabelSelector(sel, false)
+	} else if f, ok := p.FilterArg(); ok {
 		co.SetFilter(f, true)
-	}
-	if f, ok := p.FuzzyArg(); ok {
+	} else if f, ok := p.FuzzyArg(); ok {
 		co.SetFilter("-f "+f, true)
 	}
-	if sel, err := p.LabelsSelector(); err == nil {
-		co.SetLabelSelector(sel, false)
-	} else {
-		slog.Error("Unable to grok labels selector", slogs.Error, err)
+
+	if col, asc, ok := p.SortArg(); ok {
+		co.GetTable().SetSortCol(col, asc)
+		co.GetTable().SetManualSort(true)
 	}
 
 	return c.exec(p, gvr, co, clearStack, pushCmd)
