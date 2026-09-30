@@ -74,4 +74,9 @@ var (
 		"xr",
 		"xray",
 	)
+	ownersCmd = sets.New(
+		"owners",
+		"own",
+		"ot",
+	)
 )
