@@ -131,6 +131,7 @@ func (p *Pod) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyO: ui.NewKeyAction("Show Node", p.showNode, true),
 	})
+	aa.Merge(resourceSorters(p.GetTable()))
 }
 
 func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
@@ -584,4 +585,13 @@ func osFromSelector(s map[string]string) (string, bool) {
 	platform, ok := s[osSelector]
 
 	return platform, ok
+}
+
+// resourceSorters returns the CPU and MEM sort shortcuts shared by the views
+// that show resource usage columns.
+func resourceSorters(t *Table) *ui.KeyActions {
+	return ui.NewKeyActionsFromMap(ui.KeyMap{
+		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", t.SortColCmd(cpuCol, false), false),
+		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", t.SortColCmd(memCol, false), false),
+	})
 }

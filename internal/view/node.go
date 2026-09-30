@@ -85,6 +85,7 @@ func (n *Node) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyY: ui.NewKeyAction(yamlAction, n.yamlCmd, true),
 	})
+	aa.Merge(resourceSorters(n.GetTable()))
 }
 
 func (n *Node) showPods(a *App, _ ui.Tabular, _ *client.GVR, path string) {
