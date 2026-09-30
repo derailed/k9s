@@ -12,7 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 // ValueExtender adds values actions to a given viewer.

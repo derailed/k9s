@@ -9,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 // User presents a user viewer.
@@ -27,7 +27,7 @@ func NewUser(gvr *client.GVR) ResourceViewer {
 }
 
 func (u *User) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlD, ui.KeyE)
+	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, ui.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlD, ui.KeyE)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Rules", u.policyCmd, true),
 	})

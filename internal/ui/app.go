@@ -12,8 +12,8 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/slogs"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 )
 
 // App represents an application.
@@ -285,12 +285,41 @@ func (a *App) Flash() *model.Flash {
 
 // AsKey converts rune to keyboard key.
 func AsKey(evt *tcell.EventKey) tcell.Key {
+	if evt.Key() == tcell.KeyTab && evt.Modifiers()&tcell.ModShift != 0 {
+		return tcell.KeyBacktab
+	}
 	if evt.Key() != tcell.KeyRune {
 		return evt.Key()
 	}
-	key := tcell.Key(evt.Rune())
-	if evt.Modifiers() == tcell.ModAlt {
-		key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
+	// Shortcuts are single characters. Do not turn a multi-rune grapheme
+	// or an empty key event into a shortcut using only its first rune.
+	rr := []rune(evt.Str())
+	if len(rr) != 1 {
+		return tcell.KeyRune
 	}
-	return key
+	r := rr[0]
+	if evt.Modifiers()&tcell.ModCtrl != 0 {
+		if r == ' ' {
+			return KeyCtrlSpace
+		}
+		if r == '\\' {
+			return KeyCtrlBackslash
+		}
+		if r >= 'a' && r <= 'z' {
+			return tcell.KeyCtrlA + tcell.Key(r-'a')
+		}
+		if r >= 'A' && r <= 'Z' {
+			return tcell.KeyCtrlA + tcell.Key(r-'A')
+		}
+		return tcell.KeyRune
+	}
+	if evt.Modifiers() == tcell.ModAlt {
+		return tcell.Key(int16(r) * int16(evt.Modifiers()))
+	}
+	// Tcell v3's Ctrl-A..Z constants overlap ASCII uppercase letters.
+	// Keep shifted K9s shortcuts in a separate application key range.
+	if r >= 'A' && r <= 'Z' {
+		return KeyShiftA + tcell.Key(r-'A')
+	}
+	return tcell.Key(r)
 }

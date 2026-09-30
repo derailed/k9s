@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
 )
 
 // Rbac presents an RBAC policy viewer.
@@ -30,7 +29,7 @@ func NewRbac(gvr *client.GVR) ResourceViewer {
 }
 
 func (*Rbac) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, ui.KeyCtrlSpace, ui.KeySpace)
 }
 
 func showRules(app *App, _ ui.Tabular, gvr *client.GVR, path string) {

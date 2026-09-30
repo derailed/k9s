@@ -9,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 // Group presents a RBAC group viewer.
@@ -27,7 +27,7 @@ func NewGroup(gvr *client.GVR) ResourceViewer {
 }
 
 func (g *Group) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, ui.KeyCtrlSpace, ui.KeySpace)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Rules", g.policyCmd, true),
 	})

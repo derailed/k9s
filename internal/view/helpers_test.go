@@ -15,7 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 	"github.com/sahilm/fuzzy"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"

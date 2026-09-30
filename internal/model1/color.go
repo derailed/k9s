@@ -3,7 +3,7 @@
 
 package model1
 
-import "github.com/derailed/tcell/v2"
+import "github.com/gdamore/tcell/v3"
 
 var (
 	// ModColor row modified color.

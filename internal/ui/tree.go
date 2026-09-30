@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 )
 
 // KeyListenerFunc listens to key presses.

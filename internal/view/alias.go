@@ -9,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 const aliasTitle = "Aliases"
@@ -47,7 +47,7 @@ func (a *Alias) aliasContext(ctx context.Context) context.Context {
 }
 
 func (a *Alias) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, ui.KeyShiftS, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, ui.KeyShiftS, tcell.KeyCtrlS, ui.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, true),

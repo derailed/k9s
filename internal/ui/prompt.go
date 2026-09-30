@@ -10,8 +10,8 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 )
 
 const (
@@ -120,7 +120,7 @@ func (p *Prompt) SendKey(evt *tcell.EventKey) {
 // SendStrokes (testing only!)
 func (p *Prompt) SendStrokes(s string) {
 	for _, r := range s {
-		p.keyboard(tcell.NewEventKey(tcell.KeyRune, r, tcell.ModNone))
+		p.keyboard(tcell.NewEventKey(tcell.KeyRune, string(r), tcell.ModNone))
 	}
 }
 
@@ -148,17 +148,24 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	//nolint:exhaustive
-	switch evt.Key() {
-	case tcell.KeyBackspace2, tcell.KeyBackspace, tcell.KeyDelete:
+	key := evt.Key()
+	if key != tcell.KeyRune || evt.Modifiers()&tcell.ModCtrl != 0 {
+		key = AsKey(evt)
+	}
+	switch key {
+	case tcell.KeyBackspace, tcell.KeyDelete:
 		p.model.Delete()
 
 	case tcell.KeyRune:
-		r := evt.Rune()
-		// Filter out control characters and non-printable runes that may come from
-		// terminal escape sequences (e.g., cursor position reports like [7;15R)
-		// Only accept printable characters for user input
-		if isValidInputRune(r) {
-			p.model.Add(r)
+		if evt.Modifiers()&(tcell.ModCtrl|tcell.ModAlt|tcell.ModMeta) != 0 {
+			break
+		}
+		// Tcell v3 key text may be a complete grapheme cluster. Preserve all
+		// printable runes instead of truncating it to the first character.
+		for _, r := range evt.Str() {
+			if isValidInputRune(r) {
+				p.model.Add(r)
+			}
 		}
 
 	case tcell.KeyEscape:

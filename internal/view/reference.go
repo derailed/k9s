@@ -8,7 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 // Reference represents resource references.
@@ -39,7 +39,7 @@ func (r *Reference) Init(ctx context.Context) error {
 }
 
 func (r *Reference) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, ui.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlZ)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", r.gotoCmd, true),

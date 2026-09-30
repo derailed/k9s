@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

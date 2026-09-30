@@ -10,7 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +33,7 @@ func TestPrompt_FiltersControlCharacters(t *testing.T) {
 
 	for _, c := range controlChars {
 		t.Run(fmt.Sprintf("control_char_0x%02X", c), func(t *testing.T) {
-			evt := tcell.NewEventKey(tcell.KeyRune, c, tcell.ModNone)
+			evt := tcell.NewEventKey(tcell.KeyRune, string(c), tcell.ModNone)
 			p.SendKey(evt)
 			// Control characters should not be added to buffer
 			assert.Empty(t, m.GetText(), "Control character 0x%02X should be filtered", c)
@@ -60,7 +60,7 @@ func TestPrompt_AcceptsPrintableCharacters(t *testing.T) {
 
 	for _, c := range validChars {
 		t.Run(fmt.Sprintf("valid_char_%c", c), func(t *testing.T) {
-			evt := tcell.NewEventKey(tcell.KeyRune, c, tcell.ModNone)
+			evt := tcell.NewEventKey(tcell.KeyRune, string(c), tcell.ModNone)
 			p.SendKey(evt)
 			// Valid characters should be added
 			assert.Contains(t, m.GetText(), string(c), "Valid character %c should be accepted", c)
@@ -71,7 +71,7 @@ func TestPrompt_AcceptsPrintableCharacters(t *testing.T) {
 
 	// Test tab separately (it's a control char but should be accepted)
 	t.Run("valid_char_tab", func(t *testing.T) {
-		evt := tcell.NewEventKey(tcell.KeyRune, '\t', tcell.ModNone)
+		evt := tcell.NewEventKey(tcell.KeyRune, "\t", tcell.ModNone)
 		p.SendKey(evt)
 		// Tab should be accepted (it's a special case in the validation)
 		// Note: Tab might be converted to spaces or handled differently by the buffer
@@ -101,7 +101,7 @@ func TestPrompt_FiltersEscapeSequencePattern(t *testing.T) {
 
 	// Send each character
 	for _, r := range escapeSequence {
-		evt := tcell.NewEventKey(tcell.KeyRune, r, tcell.ModNone)
+		evt := tcell.NewEventKey(tcell.KeyRune, string(r), tcell.ModNone)
 		p.SendKey(evt)
 	}
 

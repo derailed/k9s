@@ -4,7 +4,7 @@ import (
 	"image"
 	"testing"
 
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 	"github.com/stretchr/testify/assert"
 )
 

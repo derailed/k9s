@@ -14,8 +14,8 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 )
 
 const (
@@ -40,7 +40,7 @@ func NewContext(gvr *client.GVR) ResourceViewer {
 }
 
 func (c *Context) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, ui.KeyCtrlSpace, ui.KeySpace)
 	if !c.App().Config.IsReadOnly() {
 		c.bindDangerousKeys(aa)
 	}
