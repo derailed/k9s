@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -282,6 +283,66 @@ func TestConfigRestConfig(t *testing.T) {
 	rc, err := cfg.RESTConfig()
 	require.NoError(t, err)
 	assert.Equal(t, "https://localhost:3002", rc.Host)
+}
+
+func setupInCluster(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "token"), []byte("s3cr3t"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "namespace"), []byte("fred-ns\n"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "ca.crt"), []byte("ca"), 0600))
+	t.Cleanup(client.MockSADir(dir))
+	t.Setenv("KUBERNETES_SERVICE_HOST", "10.96.0.1")
+	t.Setenv("KUBERNETES_SERVICE_PORT", "443")
+	// Hide any kubeconfig present on the host running the tests.
+	t.Setenv("KUBECONFIG", filepath.Join(dir, "no-such-kubeconfig"))
+}
+
+func TestConfigInCluster(t *testing.T) {
+	setupInCluster(t)
+	cfg := client.NewConfig(genericclioptions.NewConfigFlags(false))
+
+	ctx, err := cfg.CurrentContextName()
+	require.NoError(t, err)
+	assert.Equal(t, client.InClusterContext, ctx)
+
+	cl, err := cfg.CurrentClusterName()
+	require.NoError(t, err)
+	assert.Equal(t, client.InClusterContext, cl)
+
+	ns, err := cfg.CurrentNamespaceName()
+	require.NoError(t, err)
+	assert.Equal(t, "fred-ns", ns)
+
+	cc, err := cfg.Contexts()
+	require.NoError(t, err)
+	assert.Len(t, cc, 1)
+
+	rc, err := cfg.RESTConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "https://10.96.0.1:443", rc.Host)
+	assert.NotEmpty(t, rc.BearerTokenFile)
+}
+
+func TestConfigInClusterKubeConfigWins(t *testing.T) {
+	setupInCluster(t)
+	flags := genericclioptions.NewConfigFlags(false)
+	flags.KubeConfig = &kubeConfig
+	cfg := client.NewConfig(flags)
+
+	ctx, err := cfg.CurrentContextName()
+	require.NoError(t, err)
+	assert.Equal(t, "fred", ctx)
+}
+
+func TestConfigNoKubeConfigNotInCluster(t *testing.T) {
+	t.Setenv("KUBECONFIG", filepath.Join(t.TempDir(), "no-such-kubeconfig"))
+	t.Setenv("KUBERNETES_SERVICE_HOST", "")
+	t.Setenv("KUBERNETES_SERVICE_PORT", "")
+	cfg := client.NewConfig(genericclioptions.NewConfigFlags(false))
+
+	ctx, err := cfg.CurrentContextName()
+	require.NoError(t, err)
+	assert.Empty(t, ctx)
 }
 
 func TestConfigBadConfig(t *testing.T) {
