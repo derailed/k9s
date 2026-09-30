@@ -199,6 +199,61 @@ func TestPodInitRender(t *testing.T) {
 	assert.Equal(t, e, r.Fields[:21])
 }
 
+func TestPodLimitlessRender(t *testing.T) {
+	pom := render.PodWithMetrics{
+		Raw: load(t, "po_limitless"),
+		MX: &mv1beta1.PodMetrics{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nginx",
+				Namespace: "default",
+			},
+			Containers: []mv1beta1.ContainerMetrics{
+				{Usage: makeRes("100m", "90Mi")},
+				{Usage: makeRes("100m", "90Mi")},
+			},
+		},
+	}
+
+	po := render.NewPod()
+	r := model1.NewRow(14)
+	err := po.Render(&pom, "", &r)
+	require.NoError(t, err)
+
+	// Only the nginx container declares cpu/mem limits; the logger container
+	// has none. Per #881 plan A the %CPU/L and %MEM/L ratios must render as
+	// n/a instead of a misleading partial ratio (180Mi/120Mi == 150%).
+	assert.Equal(t, "default/nginx", r.ID)
+	e := model1.Fields{"default", "nginx", "n/a", "●", "2/2", "Running", "0", "<unknown>", "200", "150:300", "133", "n/a", "180", "100:120", "180", "n/a", "0:0", "172.17.0.6", "minikube", "default", "<none>"}
+	assert.Equal(t, e, r.Fields[:21])
+}
+
+func TestPodLimitRender(t *testing.T) {
+	pom := render.PodWithMetrics{
+		Raw: load(t, "po_limited"),
+		MX: &mv1beta1.PodMetrics{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nginx",
+				Namespace: "default",
+			},
+			Containers: []mv1beta1.ContainerMetrics{
+				{Usage: makeRes("100m", "90Mi")},
+				{Usage: makeRes("100m", "90Mi")},
+			},
+		},
+	}
+
+	po := render.NewPod()
+	r := model1.NewRow(14)
+	err := po.Render(&pom, "", &r)
+	require.NoError(t, err)
+
+	// Both containers declare cpu/mem limits, so the %CPU/L and %MEM/L ratios
+	// must render real values: cpu 200m/400m == 50%, mem 180Mi/180Mi == 100%.
+	assert.Equal(t, "default/nginx", r.ID)
+	e := model1.Fields{"default", "nginx", "n/a", "●", "2/2", "Running", "0", "<unknown>", "200", "150:400", "133", "50", "180", "100:180", "180", "100", "0:0", "172.17.0.6", "minikube", "default", "<none>"}
+	assert.Equal(t, e, r.Fields[:21])
+}
+
 func TestPodSidecarRender(t *testing.T) {
 	pom := render.PodWithMetrics{
 		Raw: load(t, "po_sidecar"),
