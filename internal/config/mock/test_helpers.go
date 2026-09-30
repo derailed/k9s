@@ -118,7 +118,8 @@ func (m mockKubeSettings) ContextNames() (map[string]struct{}, error) {
 func (mockKubeSettings) SetProxy(func(*http.Request) (*url.URL, error)) {}
 
 type mockConnection struct {
-	ct string
+	ct      string
+	connErr error
 }
 
 func NewMockConnection() mockConnection {
@@ -126,6 +127,9 @@ func NewMockConnection() mockConnection {
 }
 func NewMockConnectionWithContext(ct string) mockConnection {
 	return mockConnection{ct: ct}
+}
+func NewMockConnectionWithError(err error) mockConnection {
+	return mockConnection{connErr: err}
 }
 
 func (mockConnection) CanI(string, *client.GVR, string, []string) (bool, error) {
@@ -172,6 +176,9 @@ func (mockConnection) ServerVersion() (*version.Info, error) {
 }
 func (mockConnection) CheckConnectivity() bool {
 	return false
+}
+func (m mockConnection) ConnectivityError() error {
+	return m.connErr
 }
 func (m mockConnection) ActiveContext() string {
 	return m.ct
