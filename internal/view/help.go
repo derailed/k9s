@@ -15,8 +15,8 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -79,7 +79,7 @@ func (h *Help) StylesChanged(s *config.Styles) {
 }
 
 func (h *Help) bindKeys() {
-	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS, ui.KeySlash)
+	h.Actions().Delete(ui.KeySpace, ui.KeyCtrlSpace, tcell.KeyCtrlS, ui.KeySlash)
 	h.Actions().Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, true),
 		ui.KeyQ:         ui.NewKeyAction("Back", h.app.PrevCmd, false),

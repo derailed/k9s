@@ -27,8 +27,8 @@ import (
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -713,7 +713,7 @@ func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if evt != nil && evt.Rune() == '?' && a.Prompt().InCmdMode() {
+	if evt != nil && evt.Str() == "?" && a.Prompt().InCmdMode() {
 		return evt
 	}
 
@@ -733,7 +733,7 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // previousCommand returns to the command prior to the current one in the history
 func (a *App) previousCommand(evt *tcell.EventKey) *tcell.EventKey {
-	if evt != nil && evt.Rune() == rune(ui.KeyLeftBracket) && a.Prompt().InCmdMode() {
+	if evt != nil && evt.Str() == "[" && a.Prompt().InCmdMode() {
 		return evt
 	}
 	c, ok := a.cmdHistory.Back()
@@ -747,7 +747,7 @@ func (a *App) previousCommand(evt *tcell.EventKey) *tcell.EventKey {
 
 // nextCommand returns to the command subsequent to the current one in the history
 func (a *App) nextCommand(evt *tcell.EventKey) *tcell.EventKey {
-	if evt != nil && evt.Rune() == rune(ui.KeyRightBracket) && a.Prompt().InCmdMode() {
+	if evt != nil && evt.Str() == "]" && a.Prompt().InCmdMode() {
 		return evt
 	}
 	c, ok := a.cmdHistory.Forward()
@@ -763,7 +763,7 @@ func (a *App) nextCommand(evt *tcell.EventKey) *tcell.EventKey {
 
 // lastCommand switches between the last command and the current one a la `cd -`
 func (a *App) lastCommand(evt *tcell.EventKey) *tcell.EventKey {
-	if evt != nil && evt.Rune() == ui.KeyDash && a.Prompt().InCmdMode() {
+	if evt != nil && evt.Str() == "-" && a.Prompt().InCmdMode() {
 		return evt
 	}
 	c, ok := a.cmdHistory.Top()

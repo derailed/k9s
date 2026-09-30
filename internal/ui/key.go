@@ -3,7 +3,7 @@
 
 package ui
 
-import "github.com/derailed/tcell/v2"
+import "github.com/gdamore/tcell/v3"
 
 func init() {
 	initKeys()
@@ -13,6 +13,8 @@ func initKeys() {
 	tcell.KeyNames[KeyHelp] = "?"
 	tcell.KeyNames[KeySlash] = "/"
 	tcell.KeyNames[KeySpace] = "space"
+	tcell.KeyNames[KeyCtrlSpace] = "Ctrl-Space"
+	tcell.KeyNames[KeyCtrlBackslash] = "Ctrl-\\"
 
 	initNumbKeys()
 	initStdKeys()
@@ -83,11 +85,15 @@ const (
 	KeyDash         = 45
 	KeyLeftBracket  = 91
 	KeyRightBracket = 93
+	// KeyCtrlSpace is an application binding; tcell v3 reports Ctrl-Space
+	// as KeyRune with ModCtrl instead of a dedicated key.
+	KeyCtrlSpace     tcell.Key = 0
+	KeyCtrlBackslash tcell.Key = 28
 )
 
 // Define Shift Keys.
 const (
-	KeyShiftA tcell.Key = iota + 65
+	KeyShiftA tcell.Key = iota + 512
 	KeyShiftB
 	KeyShiftC
 	KeyShiftD

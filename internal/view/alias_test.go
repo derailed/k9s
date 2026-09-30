@@ -17,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +53,7 @@ func TestAliasGoto(t *testing.T) {
 	b := buffL{}
 	v.GetTable().CmdBuff().SetActive(true)
 	v.GetTable().CmdBuff().AddListener(&b)
-	v.GetTable().SendKey(tcell.NewEventKey(tcell.KeyEnter, 256, tcell.ModNone))
+	v.GetTable().SendKey(tcell.NewEventKey(tcell.KeyEnter, "", tcell.ModNone))
 
 	assert.True(t, v.GetTable().CmdBuff().IsActive())
 }

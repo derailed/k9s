@@ -17,8 +17,8 @@ import (
 	"github.com/derailed/k9s/internal/tchart"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"k8s.io/apimachinery/pkg/labels"
@@ -287,10 +287,7 @@ func (p *Pulse) bindKeys() {
 }
 
 func (p *Pulse) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		key = tcell.Key(evt.Rune())
-	}
+	key := ui.AsKey(evt)
 	if a, ok := p.actions.Get(key); ok {
 		return a.Action(evt)
 	}

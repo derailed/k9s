@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
 )
 
 const (
@@ -47,7 +46,7 @@ func (p *Policy) subjectCtx(ctx context.Context) context.Context {
 }
 
 func (*Policy) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, ui.KeyCtrlSpace, ui.KeySpace)
 }
 
 func mapSubject(subject string) string {

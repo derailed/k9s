@@ -17,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 // Table represents a table viewer.
@@ -224,18 +224,18 @@ func (t *Table) saveCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (t *Table) bindKeys() {
 	t.Actions().Bulk(ui.KeyMap{
-		ui.KeyHelp:             ui.NewKeyAction("Help", t.App().helpCmd, true),
-		ui.KeySpace:            ui.NewSharedKeyAction("Mark", t.markCmd, false),
-		tcell.KeyCtrlSpace:     ui.NewSharedKeyAction("Mark Range", t.markSpanCmd, false),
-		tcell.KeyCtrlBackslash: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
-		tcell.KeyCtrlS:         ui.NewSharedKeyAction("Save", t.saveCmd, false),
-		ui.KeySlash:            ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
-		tcell.KeyCtrlZ:         ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
-		tcell.KeyCtrlW:         ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
-		ui.KeyShiftN:           ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
-		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
-		ui.KeyShiftS:           ui.NewKeyAction("Sort Status", t.SortColCmd(statusCol, true), false),
-		ui.KeyShiftO:           ui.NewKeyAction("Sort Selected Column", t.sortSelectedColumnCmd, false),
+		ui.KeyHelp:          ui.NewKeyAction("Help", t.App().helpCmd, true),
+		ui.KeySpace:         ui.NewSharedKeyAction("Mark", t.markCmd, false),
+		ui.KeyCtrlSpace:     ui.NewSharedKeyAction("Mark Range", t.markSpanCmd, false),
+		ui.KeyCtrlBackslash: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
+		tcell.KeyCtrlS:      ui.NewSharedKeyAction("Save", t.saveCmd, false),
+		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
+		tcell.KeyCtrlZ:      ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
+		tcell.KeyCtrlW:      ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
+		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
+		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
+		ui.KeyShiftS:        ui.NewKeyAction("Sort Status", t.SortColCmd(statusCol, true), false),
+		ui.KeyShiftO:        ui.NewKeyAction("Sort Selected Column", t.sortSelectedColumnCmd, false),
 	})
 }
 

@@ -14,7 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/render/helm"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 // History represents a helm History view.
@@ -58,7 +58,7 @@ func (h *History) bindKeys(aa *ui.KeyActions) {
 		h.bindDangerousKeys(aa)
 	}
 
-	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlD)
+	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, ui.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlD)
 	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftN: ui.NewKeyAction("Sort Revision", h.GetTable().SortColCmd("REVISION", true), false),
 		ui.KeyShiftA: ui.NewKeyAction("Sort Age", h.GetTable().SortColCmd("AGE", true), false),

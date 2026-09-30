@@ -15,7 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 const (
@@ -79,7 +79,7 @@ func (d *Dir) bindDangerousKeys(aa *ui.KeyActions) {
 
 func (d *Dir) bindKeys(aa *ui.KeyActions) {
 	// !!BOZO!! Lame!
-	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, ui.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD, tcell.KeyCtrlZ)
 	if !d.App().Config.IsReadOnly() {
 		d.bindDangerousKeys(aa)

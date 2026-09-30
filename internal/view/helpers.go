@@ -22,8 +22,8 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 	"github.com/sahilm/fuzzy"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -31,7 +31,7 @@ import (
 )
 
 func isBailoutEvt(evt *tcell.EventKey) bool {
-	return evt.Name() == "Ctrl+C"
+	return ui.AsKey(evt) == tcell.KeyCtrlC
 }
 
 func aliases(m *v1.APIResource, aa sets.Set[string]) sets.Set[string] {

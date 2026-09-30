@@ -23,8 +23,8 @@ import (
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v3"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -295,7 +295,7 @@ func (l *Log) SendStrokes(s string) {
 // SendKeys (testing only!)
 func (l *Log) SendKeys(kk ...tcell.Key) {
 	for _, k := range kk {
-		l.logs.keyboard(tcell.NewEventKey(k, ' ', tcell.ModNone))
+		l.logs.keyboard(tcell.NewEventKey(k, " ", tcell.ModNone))
 	}
 }
 

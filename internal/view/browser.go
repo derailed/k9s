@@ -24,7 +24,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/view/cmd"
-	"github.com/derailed/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -582,7 +582,7 @@ func editRes(app *App, gvr *client.GVR, path string) error {
 }
 
 func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
-	i, err := strconv.Atoi(string(evt.Rune()))
+	i, err := strconv.Atoi(evt.Str())
 	if err != nil {
 		slog.Error("Unable to convert keystroke", slogs.Error, err)
 		return nil
