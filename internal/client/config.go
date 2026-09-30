@@ -29,6 +29,14 @@ const (
 	defaultBurst         = 100
 )
 
+// AppVersion is the k9s version advertised on Kubernetes API requests.
+// cmd sets this from ldflags at process start; tests may override it.
+var AppVersion = "dev"
+
+func userAgent() string {
+	return "k9s/" + AppVersion
+}
+
 // Config tracks a kubernetes configuration.
 type Config struct {
 	flags *genericclioptions.ConfigFlags
@@ -68,6 +76,7 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 		cfg.QPS = defaultQPS
 		cfg.Burst = defaultBurst
 	}
+	cfg.UserAgent = userAgent()
 
 	return cfg, nil
 }
