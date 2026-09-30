@@ -342,6 +342,7 @@ func (p *Pod) transferCmd(*tcell.EventKey) *tcell.EventKey {
 		Containers: fetchContainers(&pod.ObjectMeta, &pod.Spec, false),
 		Message:    "Download Files",
 		Pod:        fmt.Sprintf("%s/%s:", ns, n),
+		LocalPath:  p.App().Config.K9s.DefaultTransferDir,
 		Ack:        ack,
 		Retries:    defaultTxRetries,
 		Cancel:     func() {},

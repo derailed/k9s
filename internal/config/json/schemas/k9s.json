@@ -20,6 +20,7 @@
           }
         },
         "screenDumpDir": {"type": "string"},
+        "defaultTransferDir": {"type": "string"},
         "refreshRate": { "type": "number" },
         "apiServerTimeout": { "type": "string" },
         "maxConnRetry": { "type": "integer" },
