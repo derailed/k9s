@@ -162,6 +162,13 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	iReady, iTotal, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cReady += iReady
 	allCounts := len(spec.Containers) + iTotal
+	// Some providers report extra, provider-managed entries in
+	// status.containerStatuses that have no matching entry in spec.containers
+	// (e.g. an injected sidecar). Health must only be judged against the
+	// containers the Pod actually declares, or that extra status entry makes
+	// an otherwise healthy Pod look unready. The READY column above still
+	// shows the raw counts so the discrepancy stays visible.
+	specReady := p.matchedContainerStats(spec.Containers, st.ContainerStatuses) + iReady
 	rgr, rgt := p.readinessGateStats(spec, &st)
 	ready := hasPodReadyCondition(st.Conditions)
 
@@ -200,7 +207,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		asReadinessGate(spec, &st),
 		p.mapQOS(st.QOSClass),
 		mapToStr(pwm.Raw.GetLabels()),
-		AsStatus(p.diagnose(phase, cReady, allCounts, ready, rgr, rgt)),
+		AsStatus(p.diagnose(phase, specReady, allCounts, ready, rgr, rgt)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
 
@@ -419,6 +426,27 @@ func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, re
 		}
 	}
 
+	return
+}
+
+// matchedContainerStats reports how many status entries that match a
+// container declared in the Pod spec are ready. This ignores any
+// provider-managed status entries that have no corresponding spec container,
+// so Pod health isn't skewed by containers the Pod itself didn't ask for.
+func (*Pod) matchedContainerStats(cc []v1.Container, cos []v1.ContainerStatus) (ready int) {
+	mm := make(map[string]struct{}, len(cc))
+	for i := range cc {
+		mm[cc[i].Name] = struct{}{}
+	}
+
+	for i := range cos {
+		if _, ok := mm[cos[i].Name]; !ok {
+			continue
+		}
+		if cos[i].Ready {
+			ready++
+		}
+	}
 	return
 }
 
