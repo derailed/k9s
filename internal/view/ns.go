@@ -35,8 +35,18 @@ func NewNamespace(gvr *client.GVR) ResourceViewer {
 
 func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
-		ui.KeyU: ui.NewKeyAction("Use", n.useNsCmd, true),
+		ui.KeyU:        ui.NewKeyAction("Use", n.useNsCmd, true),
+		tcell.KeyCtrlX: ui.NewSharedKeyAction("Mark All", n.markAllCmd, false),
 	})
+}
+
+// markAllCmd marks all namespaces but the synthetic "all" row.
+func (n *Namespace) markAllCmd(*tcell.EventKey) *tcell.EventKey {
+	t := n.GetTable()
+	t.ToggleMarkAll(client.NamespaceAll)
+	t.Refresh()
+
+	return nil
 }
 
 func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ *client.GVR, path string) {

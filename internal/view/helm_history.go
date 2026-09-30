@@ -58,7 +58,7 @@ func (h *History) bindKeys(aa *ui.KeyActions) {
 		h.bindDangerousKeys(aa)
 	}
 
-	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlD)
+	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlX, tcell.KeyCtrlD)
 	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftN: ui.NewKeyAction("Sort Revision", h.GetTable().SortColCmd("REVISION", true), false),
 		ui.KeyShiftA: ui.NewKeyAction("Sort Age", h.GetTable().SortColCmd("AGE", true), false),

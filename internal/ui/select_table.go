@@ -4,6 +4,8 @@
 package ui
 
 import (
+	"slices"
+
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -151,6 +153,26 @@ func (s *SelectTable) ToggleMark() {
 
 	if cell := s.GetCell(s.GetSelectedRowIndex(), 0); cell != nil {
 		s.SetSelectedStyle(tcell.StyleDefault.Foreground(cell.BackgroundColor).Background(cell.Color).Attributes(tcell.AttrBold))
+	}
+}
+
+// ToggleMarkAll marks all visible rows or, if they are all marked already, unmarks them.
+// Marks on rows that are currently hidden by a filter are left untouched. Rows whose id is
+// listed in skip, such as synthetic rows, are never marked.
+func (s *SelectTable) ToggleMarkAll(skip ...string) {
+	ids := make([]string, 0, s.GetRowCount())
+	for i := 1; i < s.GetRowCount(); i++ {
+		if id, ok := s.GetRowID(i); ok && !slices.Contains(skip, id) {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	if s.marks.HasAll(ids...) {
+		s.marks.Delete(ids...)
+	} else {
+		s.marks.Insert(ids...)
 	}
 }
 

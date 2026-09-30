@@ -27,7 +27,7 @@ func NewGroup(gvr *client.GVR) ResourceViewer {
 }
 
 func (g *Group) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlX)
 	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Rules", g.policyCmd, true),
 	})

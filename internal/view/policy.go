@@ -47,7 +47,7 @@ func (p *Policy) subjectCtx(ctx context.Context) context.Context {
 }
 
 func (*Policy) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlX)
 }
 
 func mapSubject(subject string) string {
