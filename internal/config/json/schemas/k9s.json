@@ -41,6 +41,8 @@
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
             "skin": {"type": "string"},
+            "darkSkin": {"type": "string"},
+            "lightSkin": {"type": "string"},
             "defaultsToFullScreen": {"type": "boolean"},
             "useFullGVRTitle": {"type": "boolean"},
             "invert": {"type": "boolean"}

@@ -344,6 +344,7 @@ func (a *App) Resume() {
 	ctx, a.cancelFn = context.WithCancel(context.Background())
 
 	go a.clusterUpdater(ctx)
+	a.ThemeWatcher(ctx, a)
 
 	if a.Config.K9s.UI.Reactive {
 		if err := a.ConfigWatcher(ctx, a); err != nil {

@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -259,6 +260,19 @@ func (c *Configurator) activeSkin() (string, bool) {
 		}
 	}
 
+	if c.Config.K9s.UI.DarkSkin != "" || c.Config.K9s.UI.LightSkin != "" {
+		skin = c.Config.K9s.UI.LightSkin
+		if config.IsDarkMode() {
+			skin = c.Config.K9s.UI.DarkSkin
+		}
+		if skin != "" {
+			if _, err := os.Stat(config.SkinFileFromName(skin)); err == nil {
+				slog.Debug("Loading auto-theme skin", slogs.Skin, skin)
+				return skin, true
+			}
+		}
+	}
+
 	if ct, err := c.Config.K9s.ActiveContext(); err == nil && ct.Skin != "" {
 		if _, err := os.Stat(config.SkinFileFromName(ct.Skin)); err == nil {
 			skin = ct.Skin
@@ -351,6 +365,31 @@ func (c *Configurator) loadSkinFile(synchronizer) {
 	} else {
 		c.updateStyles(skinFile, invert)
 	}
+}
+
+// ThemeWatcher polls the OS dark/light mode every 5s and reloads the skin on change.
+// No-op if neither DarkSkin nor LightSkin is configured.
+func (c *Configurator) ThemeWatcher(ctx context.Context, s synchronizer) {
+	if c.Config.K9s.UI.DarkSkin == "" && c.Config.K9s.UI.LightSkin == "" {
+		return
+	}
+	// ponytail: 2s poll; switch to OS notification API (e.g. dbus/NSDistributedNotificationCenter) if latency matters
+	go func() {
+		last := config.IsDarkMode()
+		t := time.NewTicker(2 * time.Second)
+		defer t.Stop()
+		for {
+			select {
+			case <-t.C:
+				if dark := config.IsDarkMode(); dark != last {
+					last = dark
+					s.QueueUpdateDraw(func() { c.RefreshStyles(s) })
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }
 
 func (c *Configurator) updateStyles(f string, invert bool) {
