@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
 package view
@@ -31,25 +31,31 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+// spinnerPage is the page name the loading spinner is registered under
+// in the app's page stack.
+const spinnerPage = "browserSpinner"
+
 // Browser represents a generic resource browser.
 type Browser struct {
 	*Table
 
-	namespaces    map[int]string
-	meta          *metav1.APIResource
-	accessor      dao.Accessor
-	contextFn     ContextFunc
-	cancelFn      context.CancelFunc
-	mx            sync.RWMutex
-	updating      bool
+	namespaces map[int]string
+	meta       *metav1.APIResource
+	accessor   dao.Accessor
+	contextFn  ContextFunc
+	cancelFn   context.CancelFunc
+	mx         sync.RWMutex
+	updating   bool
 	actionsLoaded atomic.Bool
 	firstView     atomic.Int32
+	spinner    *ui.Spinner
 }
 
 // NewBrowser returns a new browser.
 func NewBrowser(gvr *client.GVR) ResourceViewer {
 	return &Browser{
-		Table: NewTable(gvr),
+		Table:   NewTable(gvr),
+		spinner: ui.NewSpinner(),
 	}
 }
 
@@ -178,17 +184,20 @@ func (b *Browser) Start() {
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
+
+	// Show loading spinner while resources are being fetched
+	b.showSpinner(fmt.Sprintf("Loading %s...", b.GVR().R()))
+
 	if err := b.GetModel().Watch(b.prepareContext()); err != nil {
 		go func() {
 			time.Sleep(500 * time.Millisecond)
 			b.app.QueueUpdateDraw(func() {
+				b.hideSpinner()
 				b.App().Flash().Errf("Watcher failed for %s -- %s", b.GVR(), err)
 			})
 		}()
 	}
 }
-
-// Stop terminates browser updates.
 func (b *Browser) Stop() {
 	b.mx.Lock()
 	if b.cancelFn != nil {
@@ -196,6 +205,7 @@ func (b *Browser) Stop() {
 		b.cancelFn = nil
 	}
 	b.mx.Unlock()
+	b.hideSpinner()
 	b.GetModel().RemoveListener(b)
 	b.CmdBuff().RemoveListener(b)
 	b.Table.Stop()
@@ -306,24 +316,20 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 	if !b.app.ConOK() || cancel == nil || !b.app.IsRunning() {
 		return
 	}
-	// Skip warning on first view (likely during initialization)
-	if b.firstView.Load() == 0 || mdata.HeaderCount() == 0 {
-		b.firstView.Add(1)
+
+	// Check if informer cache has synced
+	if synced, err := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
+		// Not synced yet - show spinner
+		b.showSpinner(fmt.Sprintf("Loading %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace())))
+		if err != nil {
+			b.hideSpinner()
+			b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
+		}
 		return
 	}
 
-	// While the informer cache hasn't synced yet, show a neutral status
-	// instead of a misleading "no resources found" warning.
-	if synced, err := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
-		b.app.QueueUpdateDraw(func() {
-			if err != nil {
-				b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
-				return
-			}
-			b.app.Flash().Infof("Synchronizing %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace()))
-		})
-		return
-	}
+	// Data synced but empty - hide spinner and show empty state
+	b.hideSpinner()
 
 	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
@@ -342,6 +348,7 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(mdata *model1.TableData) {
+	
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -350,6 +357,9 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 	if cancel == nil || !b.app.IsRunning() {
 		return
 	}
+
+	// Hide spinner when data is loaded
+	b.hideSpinner()
 
 	cdata := b.Update(mdata, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
@@ -372,6 +382,9 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 
 // TableLoadFailed notifies view something went south.
 func (b *Browser) TableLoadFailed(err error) {
+	// Hide spinner on load failure
+	b.hideSpinner()
+
 	b.app.QueueUpdateDraw(func() {
 		b.app.Flash().Err(err)
 		b.App().ClearStatus(false)
@@ -794,3 +807,44 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 	d := b.app.Styles.Dialog()
 	dialog.ShowDelete(&d, b.app.Content.Pages, msg, okFn, func() {})
 }
+
+// in the app's page stack.
+
+// showSpinner displays a loading spinner with the given message.
+func (b *Browser) showSpinner(message string) {
+	
+	if b.spinner == nil || b.app == nil {
+		return
+	}
+	// Set app reference for thread-safe UI updates
+	b.spinner.SetApp(b.app.Application)
+	b.spinner.SetMessage(message)
+	b.spinner.Start(message)
+
+	// Display loading status using a Flash message
+	b.app.Flash().Info(message)
+
+	// Add spinner to the page stack and show it
+    if b.app.Content != nil && b.app.Content.Pages != nil {
+        b.app.Content.Pages.AddPage(spinnerPage, b.spinner, true, true)
+        // ↑ resize=true, visible=true
+    }
+}
+
+// hideSpinner removes the loading spinner.
+func (b *Browser) hideSpinner() {
+	
+	if b.spinner == nil {
+		return
+	}
+	b.spinner.Stop()
+	if b.app != nil && b.app.Content != nil && b.app.Content.Pages != nil {
+        if b.app.Content.Pages.HasPage(spinnerPage) {
+            b.app.Content.Pages.RemovePage(spinnerPage)
+        }
+    }
+}
+
+
+
+
