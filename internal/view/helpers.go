@@ -161,6 +161,53 @@ func showPods(app *App, path string, labelSel labels.Selector, fieldSel string) 
 	}
 }
 
+// showPodsIn is like showPods but injects the view in an explicit target
+// namespace rather than the parent resource's namespace. Used when the parent
+// resource selects targets across a different namespace scope (e.g. a
+// Prometheus Operator PodMonitor's namespaceSelector).
+func showPodsIn(app *App, path, targetNS string, labelSel labels.Selector) {
+	v := NewPod(client.PodGVR)
+	v.SetContextFn(podCtx(app, path, ""))
+	v.SetLabelSelector(labelSel, true)
+
+	if err := app.Config.SetActiveNamespace(targetNS); err != nil {
+		slog.Error("Unable to set active namespace during show pods", slogs.Error, err)
+	}
+	if err := app.inject(v, false); err != nil {
+		app.Flash().Err(err)
+	}
+}
+
+func showServices(app *App, path, targetNS string, labelSel labels.Selector) {
+	v := NewService(client.SvcGVR)
+	v.SetContextFn(func(ctx context.Context) context.Context {
+		return context.WithValue(ctx, internal.KeyPath, path)
+	})
+	v.SetLabelSelector(labelSel, true)
+
+	if err := app.Config.SetActiveNamespace(targetNS); err != nil {
+		slog.Error("Unable to set active namespace during show services", slogs.Error, err)
+	}
+	if err := app.inject(v, false); err != nil {
+		app.Flash().Err(err)
+	}
+}
+
+func showIngresses(app *App, path, targetNS string, labelSel labels.Selector) {
+	v := NewBrowser(client.IngGVR)
+	v.SetContextFn(func(ctx context.Context) context.Context {
+		return context.WithValue(ctx, internal.KeyPath, path)
+	})
+	v.SetLabelSelector(labelSel, true)
+
+	if err := app.Config.SetActiveNamespace(targetNS); err != nil {
+		slog.Error("Unable to set active namespace during show ingresses", slogs.Error, err)
+	}
+	if err := app.inject(v, false); err != nil {
+		app.Flash().Err(err)
+	}
+}
+
 func podCtx(_ *App, path, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
