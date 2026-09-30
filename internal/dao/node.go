@@ -170,7 +170,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 
 	var nmx client.NodesMetricsMap
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); (withMx || !ok) && len(oo) > 0 {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
 	}
 

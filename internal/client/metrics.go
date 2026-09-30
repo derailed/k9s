@@ -7,10 +7,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"strconv"
+	"sync"
 	"time"
 
+	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/cache"
@@ -21,7 +24,16 @@ const (
 	mxCacheSize           = 100
 	mxCacheExpiry         = 1 * time.Minute
 	metricsPageSize int64 = 500
+
+	// mxFetchWait caps how long callers block on a cold metrics fetch before
+	// falling back to the last known metrics while the fetch completes in the
+	// background. Listing pod metrics across all namespaces on large clusters
+	// can take tens of seconds and must not stall the views refresh loop.
+	mxFetchWait = 500 * time.Millisecond
 )
+
+// ErrMetricsNotReady indicates metrics have not been fetched yet for a given scope.
+var ErrMetricsNotReady = errors.New("metrics not yet available")
 
 // MetricsDial tracks global metric server handle.
 var MetricsDial *MetricsServer
@@ -44,7 +56,10 @@ func ResetMetrics() {
 type MetricsServer struct {
 	Connection
 
-	cache *cache.LRUExpireCache
+	cache    *cache.LRUExpireCache
+	fmx      sync.Mutex
+	inflight map[string]chan struct{}
+	stale    map[string]any
 }
 
 // NewMetricsServer return a metric server instance.
@@ -52,7 +67,69 @@ func NewMetricsServer(c Connection) *MetricsServer {
 	return &MetricsServer{
 		Connection: c,
 		cache:      cache.NewLRUExpireCache(mxCacheSize),
+		inflight:   make(map[string]chan struct{}),
+		stale:      make(map[string]any),
 	}
+}
+
+// fetchList returns cached metrics for a given key when fresh. On a cache miss,
+// the list is refreshed in the background (a single fetch per key at a time)
+// and the last known metrics are returned after a short grace period so callers
+// never stall on slow metrics api calls.
+func (m *MetricsServer) fetchList(ctx context.Context, key string, list func(context.Context) (any, error)) (any, error) {
+	if v, ok := m.cache.Get(key); ok {
+		return v, nil
+	}
+
+	m.fmx.Lock()
+	done, ok := m.inflight[key]
+	if !ok {
+		done = make(chan struct{})
+		m.inflight[key] = done
+		timeout := DefaultCallTimeoutDuration
+		if m.Connection != nil {
+			if cfg := m.Config(); cfg != nil {
+				timeout = cfg.CallTimeout()
+			}
+		}
+		go func() {
+			defer close(done)
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+			v, err := list(ctx)
+			m.fmx.Lock()
+			defer m.fmx.Unlock()
+			delete(m.inflight, key)
+			if err != nil {
+				slog.Warn("Metrics fetch failed",
+					slogs.Key, key,
+					slogs.Error, err,
+				)
+				return
+			}
+			m.cache.Add(key, v, mxCacheExpiry)
+			m.stale[key] = v
+		}()
+	}
+	m.fmx.Unlock()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+	case <-time.After(mxFetchWait):
+	}
+
+	if v, ok := m.cache.Get(key); ok {
+		return v, nil
+	}
+	m.fmx.Lock()
+	v, ok := m.stale[key]
+	m.fmx.Unlock()
+	if ok {
+		return v, nil
+	}
+
+	return nil, ErrMetricsNotReady
 }
 
 // ClusterLoad retrieves all cluster nodes metrics.
@@ -157,17 +234,24 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	}
 
 	const key = "nodes"
-	if entry, ok := m.cache.Get(key); ok && entry != nil {
-		mxList, ok := entry.(*mv1beta1.NodeMetricsList)
-		if !ok {
-			return nil, fmt.Errorf("expected nodemetricslist but got %T", entry)
-		}
-		return mxList, nil
-	}
-
-	client, err := m.MXDial()
+	entry, err := m.fetchList(ctx, key, func(ctx context.Context) (any, error) {
+		return m.listNodesMetrics(ctx)
+	})
 	if err != nil {
 		return mx, err
+	}
+	mxList, ok := entry.(*mv1beta1.NodeMetricsList)
+	if !ok {
+		return nil, fmt.Errorf("expected nodemetricslist but got %T", entry)
+	}
+
+	return mxList, nil
+}
+
+func (m *MetricsServer) listNodesMetrics(ctx context.Context) (*mv1beta1.NodeMetricsList, error) {
+	client, err := m.MXDial()
+	if err != nil {
+		return nil, err
 	}
 	mxList := &mv1beta1.NodeMetricsList{
 		Items: make([]mv1beta1.NodeMetrics, 0, metricsPageSize),
@@ -176,7 +260,7 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	for {
 		page, err := client.MetricsV1beta1().NodeMetricses().List(ctx, opts)
 		if err != nil {
-			return mx, err
+			return nil, err
 		}
 		mxList.Items = append(mxList.Items, page.Items...)
 		if page.Continue == "" {
@@ -184,7 +268,6 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 		}
 		opts.Continue = page.Continue
 	}
-	m.cache.Add(key, mxList, mxCacheExpiry)
 
 	return mxList, nil
 }
@@ -239,17 +322,24 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	}
 
 	key := FQN(ns, "pods")
-	if entry, ok := m.cache.Get(key); ok {
-		mxList, ok := entry.(*mv1beta1.PodMetricsList)
-		if !ok {
-			return mx, fmt.Errorf("expected PodMetricsList but got %T", entry)
-		}
-		return mxList, nil
-	}
-
-	client, err := m.MXDial()
+	entry, err := m.fetchList(ctx, key, func(ctx context.Context) (any, error) {
+		return m.listPodsMetrics(ctx, ns)
+	})
 	if err != nil {
 		return mx, err
+	}
+	mxList, ok := entry.(*mv1beta1.PodMetricsList)
+	if !ok {
+		return mx, fmt.Errorf("expected PodMetricsList but got %T", entry)
+	}
+
+	return mxList, nil
+}
+
+func (m *MetricsServer) listPodsMetrics(ctx context.Context, ns string) (*mv1beta1.PodMetricsList, error) {
+	client, err := m.MXDial()
+	if err != nil {
+		return nil, err
 	}
 	mxList := &mv1beta1.PodMetricsList{
 		Items: make([]mv1beta1.PodMetrics, 0, metricsPageSize),
@@ -258,7 +348,7 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	for {
 		page, err := client.MetricsV1beta1().PodMetricses(ns).List(ctx, opts)
 		if err != nil {
-			return mx, err
+			return nil, err
 		}
 		mxList.Items = append(mxList.Items, page.Items...)
 		if page.Continue == "" {
@@ -266,7 +356,6 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 		}
 		opts.Continue = page.Continue
 	}
-	m.cache.Add(key, mxList, mxCacheExpiry)
 
 	return mxList, nil
 }
