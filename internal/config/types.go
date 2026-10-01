@@ -44,6 +44,10 @@ type UI struct {
 	// Can be overridden per context.
 	Skin string `json:"skin" yaml:"skin,omitempty"`
 
+	// Logo represents custom header ascii art.
+	// Can be overridden per context.
+	Logo string `json:"logo" yaml:"logo,omitempty"`
+
 	// DefaultsToFullScreen toggles fullscreen on views like logs, yaml, details.
 	DefaultsToFullScreen bool `json:"defaultsToFullScreen" yaml:"defaultsToFullScreen"`
 

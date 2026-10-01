@@ -147,3 +147,23 @@ func TestAppScreenDumpDir(t *testing.T) {
 	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.Equal(t, "/tmp/k9s-test/screen-dumps", cfg.K9s.AppScreenDumpDir())
 }
+
+func TestK9sLogo(t *testing.T) {
+	cfg := mock.NewMockConfig(t)
+	cfg.K9s.UI.Logo = "GLOBAL\nLOGO"
+
+	assert.Equal(t, "GLOBAL\nLOGO", cfg.K9s.Logo())
+
+	ct, err := cfg.K9s.ActivateContext("ct-1-1")
+	require.NoError(t, err)
+	assert.Equal(t, "GLOBAL\nLOGO", cfg.K9s.Logo())
+
+	ct.Logo = "CTX\nLOGO"
+	assert.Equal(t, "CTX\nLOGO", cfg.K9s.Logo())
+
+	ct.Logo = "  \n\t"
+	assert.Equal(t, "GLOBAL\nLOGO", cfg.K9s.Logo())
+
+	cfg.K9s.UI.Logo = ""
+	assert.Empty(t, cfg.K9s.Logo())
+}
