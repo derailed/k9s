@@ -77,7 +77,7 @@ func (t *Table) defaultHeader() model1.Header {
 		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name), Attrs: model1.Attrs{Time: timeCol, Wide: c.Priority > 0}})
 	}
 	if t.getAgeIndex() > 0 {
-		h = append(h, model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}})
+		h = append(h, model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}})
 	}
 
 	return h

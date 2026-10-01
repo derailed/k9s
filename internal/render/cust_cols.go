@@ -149,15 +149,16 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 		if idx >= len(cc) {
 			continue
 		}
+		spec := cc[idx]
 		parser := parsers[idx]
 		if parser == nil {
-			ix, ok := rh.IndexOf(cc[idx].Header.Name, true)
+			ix, ok := rh.IndexOf(spec.Header.Name, true)
 			if !ok {
 				cols[idx] = RenderedCol{
-					Header: cc[idx].Header,
+					Header: spec.Header,
 					Value:  NAValue,
 				}
-				slog.Warn("Unable to find custom column", slogs.Name, cc[idx].Header.Name)
+				slog.Warn("Unable to find custom column", slogs.Name, spec.Header.Name)
 				continue
 			}
 			var v string
@@ -175,7 +176,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 
 		if o == nil {
 			cols[idx] = RenderedCol{
-				Header: cc[idx].Header,
+				Header: spec.Header,
 				Value:  NAValue,
 			}
 			continue
@@ -186,9 +187,9 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			err  error
 		)
 		if unstructured, ok := o.(runtime.Unstructured); ok {
-			if vals, ok := jqParse(cc[idx].Spec, unstructured.UnstructuredContent()); ok {
+			if vals, ok := jqParse(spec.Spec, unstructured.UnstructuredContent()); ok {
 				cols[idx] = RenderedCol{
-					Header: cc[idx].Header,
+					Header: spec.Header,
 					Value:  vals,
 				}
 				continue
@@ -196,9 +197,9 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			vals, err = parser.FindResults(unstructured.UnstructuredContent())
 		} else {
 			rv := reflect.ValueOf(o)
-			if !rv.IsValid() || (rv.Kind() == reflect.Ptr && rv.IsNil()) {
+			if !rv.IsValid() || (rv.Kind() == reflect.Pointer && rv.IsNil()) {
 				cols[idx] = RenderedCol{
-					Header: cc[idx].Header,
+					Header: spec.Header,
 					Value:  NAValue,
 				}
 				continue
@@ -206,9 +207,9 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			vals, err = parser.FindResults(rv.Elem().Interface())
 		}
 		if err != nil {
-			rerr = errors.Join(rerr, fmt.Errorf("%w: %q: %w", model1.ErrCustomColumn, cc[idx].Header.Name, err))
+			rerr = errors.Join(rerr, fmt.Errorf("%w: %q: %w", model1.ErrCustomColumn, spec.Header.Name, err))
 			cols[idx] = RenderedCol{
-				Header: cc[idx].Header,
+				Header: spec.Header,
 				Value:  MissingValue,
 			}
 			continue
@@ -219,11 +220,11 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 		}
 		for i := range vals {
 			for j := range vals[i] {
-				values = append(values, formatColValue(cc[idx].Header, vals[i][j].Interface()))
+				values = append(values, formatColValue(spec.Header, vals[i][j].Interface()))
 			}
 		}
 		cols[idx] = RenderedCol{
-			Header: cc[idx].Header,
+			Header: spec.Header,
 			Value:  strings.Join(values, ","),
 		}
 	}

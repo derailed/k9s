@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # The base image for building the k9s binary
-FROM --platform=$BUILDPLATFORM golang:1.27.1-alpine3.24@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS build
+FROM --platform=$BUILDPLATFORM golang:1.27.1-alpine3.24@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -19,8 +19,8 @@ RUN apk --no-cache add --update make libx11-dev git gcc libc-dev curl \
 # Pinning this stage to $BUILDPLATFORM would yield an amd64 runtime image (incl.
 # kubectl) even for the arm64 manifest entry, so we let it default to
 # $TARGETPLATFORM and use buildx's TARGETARCH to fetch the matching kubectl.
-FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
-ARG KUBECTL_VERSION="v1.35.3"
+FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+ARG KUBECTL_VERSION="v1.37.0"
 ARG TARGETARCH
 
 COPY --from=build /k9s/execs/k9s /bin/k9s

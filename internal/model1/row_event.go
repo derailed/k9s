@@ -201,17 +201,26 @@ func (r *RowEvents) Upsert(re RowEvent) {
 	}
 }
 
-// Delete removes an element by id.
-func (r *RowEvents) Delete(fqn string) error {
-	victim, ok := r.FindIndex(fqn)
-	if !ok {
-		return fmt.Errorf("unable to delete row with fqn: %q", fqn)
+// DeleteBatch removes multiple elements by id with a single reindex.
+func (r *RowEvents) DeleteBatch(fqns []string) {
+	victims := make(map[int]struct{}, len(fqns))
+	for _, fqn := range fqns {
+		if idx, ok := r.FindIndex(fqn); ok {
+			victims[idx] = struct{}{}
+			delete(r.index, fqn)
+		}
 	}
-	r.events = append(r.events[0:victim], r.events[victim+1:]...)
-	delete(r.index, fqn)
+	if len(victims) == 0 {
+		return
+	}
+	filtered := make([]RowEvent, 0, len(r.events)-len(victims))
+	for i, e := range r.events {
+		if _, ok := victims[i]; !ok {
+			filtered = append(filtered, e)
+		}
+	}
+	r.events = filtered
 	r.reindex()
-
-	return nil
 }
 
 func (r *RowEvents) Len() int {
