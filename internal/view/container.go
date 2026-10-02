@@ -24,12 +24,15 @@ const containerTitle = "Containers"
 // Container represents a container view.
 type Container struct {
 	ResourceViewer
+	logs *LogsExtender
 }
 
 // NewContainer returns a new container view.
 func NewContainer(gvr *client.GVR) ResourceViewer {
 	c := Container{}
-	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.logOptions)
+	le := NewLogsExtender(NewBrowser(gvr), c.logOptions)
+	c.logs = le.(*LogsExtender)
+	c.ResourceViewer = NewChartsExtender(le)
 	c.SetEnvFn(c.k9sEnv)
 	c.GetTable().SetEnterFn(c.viewLogs)
 	c.GetTable().SetDecorateFn(c.decorateRows)
@@ -123,7 +126,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 }
 
 func (c *Container) viewLogs(*App, ui.Tabular, *client.GVR, string) {
-	c.ResourceViewer.(*LogsExtender).showLogs(c.GetTable().Path, false)
+	c.logs.showLogs(c.GetTable().Path, false)
 }
 
 // Handlers...

@@ -25,8 +25,6 @@ import (
 )
 
 const (
-	cpuFmt     = " %s [%s::b]%s[white::-]([%s::]%sm[white::]/[%s::]%sm[-::])"
-	memFmt     = " %s [%s::b]%s[white::-]([%s::]%sMi[white::]/[%s::]%sMi[-::])"
 	pulseTitle = "Pulses"
 	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
 	dirLeft    = 1
