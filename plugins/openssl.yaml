@@ -14,6 +14,7 @@ plugins:
       - kubectl get secret --context $CONTEXT -n $NAMESPACE $NAME -o jsonpath='{.data.ca\.crt}' | base64 -d | openssl storeutl -noout -text -certs /dev/stdin |& less
   secret-openssl-tls:
     shortCut: Shift-O
+    override: true
     confirm: false
     description: Openssl tls.crt
     scopes:

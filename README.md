@@ -759,6 +759,11 @@ The annotation value must specify a container to forward to as well as a local p
 
 You can change which columns shows up for a given resource via custom views. To surface this feature, you will need to create a new configuration file, namely `$XDG_CONFIG_HOME/k9s/views.yaml`. This file leverages GVR (Group/Version/Resource) to configure the associated table view columns. If no GVR is found for a view the default rendering will take over (ie what we have now). Going wide will add all the remaining columns that are available on the given resource after your custom columns. To boot, you can edit your views config file and tune your resources views live!
 
+Use `version/resource` for resources in the core API group and
+`group/version/resource` for resources in a named API group. For example,
+pods use `v1/pods`, while mutating webhook configurations use
+`admissionregistration.k8s.io/v1/mutatingwebhookconfigurations`.
+
 📢 🎉 As of `release v0.40.0` you can specify json parse expressions to further customize your resources rendering.
 
 The new column syntax is as follows:
@@ -827,6 +832,14 @@ views:
       - NAME
       - TYPE
       - CLUSTER-IP
+
+  admissionregistration.k8s.io/v1/mutatingwebhookconfigurations:
+    columns:
+      - NAME
+      - WEBHOOKS|N
+      - AGE
+      - POLICY:.webhooks[*].failurePolicy
+      - TIMEOUT:.webhooks[*].timeoutSeconds|N
 ```
 
 > 🩻 NOTE: This is experimental and will most likely change as we iron this out!

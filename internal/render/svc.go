@@ -18,16 +18,16 @@ import (
 
 // Header returns a header row.
 var defaultSVCHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "TYPE"},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colType},
 	model1.HeaderColumn{Name: "CLUSTER-IP"},
 	model1.HeaderColumn{Name: "EXTERNAL-IP"},
-	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "PORTS", Attrs: model1.Attrs{Wide: false}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colSelector, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colPorts, Attrs: model1.Attrs{Wide: false}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Service renders a K8s Service to screen.

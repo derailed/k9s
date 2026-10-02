@@ -100,7 +100,7 @@ func run(*cobra.Command, []string) error {
 		}
 	}()
 
-	slog.SetDefault(slog.New(tint.NewHandler(logFile, &tint.Options{
+	slog.SetDefault(slog.New(tint.NewTextHandler(logFile, &tint.Options{
 		Level:      parseLevel(*k9sFlags.LogLevel),
 		TimeFormat: time.RFC3339,
 	})))

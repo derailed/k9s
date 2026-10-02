@@ -14,12 +14,12 @@ import (
 )
 
 var defaultCRBHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "CLUSTERROLE"},
 	model1.HeaderColumn{Name: "SUBJECT-KIND"},
 	model1.HeaderColumn{Name: "SUBJECTS"},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // ClusterRoleBinding renders a K8s ClusterRoleBinding to screen.
