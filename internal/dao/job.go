@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	batchv1 "k8s.io/api/batch/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -105,6 +106,31 @@ func (j *Job) GetInstance(fqn string) (*batchv1.Job, error) {
 	}
 
 	return &job, nil
+}
+
+// ToggleSuspend toggles suspend/resume on a Job.
+func (j *Job) ToggleSuspend(ctx context.Context, path string) error {
+	ns, n := client.Namespaced(path)
+	auth, err := j.Client().CanI(ns, j.gvr, n, []string{client.GetVerb, client.UpdateVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to (un)suspend jobs")
+	}
+
+	dial, err := j.Client().Dial()
+	if err != nil {
+		return err
+	}
+	job, err := dial.BatchV1().Jobs(ns).Get(ctx, n, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	job.Spec.Suspend = toggledSuspend(job.Spec.Suspend)
+	_, err = dial.BatchV1().Jobs(ns).Update(ctx, job, metav1.UpdateOptions{})
+
+	return err
 }
 
 // ScanSA scans for serviceaccount refs.
