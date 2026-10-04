@@ -25,9 +25,9 @@ func (c ClusterRole) Header(_ string) model1.Header {
 
 // Header returns a header rbw.
 var defaultCRHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
@@ -43,15 +43,12 @@ func (p ClusterRole) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := p.specs.realize(raw, defaultCRHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (ClusterRole) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var cr rbacv1.ClusterRole
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cr)

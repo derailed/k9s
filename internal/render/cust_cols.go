@@ -128,9 +128,6 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 	}
 
 	vv, err := hydrate(o, cc, parsers, rh, row)
-	if err != nil {
-		return nil, err
-	}
 	for _, hc := range rh {
 		if vv.HasHeader(hc.Name) {
 			continue
@@ -142,21 +139,26 @@ func (cc ColumnSpecs) realize(o runtime.Object, rh model1.Header, row *model1.Ro
 		}
 	}
 
-	return vv, nil
+	return vv, err
 }
 
 func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh model1.Header, row *model1.Row) (RenderedCols, error) {
 	cols := make(RenderedCols, len(parsers))
+	var rerr error
 	for idx := range parsers {
+		if idx >= len(cc) {
+			continue
+		}
+		spec := cc[idx]
 		parser := parsers[idx]
 		if parser == nil {
-			ix, ok := rh.IndexOf(cc[idx].Header.Name, true)
+			ix, ok := rh.IndexOf(spec.Header.Name, true)
 			if !ok {
 				cols[idx] = RenderedCol{
-					Header: cc[idx].Header,
+					Header: spec.Header,
 					Value:  NAValue,
 				}
-				slog.Warn("Unable to find custom column", slogs.Name, cc[idx].Header.Name)
+				slog.Warn("Unable to find custom column", slogs.Name, spec.Header.Name)
 				continue
 			}
 			var v string
@@ -174,7 +176,7 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 
 		if o == nil {
 			cols[idx] = RenderedCol{
-				Header: cc[idx].Header,
+				Header: spec.Header,
 				Value:  NAValue,
 			}
 			continue
@@ -185,9 +187,9 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			err  error
 		)
 		if unstructured, ok := o.(runtime.Unstructured); ok {
-			if vals, ok := jqParse(cc[idx].Spec, unstructured.UnstructuredContent()); ok {
+			if vals, ok := jqParse(spec.Spec, unstructured.UnstructuredContent()); ok {
 				cols[idx] = RenderedCol{
-					Header: cc[idx].Header,
+					Header: spec.Header,
 					Value:  vals,
 				}
 				continue
@@ -195,9 +197,9 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			vals, err = parser.FindResults(unstructured.UnstructuredContent())
 		} else {
 			rv := reflect.ValueOf(o)
-			if !rv.IsValid() || (rv.Kind() == reflect.Ptr && rv.IsNil()) {
+			if !rv.IsValid() || (rv.Kind() == reflect.Pointer && rv.IsNil()) {
 				cols[idx] = RenderedCol{
-					Header: cc[idx].Header,
+					Header: spec.Header,
 					Value:  NAValue,
 				}
 				continue
@@ -205,7 +207,12 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			vals, err = parser.FindResults(rv.Elem().Interface())
 		}
 		if err != nil {
-			return nil, err
+			rerr = errors.Join(rerr, fmt.Errorf("%w: %q: %w", model1.ErrCustomColumn, spec.Header.Name, err))
+			cols[idx] = RenderedCol{
+				Header: spec.Header,
+				Value:  MissingValue,
+			}
+			continue
 		}
 		values := make([]string, 0, len(vals))
 		if len(vals) == 0 || len(vals[0]) == 0 {
@@ -213,52 +220,54 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 		}
 		for i := range vals {
 			for j := range vals[i] {
-				var (
-					strVal string
-					v      = vals[i][j].Interface()
-				)
-				switch {
-				case cc[idx].Header.MXC:
-					switch k := v.(type) {
-					case resource.Quantity:
-						strVal = toMc(k.MilliValue())
-					case string:
-						if q, err := resource.ParseQuantity(k); err == nil {
-							strVal = toMc(q.MilliValue())
-						}
-					}
-				case cc[idx].Header.MXM:
-					switch k := v.(type) {
-					case resource.Quantity:
-						strVal = toMi(k.MilliValue())
-					case string:
-						if q, err := resource.ParseQuantity(k); err == nil {
-							strVal = toMi(q.MilliValue())
-						}
-					}
-				case cc[idx].Header.Time:
-					switch k := v.(type) {
-					case string:
-						if t, err := time.Parse(time.RFC3339, k); err == nil {
-							strVal = ToAge(metav1.Time{Time: t})
-						}
-					case metav1.Time:
-						strVal = ToAge(k)
-					}
-				}
-				if strVal == "" {
-					strVal = fmt.Sprintf("%v", v)
-				}
-				values = append(values, strVal)
+				values = append(values, formatColValue(spec.Header, vals[i][j].Interface()))
 			}
 		}
 		cols[idx] = RenderedCol{
-			Header: cc[idx].Header,
+			Header: spec.Header,
 			Value:  strings.Join(values, ","),
 		}
 	}
 
-	return cols, nil
+	return cols, rerr
+}
+
+func formatColValue(h model1.HeaderColumn, v any) string {
+	var strVal string
+	switch {
+	case h.MXC:
+		switch k := v.(type) {
+		case resource.Quantity:
+			strVal = toMc(k.MilliValue())
+		case string:
+			if q, err := resource.ParseQuantity(k); err == nil {
+				strVal = toMc(q.MilliValue())
+			}
+		}
+	case h.MXM:
+		switch k := v.(type) {
+		case resource.Quantity:
+			strVal = toMi(k.MilliValue())
+		case string:
+			if q, err := resource.ParseQuantity(k); err == nil {
+				strVal = toMi(q.MilliValue())
+			}
+		}
+	case h.Time:
+		switch k := v.(type) {
+		case string:
+			if t, err := time.Parse(time.RFC3339, k); err == nil {
+				strVal = ToAge(metav1.Time{Time: t})
+			}
+		case metav1.Time:
+			strVal = ToAge(k)
+		}
+	}
+	if strVal == "" {
+		strVal = fmt.Sprintf("%v", v)
+	}
+
+	return strVal
 }
 
 func isJQSpec(spec string) bool {

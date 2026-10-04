@@ -15,12 +15,12 @@ import (
 )
 
 var defaultSECHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "TYPE"},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colType},
 	model1.HeaderColumn{Name: "DATA"},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Secret renders a K8s Secret to screen.
@@ -46,12 +46,9 @@ func (s Secret) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := s.specs.realize(raw, defaultSECHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (Secret) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

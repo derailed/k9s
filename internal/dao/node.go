@@ -152,7 +152,14 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
-	return &render.NodeWithMetrics{Raw: raw, MX: nmx}, nil
+	podCount := -1
+	if shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool); shouldCountPods {
+		if pp, err := n.GetPods(path); err == nil {
+			podCount = len(pp)
+		}
+	}
+
+	return &render.NodeWithMetrics{Raw: raw, MX: nmx, PodCount: podCount}, nil
 }
 
 // List returns a collection of node resources.

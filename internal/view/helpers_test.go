@@ -342,6 +342,22 @@ func Test_sanitizeEsc(t *testing.T) {
 			s: "[fred[]",
 			e: "[fred]",
 		},
+		"two-tags-same-line": {
+			s: "[red[]hello [green[]world",
+			e: "[red]hello [green]world",
+		},
+		"posix-class-single": {
+			s: "[[:space:[]]",
+			e: "[[:space:]]",
+		},
+		"posix-class-multi": {
+			s: "[[:space:[]]+count:[[:space:[]]*",
+			e: "[[:space:]]+count:[[:space:]]*",
+		},
+		"posix-class-mixed": {
+			s: "[[:digit:[]]+[[:alpha:[]]+[[:space:[]]+",
+			e: "[[:digit:]]+[[:alpha:]]+[[:space:]]+",
+		},
 	}
 
 	for k, u := range uu {

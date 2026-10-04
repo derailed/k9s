@@ -102,10 +102,12 @@ func (h *Help) computeMaxes(hh model.MenuHints) {
 }
 
 func (h *Help) computeExtraMaxes(ee map[string]string) {
-	h.maxDesc = 0
-	for k := range ee {
+	for k, v := range ee {
 		if len(k) > h.maxDesc {
 			h.maxDesc = len(k)
+		}
+		if len(v) > h.maxKey {
+			h.maxKey = len(v)
 		}
 	}
 }
@@ -295,6 +297,14 @@ func (*Help) showGeneral() model.MenuHints {
 		{
 			Mnemonic:    "Ctrl-s",
 			Description: "Save",
+		},
+		{
+			Mnemonic:    "shift-left",
+			Description: "Select Previous Column",
+		},
+		{
+			Mnemonic:    "shift-right",
+			Description: "Select Next Column",
 		},
 	}
 }

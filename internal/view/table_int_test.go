@@ -28,6 +28,48 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+func TestHeaderIndex(t *testing.T) {
+	uu := map[string]struct {
+		colName string
+		cells   []string
+		eok     bool
+		e       int
+	}{
+		"simple": {
+			cells:   []string{"NAMESPACE", "NAME", "AGE"},
+			colName: "NAME",
+			eok:     true,
+			e:       1,
+		},
+
+		"missing": {
+			cells:   []string{"NAMESPACE", "BLEE", "AGE"},
+			colName: "NAME",
+		},
+
+		"decorated": {
+			cells:   []string{"[#DADEE8::]NAMESPACE[::]", "[#DADEE8::]NAME[::]", "[#DADEE8::]AGE[::]"},
+			colName: "NAME",
+			eok:     true,
+			e:       1,
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			ta := NewTable(client.NewGVR("test"))
+			require.NoError(t, ta.Init(makeContext(t)))
+			for i, c := range u.cells {
+				ta.AddHeaderCell(i, model1.HeaderColumn{Name: c})
+			}
+
+			i, ok := ta.HeaderIndex(u.colName)
+			assert.Equal(t, u.eok, ok)
+			assert.Equal(t, u.e, i)
+		})
+	}
+}
+
 func TestTableSave(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	require.NoError(t, v.Init(makeContext(t)))

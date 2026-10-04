@@ -119,7 +119,7 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 * On Ubuntu
 
   ```shell
-  wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb && apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
+  wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb && sudo apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
   ```
 
 * On Fedora (42+)
@@ -235,6 +235,26 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 
   ```shell
   docker run --rm -it -v ~/.kube/config:/root/.kube/config k9s-docker:0.1
+  ```
+
+#### Building a multi-platform image
+
+  The `make imgx` target builds for `linux/amd64` and `linux/arm64` via Docker
+  buildx:
+
+  ```shell
+  make imgx
+  ```
+
+  Cross-architecture builds rely on QEMU emulation. Docker Desktop includes
+  this out of the box. On a plain Docker Engine install, see the
+  [buildx multi-platform docs](https://docs.docker.com/build/building/multi-platform/)
+  for enabling emulation.
+
+  Override the defaults with `BUILD_PLATFORMS`, `IMG_NAME` and `VERSION`:
+
+  ```shell
+  make imgx BUILD_PLATFORMS=linux/amd64,linux/arm64 IMG_NAME=your-org/k9s VERSION=v0.0.1
   ```
 
 ---
@@ -374,7 +394,6 @@ K9s uses aliases to navigate most K8s resources.
 | Filter resource view by labels                                                  | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                                            | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                                           | `<esc>`                       |                                                                        |
-| Key mapping to describe, view, edit, view logs,...                              | `d`,`v`, `e`, `l`,...         |                                                                        |
 | To view and switch to another Kubernetes context (Pod view)                     | `:`ctx⏎                       |                                                                        |
 | To view and switch directly to another Kubernetes context (Last used view)      | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace                              | `:`ns⏎                        |                                                                        |
@@ -384,8 +403,49 @@ K9s uses aliases to navigate most K8s resources.
 | To delete a resource (TAB and ENTER to confirm)                                 | `ctrl-d`                      |                                                                        |
 | To kill a resource (no confirmation dialog, equivalent to kubectl delete --now) | `ctrl-k`                      |                                                                        |
 | Launch pulses view                                                              | `:`pulses or pu⏎              |                                                                        |
-| Launch XRay view                                                                | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
-| Launch Popeye view                                                              | `:`popeye or pop⏎             | See [popeye](#popeye)                                                  |
+| Launch XRay view                                                                | `:`xray RESOURCE [NAMESPACE]⏎  | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
+| Launch Popeye view                                                              | `:`popeye or pop⏎              | See [popeye](#popeye)                                                  |
+| Mark resource                                                                   | `space`                        |                                                                        |
+| Mark range of resources                                                         | `ctrl-space`                   |                                                                        |
+| Clear all marks                                                                 | `ctrl-\`                       |                                                                        |
+| Save resources to file                                                          | `ctrl-s`                       |                                                                        |
+| Toggle faults/error display                                                     | `ctrl-z`                       |                                                                        |
+| Toggle wide columns                                                             | `ctrl-w`                       |                                                                        |
+| Toggle header                                                                   | `ctrl-e`                       |                                                                        |
+| Toggle breadcrumbs                                                              | `ctrl-g`                       |                                                                        |
+| Move selected column left                                                       | `shift-left arrow`             |                                                                        |
+| Move selected column right                                                      | `shift-right arrow`            |                                                                        |
+| Sort by selected column                                                         | `shift-o`                      |                                                                        |
+| Sort by Name                                                                    | `shift-n`                      |                                                                        |
+| Sort by Age                                                                     | `shift-a`                      |                                                                        |
+| Sort by Namespace                                                               | `shift-p`                      | Only when viewing all namespaces                                       |
+| Sort by Status                                                                  | `shift-s`                      |                                                                        |
+| Copy resource name                                                              | `c`                            |                                                                        |
+| Copy namespace                                                                  | `n`                            |                                                                        |
+| View YAML                                                                       | `y`                            |                                                                        |
+| View logs                                                                       | `l`                            | Resource specific                                                      |
+| View previous logs                                                              | `p`                            | Resource specific                                                      |
+| Shell into container                                                            | `s`                            | Pods only                                                              |
+| Attach to container                                                             | `a`                            | Pods only                                                              |
+| Describe resource                                                               | `d`                            |                                                                        |
+| Edit resource                                                                   | `e`                            | Not available in read-only mode                                        |
+| Show port-forwards                                                              | `f`                            | Pods/Services/Containers                                               |
+| Port forward                                                                    | `shift-f`                      | Pods/Services/Containers                                               |
+| Warp to namespace                                                               | `w`                            | When namespace column is available                                     |
+| Jump to owner                                                                   | `shift-j`                      | When resource has an owner                                             |
+| Use/switch namespace                                                            | `u`                            | Namespace view                                                         |
+| UsedBy (show resources using this)                                              | `u`                            | ServiceAccounts/PVCs/Secrets/ConfigMaps                                |
+| Benchmark (run/stop)                                                            | `b`                            | Services/Port-forwards                                                 |
+| Toggle text wrap                                                                | `w`                            | Log view                                                               |
+| Toggle timestamp                                                                | `t`                            | Log view                                                               |
+| Toggle fullscreen                                                               | `f`                            | Log/YAML/Details view                                                  |
+| Refresh/reload view                                                             | `ctrl-r`                       |                                                                        |
+| Trigger (CronJob)                                                               | `t`                            | CronJob view                                                           |
+| Cordon/Uncordon node                                                            | `u`                            | Node view                                                              |
+| Drain node                                                                      | `r`                            | Node view                                                              |
+| Restart resource                                                                | `r`                            | Deployments/DaemonSets/StatefulSets                                    |
+| Rollback resource                                                               | `ctrl-l`                       | ReplicaSets                                                            |
+| View ReplicaSets                                                                | `z`                            | Deployment view                                                        |
 
 ---
 
@@ -400,6 +460,15 @@ K9s uses aliases to navigate most K8s resources.
   > NOTE: This is still in flux and will change while in pre-release stage!
 
 You can now override the context portForward default address configuration by setting an env variable that can override all clusters portForward local address using `K9S_DEFAULT_PF_ADDRESS=a.b.c.d`
+
+
+Clipboard behavior can also be controlled via environment variables:
+
+- `K9S_CLIPBOARD=auto|native|osc52` (default `auto`)
+  - `auto`: try native clipboard utilities first, then fall back to OSC52 when available.
+  - `native`: only use native clipboard utilities (xclip/xsel/wl-clipboard/etc).
+  - `osc52`: force OSC52 clipboard writes.
+- `K9S_OSC52_MAX=<encoded-bytes>` sets the maximum allowed OSC52 payload size before k9s rejects the copy operation. Default is `74994`.
 
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yaml
@@ -446,7 +515,7 @@ You can now override the context portForward default address configuration by se
       # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
-      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overriden with K9S_SKIN.
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overridden with K9S_SKIN.
       # Convert dark skins to light, or vice versa, preserving hue. Default: false
       invert: false
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
@@ -457,8 +526,6 @@ You can now override the context portForward default address configuration by se
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
     skipLatestRevCheck: false
-    # When altering kubeconfig or using multiple kube configs, k9s will clean up clusters configurations that are no longer in use. Setting this flag to true will keep k9s from cleaning up inactive cluster configs. Defaults to false.
-    keepMissingClusters: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
@@ -475,6 +542,8 @@ You can now override the context portForward default address configuration by se
       columnLock: false
       # Toggles log line timestamp info. Default false
       showTime: false
+      # Sets the internal log channel buffer size. Increase when log lines are dropped under high throughput. Default 50
+      logBufferSize: 100
     # Provide shell pod customization when nodeShell feature gate is enabled!
     shellPod:
       # The shell pod image to use.
@@ -539,7 +608,6 @@ k9s:
     active: po
   featureGates:
     nodeShell: true # => Enable this feature gate to make nodeShell available on this cluster
-  portForwardAddress: localhost
 ```
 
 ### Customizing the Shell Pod
@@ -691,6 +759,11 @@ The annotation value must specify a container to forward to as well as a local p
 
 You can change which columns shows up for a given resource via custom views. To surface this feature, you will need to create a new configuration file, namely `$XDG_CONFIG_HOME/k9s/views.yaml`. This file leverages GVR (Group/Version/Resource) to configure the associated table view columns. If no GVR is found for a view the default rendering will take over (ie what we have now). Going wide will add all the remaining columns that are available on the given resource after your custom columns. To boot, you can edit your views config file and tune your resources views live!
 
+Use `version/resource` for resources in the core API group and
+`group/version/resource` for resources in a named API group. For example,
+pods use `v1/pods`, while mutating webhook configurations use
+`admissionregistration.k8s.io/v1/mutatingwebhookconfigurations`.
+
 📢 🎉 As of `release v0.40.0` you can specify json parse expressions to further customize your resources rendering.
 
 The new column syntax is as follows:
@@ -759,9 +832,103 @@ views:
       - NAME
       - TYPE
       - CLUSTER-IP
+
+  admissionregistration.k8s.io/v1/mutatingwebhookconfigurations:
+    columns:
+      - NAME
+      - WEBHOOKS|N
+      - AGE
+      - POLICY:.webhooks[*].failurePolicy
+      - TIMEOUT:.webhooks[*].timeoutSeconds|N
 ```
 
 > 🩻 NOTE: This is experimental and will most likely change as we iron this out!
+
+---
+
+## Resource Jumps
+
+K9s allows you to define custom jump shortcuts between Custom Resource Definitions (CRDs) and their related resources. This feature enables you to quickly jump from one CRD to its dependent or associated resources, similar to the built-in "jump to owner" behavior.
+
+By default, K9s provides built-in jumps for standard Kubernetes resources (e.g., Deployment → Pods, Node → Pods). With custom jumps, you can extend this behavior to your own CRDs without modifying k9s source code.
+
+To use this feature, create a configuration file at `$XDG_CONFIG_HOME/k9s/jumps.yaml`.
+
+### Configuration Format
+
+```yaml
+# $XDG_CONFIG_HOME/k9s/jumps.yaml
+jumps:
+  # Define jump from source GVR to target GVR
+  "myoperator.io/v1/patchplans":
+    targetGVR: "myoperator.io/v1/patchjobs"
+    fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
+```
+
+### Configuration Fields
+
+* **Source GVR** (map key): The Group/Version/Resource of the source CRD in format `group/version/resource` or `version/resource` for core resources
+* **targetGVR**: The target resource to jump to
+* **labelSelector** (optional): Kubernetes label selector to filter target resources. Supports Go template syntax
+* **fieldSelector** (optional): Kubernetes field selector to filter target resources. Supports Go template syntax
+* **targetNamespace** (optional): Controls namespace behavior:
+  * Empty (default): Use the source resource's namespace (or cluster-scoped if source is cluster-scoped)
+  * `all`: View resources across all namespaces
+  * `<namespace-name>`: Jump to a specific namespace
+  * `{{.spec.field}}`: Use template expression to extract namespace from source resource
+
+### Template Syntax
+
+Both `labelSelector` and `fieldSelector` support Go template syntax to dynamically reference fields from the selected (source) resource. Any field of the source object can be used on the **value** side of a selector:
+
+* `{{.metadata.name}}` - The resource name
+* `{{.metadata.namespace}}` - The resource namespace
+* `{{.metadata.labels.key}}` - A specific label value
+* `{{.spec.fieldName}}` - Any field from the source resource spec
+* `{{.status.field}}` - Any field from the source resource status
+
+> **Note:** The template above only controls the selector *value* (the right-hand side, computed from the source resource). For label selectors, the *key* can be any label and is matched server side. For **field selectors**, k9s applies the selector as a **local (client-side) filter** on the target resources, so the key may be any field path present in the target object (e.g. `metadata.name`, `spec.volumeName`), not just the API-selectable fields. This means field-selector jumps work even for resources whose fields are not server-side selectable. Field values are compared as strings, and the path is matched against the target object's manifest. For background on which fields the API server itself treats as selectable, see the Kubernetes docs on [CRD selectable fields](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#crd-selectable-fields).
+
+### Examples
+
+#### Jump between custom operator resources
+
+```yaml
+jumps:
+  "myoperator.io/v1/patchplans":
+    targetGVR: "myoperator.io/v1/patchjobs"
+    fieldSelector: "spec.patchPlanRef={{.metadata.name}}"
+```
+
+#### Jump from ArgoCD Application to Deployments
+
+```yaml
+jumps:
+  "argoproj.io/v1alpha1/applications":
+    targetGVR: "apps/v1/deployments"
+    labelSelector: "app.kubernetes.io/instance={{.metadata.name}}"
+```
+
+#### Jump from Karpenter NodePool to Nodes
+
+```yaml
+jumps:
+  "karpenter.sh/v1/nodepools":
+    targetGVR: "v1/nodes"
+    labelSelector: "karpenter.sh/nodepool={{.metadata.name}}"
+    targetNamespace: "all"  # Nodes are cluster-scoped
+```
+
+### How It Works
+
+1. When viewing a resource that has a custom jump rule defined
+2. Pressing `Enter` on a selected item will:
+   - Apply the template expressions using the selected resource's data
+   - Jump to the target resource view with filters applied
+   - Automatically apply the label/field selectors to show only related resources
+   - Adjust the namespace context as configured
+
+3. If no custom jump is defined, the default behavior applies (describe view or built-in jump)
 
 ---
 
@@ -789,6 +956,87 @@ A plugin is defined as follows:
 * Args specifies the various arguments that should apply to the command above
 * OverwriteOutput boolean option allows plugin developers to provide custom messages on plugin stdout execution. See example in [#2644](https://github.com/derailed/k9s/pull/2644)
 * Dangerous boolean option enables disabling the plugin when read-only mode is set. See [#2604](https://github.com/derailed/k9s/issues/2604)
+* Inputs defines a list of input fields to prompt the user for before executing the plugin (see below)
+
+#### Plugin Inputs
+
+Plugins can define input fields that prompt users for values before execution. This is useful when you need dynamic values like replica counts, environment variables, or profile selections. A maximum of 5 inputs per plugin is allowed.
+
+Each input has the following properties:
+
+* `name` (required) -- the input identifier used to reference the value in args as `$INPUT_<NAME>` (uppercase)
+* `label` -- the label shown to the user in the input dialog
+* `type` (required) -- the input type: `string`, `number`, `bool`, or `dropdown`
+* `required` -- when true, the user must provide a value before the plugin can execute
+* `default` -- a default value pre-filled in the input field (must be a valid option for `dropdown`, `"true"`/`"false"` for `bool`, or a valid number for `number`)
+* `options` -- for `dropdown` type only, defines the list of available choices
+
+Input values are available in plugin args using the format `$INPUT_<NAME>` where `<NAME>` is the uppercase version of the input name.
+
+**Input Types:**
+
+| Type | Description | UI Element |
+|------|-------------|------------|
+| `string` | Free-form text input | Text field |
+| `number` | Numeric input (integers and floats) | Text field with numeric validation |
+| `bool` | Boolean toggle | Checkbox |
+| `dropdown` | Selection from predefined options | Dropdown menu |
+
+**Example:**
+
+```yaml
+plugins:
+  demo-inputs:
+    shortCut: Ctrl-Y
+    description: Demo all input types
+    scopes:
+      - po
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        echo "=== Plugin input demo ===" &&
+        echo "" &&
+        echo "Pod: $NAME" &&
+        echo "Namespace: $NAMESPACE" &&
+        echo "Context: $CONTEXT" &&
+        echo "" &&
+        echo "=== Your inputs ===" &&
+        if [ -n "$INPUT_MESSAGE" ]; then echo "Message: $INPUT_MESSAGE (set)"; else echo "Message: (not set)"; fi &&
+        if [ -n "$INPUT_COUNT" ]; then echo "Count: $INPUT_COUNT (set)"; else echo "Count: (not set)"; fi &&
+        if [ -n "$INPUT_ENABLED" ]; then echo "Enabled: $INPUT_ENABLED (set)"; else echo "Enabled: (not set)"; fi &&
+        if [ -n "$INPUT_ENVIRONMENT" ]; then echo "Environment: $INPUT_ENVIRONMENT (set)"; else echo "Environment: (not set)"; fi &&
+        echo "" &&
+        read -p "Press Enter to return to k9s..."
+    inputs:
+      - name: message
+        label: Enter a message
+        type: string
+        required: true
+        default: hello world
+      - name: count
+        label: Enter a number
+        type: number
+        required: true
+        default: 3
+      - name: enabled
+        label: Enable feature
+        type: bool
+        required: false
+        default: true
+      - name: environment
+        label: Select environment
+        type: dropdown
+        required: true
+        default: staging
+        options:
+          - development
+          - staging
+          - production
+```
+
+For a real-world example of plugin inputs, see [pvc-resize.yaml](plugins/pvc-resize.yaml) which prompts the user for a new PVC size before resizing.
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
@@ -1079,7 +1327,6 @@ k9s:
     active: po
   featureGates:
     nodeShell: false
-  portForwardAddress: localhost
 ```
 
 You can also specify a default skin for all contexts in the root k9s config file as so:
@@ -1127,6 +1374,7 @@ k9s:
     disableAutoscroll: false
     columnLock: false
     showTime: false
+    logBufferSize: 50
   thresholds:
     cpu:
       critical: 90
@@ -1201,6 +1449,7 @@ k9s:
         fgColor: white
         bgColor: darkblue
         sorterColor: orange
+        selectedSortColumnColor: lightskyblue
     # YAML info styles.
     yaml:
       keyColor: steelblue

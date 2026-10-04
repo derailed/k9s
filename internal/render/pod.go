@@ -52,19 +52,19 @@ const (
 )
 
 var defaultPodHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colVS, Attrs: model1.Attrs{VS: true}},
 	model1.HeaderColumn{Name: "PF"},
-	model1.HeaderColumn{Name: "READY"},
-	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: colReady},
+	model1.HeaderColumn{Name: colStatus},
 	model1.HeaderColumn{Name: "RESTARTS", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "LAST RESTART", Attrs: model1.Attrs{Align: tview.AlignRight, Time: true, Wide: true}},
-	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: colCPU, Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "CPU/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
 	model1.HeaderColumn{Name: "%CPU/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%CPU/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: colMEM, Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "MEM/RL", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
 	model1.HeaderColumn{Name: "%MEM/R", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%MEM/L", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
@@ -75,9 +75,9 @@ var defaultPodHeader = model1.Header{
 	model1.HeaderColumn{Name: "NOMINATED NODE", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "READINESS GATES", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "QOS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Pod renders a K8s Pod to screen.
@@ -141,12 +141,9 @@ func (p *Pod) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := p.specs.realize(pwm.Raw.DeepCopy(), defaultPodHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
@@ -162,9 +159,9 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 	dt := pwm.Raw.GetDeletionTimestamp()
 	cReady, _, cRestarts, lastRestart := p.ContainerStats(st.ContainerStatuses)
 
-	iReady, iTerminated, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
+	iReady, iTotal, iRestarts := p.initContainerStats(spec.InitContainers, st.InitContainerStatuses)
 	cReady += iReady
-	allCounts := len(spec.Containers) + iTerminated
+	allCounts := len(spec.Containers) + iTotal
 	rgr, rgt := p.readinessGateStats(spec, &st)
 	ready := hasPodReadyCondition(st.Conditions)
 
@@ -426,10 +423,20 @@ func (*Pod) ContainerStats(cc []v1.ContainerStatus) (readyCnt, terminatedCnt, re
 }
 
 func (*Pod) initContainerStats(cc []v1.Container, cos []v1.ContainerStatus) (ready, total, restart int) {
+	mm := make(map[string]v1.Container, len(cc))
+	for i := range cc {
+		mm[cc[i].Name] = cc[i]
+	}
+
 	for i := range cos {
-		if !isSideCarContainer(cc[i].RestartPolicy) {
+		c, ok := mm[cos[i].Name]
+		if !ok {
 			continue
 		}
+		if !isSideCarContainer(c.RestartPolicy) {
+			continue
+		}
+
 		total++
 		if cos[i].Ready {
 			ready++
@@ -529,6 +536,10 @@ func checkInitContainerStatus(cs *v1.ContainerStatus, count, initCount int, rest
 		if cs.State.Terminated.ExitCode == 0 {
 			return ""
 		}
+		// Sidecar containers are expected to be terminated when the pod completes.
+		if restartable {
+			return ""
+		}
 		if cs.State.Terminated.Reason != "" {
 			return "Init:" + cs.State.Terminated.Reason
 		}
@@ -560,31 +571,9 @@ func PodStatus(pod *v1.Pod) string {
 		}
 	}
 
-	var initializing bool
-	for i := range pod.Status.InitContainerStatuses {
-		container := pod.Status.InitContainerStatuses[i]
-		switch {
-		case container.State.Terminated != nil && container.State.Terminated.ExitCode == 0:
-			continue
-		case container.State.Terminated != nil:
-			if container.State.Terminated.Reason == "" {
-				if container.State.Terminated.Signal != 0 {
-					reason = fmt.Sprintf("Init:Signal:%d", container.State.Terminated.Signal)
-				} else {
-					reason = fmt.Sprintf("Init:ExitCode:%d", container.State.Terminated.ExitCode)
-				}
-			} else {
-				reason = "Init:" + container.State.Terminated.Reason
-			}
-			initializing = true
-		case container.State.Waiting != nil && container.State.Waiting.Reason != "" && container.State.Waiting.Reason != "PodInitializing":
-			reason = "Init:" + container.State.Waiting.Reason
-			initializing = true
-		default:
-			reason = fmt.Sprintf("Init:%d/%d", i, len(pod.Spec.InitContainers))
-			initializing = true
-		}
-		break
+	initializing, initReason := initContainerStatus(pod)
+	if initializing {
+		reason = initReason
 	}
 	if !initializing {
 		var hasRunning bool
@@ -632,6 +621,43 @@ func hasPodReadyCondition(conditions []v1.PodCondition) bool {
 	}
 
 	return false
+}
+
+func initContainerStatus(pod *v1.Pod) (initializing bool, reason string) {
+	sidecars := make(map[string]bool)
+	for i := range pod.Spec.InitContainers {
+		if isSideCarContainer(pod.Spec.InitContainers[i].RestartPolicy) {
+			sidecars[pod.Spec.InitContainers[i].Name] = true
+		}
+	}
+
+	for i := range pod.Status.InitContainerStatuses {
+		container := pod.Status.InitContainerStatuses[i]
+		switch {
+		case container.State.Terminated != nil && container.State.Terminated.ExitCode == 0:
+			continue
+		case container.State.Terminated != nil && sidecars[container.Name]:
+			// Sidecar containers are expected to be terminated when the pod completes.
+			continue
+		case container.State.Terminated != nil:
+			if container.State.Terminated.Reason == "" {
+				if container.State.Terminated.Signal != 0 {
+					return true, fmt.Sprintf("Init:Signal:%d", container.State.Terminated.Signal)
+				}
+				return true, fmt.Sprintf("Init:ExitCode:%d", container.State.Terminated.ExitCode)
+			}
+			return true, "Init:" + container.State.Terminated.Reason
+		case container.State.Waiting != nil && container.State.Waiting.Reason != "" && container.State.Waiting.Reason != "PodInitializing":
+			return true, "Init:" + container.State.Waiting.Reason
+		default:
+			if sidecars[container.Name] {
+				continue
+			}
+			return true, fmt.Sprintf("Init:%d/%d", i, len(pod.Spec.InitContainers))
+		}
+	}
+
+	return false, ""
 }
 
 func isSideCarContainer(p *v1.ContainerRestartPolicy) bool {

@@ -28,7 +28,7 @@ func TestPluginLoad(t *testing.T) {
 						ShortCut:        "shift-s",
 						Description:     "blee",
 						Command:         "duh",
-						Confirm:         true,
+						Confirm:         boolPtr(true),
 						OverwriteOutput: true,
 					},
 				},
@@ -65,7 +65,7 @@ func TestPluginLoad(t *testing.T) {
 						ShortCut:    "shift-s",
 						Description: "blee",
 						Command:     "duh",
-						Confirm:     true,
+						Confirm:     boolPtr(true),
 					},
 				},
 			},
@@ -102,7 +102,7 @@ func TestSinglePluginFileLoad(t *testing.T) {
 		ShortCut:    "shift-s",
 		Description: "blee",
 		Command:     "duh",
-		Confirm:     true,
+		Confirm:     boolPtr(true),
 	}
 
 	p := NewPlugins()
@@ -133,7 +133,7 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 						ShortCut:    "shift-s",
 						Description: "blee",
 						Command:     "duh",
-						Confirm:     true,
+						Confirm:     boolPtr(true),
 					},
 					"snippet.1": {
 						ShortCut:        "shift-s",
@@ -141,7 +141,7 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 						Scopes:          []string{"po", "dp"},
 						Args:            []string{"-n", "$NAMESPACE", "-boolean"},
 						Description:     "blee",
-						Confirm:         true,
+						Confirm:         boolPtr(true),
 						OverwriteOutput: true,
 					},
 					"snippet.2": {
@@ -150,6 +150,7 @@ func TestMultiplePluginFilesLoad(t *testing.T) {
 						ShortCut:    "shift-r",
 						Description: "bla",
 						Command:     "duha",
+						Confirm:     boolPtr(false),
 						Background:  true,
 					},
 					"crapola": {
@@ -206,7 +207,7 @@ func TestPluginLoadSymlink(t *testing.T) {
 				ShortCut:    "shift-s",
 				Description: "blee",
 				Command:     "duh",
-				Confirm:     true,
+				Confirm:     boolPtr(true),
 			},
 			"snippet.1": {
 				ShortCut:        "shift-s",
@@ -214,7 +215,7 @@ func TestPluginLoadSymlink(t *testing.T) {
 				Scopes:          []string{"po", "dp"},
 				Args:            []string{"-n", "$NAMESPACE", "-boolean"},
 				Description:     "blee",
-				Confirm:         true,
+				Confirm:         boolPtr(true),
 				OverwriteOutput: true,
 			},
 			"snippet.2": {
@@ -223,6 +224,7 @@ func TestPluginLoadSymlink(t *testing.T) {
 				ShortCut:    "shift-r",
 				Description: "bla",
 				Command:     "duha",
+				Confirm:     boolPtr(false),
 				Background:  true,
 			},
 			"crapola": {

@@ -4,40 +4,66 @@
 package model1
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 
+	"github.com/derailed/k9s/internal/slogs"
 	"github.com/fvbommel/sortorder"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 )
 
-const poolSize = 10
+var ErrCustomColumn = errors.New("custom column resolution error")
 
-func Hydrate(ns string, oo []runtime.Object, rr Rows, re Renderer) error {
-	pool := NewWorkerPool(context.Background(), poolSize)
-	for i, o := range oo {
-		pool.Add(func(ctx context.Context) error {
-			select {
-			case <-ctx.Done():
-				slog.Debug("Worker canceled")
-				return nil
-			default:
-				return re.Render(o, ns, &rr[i])
+// parallelRender fans work across NumCPU batch workers.
+func parallelRender(n int, fn func(i int) error) error {
+	if n == 0 {
+		return nil
+	}
+
+	workers := min(runtime.NumCPU(), n)
+	if workers < 1 {
+		workers = 1
+	}
+	chunkSize := (n + workers - 1) / workers
+
+	var (
+		wg       sync.WaitGroup
+		firstErr error
+		errOnce  sync.Once
+	)
+	for w := range workers {
+		lo := w * chunkSize
+		hi := min(lo+chunkSize, n)
+		if lo >= n {
+			break
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := lo; i < hi; i++ {
+				if err := fn(i); err != nil {
+					errOnce.Do(func() { firstErr = err })
+				}
 			}
-		})
+		}()
 	}
-	errs := pool.Drain()
-	if len(errs) > 0 {
-		return errs[0]
-	}
+	wg.Wait()
 
-	return nil
+	return firstErr
+}
+
+func Hydrate(ns string, oo []k8sruntime.Object, rr Rows, re Renderer) error {
+	return parallelRender(len(oo), func(i int) error {
+		return handleRenderErr(re.Render(oo[i], ns, &rr[i]))
+	})
 }
 
 func GenericHydrate(ns string, table *metav1.Table, rr Rows, re Renderer) error {
@@ -46,24 +72,22 @@ func GenericHydrate(ns string, table *metav1.Table, rr Rows, re Renderer) error 
 		return fmt.Errorf("expecting generic renderer but got %T", re)
 	}
 	gr.SetTable(ns, table)
-	pool := NewWorkerPool(context.Background(), poolSize)
-	for i, row := range table.Rows {
-		pool.Add(func(ctx context.Context) error {
-			select {
-			case <-ctx.Done():
-				slog.Debug("Worker canceled")
-				return nil
-			default:
-				return gr.Render(row, ns, &rr[i])
-			}
-		})
+
+	return parallelRender(len(table.Rows), func(i int) error {
+		return handleRenderErr(gr.Render(table.Rows[i], ns, &rr[i]))
+	})
+}
+
+func handleRenderErr(err error) error {
+	if err == nil {
+		return nil
 	}
-	errs := pool.Drain()
-	if len(errs) > 0 {
-		return errs[0]
+	if errors.Is(err, ErrCustomColumn) {
+		slog.Warn("Unable to resolve custom column; rendering partial row", slogs.Error, err)
+		return nil
 	}
 
-	return nil
+	return err
 }
 
 // IsValid returns true if resource is valid, false otherwise.
@@ -80,10 +104,12 @@ func IsValid(_ string, h Header, r Row) bool {
 }
 
 func sortLabels(m map[string]string) (keys, vals []string) {
+	keys = make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+	vals = make([]string, 0, len(m))
 	for _, k := range keys {
 		vals = append(vals, m[k])
 	}
@@ -150,39 +176,42 @@ func runesToNum(rr []rune) int64 {
 }
 
 func capacityToNumber(capacity string) int64 {
+	if strings.TrimSpace(capacity) == "" {
+		return 0
+	}
 	quantity := resource.MustParse(capacity)
 	return quantity.Value()
 }
 
-// Less return true if c1 <= c2.
+// Less return true if v1 sorts before v2.
 func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
-	var less bool
+	var less, equal bool
 	switch {
 	case isNumber:
 		less = lessNumber(v1, v2)
 	case isDuration:
-		less = lessDuration(v1, v2)
+		less, equal = lessDuration(v1, v2)
 	case isCapacity:
-		less = lessCapacity(v1, v2)
+		less, equal = lessCapacity(v1, v2)
 	default:
 		less = sortorder.NaturalLess(v1, v2)
 	}
-	if v1 == v2 {
+	if v1 == v2 || equal {
 		return sortorder.NaturalLess(id1, id2)
 	}
 
 	return less
 }
 
-func lessDuration(s1, s2 string) bool {
+func lessDuration(s1, s2 string) (less, equal bool) {
 	d1, d2 := durationToSeconds(s1), durationToSeconds(s2)
-	return d1 <= d2
+	return d1 < d2, d1 == d2
 }
 
-func lessCapacity(s1, s2 string) bool {
+func lessCapacity(s1, s2 string) (less, equal bool) {
 	c1, c2 := capacityToNumber(s1), capacityToNumber(s2)
 
-	return c1 <= c2
+	return c1 < c2, c1 == c2
 }
 
 func lessNumber(s1, s2 string) bool {

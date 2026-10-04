@@ -24,6 +24,9 @@ const (
 
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true
+
+	defaultQPS   float32 = 50
+	defaultBurst         = 100
 )
 
 // Config tracks a kubernetes configuration.
@@ -60,6 +63,10 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 	}
 	if c.proxy != nil {
 		cfg.Proxy = c.proxy
+	}
+	if cfg.QPS == 0 {
+		cfg.QPS = defaultQPS
+		cfg.Burst = defaultBurst
 	}
 
 	return cfg, nil

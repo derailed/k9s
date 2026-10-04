@@ -1,5 +1,5 @@
 NAME            := k9s
-VERSION         ?= v0.50.18
+VERSION         ?= v0.51.0
 PACKAGE         := github.com/derailed/$(NAME)
 OUTPUT_BIN      ?= execs/${NAME}
 GO_FLAGS        ?=
@@ -22,6 +22,10 @@ default: help
 
 test:                    ## Run all tests
 	@go clean --testcache && go test ./...
+
+lint:                    ## Run golangci-lint
+	@command -v golangci-lint >/dev/null 2>&1 || go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
+	@golangci-lint run
 
 cover:                   ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out

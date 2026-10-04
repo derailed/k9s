@@ -7,6 +7,7 @@ import (
 	"context"
 	"log/slog"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
@@ -56,6 +57,9 @@ func (t *Table) Init(ctx context.Context) (err error) {
 			slog.Warn("CustomViews load failed", slogs.Error, err)
 			t.app.Logo().Warn("Views load failed!")
 		}
+		if err := t.app.RefreshCustomJumps(); err != nil {
+			slog.Warn("CustomJumps load failed", slogs.Error, err)
+		}
 	}
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
@@ -70,6 +74,8 @@ func (t *Table) SetCommand(i *cmd.Interpreter) {
 	t.command = i
 }
 
+var stripHeaderRX = regexp.MustCompile(`\[.+\](\w+)\[.+\]`)
+
 // HeaderIndex returns index of a given column or false if not found.
 func (t *Table) HeaderIndex(colName string) (int, bool) {
 	for i := range t.GetColumnCount() {
@@ -78,13 +84,14 @@ func (t *Table) HeaderIndex(colName string) (int, bool) {
 			continue
 		}
 		s := h.Text
-		if idx := strings.Index(s, "["); idx > 0 {
-			s = s[:idx]
+		if mm := stripHeaderRX.FindStringSubmatch(s); len(mm) == 2 {
+			s = mm[1]
 		}
 		if s == colName {
 			return i, true
 		}
 	}
+
 	return 0, false
 }
 

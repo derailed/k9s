@@ -16,12 +16,12 @@ import (
 )
 
 var defaultEPsHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "ADDRESSTYPE"},
-	model1.HeaderColumn{Name: "PORTS"},
+	model1.HeaderColumn{Name: colPorts},
 	model1.HeaderColumn{Name: "ENDPOINTS"},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // EndpointSlice renders a K8s EndpointSlice to screen.
@@ -43,12 +43,9 @@ func (e EndpointSlice) Render(o any, ns string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := e.specs.realize(o.(*unstructured.Unstructured), defaultEPsHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (e EndpointSlice) defaultRow(o any, ns string, r *model1.Row) error {

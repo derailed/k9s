@@ -109,7 +109,7 @@ func (v *OwnerExtender) jumpOwner(ns string, owner *metav1.OwnerReference) error
 	if namespaced {
 		ownerFQN = client.FQN(ns, owner.Name)
 	} else {
-		ownerFQN = owner.Name
+		ownerFQN = client.FQN(client.ClusterScope, owner.Name)
 	}
 
 	v.App().gotoResource(gvr.String(), ownerFQN, false, true)

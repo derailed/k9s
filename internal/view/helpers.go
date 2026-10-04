@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -46,15 +45,7 @@ func aliases(m *v1.APIResource, aa sets.Set[string]) sets.Set[string] {
 	return ss
 }
 
-func clipboardWrite(text string) error {
-	if text != "" {
-		return clipboard.WriteAll(text)
-	}
-
-	return nil
-}
-
-var bracketRX = regexp.MustCompile(`\[(.+)\[\]`)
+var bracketRX = regexp.MustCompile(`\[(.+?)\[\]`)
 
 func sanitizeEsc(s string) string {
 	return bracketRX.ReplaceAllString(s, `[$1]`)

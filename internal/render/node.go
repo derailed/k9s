@@ -37,30 +37,30 @@ var (
 )
 
 var defaultNOHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colStatus},
 	model1.HeaderColumn{Name: "ROLE"},
 	model1.HeaderColumn{Name: "ARCH", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "TAINTS"},
-	model1.HeaderColumn{Name: "VERSION"},
+	model1.HeaderColumn{Name: colVersion},
 	model1.HeaderColumn{Name: "OS-IMAGE", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "KERNEL", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "INTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "EXTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "PODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
-	model1.HeaderColumn{Name: "CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: colCPU, Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "CPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
+	model1.HeaderColumn{Name: colMEM, Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "MEM/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%MEM", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "GPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "GPU/C", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "SH-GPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "SH-GPU/C", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Node renders a K8s Node to screen.
@@ -104,15 +104,12 @@ func (n Node) Render(o any, _ string, row *model1.Row) error {
 	}
 
 	cols, err := n.specs.realize(nwm.Raw, defaultNOHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 	var no v1.Node
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(nwm.Raw.Object, &no)
@@ -191,13 +188,16 @@ func (Node) diagnose(ss []string) error {
 		return nil
 	}
 
-	var ready bool
+	var (
+		ready    bool
+		cordoned bool
+	)
 	for _, s := range ss {
 		if s == "" {
 			continue
 		}
 		if s == "SchedulingDisabled" {
-			return cordonErr
+			cordoned = true
 		}
 		if s == "Ready" {
 			ready = true
@@ -206,6 +206,9 @@ func (Node) diagnose(ss []string) error {
 
 	if !ready {
 		return notReadyErr
+	}
+	if cordoned {
+		return cordonErr
 	}
 
 	return nil

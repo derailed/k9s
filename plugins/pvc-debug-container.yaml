@@ -1,38 +1,83 @@
 plugins:
   pvc-shell:
-    shortCut: s
-    description: "Spawn an Ubuntu shell pod with this PVC mounted"
-    scopes:
-      - pvc
-    command: sh
-    background: false
-    args:
-      - -c
-      - |
-        echo "Starting a shell pod with PVC $NAME mounted at /mnt/data"
-        cat <<EOF | kubectl --kubeconfig $KUBECONFIG apply -f > /dev/null 2>&1 -
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: pvc-shell
-          namespace: $NAMESPACE
-        spec:
-          restartPolicy: Never
-          containers:
-            - name: shell
-              image: ubuntu:latest
-              command: ["bash"]
-              stdin: true
-              tty: true
-              volumeMounts:
-                - name: vol
-                  mountPath: /mnt/data
-          volumes:
-            - name: vol
-              persistentVolumeClaim:
-                claimName: $NAME
-        EOF
-        echo "Waiting for pod to be ready..."
-        kubectl --kubeconfig $KUBECONFIG -n $NAMESPACE wait --for=condition=Ready pod/pvc-shell > /dev/null 2>&1
-        kubectl --kubeconfig $KUBECONFIG -n $NAMESPACE exec -it pvc-shell -- bash
-        kubectl --kubeconfig $KUBECONFIG -n $NAMESPACE delete pod pvc-shell --grace-period=0 --force=true > /dev/null 2>&1
+      shortCut: s
+      description: "Shell on PVC"
+      scopes:
+        - pvc
+      command: sh
+      background: false
+      confirm: false
+      inputs:
+        - name: podname
+          label: POD name
+          type: string
+          required: true
+          default: "pvc-shell"
+        - name: image
+          label: Image
+          type: dropdown
+          required: true
+          default: nicolaka/netshoot:v0.15
+          options:
+            - nicolaka/netshoot:v0.15
+            - ubuntu:26.04
+        - name: mountpath
+          label: Mount path
+          type: string
+          required: true
+          default: "/mnt/data"
+      args:
+        - -c
+        - |
+          NODE=$(kubectl --context $CONTEXT -n $NAMESPACE get pods \
+            -o jsonpath='{range .items[?(@.spec.volumes[*].persistentVolumeClaim.claimName=="'"$NAME"'")]}{.spec.nodeName}{"\n"}{end}' | head -n1)
+
+          if [ -n "$NODE" ]; then
+            NODE_LINE="nodeName: $NODE"
+          else
+            NODE_LINE=""
+          fi
+
+          echo "Starting a shell pod with PVC - $NAME mounted at $INPUT_MOUNTPATH"
+
+          {
+          cat <<EOF
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: $INPUT_PODNAME
+            namespace: $NAMESPACE
+          spec:
+            $NODE_LINE
+            restartPolicy: Never
+            tolerations:
+              - operator: Exists
+            containers:
+              - name: shell
+                image: $INPUT_IMAGE
+                command: ["sh"]
+                stdin: true
+                tty: true
+                volumeMounts:
+                  - name: vol
+                    mountPath: $INPUT_MOUNTPATH
+            volumes:
+              - name: vol
+                persistentVolumeClaim:
+                  claimName: $NAME
+          EOF
+          } | kubectl --context $CONTEXT apply -f - >/dev/null 2>&1
+
+          echo "Waiting for pod to be ready."
+          if ! kubectl --context $CONTEXT -n $NAMESPACE wait --for=condition=Ready pod/$INPUT_PODNAME --timeout=60s; then
+            echo "Pod did not become Ready. Likely a ReadWriteOnce conflict."
+            echo "Press Enter to return to k9s."
+            read dummy
+            kubectl --context $CONTEXT -n $NAMESPACE delete pod $INPUT_PODNAME --ignore-not-found --grace-period=0 --force >/dev/null 2>&1
+            exit 0
+          fi
+
+          kubectl --context $CONTEXT -n $NAMESPACE exec -it $INPUT_PODNAME -- bash || echo "Could not exec into pod."
+
+          echo "Cleaning up pod."
+          kubectl --context $CONTEXT -n $NAMESPACE delete pod $INPUT_PODNAME --ignore-not-found --grace-period=0 --force >/dev/null 2>&1

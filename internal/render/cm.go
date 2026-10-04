@@ -25,11 +25,11 @@ func (m ConfigMap) Header(_ string) model1.Header {
 }
 
 var defaultCMHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "DATA"},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
@@ -42,15 +42,12 @@ func (m ConfigMap) Render(o any, _ string, row *model1.Row) error {
 	}
 
 	cols, err := m.specs.realize(o.(*unstructured.Unstructured), defaultCMHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (ConfigMap) defaultRow(o any, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {

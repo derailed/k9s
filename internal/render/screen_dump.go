@@ -31,10 +31,10 @@ func (ScreenDump) ColorerFunc() model1.ColorerFunc {
 // Header returns a header row.
 func (ScreenDump) Header(string) model1.Header {
 	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: colName},
 		model1.HeaderColumn{Name: "DIR"},
-		model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-		model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+		model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+		model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 	}
 }
 

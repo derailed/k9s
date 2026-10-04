@@ -19,7 +19,6 @@ func ShowSelection(styles *config.Dialog, pages *ui.Pages, title string, options
 
 	for _, option := range options {
 		list.AddItem(option, "", 0, nil)
-		list.AddItem(option, "", 0, nil)
 	}
 
 	modal := ui.NewModalList("<"+title+">", list)

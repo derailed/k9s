@@ -12,10 +12,10 @@ import (
 )
 
 var defaultGENHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Generic renders a K8s generic resource to screen.
@@ -41,15 +41,12 @@ func (m Generic) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := m.specs.realize(o.(*unstructured.Unstructured), defaultGENHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (Generic) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	r.ID = client.FQN(raw.GetNamespace(), raw.GetName())
 	r.Fields = model1.Fields{

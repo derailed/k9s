@@ -6,6 +6,7 @@ package ui
 import (
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // SelectTable represents a table with selections.
@@ -14,7 +15,7 @@ type SelectTable struct {
 
 	model      Tabular
 	selectedFn func(string) string
-	marks      map[string]struct{}
+	marks      sets.Set[string]
 	selFgColor tcell.Color
 	selBgColor tcell.Color
 }
@@ -44,19 +45,14 @@ func (s *SelectTable) SelectFirstRow() {
 
 // GetSelectedItems return currently marked or selected items names.
 func (s *SelectTable) GetSelectedItems() []string {
-	if len(s.marks) == 0 {
+	if s.marks.Len() == 0 {
 		if item := s.GetSelectedItem(); item != "" {
 			return []string{item}
 		}
 		return nil
 	}
 
-	items := make([]string, 0, len(s.marks))
-	for item := range s.marks {
-		items = append(items, item)
-	}
-
-	return items
+	return s.marks.UnsortedList()
 }
 
 // GetRowID returns the row id at given location.
@@ -133,14 +129,12 @@ func (s *SelectTable) selectionChanged(r, c int) {
 
 // ClearMarks delete all marked items.
 func (s *SelectTable) ClearMarks() {
-	for k := range s.marks {
-		delete(s.marks, k)
-	}
+	s.marks.Clear()
 }
 
 // DeleteMark delete a marked item.
 func (s *SelectTable) DeleteMark(k string) {
-	delete(s.marks, k)
+	s.marks.Delete(k)
 }
 
 // ToggleMark toggles marked row.
@@ -149,10 +143,10 @@ func (s *SelectTable) ToggleMark() {
 	if sel == "" {
 		return
 	}
-	if _, ok := s.marks[sel]; ok {
-		delete(s.marks, s.GetSelectedItem())
+	if s.marks.Has(sel) {
+		s.marks.Delete(s.GetSelectedItem())
 	} else {
-		s.marks[sel] = struct{}{}
+		s.marks.Insert(sel)
 	}
 
 	if cell := s.GetCell(s.GetSelectedRowIndex(), 0); cell != nil {
@@ -172,7 +166,7 @@ func (s *SelectTable) SpanMark() {
 		if !ok {
 			break
 		}
-		if _, ok := s.marks[id]; ok {
+		if s.marks.Has(id) {
 			prev = i
 			break
 		}
@@ -188,7 +182,7 @@ func (s *SelectTable) SpanMark() {
 		if !ok {
 			break
 		}
-		if _, ok := s.marks[id]; ok {
+		if s.marks.Has(id) {
 			prev = i
 			break
 		}
@@ -208,7 +202,7 @@ func (s *SelectTable) markRange(prev, curr int) {
 		if !ok {
 			break
 		}
-		s.marks[id] = struct{}{}
+		s.marks.Insert(id)
 		cell := s.GetCell(s.GetSelectedRowIndex(), 0)
 		if cell == nil {
 			break
@@ -219,6 +213,5 @@ func (s *SelectTable) markRange(prev, curr int) {
 
 // IsMarked returns true if this item was marked.
 func (s *SelectTable) IsMarked(item string) bool {
-	_, ok := s.marks[item]
-	return ok
+	return s.marks.Has(item)
 }

@@ -16,14 +16,14 @@ import (
 )
 
 var defaultSCHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "PROVISIONER"},
 	model1.HeaderColumn{Name: "RECLAIMPOLICY"},
 	model1.HeaderColumn{Name: "VOLUMEBINDINGMODE"},
 	model1.HeaderColumn{Name: "ALLOWVOLUMEEXPANSION"},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // StorageClass renders a K8s StorageClass to screen.
@@ -49,12 +49,9 @@ func (s StorageClass) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := s.specs.realize(raw, defaultSCHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (s StorageClass) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

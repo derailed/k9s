@@ -1,0 +1,4 @@
+jumps:
+  "v1/persistentvolumeclaims":
+    targetGVR: "v1/persistentvolumes"
+    fieldSelector: "metadata.name={{.spec.volumeName}}"

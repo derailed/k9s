@@ -105,7 +105,7 @@ func (t *TableData) RowsRange(f ReRangeFn) {
 }
 
 func (t *TableData) Sort(sc SortColumn) {
-	col, idx := t.HeadCol(sc.Name, false)
+	col, idx := t.HeadCol(sc.Name, true)
 	if idx < 0 {
 		return
 	}
@@ -150,10 +150,10 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 		return td
 	}
 	if f, ok := internal.IsFuzzySelector(f.Filter); ok {
-		td.rowEvents = t.fuzzyFilter(f)
+		td.rowEvents = td.fuzzyFilter(f)
 		return td
 	}
-	rr, err := t.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
+	rr, err := td.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
 	if err == nil {
 		td.rowEvents = rr
 	} else {
@@ -461,24 +461,17 @@ func (t *TableData) Delete(newKeys sets.Set[string]) {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	victims := sets.New[string]()
+	victims := make([]string, 0)
 	t.rowEvents.Range(func(_ int, e RowEvent) bool {
 		if newKeys.Has(e.Row.ID) {
 			delete(newKeys, e.Row.ID)
 		} else {
-			victims.Insert(e.Row.ID)
+			victims = append(victims, e.Row.ID)
 		}
 		return true
 	})
 
-	for _, id := range victims.UnsortedList() {
-		if err := t.rowEvents.Delete(id); err != nil {
-			slog.Error("Table delete failed",
-				slogs.Error, err,
-				slogs.Message, id,
-			)
-		}
-	}
+	t.rowEvents.DeleteBatch(victims)
 }
 
 // Diff checks if two tables are equal.

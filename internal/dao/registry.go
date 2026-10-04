@@ -27,6 +27,8 @@ const (
 	k9sCat   = "k9s"
 	helmCat  = "helm"
 	scaleCat = "scale"
+
+	verbDelete = "delete"
 )
 
 var stdGroups = sets.New[string](
@@ -238,7 +240,7 @@ func loadK9s(m ResourceMetas) {
 		Kind:         "ScreenDumps",
 		SingularName: "screendump",
 		ShortNames:   []string{"sd"},
-		Verbs:        []string{"delete"},
+		Verbs:        []string{verbDelete},
 		Categories:   []string{k9sCat},
 	}
 	m[client.BeGVR] = &metav1.APIResource{
@@ -246,7 +248,7 @@ func loadK9s(m ResourceMetas) {
 		Kind:         "Benchmarks",
 		SingularName: "benchmark",
 		ShortNames:   []string{"be"},
-		Verbs:        []string{"delete"},
+		Verbs:        []string{verbDelete},
 		Categories:   []string{k9sCat},
 	}
 	m[client.PfGVR] = &metav1.APIResource{
@@ -255,7 +257,7 @@ func loadK9s(m ResourceMetas) {
 		Kind:         "PortForwards",
 		SingularName: "portforward",
 		ShortNames:   []string{"pf"},
-		Verbs:        []string{"delete"},
+		Verbs:        []string{verbDelete},
 		Categories:   []string{k9sCat},
 	}
 	m[client.CoGVR] = &metav1.APIResource{
@@ -287,14 +289,14 @@ func loadHelm(m ResourceMetas) {
 		Name:       "helm",
 		Kind:       "Helm",
 		Namespaced: true,
-		Verbs:      []string{"delete"},
+		Verbs:      []string{verbDelete},
 		Categories: []string{helmCat},
 	}
 	m[client.HmhGVR] = &metav1.APIResource{
 		Name:       "history",
 		Kind:       "History",
 		Namespaced: true,
-		Verbs:      []string{"delete"},
+		Verbs:      []string{verbDelete},
 		Categories: []string{helmCat},
 	}
 }
@@ -325,7 +327,10 @@ func loadRBAC(m ResourceMetas) {
 
 func loadPreferred(f Factory, m ResourceMetas) error {
 	if f == nil || f.Client() == nil || !f.Client().ConnectionOK() {
-		slog.Error("Load cluster resources - No API server connection")
+		// Only log as error if we have a context configured
+		if f != nil && f.Client() != nil && f.Client().ActiveContext() != "" {
+			slog.Error("Load cluster resources - No API server connection")
+		}
 		return nil
 	}
 
@@ -397,13 +402,22 @@ func loadCRDs(f Factory, m ResourceMetas) {
 			slog.Error("CRD conversion failed", slogs.Error, err)
 			continue
 		}
-		for gvr, version := range client.NewGVRFromCRD(&crd) {
-			if meta, ok := m[gvr]; ok && version.Subresources != nil && version.Subresources.Scale != nil {
-				if !slices.Contains(meta.Categories, scaleCat) {
-					meta.Categories = append(meta.Categories, scaleCat)
-					m[gvr] = meta
-				}
-			}
+		addCRDProperties(m, &crd)
+	}
+}
+
+func addCRDProperties(m ResourceMetas, crd *apiext.CustomResourceDefinition) {
+	for gvr, version := range client.NewGVRFromCRD(crd) {
+		meta, ok := m[gvr]
+		if !ok {
+			continue
 		}
+		if !slices.Contains(meta.Categories, crdCat) {
+			meta.Categories = append(meta.Categories, crdCat)
+		}
+		if version.Subresources != nil && version.Subresources.Scale != nil && !slices.Contains(meta.Categories, scaleCat) {
+			meta.Categories = append(meta.Categories, scaleCat)
+		}
+		m[gvr] = meta
 	}
 }

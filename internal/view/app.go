@@ -117,8 +117,12 @@ func (a *App) Init(version string, _ int) error {
 		a.clusterModel.AddListener(a.clusterInfo())
 		a.clusterModel.AddListener(a.statusIndicator())
 		if a.Conn().ConnectionOK() {
-			a.clusterModel.Refresh()
-			a.clusterInfo().Init()
+			go func() {
+				a.clusterModel.Refresh()
+				a.QueueUpdateDraw(func() {
+					a.clusterInfo().Init()
+				})
+			}()
 		}
 	}
 
@@ -351,6 +355,9 @@ func (a *App) Resume() {
 		if err := a.CustomViewsWatcher(ctx, a); err != nil {
 			slog.Warn("CustomView watcher failed", slogs.Error, err)
 		}
+		if err := a.CustomJumpsWatcher(ctx, a); err != nil {
+			slog.Warn("CustomJumps watcher failed", slogs.Error, err)
+		}
 	}
 }
 
@@ -457,7 +464,6 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 	if (!ok || a.Config.ActiveContextName() == contextName) && !force {
 		return nil
 	}
-
 	a.Halt()
 	defer a.Resume()
 	{
@@ -469,14 +475,14 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		if cns, ok := ci.NSArg(); ok {
 			ct.Namespace.Active = cns
 		}
-
 		p := cmd.NewInterpreter(a.Config.ActiveView())
 		p.ResetContextArg()
 		if p.IsContextCmd() {
 			a.Config.SetActiveView(client.PodGVR.String())
 		}
 		ns := a.Config.ActiveNamespace()
-		if !a.Conn().IsValidNamespace(ns) {
+		_, nsExplicit := ci.NSArg()
+		if !nsExplicit && !a.Conn().IsValidNamespace(ns) {
 			slog.Warn("Unable to validate namespace", slogs.Namespace, ns)
 			if err := a.Config.SetActiveNamespace(ns); err != nil {
 				return err
@@ -511,9 +517,8 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
-
 		if a.clusterModel != nil {
-			a.clusterModel.Reset(a.factory)
+			go a.clusterModel.Reset(a.factory)
 		}
 	}
 

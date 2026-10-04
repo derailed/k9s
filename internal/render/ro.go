@@ -24,11 +24,11 @@ func (r Role) Header(_ string) model1.Header {
 }
 
 var defaultROHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
@@ -44,12 +44,9 @@ func (r Role) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := r.specs.realize(raw, defaultROHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (Role) defaultRow(raw *unstructured.Unstructured, row *model1.Row) error {

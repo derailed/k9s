@@ -35,14 +35,15 @@ import (
 type Browser struct {
 	*Table
 
-	namespaces map[int]string
-	meta       *metav1.APIResource
-	accessor   dao.Accessor
-	contextFn  ContextFunc
-	cancelFn   context.CancelFunc
-	mx         sync.RWMutex
-	updating   bool
-	firstView  atomic.Int32
+	namespaces    map[int]string
+	meta          *metav1.APIResource
+	accessor      dao.Accessor
+	contextFn     ContextFunc
+	cancelFn      context.CancelFunc
+	mx            sync.RWMutex
+	updating      bool
+	actionsLoaded atomic.Bool
+	firstView     atomic.Int32
 }
 
 // NewBrowser returns a new browser.
@@ -173,6 +174,7 @@ func (b *Browser) Start() {
 
 	b.Stop()
 	b.firstView.Store(0) // Reset first view counter on each start
+	b.actionsLoaded.Store(false)
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -307,6 +309,19 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 	// Skip warning on first view (likely during initialization)
 	if b.firstView.Load() == 0 || mdata.HeaderCount() == 0 {
 		b.firstView.Add(1)
+		return
+	}
+
+	// While the informer cache hasn't synced yet, show a neutral status
+	// instead of a misleading "no resources found" warning.
+	if synced, err := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
+		b.app.QueueUpdateDraw(func() {
+			if err != nil {
+				b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
+				return
+			}
+			b.app.Flash().Infof("Synchronizing %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace()))
+		})
 		return
 	}
 
@@ -448,6 +463,15 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
+	// Check for custom jump rules first
+	if rule, ok := b.App().CustomJumps().GetRule(b.GVR()); ok {
+		if err := customJump(b.app, b.GVR(), path, rule); err != nil {
+			b.app.Flash().Errf("Custom jump failed: %s", err)
+		}
+		return nil
+	}
+
+	// Fall back to default behavior
 	f := describeResource
 	if b.enterFn != nil {
 		f = b.enterFn
@@ -476,6 +500,9 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		msg := fmt.Sprintf("Delete %s %s?", b.GVR().R(), selections[0])
 		if len(selections) > 1 {
 			msg = fmt.Sprintf("Delete %d marked %s?", len(selections), b.GVR())
+			if hidden := b.countHiddenMarks(selections); hidden > 0 {
+				msg += fmt.Sprintf(" (%d currently hidden by filter)", hidden)
+			}
 		}
 		if !dao.IsK8sMeta(b.meta) {
 			b.simpleDelete(selections, msg)
@@ -485,6 +512,21 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
+}
+
+// countHiddenMarks returns the number of marked items not visible in the current filtered view.
+func (b *Browser) countHiddenMarks(selections []string) int {
+	if b.CmdBuff().Empty() {
+		return 0
+	}
+	filtered := b.GetTable().GetFilteredData()
+	var hidden int
+	for _, sel := range selections {
+		if _, ok := filtered.FindRow(sel); !ok {
+			hidden++
+		}
+	}
+	return hidden
 }
 
 func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -589,6 +631,7 @@ func (b *Browser) setNamespace(ns string) {
 		ns = client.ClusterScope
 	}
 	b.GetModel().SetNamespace(ns)
+	b.GetTable().ClearMarks()
 }
 
 func (b *Browser) defaultContext() context.Context {
@@ -646,13 +689,20 @@ func (b *Browser) refreshActions() {
 	}
 	b.Actions().Merge(aa)
 
-	if err := pluginActions(b, b.Actions()); err != nil {
-		slog.Warn("Plugins load failed", slogs.Error, err)
-		b.app.Logo().Warn("Plugins load failed!")
-	}
-	if err := hotKeyActions(b, b.Actions()); err != nil {
-		slog.Warn("Hotkeys load failed", slogs.Error, err)
-		b.app.Logo().Warn("HotKeys load failed!")
+	if !b.actionsLoaded.Load() {
+		// pluginActions no-ops without a live connection: don't cache until one actually loads.
+		connOK := b.app.Conn() != nil && b.app.Conn().ConnectionOK()
+		if err := pluginActions(b, b.Actions()); err != nil {
+			slog.Warn("Plugins load failed", slogs.Error, err)
+			b.app.Logo().Warn("Plugins load failed!")
+		}
+		if err := hotKeyActions(b, b.Actions()); err != nil {
+			slog.Warn("Hotkeys load failed", slogs.Error, err)
+			b.app.Logo().Warn("HotKeys load failed!")
+		}
+		if connOK {
+			b.actionsLoaded.Store(true)
+		}
 	}
 	b.app.Menu().HydrateMenu(b.Hints())
 }

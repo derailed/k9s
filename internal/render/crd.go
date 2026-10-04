@@ -18,15 +18,15 @@ import (
 )
 
 var defaultCRDHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "GROUP"},
-	model1.HeaderColumn{Name: "KIND"},
+	model1.HeaderColumn{Name: colKind},
 	model1.HeaderColumn{Name: "VERSIONS"},
 	model1.HeaderColumn{Name: "SCOPE"},
 	model1.HeaderColumn{Name: "ALIASES", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // CustomResourceDefinition renders a K8s CustomResourceDefinition to screen.
@@ -53,15 +53,12 @@ func (c CustomResourceDefinition) Render(o any, _ string, row *model1.Row) error
 		return nil
 	}
 	cols, err := c.specs.realize(raw, defaultCRDHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
-// Render renders a K8s resource to screen.
+// defaultRow populates the row fields with Deployment data.
 func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	var crd v1.CustomResourceDefinition
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &crd)
@@ -91,7 +88,7 @@ func (c CustomResourceDefinition) defaultRow(raw *unstructured.Unstructured, r *
 		naStrings(versions),
 		string(crd.Spec.Scope),
 		naStrings(crd.Spec.Names.ShortNames),
-		mapToIfc(crd.GetLabels()),
+		mapToStr(crd.GetLabels()),
 		AsStatus(c.diagnose(crd.Name, crd.Spec.Versions)),
 		ToAge(crd.GetCreationTimestamp()),
 	}

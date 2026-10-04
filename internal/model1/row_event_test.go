@@ -5,11 +5,9 @@ package model1_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRowEventCustomize(t *testing.T) {
@@ -361,53 +359,76 @@ func TestRowEventsCustomize(t *testing.T) {
 	}
 }
 
-func TestRowEventsDelete(t *testing.T) {
+func TestRowEventsDeleteBatch(t *testing.T) {
 	uu := map[string]struct {
 		re, e *model1.RowEvents
-		id    string
+		ids   []string
 	}{
-		"first": {
+		"single": {
 			re: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
 			),
-			id: "A",
-			e: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
-			),
-		},
-		"middle": {
-			re: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
-			),
-			id: "B",
+			ids: []string{"B"},
 			e: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
 			),
 		},
-		"last": {
+		"multiple": {
 			re: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
 			),
-			id: "C",
+			ids: []string{"A", "C"},
 			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
+			),
+		},
+		"duplicate_ids": {
+			re: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
 			),
+			ids: []string{"A", "A"},
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
+			),
+		},
+		"unknown_ids": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+			),
+			ids: []string{"X", "Y"},
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+			),
+		},
+		"empty_ids": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+			),
+			ids: []string{},
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+			),
+		},
+		"all": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
+			),
+			ids: []string{"A", "B"},
+			e:   model1.NewRowEvents(2),
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			require.NoError(t, u.re.Delete(u.id))
+			u.re.DeleteBatch(u.ids)
 			assert.Equal(t, u.e, u.re)
 		})
 	}
@@ -422,17 +443,32 @@ func TestRowEventsSort(t *testing.T) {
 	}{
 		"age_time": {
 			re: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", testTime().Add(20 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", testTime().Add(10 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", testTime().String()}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "2m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "1m"}}},
 			),
 			col:      2,
 			asc:      true,
 			duration: true,
 			e: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", testTime().String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", testTime().Add(10 * time.Second).String()}}},
-				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", testTime().Add(20 * time.Second).String()}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "1m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "2m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3m"}}},
+			),
+		},
+		"age_time_equal_value": {
+			// Different strings, identical parsed duration: order must be
+			// deterministic (by ID asc) and must not depend on input order.
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "1m"}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "60s"}}},
+			),
+			col:      2,
+			asc:      true,
+			duration: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "60s"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "1m"}}},
 			),
 		},
 		"col0": {

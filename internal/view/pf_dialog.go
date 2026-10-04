@@ -48,17 +48,13 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	f.AddInputField("Local Port:", p2, fieldLen, nil, nil)
 	coField := f.GetFormItemByLabel("Container Port:").(*tview.InputField)
 	loField := f.GetFormItemByLabel("Local Port:").(*tview.InputField)
-	if coField.GetText() == "" {
-		coField.SetPlaceholder("Enter a container name::port")
-	}
+	coField.SetPlaceholder("Enter a container name::port")
 	coField.SetChangedFunc(func(s string) {
 		p := extractPort(s)
 		loField.SetText(p)
 		p2 = p
 	})
-	if loField.GetText() == "" {
-		loField.SetPlaceholder("Enter a local port")
-	}
+	loField.SetPlaceholder("Enter a local port")
 	address := v.App().Config.K9s.PortForwardAddress
 	f.AddInputField("Address:", address, fieldLen, nil, func(h string) {
 		address = h
@@ -72,7 +68,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 
 	f.AddButton("OK", func() {
 		if coField.GetText() == "" || loField.GetText() == "" {
-			v.App().Flash().Err(fmt.Errorf("container to local port mismatch"))
+			v.App().Flash().Err(fmt.Errorf("container or local port cannot be empty"))
 			return
 		}
 		tt, err := port.ToTunnels(address, coField.GetText(), loField.GetText())
@@ -97,7 +93,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 
 	modal := tview.NewModalForm("<PortForward>", f)
 	msg := path
-	if len(ports) > 1 {
+	if len(ports) >= 1 {
 		msg += "\n\nExposed Ports:\n" + ports.Dump()
 	}
 	modal.SetText(msg)
