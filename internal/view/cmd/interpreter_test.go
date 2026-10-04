@@ -295,7 +295,17 @@ func TestLabelCmd(t *testing.T) {
 
 		"l-arg-caps": {
 			cmd:    "POD  FRED=BLEE   ",
-			labels: "fred=blee",
+			labels: "FRED=BLEE",
+		},
+
+		"mixed-case-labels": {
+			cmd:    "pod app=MyApp,Tier=Backend",
+			labels: "Tier=Backend,app=MyApp",
+		},
+
+		"mixed-case-quoted-labels": {
+			cmd:    "pod 'app in (MyApp,Other)' @Fred",
+			labels: "app in (MyApp,Other)",
 		},
 
 		"toast-labels": {
