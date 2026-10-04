@@ -461,11 +461,26 @@ func (e *Explain) showLeafContent(content string) {
 	// Create a Details view to show the text content
 	details := NewDetails(e.app, fmt.Sprintf("Explain: %s", e.currentPath), e.currentPath, "text", true)
 	details.Update(content)
+	details.Actions().Add(tcell.KeyEscape, ui.NewKeyAction("Back", e.leafBackCmd, false))
+	details.Actions().Add(ui.KeyQ, ui.NewKeyAction("Back", e.leafBackCmd, false))
 
 	// Push the details view onto the stack
 	if err := e.app.inject(details, false); err != nil {
 		e.app.Flash().Err(err)
 	}
+}
+
+func (e *Explain) leafBackCmd(evt *tcell.EventKey) *tcell.EventKey {
+	e.app.PrevCmd(evt)
+	if len(e.pathHistory) == 0 {
+		return nil
+	}
+
+	lastPath := e.pathHistory[len(e.pathHistory)-1]
+	e.pathHistory = e.pathHistory[:len(e.pathHistory)-1]
+	e.loadExplain(lastPath)
+
+	return nil
 }
 
 // Name returns the view name.
