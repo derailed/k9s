@@ -72,7 +72,7 @@ func (*Explain) explainWithOptions(ctx context.Context, resourcePath string, rec
 	}
 
 	// Build kubectl explain command
-	args := []string{"explain", resourcePath}
+	args := []string{explainCmd, resourcePath}
 	if recursive {
 		args = append(args, "--recursive")
 	}
