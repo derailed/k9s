@@ -20,7 +20,7 @@ import (
 
 var (
 	keyValRX = regexp.MustCompile(`\A(\s*)([\w\-./\s]+):\s(.+)\z`)
-	keyRX    = regexp.MustCompile(`\A(\s*)([\w\-./\s]+):\s*\z`)
+	keyRX    = regexp.MustCompile(`\A(\s*)([\w\-./\s()]+):\s*\z`)
 	searchRX = regexp.MustCompile(`<<<("search_\d+")>>>(.+)<<<"">>>`)
 )
 

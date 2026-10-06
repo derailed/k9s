@@ -15,6 +15,10 @@ func TestYaml(t *testing.T) {
 		s, e string
 	}{
 		{
+			"Events (2026-10-06 UTC):",
+			"[#4682b4::b]Events (2026-10-06 UTC)[#ffffff::-]:",
+		},
+		{
 			`api: fred
 		   version: v1`,
 			`[#4682b4::b]api[#ffffff::-]: [#ffefd5::]fred
