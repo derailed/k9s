@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -33,9 +34,10 @@ var (
 
 // Command represents a user command.
 type Command struct {
-	app   *App
-	alias *dao.Alias
-	mx    sync.Mutex
+	app             *App
+	alias           *dao.Alias
+	lastMissRefresh time.Time
+	mx              sync.Mutex
 }
 
 // NewCommand returns a new command.
@@ -317,6 +319,25 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, *cm
 		return client.NoGVR, nil, nil, fmt.Errorf("no connection available")
 	}
 	gvr, ok := c.alias.Resolve(p)
+	if !ok {
+		c.mx.Lock()
+		shouldRefresh := time.Since(c.lastMissRefresh) > 5*time.Second
+		if shouldRefresh {
+			c.lastMissRefresh = time.Now()
+		}
+		c.mx.Unlock()
+
+		if shouldRefresh && c.app != nil && c.app.factory != nil && c.app.factory.Client() != nil {
+			if err := c.app.factory.Client().InvalidateCache(); err == nil {
+				path := ""
+				if c.app != nil && c.app.App != nil && c.app.Config != nil {
+					path = c.app.Config.ContextAliasesPath()
+				}
+				_ = c.Reset(path, false)
+				gvr, ok = c.alias.Resolve(p)
+			}
+		}
+	}
 	if !ok {
 		return client.NoGVR, nil, nil, fmt.Errorf("`%s` command not found", p.Cmd())
 	}

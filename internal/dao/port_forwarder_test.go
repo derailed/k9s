@@ -166,6 +166,7 @@ func (*pfConn) DialLogs() (kubernetes.Interface, error)               { return n
 func (*pfConn) ConnectionOK() bool                                    { return true }
 func (*pfConn) SwitchContext(string) error                            { return nil }
 func (*pfConn) CachedDiscovery() (*disk.CachedDiscoveryClient, error) { return nil, nil }
+func (*pfConn) InvalidateCache() error                                 { return nil }
 func (*pfConn) RestConfig() (*restclient.Config, error) {
 	return nil, fmt.Errorf("mock: no real cluster")
 }
