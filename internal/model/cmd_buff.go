@@ -5,6 +5,8 @@ package model
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"sync"
 	"time"
 )
@@ -85,7 +87,7 @@ func (c *CmdBuff) SetActive(b bool) {
 	c.active = b
 	c.mx.Unlock()
 
-	c.fireActive(c.active)
+	c.fireActive(b)
 }
 
 // GetText returns the current text.
@@ -226,20 +228,32 @@ func (c *CmdBuff) RemoveListener(l BuffWatcher) {
 	c.mx.Unlock()
 }
 
+// snapshotListeners returns a copy of the current listeners. Events fire
+// from the key entry timer goroutine as well as the UI goroutine, so the
+// map can't be ranged over directly, and the lock can't be held while
+// notifying since listeners may register or unregister in response.
+func (c *CmdBuff) snapshotListeners() []BuffWatcher {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+
+	return slices.Collect(maps.Keys(c.listeners))
+}
+
 func (c *CmdBuff) fireBufferCompleted(t, s string) {
-	for l := range c.listeners {
+	for _, l := range c.snapshotListeners() {
 		l.BufferCompleted(t, s)
 	}
 }
 
 func (c *CmdBuff) fireBufferChanged(t, s string) {
-	for l := range c.listeners {
+	for _, l := range c.snapshotListeners() {
 		l.BufferChanged(t, s)
 	}
 }
 
 func (c *CmdBuff) fireActive(b bool) {
-	for l := range c.listeners {
-		l.BufferActive(b, c.GetKind())
+	kind := c.GetKind()
+	for _, l := range c.snapshotListeners() {
+		l.BufferActive(b, kind)
 	}
 }
