@@ -29,6 +29,7 @@ const (
 	scaleCat = "scale"
 
 	verbDelete = "delete"
+	explainCmd = "explain"
 )
 
 var stdGroups = sets.New[string](
@@ -271,6 +272,14 @@ func loadK9s(m ResourceMetas) {
 		Name:         "scans",
 		Kind:         "Scans",
 		SingularName: "scan",
+		Verbs:        []string{},
+		Categories:   []string{k9sCat},
+	}
+	m[client.ExplainGVR] = &metav1.APIResource{
+		Name:         explainCmd,
+		Kind:         "Explain",
+		SingularName: "explain",
+		ShortNames:   []string{"exp"},
 		Verbs:        []string{},
 		Categories:   []string{k9sCat},
 	}
