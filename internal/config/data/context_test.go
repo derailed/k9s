@@ -17,8 +17,8 @@ func TestClusterValidate(t *testing.T) {
 
 	assert.Equal(t, data.DefaultView, c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)
-	assert.Len(t, c.Namespace.Favorites, 1)
-	assert.Equal(t, []string{"default"}, c.Namespace.Favorites)
+	assert.Len(t, c.Namespace.Recent, 1)
+	assert.Equal(t, []string{"default"}, c.Namespace.Recent)
 }
 
 func TestClusterValidateEmpty(t *testing.T) {
@@ -27,6 +27,6 @@ func TestClusterValidateEmpty(t *testing.T) {
 
 	assert.Equal(t, data.DefaultView, c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)
-	assert.Len(t, c.Namespace.Favorites, 1)
-	assert.Equal(t, []string{"default"}, c.Namespace.Favorites)
+	assert.Len(t, c.Namespace.Recent, 1)
+	assert.Equal(t, []string{"default"}, c.Namespace.Recent)
 }

@@ -397,6 +397,8 @@ K9s uses aliases to navigate most K8s resources.
 | To view and switch to another Kubernetes context (Pod view)                     | `:`ctx⏎                       |                                                                        |
 | To view and switch directly to another Kubernetes context (Last used view)      | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace                              | `:`ns⏎                        |                                                                        |
+| Fav/unfav a namespace (Namespace view)                                          | `f`                           | Favorites (`+`) own switch slots 1,2,...; recent ones (`~`) fill the rest |
+| Show only favorite namespaces (Namespace view)                                  | `ctrl-f`                      |                                                                        |
 | To switch back to the last active command (like how "cd -" works)               | `-`                           | Navigation that adds breadcrumbs to the bottom are not commands        |
 | To go back and forward through the command history                              | back: `[`, forward: `]`       | Same as above                                                          |
 | To view all saved resources                                                     | `:`screendump or sd⏎          |                                                                        |
@@ -600,9 +602,11 @@ k9s:
   readOnly: false
   namespace:
     active: default
-    lockFavorites: false
+    # Your favorites. They own the first namespace switch slots ie 1,2,...
     favorites:
     - kube-system
+    # Recently used namespaces. They fill in the leftover slots. Oldest gets recycled.
+    recent:
     - default
   view:
     active: po
@@ -1319,9 +1323,9 @@ k9s:
   readOnly: false
   namespace:
     active: default
-    lockFavorites: false
     favorites:
     - kube-system
+    recent:
     - default
   view:
     active: po

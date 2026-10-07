@@ -2,8 +2,7 @@ k9s:
   cluster: cl-test
   namespace:
     active: default
-    lockFavorites: false
-    favorites:
+    recent:
     - default
   view:
     active: po
