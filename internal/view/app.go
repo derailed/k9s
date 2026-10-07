@@ -551,6 +551,20 @@ func (a *App) BailOut(exitCode int) {
 func (a *App) Run() error {
 	a.Resume()
 
+	screen, err := tcell.NewScreen()
+	if err != nil {
+		return err
+	}
+	if err := screen.Init(); err != nil {
+		return err
+	}
+	if a.Config.K9s.UI.EnableMouse {
+		screen.EnableMouse()
+	}
+	a.SetScreen(ui.NewScreenGuard(screen, func(_ error) {
+		a.BailOut(0)
+	}))
+
 	go func() {
 		if !a.Config.K9s.IsSplashless() {
 			<-time.After(splashDelay)
