@@ -207,3 +207,52 @@ func TestInitConnectionStoresDialClient(t *testing.T) {
 	assert.NotNil(t, a.getClient(),
 		"InitConnection should store a Dial client for reuse")
 }
+
+func TestDialSendsK9sUserAgent(t *testing.T) {
+	orig := AppVersion
+	t.Cleanup(func() { AppVersion = orig })
+	AppVersion = "v0.51.0"
+
+	var gotUA atomic.Value
+	mux := http.NewServeMux()
+	mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+		gotUA.Store(r.UserAgent())
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(version.Info{
+			Major:      "1",
+			Minor:      "28",
+			GitVersion: "v1.28.0",
+		})
+	})
+	mux.HandleFunc("/api", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"kind":"APIVersions","versions":["v1"]}`))
+	})
+	mux.HandleFunc("/apis", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"kind":"APIGroupList","apiVersion":"v1","groups":[]}`))
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	t.Setenv("HOME", t.TempDir())
+
+	kubeconfig := writeSwitchTestKubeconfig(t, srv.URL, srv.URL)
+	flags := genericclioptions.NewConfigFlags(false)
+	flags.KubeConfig = &kubeconfig
+	ctx := testContext1
+	flags.Context = &ctx
+	a := &APIClient{
+		config: NewConfig(flags),
+		cache:  cache.NewLRUExpireCache(cacheSize),
+		connOK: true,
+		log:    slog.Default(),
+	}
+
+	c, err := a.Dial()
+	require.NoError(t, err)
+	_, err = c.Discovery().ServerVersion()
+	require.NoError(t, err)
+
+	ua, _ := gotUA.Load().(string)
+	assert.Equal(t, "k9s/v0.51.0", ua)
+}
