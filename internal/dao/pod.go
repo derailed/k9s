@@ -124,6 +124,13 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 	nodeName := fsel["spec.nodeName"]
 
+	var svcPods sets.Set[string]
+	if svcName, ok := ctx.Value(internal.KeyServiceName).(string); ok && svcName != "" {
+		if svcPods, err = podsForService(p.getFactory(), ns, svcName); err != nil {
+			return nil, err
+		}
+	}
+
 	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
@@ -131,6 +138,9 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 			return res, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 		}
 		fqn := extractFQN(o)
+		if svcPods != nil && !svcPods.Has(fqn) {
+			continue
+		}
 		if nodeName == "" {
 			res = append(res, &render.PodWithMetrics{Raw: u, MX: pmx[fqn]})
 			continue
