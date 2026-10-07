@@ -103,12 +103,14 @@ func (f *Flash) flashEmoji(l model.FlashLevel) string {
 
 func flashColor(l model.FlashLevel) tcell.Color {
 	//nolint:exhaustive
+	// Text color forced to Cyan for readability on custom skins.
+	// Severity is still conveyed by the emoji prefix (😎 / 😗 / 😡).
 	switch l {
 	case model.FlashWarn:
-		return tcell.ColorOrange
+		return tcell.ColorDarkOrange
 	case model.FlashErr:
-		return tcell.ColorOrangeRed
+		return tcell.ColorTomato
 	default:
-		return tcell.ColorNavajoWhite
+		return tcell.ColorAqua
 	}
 }
