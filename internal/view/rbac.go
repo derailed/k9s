@@ -30,7 +30,7 @@ func NewRbac(gvr *client.GVR) ResourceViewer {
 }
 
 func (*Rbac) bindKeys(aa *ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlX)
+	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlA)
 }
 
 func showRules(app *App, _ ui.Tabular, gvr *client.GVR, path string) {

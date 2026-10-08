@@ -227,7 +227,7 @@ func (t *Table) bindKeys() {
 		ui.KeyHelp:             ui.NewKeyAction("Help", t.App().helpCmd, true),
 		ui.KeySpace:            ui.NewSharedKeyAction("Mark", t.markCmd, false),
 		tcell.KeyCtrlSpace:     ui.NewSharedKeyAction("Mark Range", t.markSpanCmd, false),
-		tcell.KeyCtrlX:         ui.NewSharedKeyAction("Mark All", t.markAllCmd, false),
+		tcell.KeyCtrlA:         ui.NewSharedKeyAction("Mark All", t.markAllCmd, false),
 		tcell.KeyCtrlBackslash: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
 		tcell.KeyCtrlS:         ui.NewSharedKeyAction("Save", t.saveCmd, false),
 		ui.KeySlash:            ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),

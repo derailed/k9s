@@ -36,7 +36,7 @@ func NewNamespace(gvr *client.GVR) ResourceViewer {
 func (n *Namespace) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyU:        ui.NewKeyAction("Use", n.useNsCmd, true),
-		tcell.KeyCtrlX: ui.NewSharedKeyAction("Mark All", n.markAllCmd, false),
+		tcell.KeyCtrlA: ui.NewSharedKeyAction("Mark All", n.markAllCmd, false),
 	})
 }
 
