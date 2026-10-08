@@ -423,6 +423,7 @@ K9s uses aliases to navigate most K8s resources.
 | Copy resource name                                                              | `c`                            |                                                                        |
 | Copy namespace                                                                  | `n`                            |                                                                        |
 | View YAML                                                                       | `y`                            |                                                                        |
+| View KYAML                                                                      | `shift-y`                      | [KYAML](https://kubernetes.io/docs/reference/encodings/kyaml/) encoding |
 | View logs                                                                       | `l`                            | Resource specific                                                      |
 | View previous logs                                                              | `p`                            | Resource specific                                                      |
 | Shell into container                                                            | `s`                            | Pods only                                                              |

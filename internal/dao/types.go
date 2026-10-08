@@ -110,6 +110,9 @@ type Describer interface {
 
 	// ToYAML dumps a resource to YAML.
 	ToYAML(path string, showManaged bool) (string, error)
+
+	// ToKYAML dumps a resource to KYAML.
+	ToKYAML(path string, showManaged bool) (string, error)
 }
 
 // Scalable represents resources that can scale.
