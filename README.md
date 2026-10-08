@@ -381,7 +381,7 @@ K9s uses aliases to navigate most K8s resources.
 | Action                                                                          | Command                       | Comment                                                                |
 |---------------------------------------------------------------------------------|-------------------------------|------------------------------------------------------------------------|
 | Show active keyboard mnemonics and help                                         | `?`                           |                                                                        |
-| Show all available resource alias                                               | `ctrl-a`                      |                                                                        |
+| Show all available resource alias                                               | `ctrl-x`                      |                                                                        |
 | To bail out of K9s                                                              | `:quit`, `:q`, `ctrl-c`       |                                                                        |
 | To go up/back to the previous view                                              | `esc`                         | If you have crumbs on, this will go to the previous one                |
 | View a Kubernetes resource using singular/plural or short-name                  | `:`pod⏎                       | accepts singular, plural, short-name or alias ie pod or pods           |
@@ -407,6 +407,7 @@ K9s uses aliases to navigate most K8s resources.
 | Launch Popeye view                                                              | `:`popeye or pop⏎              | See [popeye](#popeye)                                                  |
 | Mark resource                                                                   | `space`                        |                                                                        |
 | Mark range of resources                                                         | `ctrl-space`                   |                                                                        |
+| Mark all visible resources (press again to unmark them)                         | `ctrl-a`                       |                                                                        |
 | Clear all marks                                                                 | `ctrl-\`                       |                                                                        |
 | Save resources to file                                                          | `ctrl-s`                       |                                                                        |
 | Toggle faults/error display                                                     | `ctrl-z`                       |                                                                        |
