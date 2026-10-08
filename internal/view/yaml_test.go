@@ -15,8 +15,8 @@ func TestYaml(t *testing.T) {
 		s, e string
 	}{
 		{
-			"Events (2026-10-06 UTC):",
-			"[#4682b4::b]Events (2026-10-06 UTC)[#ffffff::-]:",
+			"Events (2026-10-06 local):",
+			"[#4682b4::b]Events (2026-10-06 local)[#ffffff::-]:",
 		},
 		{
 			`api: fred
@@ -70,4 +70,14 @@ func TestYaml(t *testing.T) {
 	for _, u := range uu {
 		assert.Equal(t, u.e, colorizeYAML(s.Views().Yaml, u.s))
 	}
+}
+
+func TestWarningRowColor(t *testing.T) {
+	style := config.NewStyles().Views().Yaml
+	raw := "Events (2026-10-08 local):\n  ⚠ 07:45:44 → ::47 (x24)  Unhealthy  kubelet  probe failed [red]\n  ⚠     connection refused\n    07:45:48  Started  kubelet  container started"
+	got := colorizeYAML(style, raw)
+	assert.Contains(t, got, "[#4682b4::b]Events (2026-10-08 local)[#ffffff::-]:")
+	assert.Contains(t, got, "[orange::]  ⚠ 07:45:44 → ::47 (x24)  Unhealthy  kubelet  probe failed [red[]")
+	assert.Contains(t, got, "[orange::]  ⚠     connection refused")
+	assert.Contains(t, got, "[#ffefd5::]    07:45:48  Started")
 }

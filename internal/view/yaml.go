@@ -43,6 +43,15 @@ func colorizeYAML(style config.Yaml, raw string) string {
 
 	buff := make([]string, 0, len(lines))
 	for _, l := range lines {
+		if strings.TrimSpace(l) == "Time ranges show first → last occurrence. Orange ⚠ rows indicate warnings." {
+			legend := strings.Replace(l, "Orange", "[orange::]Orange["+style.ValueColor.String()+"::]", 1)
+			buff = append(buff, fmt.Sprintf(valFmt, legend))
+			continue
+		}
+		if strings.HasPrefix(strings.TrimSpace(l), "⚠ ") {
+			buff = append(buff, enableRegion("[orange::]"+l))
+			continue
+		}
 		res := keyValRX.FindStringSubmatch(l)
 		if len(res) == 4 {
 			buff = append(buff, enableRegion(fmt.Sprintf(fullFmt, res[1], res[2], res[3])))
