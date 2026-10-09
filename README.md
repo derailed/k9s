@@ -516,6 +516,10 @@ Clipboard behavior can also be controlled via environment variables:
       reactive: false
       # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
       skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory. Can be overridden with K9S_SKIN.
+      # Replaces the K9s header logo with custom ascii art. Can be overridden per context.
+      logo: |
+        MY
+        K9S
       # Convert dark skins to light, or vice versa, preserving hue. Default: false
       invert: false
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
@@ -1309,6 +1313,16 @@ Colors can be defined by name or using a hex representation. Of recent, we've ad
 > NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 > NOTE: Please see [K9s Skins](https://k9scli.io/topics/skins/) for a list of available colors.
 
+Custom header logos use a fixed area of 26 terminal columns and six art rows, with a
+status row underneath. Extra columns and lines are clipped from the right and
+bottom; tabs expand to four spaces and bracketed text is displayed literally.
+Context logos override `k9s.ui.logo`; an empty or whitespace-only context logo
+falls back to the global logo, and an empty global logo uses the stock K9s art.
+The logo is temporarily hidden when the terminal cannot fit the cluster panel,
+the first populated menu column, and the full logo width. It returns automatically
+when the terminal is widened. Short terminals clip the header to preserve the
+resource view.
+
 To skin a specific context and provided the file `in-the-navy.yaml` is present in your skins directory.
 
 ```yaml
@@ -1316,6 +1330,9 @@ To skin a specific context and provided the file `in-the-navy.yaml` is present i
 k9s:
   cluster: clusterX
   skin: in-the-navy
+  logo: |
+    PROD
+    CLUSTER
   readOnly: false
   namespace:
     active: default
@@ -1352,6 +1369,10 @@ k9s:
     reactive: false
     # By default all contexts will use the dracula skin unless explicitly overridden in the context config file.
     skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+    # Replaces the K9s header logo with custom ascii art. Can be overridden per context.
+    logo: |
+      MY
+      K9S
     defaultsToFullScreen: false
   skipLatestRevCheck: false
   disablePodCounting: false
