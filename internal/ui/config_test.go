@@ -45,11 +45,23 @@ func TestSkinnedContext(t *testing.T) {
 		mock.NewMockKubeSettings(&flags))
 	_, err = cfg.Config.K9s.ActivateContext("ct-1-1")
 	require.NoError(t, err)
-	cfg.Config.K9s.UI = config.UI{Skin: "black-and-wtf"}
-	cfg.RefreshStyles(newMockSynchronizer())
+	cfg.Config.K9s.UI = config.UI{Skin: "black-and-wtf", Logo: "CUSTOM"}
+	cfg.Styles = config.NewStyles()
+	s := newMockSynchronizer()
+	s.logo = ui.NewLogo(cfg.Styles)
+	cfg.RefreshStyles(s)
 	assert.True(t, cfg.HasSkin())
 	assert.Equal(t, tcell.ColorGhostWhite.TrueColor(), model1.StdColor)
 	assert.Equal(t, tcell.ColorWhiteSmoke.TrueColor(), model1.ErrColor)
+	screen := tcell.NewSimulationScreen("UTF-8")
+	require.NoError(t, screen.Init())
+	defer screen.Fini()
+	s.logo.SetRect(0, 0, ui.LogoWidth, ui.LogoArtHeight+1)
+	s.logo.Draw(screen)
+	r, _, style, _ := screen.GetContent(0, 0)
+	assert.Equal(t, 'C', r)
+	fg, _, _ := style.Decompose()
+	assert.Equal(t, tcell.ColorWhite.TrueColor(), fg)
 }
 
 func TestBenchConfig(t *testing.T) {
@@ -64,17 +76,34 @@ func TestBenchConfig(t *testing.T) {
 
 // Helpers...
 
-type synchronizer struct{}
+type synchronizer struct{ logo *ui.Logo }
 
 func newMockSynchronizer() synchronizer {
-	return synchronizer{}
+	return synchronizer{logo: ui.NewLogo(config.NewStyles())}
 }
 
 func (synchronizer) Flash() *model.Flash {
 	return model.NewFlash(100 * time.Millisecond)
 }
-func (synchronizer) Logo() *ui.Logo         { return nil }
-func (synchronizer) RefreshHeader()         {}
+func (s synchronizer) Logo() *ui.Logo       { return s.logo }
 func (synchronizer) UpdateClusterInfo()     {}
 func (synchronizer) QueueUpdateDraw(func()) {}
 func (synchronizer) QueueUpdate(func())     {}
+
+func TestRefreshStylesLogo(t *testing.T) {
+	cfg := ui.Configurator{Config: mock.NewMockConfig(t), Styles: config.NewStyles()}
+	s := synchronizer{logo: ui.NewLogo(cfg.Styles)}
+	cfg.Config.K9s.UI.Logo = "GLOBAL"
+	cfg.RefreshStyles(s)
+	assert.Contains(t, s.Logo().Logo().GetText(false), "GLOBAL")
+	ct, err := cfg.Config.K9s.ActivateContext("ct-1-1")
+	require.NoError(t, err)
+	ct.Logo = "CONTEXT"
+	cfg.RefreshStyles(s)
+	assert.Contains(t, s.Logo().Logo().GetText(false), "CONTEXT")
+	cfg.RefreshStyles(s)
+	assert.Contains(t, s.Logo().Logo().GetText(false), "CONTEXT")
+	ct.Logo = " \n\t"
+	cfg.RefreshStyles(s)
+	assert.Contains(t, s.Logo().Logo().GetText(false), "GLOBAL")
+}

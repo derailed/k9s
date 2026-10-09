@@ -10,8 +10,16 @@ import (
 	"sync"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
+)
+
+const (
+	// LogoWidth is the maximum width of header art in terminal columns.
+	LogoWidth = 26
+	// LogoArtHeight is the fixed number of art rows, excluding status.
+	LogoArtHeight = 6
 )
 
 // Logo represents a K9s logo.
@@ -21,7 +29,6 @@ type Logo struct {
 	logo, status *tview.TextView
 	lines        []string
 	styles       *config.Styles
-	items        int
 	mx           sync.Mutex
 }
 
@@ -35,7 +42,8 @@ func NewLogo(styles *config.Styles) *Logo {
 		styles: styles,
 	}
 	l.SetDirection(tview.FlexRow)
-	l.resize()
+	l.AddItem(l.logo, LogoArtHeight, 0, false)
+	l.AddItem(l.status, 1, 0, false)
 	l.refreshLogo(styles.Body().LogoColor)
 	l.SetBackgroundColor(styles.BgColor())
 	styles.AddListener(&l)
@@ -56,37 +64,35 @@ func (l *Logo) Status() *tview.TextView {
 // SetLogo updates the logo art.
 func (l *Logo) SetLogo(art string) {
 	l.mx.Lock()
-	l.lines = logoLines(art)
-	l.mx.Unlock()
-
-	l.resize()
+	defer l.mx.Unlock()
+	lines := logoLines(art)
+	if slices.Equal(l.lines, lines) {
+		return
+	}
+	l.lines = lines
 	l.refreshLogo(l.styles.Body().LogoColor)
 }
 
-// Width returns the logo preferred width.
-func (l *Logo) Width() int {
+// Draw clips art to the available rows while preserving the status row.
+func (l *Logo) Draw(screen tcell.Screen) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
-
-	w := 0
-	for _, line := range l.lines {
-		w = max(w, runewidth.StringWidth(line))
-	}
-
-	return w
-}
-
-// Height returns the logo preferred height including status.
-func (l *Logo) Height() int {
-	l.mx.Lock()
-	defer l.mx.Unlock()
-
-	return len(l.lines) + 1
+	_, _, _, height := l.GetInnerRect()
+	l.ResizeItem(l.logo, min(LogoArtHeight, max(0, height-1)), 0)
+	l.ResizeItem(l.status, min(1, max(0, height)), 0)
+	l.logo.ScrollToBeginning()
+	l.Flex.Draw(screen)
 }
 
 // StylesChanged notifies the skin changed.
 func (l *Logo) StylesChanged(s *config.Styles) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	l.styles = s
+	l.applyStyles()
+}
+
+func (l *Logo) applyStyles() {
 	l.SetBackgroundColor(l.styles.BgColor())
 	l.status.SetBackgroundColor(l.styles.BgColor())
 	l.logo.SetBackgroundColor(l.styles.BgColor())
@@ -95,28 +101,38 @@ func (l *Logo) StylesChanged(s *config.Styles) {
 
 // IsBenchmarking checks if benchmarking is active or not.
 func (l *Logo) IsBenchmarking() bool {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	txt := l.Status().GetText(true)
 	return strings.Contains(txt, "Bench")
 }
 
 // Reset clears out the logo view and resets colors.
 func (l *Logo) Reset() {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	l.status.Clear()
-	l.StylesChanged(l.styles)
+	l.applyStyles()
 }
 
 // Err displays a log error state.
 func (l *Logo) Err(msg string) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	l.update(msg, l.styles.Body().LogoColorError)
 }
 
 // Warn displays a log warning state.
 func (l *Logo) Warn(msg string) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	l.update(msg, l.styles.Body().LogoColorWarn)
 }
 
 // Info displays a log info state.
 func (l *Logo) Info(msg string) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	l.update(msg, l.styles.Body().LogoColorInfo)
 }
 
@@ -126,9 +142,6 @@ func (l *Logo) update(msg string, c config.Color) {
 }
 
 func (l *Logo) refreshStatus(msg string, c config.Color) {
-	l.mx.Lock()
-	defer l.mx.Unlock()
-
 	l.status.SetBackgroundColor(c.Color())
 	l.status.SetText(
 		fmt.Sprintf("[%s::b]%s", l.styles.Body().LogoColorMsg, msg),
@@ -136,11 +149,9 @@ func (l *Logo) refreshStatus(msg string, c config.Color) {
 }
 
 func (l *Logo) refreshLogo(c config.Color) {
-	l.mx.Lock()
-	defer l.mx.Unlock()
 	l.logo.Clear()
 	for i, s := range l.lines {
-		_, _ = fmt.Fprintf(l.logo, "[%s::b]%s", c, s)
+		_, _ = fmt.Fprintf(l.logo, "[%s::b]%s", c, tview.Escape(s))
 		if i+1 < len(l.lines) {
 			_, _ = fmt.Fprintf(l.logo, "\n")
 		}
@@ -154,16 +165,13 @@ func logoLines(art string) []string {
 		return slices.Clone(LogoSmall)
 	}
 
-	return strings.Split(art, "\n")
-}
-
-func (l *Logo) resize() {
-	for i := 0; i < l.items; i++ {
-		l.RemoveItemAtIndex(0)
+	lines := strings.SplitN(art, "\n", LogoArtHeight+1)
+	lines = lines[:min(len(lines), LogoArtHeight)]
+	for i, line := range lines {
+		line = strings.ReplaceAll(line, "\t", strings.Repeat(" ", tview.TabSize))
+		lines[i] = runewidth.Truncate(line, LogoWidth, "")
 	}
-	l.AddItem(l.logo, max(1, len(l.lines)), 1, false)
-	l.AddItem(l.status, 1, 1, false)
-	l.items = 2
+	return lines
 }
 
 func logo() *tview.TextView {

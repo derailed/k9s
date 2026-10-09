@@ -131,6 +131,8 @@ func (k *K9s) Merge(k1 *K9s) {
 	if k1 == nil {
 		return
 	}
+	k.mx.Lock()
+	defer k.mx.Unlock()
 
 	for k, v := range k1.GPUVendors {
 		KnownGPUVendors[k] = v
@@ -396,9 +398,13 @@ func (k *K9s) IsInvert() bool {
 
 // Logo returns the configured header logo ascii art.
 func (k *K9s) Logo() string {
-	if cfg := k.getActiveConfig(); cfg != nil && cfg.Context != nil && strings.TrimSpace(cfg.Context.Logo) != "" {
-		return cfg.Context.Logo
+	if cfg := k.getActiveConfig(); cfg != nil {
+		if art := cfg.Logo(); strings.TrimSpace(art) != "" {
+			return art
+		}
 	}
+	k.mx.RLock()
+	defer k.mx.RUnlock()
 	if strings.TrimSpace(k.UI.Logo) == "" {
 		return ""
 	}

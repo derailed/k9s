@@ -5,6 +5,7 @@ package config_test
 
 import (
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
@@ -59,6 +60,41 @@ func TestK9sReload(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestK9sLogoConcurrentMerge(t *testing.T) {
+	k := mock.NewMockConfig(t).K9s
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		for range 200 {
+			k.Merge(&config.K9s{UI: config.UI{Logo: "GLOBAL"}})
+		}
+	})
+	wg.Go(func() {
+		for range 200 {
+			assert.Contains(t, []string{"", "GLOBAL"}, k.Logo())
+		}
+	})
+	wg.Wait()
+}
+
+func TestK9sLogoConcurrentReload(t *testing.T) {
+	k := mock.NewMockConfig(t).K9s
+	k.UI.Logo = "GLOBAL"
+	_, err := k.ActivateContext("ct-1-1")
+	require.NoError(t, err)
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		for range 100 {
+			assert.NoError(t, k.Reload())
+		}
+	})
+	wg.Go(func() {
+		for range 200 {
+			assert.Equal(t, "GLOBAL", k.Logo())
+		}
+	})
+	wg.Wait()
 }
 
 func TestK9sMerge(t *testing.T) {

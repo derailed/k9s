@@ -86,12 +86,17 @@ func (a *App) UpdateClusterInfo() {
 	}
 }
 
-// RefreshHeader rebuilds the header layout.
+// RefreshHeader updates header bounds without rebuilding its primitives.
 func (a *App) RefreshHeader() {
-	if a.Main.GetPrimitive("main") == nil {
+	main, ok := a.Main.GetPrimitive("main").(*tview.Flex)
+	if !ok {
 		return
 	}
-	a.toggleHeader(a.showHeader, a.showLogo)
+	_, _, width, height := main.GetInnerRect()
+	a.resizeMain(main, height)
+	if header, ok := main.ItemAt(0).(*tview.Flex); ok && a.showHeader {
+		a.resizeHeader(header, width)
+	}
 }
 
 // ConOK checks the connection is cool, returns false otherwise.
@@ -182,6 +187,10 @@ func (a *App) layout(ctx context.Context) {
 		main.AddItem(a.Crumbs(), 1, 1, false)
 	}
 	main.AddItem(flash, 1, 1, false)
+	main.SetDrawFunc(func(_ tcell.Screen, x, y, width, height int) (int, int, int, int) {
+		a.resizeMain(main, height)
+		return x, y, width, height
+	})
 
 	a.Main.AddPage("main", main, true, false)
 	a.toggleHeader(!a.Config.K9s.IsHeadless(), !a.Config.K9s.IsLogoless())
@@ -287,10 +296,10 @@ func (a *App) toggleHeader(header, logo bool) {
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.buildHeader(), a.headerHeight(), 1, false)
+		flex.AddItemAtIndex(0, a.buildHeader(), ui.LogoArtHeight+1, 0, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
+		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 0, false)
 	}
 }
 
@@ -318,36 +327,102 @@ func (a *App) buildHeader() tview.Primitive {
 		return header
 	}
 
+	header.AddItem(a.clusterInfo(), clusterInfoWidth, 0, false)
+	header.AddItem(a.Menu(), 0, 1, false)
+	if a.showLogo {
+		header.AddItem(a.Logo(), ui.LogoWidth, 0, false)
+	}
+	header.SetDrawFunc(func(_ tcell.Screen, x, y, width, height int) (int, int, int, int) {
+		a.resizeHeader(header, width)
+		return x, y, width, height
+	})
+	return header
+}
+
+func (a *App) preferredClusterWidth() int {
 	clWidth := clusterInfoWidth
 	if a.Conn() != nil && a.Conn().ConnectionOK() {
 		n, err := a.Conn().Config().CurrentClusterName()
 		if err == nil {
-			size := len(n) + clusterInfoPad
+			size := tview.TaggedStringWidth(tview.Escape(n)) + clusterInfoPad
 			if size > clWidth {
 				clWidth = size
 			}
 		}
 	}
-	header.AddItem(a.clusterInfo(), clWidth, 1, false)
-	header.AddItem(a.Menu(), 0, 1, false)
-
-	if a.showLogo {
-		header.AddItem(a.Logo(), a.logoWidth(), 1, false)
-	}
-
-	return header
+	return clWidth
 }
 
-func (a *App) headerHeight() int {
-	if !a.showLogo {
-		return 7
+func (a *App) headerHeight(availableRows int) int {
+	height := 1
+	if a.showHeader {
+		height = ui.LogoArtHeight + 1
 	}
-
-	return max(7, a.Logo().Height())
+	return min(height, max(0, availableRows))
 }
 
-func (a *App) logoWidth() int {
-	return max(26, a.Logo().Width())
+func (a *App) logoWidth(width, clusterWidth, menuWidth int) int {
+	if !a.showLogo || width < clusterWidth+menuWidth+ui.LogoWidth {
+		return 0
+	}
+	return ui.LogoWidth
+}
+
+func (a *App) menuWidth() int {
+	for col := range a.Menu().GetColumnCount() {
+		width := 0
+		for row := range a.Menu().GetRowCount() {
+			width = max(width, tview.TaggedStringWidth(a.Menu().GetCell(row, col).Text))
+		}
+		if width > 0 {
+			return width
+		}
+	}
+	return 1
+}
+
+func (a *App) resizeHeader(header *tview.Flex, width int) {
+	width = max(0, width)
+	menuWidth := min(width, a.menuWidth())
+	clusterWidth := a.preferredClusterWidth()
+	header.ResizeItem(a.Logo(), a.logoWidth(width, clusterWidth, menuWidth), 0)
+	header.ResizeItem(a.clusterInfo(), min(clusterWidth, width-menuWidth), 0)
+}
+
+func flexContains(flex *tview.Flex, primitive tview.Primitive) bool {
+	for i := 0; flex.ItemAt(i) != nil; i++ {
+		if flex.ItemAt(i) == primitive {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *App) resizeMain(main *tview.Flex, height int) {
+	var flash tview.Primitive
+	for i := 0; main.ItemAt(i) != nil; i++ {
+		if item, ok := main.ItemAt(i).(*ui.Flash); ok {
+			flash = item
+		}
+	}
+	remaining := max(0, height-1)
+	for _, item := range []struct {
+		primitive tview.Primitive
+		height    int
+	}{
+		{a.Prompt(), 3},
+		{flash, 1},
+		{a.Crumbs(), 1},
+		{main.ItemAt(0), a.headerHeight(remaining)},
+	} {
+		if item.primitive == nil || !flexContains(main, item.primitive) {
+			continue
+		}
+		size := min(item.height, remaining)
+		main.ResizeItem(item.primitive, size, 0)
+		remaining -= size
+	}
+	main.ResizeItem(a.Content, 0, 1)
 }
 
 // Halt stop the application event loop.
@@ -536,7 +611,6 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		)
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
 		a.ReloadStyles()
-		a.toggleHeader(a.showHeader, a.showLogo)
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		if a.clusterModel != nil {
 			go a.clusterModel.Reset(a.factory)
