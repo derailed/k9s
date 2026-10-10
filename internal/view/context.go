@@ -134,13 +134,15 @@ func (c *Context) useCtx(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
 		slogs.GVR, gvr,
 		slogs.FQN, path,
 	)
-	if err := useContext(app, path); err != nil {
-		app.Flash().Err(err)
-		return
-	}
-	c.App().clearHistory()
-	c.Refresh()
-	c.GetTable().Select(1, 0)
+	app.confirmCloseTabs(path, func() {
+		if err := useContext(app, path); err != nil {
+			app.Flash().Err(err)
+			return
+		}
+		c.App().clearHistory()
+		c.Refresh()
+		c.GetTable().Select(1, 0)
+	})
 }
 
 func useContext(app *App, name string) error {

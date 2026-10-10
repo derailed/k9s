@@ -413,6 +413,9 @@ K9s uses aliases to navigate most K8s resources.
 | Toggle wide columns                                                             | `ctrl-w`                       |                                                                        |
 | Toggle header                                                                   | `ctrl-e`                       |                                                                        |
 | Toggle breadcrumbs                                                              | `ctrl-g`                       |                                                                        |
+| New tab (max 9)                                                                 | `ctrl-t`                       | Opens the current view in a new tab                                    |
+| Close tab                                                                       | `ctrl-x`                       |                                                                        |
+| Go to tab 1-9                                                                   | `alt-1` .. `alt-9`             | Tabs can also be clicked when `enableMouse` is on                      |
 | Move selected column left                                                       | `shift-left arrow`             |                                                                        |
 | Move selected column right                                                      | `shift-right arrow`            |                                                                        |
 | Sort by selected column                                                         | `shift-o`                      |                                                                        |
@@ -1419,6 +1422,11 @@ k9s:
       numKeyColor: cadetblue
     # CrumbView attributes for history navigation.
     crumbs:
+      fgColor: white
+      bgColor: steelblue
+      activeColor: skyblue
+    # TabView attributes.
+    tabs:
       fgColor: white
       bgColor: steelblue
       activeColor: skyblue
