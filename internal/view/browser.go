@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
 package view
@@ -348,7 +348,6 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(mdata *model1.TableData) {
-	
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -812,7 +811,6 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 
 // showSpinner displays a loading spinner with the given message.
 func (b *Browser) showSpinner(message string) {
-	
 	if b.spinner == nil || b.app == nil {
 		return
 	}
@@ -833,7 +831,6 @@ func (b *Browser) showSpinner(message string) {
 
 // hideSpinner removes the loading spinner.
 func (b *Browser) hideSpinner() {
-	
 	if b.spinner == nil {
 		return
 	}

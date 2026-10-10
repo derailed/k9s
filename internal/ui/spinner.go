@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
 package ui
@@ -67,13 +67,11 @@ func (s *Spinner) Start(message string) {
 	if s.active {
 		// Already active, just update the message
 		s.message = message
-		
 		return
 	}
 	s.active = true
 	s.message = message
 	s.cancel = make(chan struct{})
-	
 	go s.animate()
 }
 
@@ -87,7 +85,6 @@ func (s *Spinner) Stop() {
 	}
 	s.active = false
 	close(s.cancel)
-	
 }
 
 // IsActive returns whether the spinner is currently animating.
@@ -104,10 +101,8 @@ func (s *Spinner) animate() {
 	for {
 		select {
 		case <-s.cancel:
-			
 			return
 		case <-ticker.C:
-			
 			s.mx.Lock()
 			frame := s.frames[s.frameIdx]
 			msg := s.message
