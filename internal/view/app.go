@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"sort"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -52,6 +53,11 @@ type App struct {
 	clusterModel  *model.ClusterInfo
 	cmdHistory    *model.History
 	filterHistory *model.History
+	tabs          []*tab
+	curTab        int
+	tabMX         sync.RWMutex
+	body          *tview.Flex
+	tabBar        *tabBar
 	conRetry      int32
 	showHeader    bool
 	showLogo      bool
@@ -60,12 +66,18 @@ type App struct {
 
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
+	first := newTab()
 	a := App{
 		App:           ui.NewApp(cfg, cfg.K9s.ActiveContextName()),
-		cmdHistory:    model.NewHistory(model.MaxHistory),
-		filterHistory: model.NewHistory(model.MaxHistory),
-		Content:       NewPageStack(),
+		cmdHistory:    first.cmdHistory,
+		filterHistory: first.filterHistory,
+		Content:       first.content,
+		tabs:          []*tab{first},
+		body:          tview.NewFlex().SetDirection(tview.FlexRow),
 	}
+	a.tabBar = newTabBar(&a)
+	a.body.AddItem(a.tabBar, 0, 0, false)
+	a.body.AddItem(a.Content, 0, 1, true)
 	a.ReloadStyles()
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
@@ -101,6 +113,7 @@ func (a *App) Init(version string, _ int) error {
 	}
 	a.Content.AddListener(a.Crumbs())
 	a.Content.AddListener(a.Menu())
+	a.Content.AddListener(a.tabBar)
 
 	a.App.Init()
 	a.SetInputCapture(a.keyboard)
@@ -169,7 +182,7 @@ func (a *App) layout(ctx context.Context) {
 
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
-	main.AddItem(a.Content, 0, 10, true)
+	main.AddItem(a.body, 0, 10, true)
 	if !a.Config.K9s.IsCrumbsless() {
 		main.AddItem(a.Crumbs(), 1, 1, false)
 	}
@@ -262,7 +275,14 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlA:     ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter:     ui.NewKeyAction("Goto", a.gotoCmd, false),
 		tcell.KeyCtrlC:     ui.NewKeyAction("Quit", a.quitCmd, false),
+		tcell.KeyCtrlT:     ui.NewSharedKeyAction("New Tab", a.newTabCmd, false),
+		tcell.KeyCtrlX:     ui.NewSharedKeyAction("Close Tab", a.closeTabCmd, false),
 	}))
+	for i := range maxTabs {
+		a.AddActions(ui.NewKeyActionsFromMap(ui.KeyMap{
+			altKey('1' + rune(i)): ui.NewSharedKeyAction(fmt.Sprintf("Tab %d", i+1), a.gotoTabCmd(i), false),
+		}))
+	}
 }
 
 // ActiveView returns the currently active view.
@@ -399,7 +419,7 @@ func (a *App) refreshCluster(context.Context) error {
 		return nil
 	}
 
-	c := a.Content.Top()
+	c := a.topComponent()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
 			atomic.StoreInt32(&a.conRetry, 0)
@@ -515,6 +535,7 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 			slogs.View, a.Config.ActiveView(),
 		)
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
+		a.resetTabs()
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)
 		if a.clusterModel != nil {
