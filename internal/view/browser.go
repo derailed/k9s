@@ -39,16 +39,16 @@ const spinnerPage = "browserSpinner"
 type Browser struct {
 	*Table
 
-	namespaces map[int]string
-	meta       *metav1.APIResource
-	accessor   dao.Accessor
-	contextFn  ContextFunc
-	cancelFn   context.CancelFunc
-	mx         sync.RWMutex
-	updating   bool
+	namespaces    map[int]string
+	meta          *metav1.APIResource
+	accessor      dao.Accessor
+	contextFn     ContextFunc
+	cancelFn      context.CancelFunc
+	mx            sync.RWMutex
+	updating      bool
 	actionsLoaded atomic.Bool
 	firstView     atomic.Int32
-	spinner    *ui.Spinner
+	spinner       *ui.Spinner
 }
 
 // NewBrowser returns a new browser.
@@ -823,10 +823,10 @@ func (b *Browser) showSpinner(message string) {
 	b.app.Flash().Info(message)
 
 	// Add spinner to the page stack and show it
-    if b.app.Content != nil && b.app.Content.Pages != nil {
-        b.app.Content.Pages.AddPage(spinnerPage, b.spinner, true, true)
-        // ↑ resize=true, visible=true
-    }
+	if b.app.Content != nil && b.app.Content.Pages != nil {
+		b.app.Content.Pages.AddPage(spinnerPage, b.spinner, true, true)
+		// ↑ resize=true, visible=true
+	}
 }
 
 // hideSpinner removes the loading spinner.
@@ -836,12 +836,8 @@ func (b *Browser) hideSpinner() {
 	}
 	b.spinner.Stop()
 	if b.app != nil && b.app.Content != nil && b.app.Content.Pages != nil {
-        if b.app.Content.Pages.HasPage(spinnerPage) {
-            b.app.Content.Pages.RemovePage(spinnerPage)
-        }
-    }
+		if b.app.Content.Pages.HasPage(spinnerPage) {
+			b.app.Content.Pages.RemovePage(spinnerPage)
+		}
+	}
 }
-
-
-
-
