@@ -5,7 +5,7 @@ go 1.26.8
 require (
 	github.com/adrg/xdg v0.5.3
 	github.com/anchore/clio v0.1.1
-	github.com/anchore/grype v0.120.0
+	github.com/anchore/grype v0.120.1
 	github.com/anchore/syft v1.54.1
 	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff/v4 v4.3.0
