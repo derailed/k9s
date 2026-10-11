@@ -20,7 +20,7 @@ require (
 	github.com/karrick/godirwalk v1.17.0
 	github.com/lmittmann/tint v1.2.1
 	github.com/lucasb-eyer/go-colorful v1.4.1
-	github.com/mattn/go-colorable v0.1.15
+	github.com/mattn/go-colorable v0.1.16
 	github.com/mattn/go-runewidth v0.0.30
 	github.com/olekukonko/tablewriter v1.1.5
 	github.com/petergtz/pegomock v2.9.0+incompatible
