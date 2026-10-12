@@ -47,8 +47,7 @@ func TestSkinnedContext(t *testing.T) {
 	require.NoError(t, err)
 	cfg.Config.K9s.UI = config.UI{Skin: "black-and-wtf", Logo: "CUSTOM"}
 	cfg.Styles = config.NewStyles()
-	s := newMockSynchronizer()
-	s.logo = ui.NewLogo(cfg.Styles)
+	s := newMockSynchronizer(cfg.Styles)
 	cfg.RefreshStyles(s)
 	assert.True(t, cfg.HasSkin())
 	assert.Equal(t, tcell.ColorGhostWhite.TrueColor(), model1.StdColor)
@@ -78,8 +77,8 @@ func TestBenchConfig(t *testing.T) {
 
 type synchronizer struct{ logo *ui.Logo }
 
-func newMockSynchronizer() synchronizer {
-	return synchronizer{logo: ui.NewLogo(config.NewStyles())}
+func newMockSynchronizer(styles *config.Styles) synchronizer {
+	return synchronizer{logo: ui.NewLogo(styles)}
 }
 
 func (synchronizer) Flash() *model.Flash {
@@ -92,7 +91,7 @@ func (synchronizer) QueueUpdate(func())     {}
 
 func TestRefreshStylesLogo(t *testing.T) {
 	cfg := ui.Configurator{Config: mock.NewMockConfig(t), Styles: config.NewStyles()}
-	s := synchronizer{logo: ui.NewLogo(cfg.Styles)}
+	s := newMockSynchronizer(cfg.Styles)
 	cfg.Config.K9s.UI.Logo = "GLOBAL"
 	cfg.RefreshStyles(s)
 	assert.Contains(t, s.Logo().Logo().GetText(false), "GLOBAL")

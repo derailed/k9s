@@ -1320,8 +1320,8 @@ Context logos override `k9s.ui.logo`; an empty or whitespace-only context logo
 falls back to the global logo, and an empty global logo uses the stock K9s art.
 The logo is temporarily hidden when the terminal cannot fit the cluster panel,
 the first populated menu column, and the full logo width. It returns automatically
-when the terminal is widened. Short terminals clip the header to preserve the
-resource view.
+when the terminal is widened. Stock and custom logos use the same layout; logo
+configuration does not resize the resource view, prompt, or footer.
 
 To skin a specific context and provided the file `in-the-navy.yaml` is present in your skins directory.
 

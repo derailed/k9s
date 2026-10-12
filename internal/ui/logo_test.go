@@ -40,6 +40,7 @@ func TestLogoRendering(t *testing.T) {
 		"tabs and indentation": {" A\tB", []string{" A    B"}},
 		"CRLF":                 {" A\r\nB\r\n", []string{" A", "B"}},
 		"wide art":             {strings.Repeat("A", 30), []string{strings.Repeat("A", ui.LogoWidth)}},
+		"partial wide rune":    {strings.Repeat("A", 25) + "\u754c", []string{strings.Repeat("A", 25)}},
 		"tall art":             {"1\n2\n3\n4\n5\n6\n7\n8", []string{"1", "2", "3", "4", "5", "6"}},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -88,20 +89,20 @@ func TestLogoWideRunesAndCombiningCharacters(t *testing.T) {
 	assert.Equal(t, '\u754c', r)
 }
 
-func TestLogoShortPanel(t *testing.T) {
+func TestLogoFixedFootprint(t *testing.T) {
 	screen := tcell.NewSimulationScreen("UTF-8")
 	require.NoError(t, screen.Init())
 	defer screen.Fini()
-	screen.SetSize(ui.LogoWidth, 3)
+	screen.SetSize(ui.LogoWidth, ui.LogoArtHeight+1)
 	v := ui.NewLogo(config.NewStyles())
 	v.SetLogo("A\nB\nC\nD")
 	v.Info("status")
-	v.SetRect(0, 0, ui.LogoWidth, 3)
+	v.SetRect(0, 0, ui.LogoWidth, ui.LogoArtHeight+1)
 	v.Draw(screen)
 	_, _, _, artHeight := v.Logo().GetRect()
 	_, statusY, _, statusHeight := v.Status().GetRect()
-	assert.Equal(t, 2, artHeight)
-	assert.Equal(t, 2, statusY)
+	assert.Equal(t, ui.LogoArtHeight, artHeight)
+	assert.Equal(t, ui.LogoArtHeight, statusY)
 	assert.Equal(t, 1, statusHeight)
 	r, _, _, _ := screen.GetContent(0, 0)
 	assert.Equal(t, 'A', r)

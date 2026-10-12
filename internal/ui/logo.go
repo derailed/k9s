@@ -12,7 +12,6 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	runewidth "github.com/mattn/go-runewidth"
 )
 
 const (
@@ -73,14 +72,10 @@ func (l *Logo) SetLogo(art string) {
 	l.refreshLogo(l.styles.Body().LogoColor)
 }
 
-// Draw clips art to the available rows while preserving the status row.
+// Draw synchronizes rendering with logo and style updates.
 func (l *Logo) Draw(screen tcell.Screen) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
-	_, _, _, height := l.GetInnerRect()
-	l.ResizeItem(l.logo, min(LogoArtHeight, max(0, height-1)), 0)
-	l.ResizeItem(l.status, min(1, max(0, height)), 0)
-	l.logo.ScrollToBeginning()
 	l.Flex.Draw(screen)
 }
 
@@ -156,6 +151,7 @@ func (l *Logo) refreshLogo(c config.Color) {
 			_, _ = fmt.Fprintf(l.logo, "\n")
 		}
 	}
+	l.logo.ScrollToBeginning()
 }
 
 func logoLines(art string) []string {
@@ -168,8 +164,7 @@ func logoLines(art string) []string {
 	lines := strings.SplitN(art, "\n", LogoArtHeight+1)
 	lines = lines[:min(len(lines), LogoArtHeight)]
 	for i, line := range lines {
-		line = strings.ReplaceAll(line, "\t", strings.Repeat(" ", tview.TabSize))
-		lines[i] = runewidth.Truncate(line, LogoWidth, "")
+		lines[i] = strings.ReplaceAll(line, "\t", strings.Repeat(" ", tview.TabSize))
 	}
 	return lines
 }

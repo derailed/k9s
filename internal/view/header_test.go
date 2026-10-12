@@ -48,14 +48,16 @@ func TestHeaderNarrowTerminalHidesAndRestoresLogo(t *testing.T) {
 	}{
 		{threshold - 1, 0},
 		{threshold, ui.LogoWidth},
-		{10, 0},
+		{clusterInfoWidth + len(menuText), 0},
 		{threshold + 10, ui.LogoWidth},
 	} {
 		drawHeaderTest(main, screen, tc.width, 20)
 		_, _, width, _ := a.Logo().GetRect()
 		assert.Equal(t, tc.logoWidth, width, "terminal width %d, menu width %d", tc.width, a.menuWidth())
 		_, _, width, _ = a.Menu().GetRect()
-		assert.GreaterOrEqual(t, width, min(tc.width, len(menuText)))
+		assert.GreaterOrEqual(t, width, len(menuText))
+		_, _, width, _ = a.clusterInfo().GetRect()
+		assert.Equal(t, clusterInfoWidth, width)
 		_, _, _, artHeight := a.Logo().Logo().GetRect()
 		_, statusY, _, statusHeight := a.Logo().Status().GetRect()
 		assert.Equal(t, ui.LogoArtHeight, artHeight)
@@ -66,41 +68,55 @@ func TestHeaderNarrowTerminalHidesAndRestoresLogo(t *testing.T) {
 	}
 }
 
-func TestHeaderOversizedArtAndShortTerminal(t *testing.T) {
-	a, main, screen := newHeaderTestApp(t)
-	a.Logo().SetLogo(strings.Repeat(strings.Repeat("X", 100)+"\n", 100))
-	for _, height := range []int{30, 10, 6, 3, 2, 1, 0, 30} {
-		drawHeaderTest(main, screen, 120, height)
-		_, _, _, headerHeight := main.ItemAt(0).GetRect()
-		assert.LessOrEqual(t, headerHeight, ui.LogoArtHeight+1)
-		_, _, _, contentHeight := a.Content.GetRect()
-		assert.GreaterOrEqual(t, contentHeight, min(1, height))
-		for i := 0; main.ItemAt(i) != nil; i++ {
-			_, y, _, h := main.ItemAt(i).GetRect()
-			assert.GreaterOrEqual(t, h, 0)
-			assert.LessOrEqual(t, y+h, height)
-		}
+func TestHeaderStockAndCustomLayoutParity(t *testing.T) {
+	for name, tc := range map[string]struct {
+		width, height        int
+		prompt, header, logo bool
+	}{
+		"normal":       {120, 20, false, true, true},
+		"narrow":       {70, 20, false, true, true},
+		"short":        {120, 6, false, true, true},
+		"prompt":       {120, 20, true, true, true},
+		"short prompt": {120, 6, true, true, true},
+		"logoless":     {120, 20, true, true, false},
+		"headless":     {120, 20, true, false, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			a, main, screen := newHeaderTestApp(t)
+			assert.Nil(t, main.GetDrawFunc())
+			a.toggleHeader(tc.header, tc.logo)
+			if tc.prompt {
+				main.AddItemAtIndex(1, a.Prompt(), 3, 1, false)
+			}
+			geometry := func() [][4]int {
+				var rects [][4]int
+				for i := 0; main.ItemAt(i) != nil; i++ {
+					x, y, w, h := main.ItemAt(i).GetRect()
+					rects = append(rects, [4]int{x, y, w, h})
+				}
+				if tc.header {
+					for _, p := range []tview.Primitive{a.clusterInfo(), a.Menu(), a.Logo()} {
+						x, y, w, h := p.GetRect()
+						rects = append(rects, [4]int{x, y, w, h})
+					}
+				}
+				return rects
+			}
+			drawHeaderTest(main, screen, tc.width, tc.height)
+			stock := geometry()
+			header := main.ItemAt(0)
+			a.Logo().SetLogo(strings.Repeat(strings.Repeat("X", 100)+"\n", 100))
+			drawHeaderTest(main, screen, tc.width, tc.height)
+			assert.Equal(t, stock, geometry())
+			assert.Same(t, header, main.ItemAt(0))
+			a.Logo().SetLogo("")
+			drawHeaderTest(main, screen, tc.width, tc.height)
+			assert.Equal(t, stock, geometry())
+		})
 	}
 }
 
-func TestHeaderActivePromptKeepsContentVisible(t *testing.T) {
-	a, main, screen := newHeaderTestApp(t)
-	main.AddItemAtIndex(1, a.Prompt(), 3, 1, false)
-	for _, height := range []int{20, 6, 3, 1, 0} {
-		drawHeaderTest(main, screen, 120, height)
-		_, _, _, contentHeight := a.Content.GetRect()
-		assert.GreaterOrEqual(t, contentHeight, min(1, height))
-		for i := 0; main.ItemAt(i) != nil; i++ {
-			_, y, _, h := main.ItemAt(i).GetRect()
-			assert.GreaterOrEqual(t, h, 0)
-			assert.LessOrEqual(t, y+h, height)
-		}
-	}
-}
-
-func TestRefreshHeaderPreservesLayoutAndVisibility(t *testing.T) {
-	a := NewApp(mock.NewMockConfig(t))
-	assert.NotPanics(t, a.RefreshHeader)
+func TestHeaderStylesPreserveLayoutAndVisibility(t *testing.T) {
 	a, main, screen := newHeaderTestApp(t)
 	drawHeaderTest(main, screen, 120, 20)
 	header := main.ItemAt(0)
@@ -113,19 +129,16 @@ func TestRefreshHeaderPreservesLayoutAndVisibility(t *testing.T) {
 	ct.Logo = "CONTEXT"
 	a.ReloadStyles()
 	a.ReloadStyles()
-	a.RefreshHeader()
 	assert.Same(t, header, main.ItemAt(0))
 	assert.Contains(t, a.Logo().Logo().GetText(false), "CONTEXT")
 	a.toggleHeader(true, false)
 	drawHeaderTest(main, screen, 120, 20)
 	header = main.ItemAt(0)
 	a.ReloadStyles()
-	a.RefreshHeader()
 	assert.Same(t, header, main.ItemAt(0))
 	assert.False(t, a.showLogo)
 	assert.Nil(t, header.(*tview.Flex).ItemAt(2))
 	a.toggleHeader(false, false)
-	a.RefreshHeader()
 	assert.Same(t, a.statusIndicator(), main.ItemAt(0))
 }
 
@@ -139,14 +152,24 @@ func TestHeaderMenuWidthSkipsEmptyColumns(t *testing.T) {
 	assert.Zero(t, width)
 }
 
-func TestHeaderHeight(t *testing.T) {
-	a := &App{showHeader: true}
-	for _, rows := range []int{-1, 0, 1, 6, 7, 100} {
-		assert.Equal(t, min(7, max(0, rows)), a.headerHeight(rows))
+func TestHeaderMenuChangesToggleLogo(t *testing.T) {
+	a, main, screen := newHeaderTestApp(t)
+	header := main.ItemAt(0)
+	for _, tc := range []struct {
+		text  string
+		width int
+	}{
+		{"Aliases", ui.LogoWidth},
+		{strings.Repeat("X", 50), 0},
+		{"Aliases", ui.LogoWidth},
+		{"Aliases", ui.LogoWidth},
+	} {
+		a.Menu().SetCell(0, 0, tview.NewTableCell(tc.text))
+		drawHeaderTest(main, screen, 120, 20)
+		_, _, width, _ := a.Logo().GetRect()
+		assert.Equal(t, tc.width, width)
+		assert.Same(t, header, main.ItemAt(0))
 	}
-	a.showHeader = false
-	assert.Equal(t, 1, a.headerHeight(100))
-	assert.Zero(t, a.headerHeight(0))
 }
 
 func TestLogoWidth(t *testing.T) {
