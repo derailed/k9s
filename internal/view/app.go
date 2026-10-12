@@ -323,37 +323,9 @@ func (a *App) buildHeader() tview.Primitive {
 	header.AddItem(a.clusterInfo(), clWidth, 1, false)
 	header.AddItem(a.Menu(), 0, 1, false)
 	if a.showLogo {
-		logoWidth := ui.LogoWidth
-		header.AddItem(a.Logo(), logoWidth, 0, false)
-		header.SetDrawFunc(func(_ tcell.Screen, x, y, width, height int) (int, int, int, int) {
-			if size := a.logoWidth(width, clWidth, a.menuWidth()); size != logoWidth {
-				header.ResizeItem(a.Logo(), size, 0)
-				logoWidth = size
-			}
-			return x, y, width, height
-		})
+		header.AddItem(a.Logo(), ui.LogoWidth, 0, false)
 	}
 	return header
-}
-
-func (a *App) logoWidth(width, clusterWidth, menuWidth int) int {
-	if !a.showLogo || width < clusterWidth+menuWidth+ui.LogoWidth {
-		return 0
-	}
-	return ui.LogoWidth
-}
-
-func (a *App) menuWidth() int {
-	for col := range a.Menu().GetColumnCount() {
-		width := 0
-		for row := range a.Menu().GetRowCount() {
-			width = max(width, tview.TaggedStringWidth(a.Menu().GetCell(row, col).Text))
-		}
-		if width > 0 {
-			return width
-		}
-	}
-	return 1
 }
 
 // Halt stop the application event loop.

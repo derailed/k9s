@@ -37,34 +37,29 @@ func drawHeaderTest(main *tview.Flex, screen tcell.SimulationScreen, width, heig
 	main.Draw(screen)
 }
 
-func TestHeaderNarrowTerminalHidesAndRestoresLogo(t *testing.T) {
+func TestHeaderNarrowTerminalPreservesLogoAndStatus(t *testing.T) {
 	a, main, screen := newHeaderTestApp(t)
-	const menuText = " <ctrl-a> Aliases "
-	a.Menu().SetCell(0, 0, tview.NewTableCell("[red::b]"+menuText+"[-::-]"))
-	threshold := clusterInfoWidth + len(menuText) + ui.LogoWidth
-	header := main.ItemAt(0)
-	for _, tc := range []struct {
-		width, logoWidth int
-	}{
-		{threshold - 1, 0},
-		{threshold, ui.LogoWidth},
-		{clusterInfoWidth + len(menuText), 0},
-		{threshold + 10, ui.LogoWidth},
-	} {
-		drawHeaderTest(main, screen, tc.width, 20)
-		_, _, width, _ := a.Logo().GetRect()
-		assert.Equal(t, tc.logoWidth, width, "terminal width %d, menu width %d", tc.width, a.menuWidth())
-		_, _, width, _ = a.Menu().GetRect()
-		assert.GreaterOrEqual(t, width, len(menuText))
-		_, _, width, _ = a.clusterInfo().GetRect()
-		assert.Equal(t, clusterInfoWidth, width)
-		_, _, _, artHeight := a.Logo().Logo().GetRect()
-		_, statusY, _, statusHeight := a.Logo().Status().GetRect()
-		assert.Equal(t, ui.LogoArtHeight, artHeight)
-		assert.Equal(t, ui.LogoArtHeight, statusY)
-		assert.Equal(t, 1, statusHeight)
-		assert.True(t, a.showLogo)
-		assert.Same(t, header, main.ItemAt(0))
+	for _, art := range []string{"", "CUSTOM"} {
+		a.Logo().SetLogo(art)
+		a.Logo().Warn("Dial K8s Toast")
+		for _, menu := range []string{"Aliases", strings.Repeat("X", 50)} {
+			a.Menu().SetCell(0, 0, tview.NewTableCell(menu))
+			for _, width := range []int{120, 80, 120} {
+				drawHeaderTest(main, screen, width, 20)
+				x, _, w, _ := a.Logo().GetRect()
+				assert.Equal(t, ui.LogoWidth, w)
+				assert.Equal(t, width-ui.LogoWidth, x)
+				_, y, _, h := a.Logo().Status().GetRect()
+				assert.Equal(t, ui.LogoArtHeight, y)
+				assert.Equal(t, 1, h)
+				var status strings.Builder
+				for col := x; col < x+w; col++ {
+					r, _, _, _ := screen.GetContent(col, y)
+					status.WriteRune(r)
+				}
+				assert.Contains(t, status.String(), "Dial K8s Toast")
+			}
+		}
 	}
 }
 
@@ -140,45 +135,4 @@ func TestHeaderStylesPreserveLayoutAndVisibility(t *testing.T) {
 	assert.Nil(t, header.(*tview.Flex).ItemAt(2))
 	a.toggleHeader(false, false)
 	assert.Same(t, a.statusIndicator(), main.ItemAt(0))
-}
-
-func TestHeaderMenuWidthSkipsEmptyColumns(t *testing.T) {
-	a, main, screen := newHeaderTestApp(t)
-	a.Menu().SetCell(0, 0, tview.NewTableCell(""))
-	a.Menu().SetCell(0, 1, tview.NewTableCell("[#ff0000::b]Aliases"))
-	assert.Equal(t, len("Aliases"), a.menuWidth())
-	drawHeaderTest(main, screen, clusterInfoWidth+len("Aliases")+ui.LogoWidth-1, 20)
-	_, _, width, _ := a.Logo().GetRect()
-	assert.Zero(t, width)
-}
-
-func TestHeaderMenuChangesToggleLogo(t *testing.T) {
-	a, main, screen := newHeaderTestApp(t)
-	header := main.ItemAt(0)
-	for _, tc := range []struct {
-		text  string
-		width int
-	}{
-		{"Aliases", ui.LogoWidth},
-		{strings.Repeat("X", 50), 0},
-		{"Aliases", ui.LogoWidth},
-		{"Aliases", ui.LogoWidth},
-	} {
-		a.Menu().SetCell(0, 0, tview.NewTableCell(tc.text))
-		drawHeaderTest(main, screen, 120, 20)
-		_, _, width, _ := a.Logo().GetRect()
-		assert.Equal(t, tc.width, width)
-		assert.Same(t, header, main.ItemAt(0))
-	}
-}
-
-func TestLogoWidth(t *testing.T) {
-	a := &App{showLogo: true}
-	assert.Zero(t, a.logoWidth(75, 50, 1))
-	assert.Zero(t, a.logoWidth(76, 50, 1))
-	assert.Equal(t, ui.LogoWidth, a.logoWidth(77, 50, 1))
-	assert.Zero(t, a.logoWidth(100, 80, 1))
-	assert.Zero(t, a.logoWidth(0, 50, 1))
-	a.showLogo = false
-	assert.Zero(t, a.logoWidth(120, 50, 1))
 }
