@@ -190,8 +190,9 @@ func (x *Xray) refreshActions() {
 	}
 	if !dao.IsK9sMeta(x.meta) {
 		aa.Bulk(ui.KeyMap{
-			ui.KeyY: ui.NewKeyAction(yamlAction, x.viewCmd, true),
-			ui.KeyD: ui.NewKeyAction("Describe", x.describeCmd, true),
+			ui.KeyY:      ui.NewKeyAction(yamlAction, x.viewCmd, true),
+			ui.KeyShiftY: ui.NewKeyAction(kyamlAction, x.viewKYAMLCmd, true),
+			ui.KeyD:      ui.NewKeyAction("Describe", x.describeCmd, true),
 		})
 	}
 
@@ -398,6 +399,27 @@ func (x *Xray) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	details := NewDetails(x.app, yamlAction, spec.Path(), contentYAML, true).Update(raw)
+	if err := x.app.inject(details, false); err != nil {
+		x.app.Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (x *Xray) viewKYAMLCmd(evt *tcell.EventKey) *tcell.EventKey {
+	spec := x.selectedSpec()
+	if spec == nil {
+		return evt
+	}
+
+	ctx := x.defaultContext()
+	raw, err := x.model.ToKYAML(ctx, spec.GVR(), spec.Path())
+	if err != nil {
+		x.App().Flash().Errf("unable to get resource %q -- %s", spec.GVR(), err)
+		return nil
+	}
+
+	details := NewDetails(x.app, kyamlAction, spec.Path(), contentKYAML, true).Update(raw)
 	if err := x.app.inject(details, false); err != nil {
 		x.app.Flash().Err(err)
 	}
