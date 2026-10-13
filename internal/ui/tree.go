@@ -111,7 +111,12 @@ func (*Tree) noopCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (t *Tree) toggleCollapseCmd(*tcell.EventKey) *tcell.EventKey {
 	t.expandNodes = !t.expandNodes
-	t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+	// The root is populated asynchronously and may not be set yet.
+	root := t.GetRoot()
+	if root == nil {
+		return nil
+	}
+	root.Walk(func(node, parent *tview.TreeNode) bool {
 		if parent != nil {
 			node.SetExpanded(t.expandNodes)
 		}
