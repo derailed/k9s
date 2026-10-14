@@ -41,6 +41,7 @@
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
             "skin": {"type": "string"},
+            "logo": {"type": "string"},
             "defaultsToFullScreen": {"type": "boolean"},
             "useFullGVRTitle": {"type": "boolean"},
             "invert": {"type": "boolean"}
