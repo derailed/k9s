@@ -53,18 +53,18 @@ func (p PersistentVolume) Header(_ string) model1.Header {
 }
 
 var defaultPVHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "CAPACITY", Attrs: model1.Attrs{Capacity: true}},
 	model1.HeaderColumn{Name: "ACCESS MODES"},
 	model1.HeaderColumn{Name: "RECLAIM POLICY"},
-	model1.HeaderColumn{Name: "STATUS"},
+	model1.HeaderColumn{Name: colStatus},
 	model1.HeaderColumn{Name: "CLAIM"},
 	model1.HeaderColumn{Name: "STORAGECLASS"},
 	model1.HeaderColumn{Name: "REASON"},
 	model1.HeaderColumn{Name: "VOLUMEMODE", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
@@ -80,12 +80,9 @@ func (p PersistentVolume) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := p.specs.realize(raw, defaultPVHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (p PersistentVolume) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

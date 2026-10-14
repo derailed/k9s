@@ -124,6 +124,7 @@ plugins:
       - "kubectl cnpg status $NAME -n $NAMESPACE --context \"$CONTEXT\" 2>&1 | less -R"
   cnpg-status-verbose:
     shortCut: Shift-S
+    override: true
     description: Status (verbose)
     scopes:
       - cluster

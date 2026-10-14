@@ -69,25 +69,34 @@ func TestReadLogs_DropsOnFullChannel(t *testing.T) {
 }
 
 func TestReadLogs_CancelStopsEarly(t *testing.T) {
-	// Infinite-like stream: we cancel after a few lines
-	input := strings.Repeat("line\n", 10000)
-	stream := io.NopCloser(strings.NewReader(input))
-	out := make(chan *LogItem, 10)
+	// out is sized to fill exactly with the pre-cancel lines, so the final
+	// line can only be read once ctx is canceled, forcing a deterministic
+	// streamCanceled result instead of racing the send-vs-cancel select.
+	const preCancelLines = 5
+	pr, pw := io.Pipe()
+	stream := io.NopCloser(pr)
+	out := make(chan *LogItem, preCancelLines)
 	opts := &LogOptions{Path: "ns/pod", Container: "c1"}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Read a few items then cancel
+	releaseWriter := make(chan struct{})
+	go func() {
+		for range preCancelLines {
+			_, _ = pw.Write([]byte("line\n"))
+		}
+		<-releaseWriter
+		_, _ = pw.Write([]byte("line\n"))
+		_ = pw.Close()
+	}()
+
 	done := make(chan streamResult, 1)
 	go func() {
 		done <- readLogs(ctx, stream, out, opts)
 	}()
 
-	// Drain a few items then cancel
-	for range 5 {
-		<-out
-	}
 	cancel()
+	close(releaseWriter)
 
 	result := <-done
 	assert.Equal(t, streamCanceled, result)

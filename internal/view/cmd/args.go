@@ -52,7 +52,7 @@ func newArgs(p *Interpreter, aa []string) args {
 			arguments[contextKey] = a[1:]
 
 		case isLabelArg(a):
-			arguments[labelKey] = strings.ToLower(a)
+			arguments[labelKey] = a
 
 		default:
 			switch {

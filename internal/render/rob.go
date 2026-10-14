@@ -15,14 +15,14 @@ import (
 )
 
 var defaultROBHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "ROLE"},
-	model1.HeaderColumn{Name: "KIND"},
+	model1.HeaderColumn{Name: colKind},
 	model1.HeaderColumn{Name: "SUBJECTS"},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // RoleBinding renders a K8s RoleBinding to screen.
@@ -48,12 +48,9 @@ func (r RoleBinding) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := r.specs.realize(raw, defaultROBHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (RoleBinding) defaultRow(raw *unstructured.Unstructured, row *model1.Row) error {

@@ -141,12 +141,26 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 		return nil, fmt.Errorf("unable to forward port because pod is not running. Current status=%v", pod.Status.Phase)
 	}
 
-	auth, err = p.Client().CanI(ns, client.PodGVR.WithSubResource("portforward"), "", []string{client.CreateVerb})
+	// Kubernetes port-forward via SPDY requires the 'create' verb on pods/portforward.
+	// Starting with Kubernetes 1.31, kubectl and client-go can negotiate port-forward over
+	// WebSockets instead of SPDY (PortForwardWebsockets feature). A WebSocket handshake is
+	// an HTTP GET, which maps to the 'get' verb in RBAC. Therefore, a Role that grants only
+	// 'get' on pods/portforward is sufficient for port-forward on 1.31+ clusters.
+	//
+	// We perform two independent authorization checks and allow port-forward if EITHER one
+	// succeeds. This preserves backward compatibility for legacy SPDY-only clusters while
+	// correctly supporting the newer WebSocket path.
+	var getAuth, createAuth bool
+	getAuth, err = p.Client().CanI(ns, client.PodGVR.WithSubResource("portforward"), "", client.GetAccess)
 	if err != nil {
 		return nil, err
 	}
-	if !auth {
-		return nil, fmt.Errorf("user is not authorized to update portforward")
+	createAuth, err = p.Client().CanI(ns, client.PodGVR.WithSubResource("portforward"), "", []string{client.CreateVerb})
+	if err != nil {
+		return nil, err
+	}
+	if !getAuth && !createAuth {
+		return nil, fmt.Errorf("user is not authorized to access portforward (requires get or create on pods/portforward)")
 	}
 
 	cfg, err := p.Client().RestConfig()

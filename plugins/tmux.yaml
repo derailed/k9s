@@ -1,0 +1,34 @@
+plugins:
+  tmux-split-horizontal:
+    shortCut: Shift-H
+    confirm: false
+    description: Split horizontal <Tmux>
+    scopes:
+      - all
+    command: tmux
+    background: true
+    args:
+      - split-window
+      - -v
+      - k9s
+      - --context
+      - $CONTEXT
+      - --command
+      - $RESOURCE_NAME
+
+  tmux-split-vertical:
+    shortCut: Shift-V
+    confirm: false
+    description: Split vertical <Tmux>
+    scopes:
+      - all
+    command: tmux
+    background: true
+    args:
+      - split-window
+      - -h
+      - k9s
+      - --context
+      - $CONTEXT
+      - --command
+      - $RESOURCE_NAME

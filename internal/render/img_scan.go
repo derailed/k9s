@@ -60,9 +60,9 @@ func (ImageScan) Header(string) model1.Header {
 		model1.HeaderColumn{Name: "VULNERABILITY"},
 		model1.HeaderColumn{Name: "IMAGE"},
 		model1.HeaderColumn{Name: "LIBRARY"},
-		model1.HeaderColumn{Name: "VERSION"},
+		model1.HeaderColumn{Name: colVersion},
 		model1.HeaderColumn{Name: "FIXED-IN"},
-		model1.HeaderColumn{Name: "TYPE"},
+		model1.HeaderColumn{Name: colType},
 	}
 }
 

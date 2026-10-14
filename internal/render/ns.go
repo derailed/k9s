@@ -20,11 +20,11 @@ import (
 )
 
 var defaultNSHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "STATUS"},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colStatus},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Namespace renders a K8s Namespace to screen.
@@ -69,12 +69,9 @@ func (n Namespace) Render(o any, _ string, row *model1.Row) error {
 	}
 
 	cols, err := n.specs.realize(raw, defaultNSHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (n Namespace) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {

@@ -46,12 +46,12 @@ func (Rbac) ColorerFunc() model1.ColorerFunc {
 func (Rbac) Header(string) model1.Header {
 	h := make(model1.Header, 0, 10)
 	h = append(h,
-		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: colName},
 		model1.HeaderColumn{Name: "API-GROUP"},
 	)
 	h = append(h, rbacVerbHeader()...)
 
-	return append(h, model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}})
+	return append(h, model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}})
 }
 
 // Render renders a K8s resource to screen.

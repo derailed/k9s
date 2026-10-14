@@ -36,10 +36,10 @@ func (Context) ColorerFunc() model1.ColorerFunc {
 // Header returns a header row.
 func (Context) Header(string) model1.Header {
 	return model1.Header{
-		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: colName},
 		model1.HeaderColumn{Name: "CLUSTER"},
 		model1.HeaderColumn{Name: "AUTHINFO"},
-		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: colNamespace},
 	}
 }
 
