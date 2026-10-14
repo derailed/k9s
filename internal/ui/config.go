@@ -300,6 +300,11 @@ func (c *Configurator) activeConfig() (cluster, contxt string, ok bool) {
 // RefreshStyles load for skin configuration changes.
 func (c *Configurator) RefreshStyles(s synchronizer) {
 	s.UpdateClusterInfo()
+	if c.Config != nil && c.Config.K9s != nil {
+		if l := s.Logo(); l != nil {
+			l.SetLogo(c.Config.K9s.Logo())
+		}
+	}
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
 	}
