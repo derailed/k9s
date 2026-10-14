@@ -35,7 +35,7 @@ const (
 var _ data.KubeSettings = (*client.Config)(nil)
 
 var (
-	version, commit, date, skipLatestRevCheck = "dev", "dev", client.NA, "false"
+	version, commit, date, skipLatestRevCheck = "dev", "dev", client.NA, ""
 	k9sFlags              *config.Flags
 	k8sFlags              *genericclioptions.ConfigFlags
 
@@ -152,8 +152,10 @@ func loadConfiguration() (*config.Config, error) {
 		slog.Error("Fail to refine k9s config", slogs.Error, err)
 		errs = errors.Join(errs, err)
 	}
-	if b, err := strconv.ParseBool(skipLatestRevCheck); err == nil {
-		k9sCfg.K9s.SkipLatestRevCheck = b
+	if skipLatestRevCheck != "" {
+		if b, err := strconv.ParseBool(skipLatestRevCheck); err == nil {
+			k9sCfg.K9s.SkipLatestRevCheck = b
+		}
 	}
 
 	// Try to access server version if that fail. Connectivity issue?
