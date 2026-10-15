@@ -36,6 +36,10 @@ var accessors = Accessors{
 	client.HmhGVR: new(HelmHistory),
 
 	client.CrdGVR: new(CustomResourceDefinition),
+
+	client.SmonGVR: new(ServiceMonitor),
+	client.PmonGVR: new(PodMonitor),
+	client.PrbGVR:  new(Probe),
 }
 
 // Accessors represents a collection of dao accessors.
