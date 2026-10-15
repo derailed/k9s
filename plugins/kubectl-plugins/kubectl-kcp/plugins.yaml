@@ -1,12 +1,13 @@
 plugins:
   # kcp: browse the full workspace tree and switch with Enter (kubectl ws -i).
-  # When k9s runs via kcp/k9s-kcp, k9s restarts on the new workspace automatically.
+  # kcp-ws is found via PATH: kcp/k9s-kcp adds the kcp dir to it and restarts k9s
+  # on the new workspace automatically.
   kcp-ws-tree:
     shortCut: Shift-W
     description: kcp workspace tree
     scopes:
       - all
-    command: /home/nils/.config/k9s/kcp/kcp-ws
+    command: kcp-ws
     background: false
     args:
       - tree
@@ -20,7 +21,7 @@ plugins:
     description: Use workspace
     scopes:
       - workspaces
-    command: /home/nils/.config/k9s/kcp/kcp-ws
+    command: kcp-ws
     background: false
     args:
       - use
@@ -35,7 +36,7 @@ plugins:
     scopes:
       - workspaces
       - contexts
-    command: /home/nils/.config/k9s/kcp/kcp-ws
+    command: kcp-ws
     background: false
     args:
       - use
