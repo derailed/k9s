@@ -569,31 +569,69 @@ func Test_gatherPodMX(t *testing.T) {
 
 func Test_podLimits(t *testing.T) {
 	uu := map[string]struct {
-		cc []v1.Container
-		l  v1.ResourceList
+		cc             []v1.Container
+		l              v1.ResourceList
+		allCPU, allMem bool
 	}{
 		"plain": {
 			cc: []v1.Container{
 				makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
 			},
-			l: makeRes("20m", "2Mi"),
+			l:      makeRes("20m", "2Mi"),
+			allCPU: true,
+			allMem: true,
 		},
 		"multi-co": {
 			cc: []v1.Container{
 				makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
 				makeContainer("c2", false, "10m", "1Mi", "40m", "4Mi"),
 			},
-			l: makeRes("60m", "6Mi"),
+			l:      makeRes("60m", "6Mi"),
+			allCPU: true,
+			allMem: true,
+		},
+		"container-without-limits": {
+			cc: []v1.Container{
+				makeContainer("c1", false, "10m", "1Mi", "20m", "2Mi"),
+				{
+					Name: "c2",
+					Resources: v1.ResourceRequirements{
+						Requests: makeRes("5m", "1Mi"),
+					},
+				},
+			},
+			l: makeRes("20m", "2Mi"),
+		},
+		"cpu-only-limits": {
+			cc: []v1.Container{
+				{
+					Name: "c1",
+					Resources: v1.ResourceRequirements{
+						Limits: v1.ResourceList{
+							v1.ResourceCPU: res.MustParse("20m"),
+						},
+					},
+				},
+				makeContainer("c2", false, "10m", "1Mi", "40m", "4Mi"),
+			},
+			l: v1.ResourceList{
+				v1.ResourceCPU:                    res.MustParse("60m"),
+				v1.ResourceMemory:                 res.MustParse("4Mi"),
+				v1.ResourceName("nvidia.com/gpu"): res.MustParse("40m"),
+			},
+			allCPU: true,
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			c, m, g := cosLimits(u.cc)
+			c, m, g, allCPU, allMem := cosLimits(u.cc)
 			assert.True(t, c.Equal(*u.l.Cpu()))
 			assert.True(t, m.Equal(*u.l.Memory()))
 			assert.True(t, g.Equal(*extractGPU(u.l)))
+			assert.Equal(t, u.allCPU, allCPU)
+			assert.Equal(t, u.allMem, allMem)
 		})
 	}
 }
