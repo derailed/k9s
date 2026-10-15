@@ -215,6 +215,27 @@ func TestPodSidecarRender(t *testing.T) {
 	assert.Equal(t, e, r.Fields[:21])
 }
 
+// TestPodExtraStatusContainerRender guards against a provider (e.g. a virtual
+// node injecting a logging sidecar) reporting a container in
+// status.containerStatuses that has no matching entry in spec.containers.
+// READY should still surface the discrepancy (3/2), but the Pod must not be
+// flagged unhealthy in the VALID column when every *declared* container is
+// ready. See https://github.com/derailed/k9s/issues/4145.
+func TestPodExtraStatusContainerRender(t *testing.T) {
+	pom := render.PodWithMetrics{
+		Raw: load(t, "po_extra_status"),
+	}
+
+	po := render.NewPod()
+	r := model1.NewRow(26)
+	err := po.Render(&pom, "", &r)
+	require.NoError(t, err)
+
+	assert.Equal(t, "default/nginx", r.ID)
+	assert.Equal(t, "3/2", r.Fields[4])
+	assert.Empty(t, r.Fields[24])
+}
+
 func TestCheckPodStatus(t *testing.T) {
 	uu := map[string]struct {
 		pod v1.Pod
