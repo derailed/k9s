@@ -147,6 +147,7 @@ func (t *Table) defaultEnv() Env {
 	row := t.GetSelectedRow(path)
 	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header(), row)
 	env["FILTER"] = t.CmdBuff().GetText()
+	env["RAW_FILTER"] = env["FILTER"]
 	if env["FILTER"] == "" {
 		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)
 	}
