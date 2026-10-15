@@ -1,0 +1,44 @@
+plugins:
+  # kcp: browse the full workspace tree and switch with Enter (kubectl ws -i).
+  # When k9s runs via kcp/k9s-kcp, k9s restarts on the new workspace automatically.
+  kcp-ws-tree:
+    shortCut: Shift-W
+    description: kcp workspace tree
+    scopes:
+      - all
+    command: /home/nils/.config/k9s/kcp/kcp-ws
+    background: false
+    args:
+      - tree
+      - $CONTEXT
+      - $RESOURCE_NAME
+
+  # kcp: in the :ws view (child workspaces of the current one), Enter switches into the selected workspace.
+  kcp-ws-use:
+    shortCut: Enter
+    override: true
+    description: Use workspace
+    scopes:
+      - workspaces
+    command: /home/nils/.config/k9s/kcp/kcp-ws
+    background: false
+    args:
+      - use
+      - $CONTEXT
+      - $NAME
+      - ws
+
+  # kcp: go to the parent workspace.
+  kcp-ws-parent:
+    shortCut: Shift-P
+    description: Parent workspace
+    scopes:
+      - workspaces
+      - contexts
+    command: /home/nils/.config/k9s/kcp/kcp-ws
+    background: false
+    args:
+      - use
+      - $CONTEXT
+      - ..
+      - ws
