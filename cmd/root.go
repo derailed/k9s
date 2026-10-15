@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -34,9 +35,9 @@ const (
 var _ data.KubeSettings = (*client.Config)(nil)
 
 var (
-	version, commit, date = "dev", "dev", client.NA
-	k9sFlags              *config.Flags
-	k8sFlags              *genericclioptions.ConfigFlags
+	version, commit, date, skipLatestRevCheck = "dev", "dev", client.NA, ""
+	k9sFlags                                  *config.Flags
+	k8sFlags                                  *genericclioptions.ConfigFlags
 
 	rootCmd = &cobra.Command{
 		Use:   appName,
@@ -150,6 +151,11 @@ func loadConfiguration() (*config.Config, error) {
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		slog.Error("Fail to refine k9s config", slogs.Error, err)
 		errs = errors.Join(errs, err)
+	}
+	if skipLatestRevCheck != "" {
+		if b, err := strconv.ParseBool(skipLatestRevCheck); err == nil {
+			k9sCfg.K9s.SkipLatestRevCheck = b
+		}
 	}
 
 	// Try to access server version if that fail. Connectivity issue?
