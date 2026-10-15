@@ -114,7 +114,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 
 	var pmx client.PodsMetricsMap
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx && len(oo) > 0 {
 		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetricsMap(ctx, ns)
 	}
 	sel, _ := ctx.Value(internal.KeyFields).(string)
