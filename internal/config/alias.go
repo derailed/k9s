@@ -195,6 +195,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare(client.SdGVR, "screendump", "sd")
 	a.declare(client.PuGVR, "pulse", "pu", "hz")
 	a.declare(client.XGVR, "xray", "x")
+	a.declare(client.OwnGVR, "owners", "own", "ot")
 	a.declare(client.WkGVR, "workload", "wk")
 }
 
