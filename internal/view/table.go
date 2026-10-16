@@ -113,6 +113,14 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			t.Table.SelectNextColumn()
 			return nil
 		}
+		// Shift+Down/Up page the table, matching vi's terminal keymap
+		// (<S-Down> == <PageDown>, <S-Up> == <PageUp>).
+		if key == tcell.KeyDown {
+			return tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone)
+		}
+		if key == tcell.KeyUp {
+			return tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone)
+		}
 	}
 
 	if key == tcell.KeyUp || key == tcell.KeyDown {
