@@ -284,6 +284,21 @@ func TestConfigRestConfig(t *testing.T) {
 	assert.Equal(t, "https://localhost:3002", rc.Host)
 }
 
+func TestConfigRestConfigSetsK9sUserAgent(t *testing.T) {
+	orig := client.AppVersion
+	t.Cleanup(func() { client.AppVersion = orig })
+	client.AppVersion = "v0.51.0"
+
+	flags := genericclioptions.ConfigFlags{
+		KubeConfig: &kubeConfig,
+	}
+
+	cfg := client.NewConfig(&flags)
+	rc, err := cfg.RESTConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "k9s/v0.51.0", rc.UserAgent)
+}
+
 func TestConfigBadConfig(t *testing.T) {
 	kubeConfig := "./testdata/bork_config"
 	flags := genericclioptions.ConfigFlags{
