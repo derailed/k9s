@@ -102,6 +102,7 @@ func TestGetEditableYAML(t *testing.T) {
 			factory: makeFactory(),
 			path:    "kube-system/bootstrap-token-abcdef",
 			contains: []string{
+				"# data is base64. stringData is plaintext.",
 				"token-secret-f: 0123456789abcdef",
 				"stringData:",
 				"kind: Secret",
@@ -144,6 +145,27 @@ func TestGetEditableYAML(t *testing.T) {
 				"username: admin",
 				"password: s3cr3t",
 			},
+		},
+		"nel-stays-base64": {
+			factory: secretFactory("nel-secret", map[string]any{
+				"nel": base64.StdEncoding.EncodeToString([]byte("a\u0085b")),
+			}),
+			path: "default/nel-secret",
+			contains: []string{
+				"data:",
+				base64.StdEncoding.EncodeToString([]byte("a\u0085b")),
+			},
+			notContains: []string{"stringData:"},
+		},
+		"del-stays-base64": {
+			factory: secretFactory("del-secret", map[string]any{
+				"del": base64.StdEncoding.EncodeToString([]byte("a\x7fb")),
+			}),
+			path: "default/del-secret",
+			contains: []string{
+				base64.StdEncoding.EncodeToString([]byte("a\x7fb")),
+			},
+			notContains: []string{"stringData:"},
 		},
 		"convert-error": {
 			factory: &testFactory{
@@ -247,7 +269,7 @@ func TestUpdateFromEditedYAML_ParseError(t *testing.T) {
 	var s dao.Secret
 	s.Init(makeFactory(), client.SecGVR)
 
-	err := s.UpdateFromEditedYAML("default/empty-secret", []byte("not: valid: yaml: {{{}"))
+	err := s.UpdateFromEditedYAML("default/empty-secret", "100", []byte("not: valid: yaml: {{{}"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to parse edited YAML")
 }
@@ -258,19 +280,62 @@ kind: Secret
 metadata:
   name: other-secret
   namespace: other-ns
+  resourceVersion: "999"
 stringData:
   k: v
 `)
-	obj, err := dao.PrepareEditedSecret("default/empty-secret", edited)
+	obj, err := dao.PrepareEditedSecret("default/empty-secret", "100", edited)
 	require.NoError(t, err)
 	assert.Equal(t, "empty-secret", obj.GetName())
 	assert.Equal(t, "default", obj.GetNamespace())
+	assert.Equal(t, "100", obj.GetResourceVersion())
 }
 
 func TestPrepareEditedSecret_missingName(t *testing.T) {
-	_, err := dao.PrepareEditedSecret("default/", []byte("kind: Secret"))
+	_, err := dao.PrepareEditedSecret("default/", "100", []byte("kind: Secret"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "missing resource name")
+}
+
+func TestPrepareEditedSecret_rejectsEmptyAndForeign(t *testing.T) {
+	tests := []struct {
+		name string
+		yaml string
+		want string
+	}{
+		{name: "empty-file", yaml: "", want: "failed to parse"},
+		{name: "comments", yaml: "# only a comment\n", want: "empty"},
+		{name: "dashes", yaml: "---\n", want: "empty"},
+		{name: "null", yaml: "null\n", want: "empty"},
+		{name: "empty-map", yaml: "{}\n", want: "kind Secret"},
+		{name: "configmap", yaml: "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: x\n", want: "kind Secret"},
+		{name: "no-kind", yaml: "apiVersion: v1\nmetadata:\n  name: x\nstringData:\n  a: b\n", want: "kind Secret"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := dao.PrepareEditedSecret("default/empty-secret", "100", []byte(tt.yaml))
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+		})
+	}
+}
+
+func TestOpenedResourceVersion_fromEditableYAML(t *testing.T) {
+	var s dao.Secret
+	s.Init(secretFactory("empty-secret", nil), client.SecGVR)
+
+	raw, err := s.GetEditableYAML("default/empty-secret")
+	require.NoError(t, err)
+	rv, err := dao.OpenedResourceVersion(raw)
+	require.NoError(t, err)
+	assert.Equal(t, "100", rv)
+}
+
+func TestPrepareEditedSecret_requiresResourceVersion(t *testing.T) {
+	edited := []byte("apiVersion: v1\nkind: Secret\nmetadata:\n  name: s\n")
+	_, err := dao.PrepareEditedSecret("default/s", "", edited)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "without a resourceVersion")
 }
 
 func secretMaps(t *testing.T, obj *unstructured.Unstructured) (data, stringData map[string]any) {
@@ -433,6 +498,27 @@ stringData:
 			wantString: map[string]string{"password": "password2"},
 		},
 		{
+			name: "valid-base64-word-in-data",
+			yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: word
+data:
+  k: password
+`,
+			wantData: map[string]string{"k": "password"},
+		},
+		{
+			name:    "number-in-stringdata",
+			yaml:    "apiVersion: v1\nkind: Secret\nmetadata:\n  name: bad\nstringData:\n  PORT: 8080\n",
+			wantErr: "stringData.PORT must be a string",
+		},
+		{
+			name:    "bool-in-stringdata",
+			yaml:    "apiVersion: v1\nkind: Secret\nmetadata:\n  name: bad\nstringData:\n  ENABLED: true\n",
+			wantErr: "stringData.ENABLED must be a string",
+		},
+		{
 			name:    "plaintext-in-data",
 			yaml:    "apiVersion: v1\nkind: Secret\nmetadata:\n  name: bad\ndata:\n  k: password2\n",
 			wantErr: "not valid base64",
@@ -451,7 +537,7 @@ stringData:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			obj, err := dao.PrepareEditedSecret("default/"+tt.name, []byte(tt.yaml))
+			obj, err := dao.PrepareEditedSecret("default/"+tt.name, "100", []byte(tt.yaml))
 			if tt.wantErr != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.wantErr)
@@ -488,7 +574,7 @@ func TestPrepareEditedSecret_roundtripUneditedMixed(t *testing.T) {
 	raw, err := s.GetEditableYAML("default/mixed-secret")
 	require.NoError(t, err)
 
-	obj, err := dao.PrepareEditedSecret("default/mixed-secret", raw)
+	obj, err := dao.PrepareEditedSecret("default/mixed-secret", "100", raw)
 	require.NoError(t, err)
 	data, stringData := secretMaps(t, obj)
 	assert.Equal(t, "AAEB//7wgA==", data["binary"])

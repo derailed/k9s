@@ -106,12 +106,20 @@ func editDecodedSecret(app *App, path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
+	openedRV, err := dao.OpenedResourceVersion(original)
+	if err != nil {
+		return err
+	}
 
 	tmpFile, err := os.CreateTemp("", "k9s-secret-*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
+	keepFile := false
 	defer func() {
+		if keepFile {
+			return
+		}
 		if e := os.Remove(tmpFile.Name()); e != nil {
 			slog.Debug("Failed to remove temp file", slogs.Error, e)
 		}
@@ -137,8 +145,9 @@ func editDecodedSecret(app *App, path string) error {
 		return nil
 	}
 
-	if err := sec.UpdateFromEditedYAML(path, edited); err != nil {
-		return fmt.Errorf("failed to update secret: %w", err)
+	if err := sec.UpdateFromEditedYAML(path, openedRV, edited); err != nil {
+		keepFile = true
+		return fmt.Errorf("failed to update secret: %w\nedited file kept at %s", err, tmpFile.Name())
 	}
 
 	app.Flash().Infof("Secret %s updated successfully", path)
