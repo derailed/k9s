@@ -140,6 +140,7 @@ func (c Container) defaultRow(cr ContainerRes, r *model1.Row) error {
 		AsStatus(c.diagnose(state, ready)),
 		ToAge(cr.Age),
 	}
+	stashAge(r, cr.Age)
 
 	return nil
 }
