@@ -166,6 +166,8 @@ func TestPodRender(t *testing.T) {
 	assert.Equal(t, "default/nginx", r.ID)
 	e := model1.Fields{"default", "nginx", "n/a", "●", "1/1", "Running", "0", "<unknown>", "100", "100:0", "100", "n/a", "50", "70:170", "71", "29", "0:0", "172.17.0.6", "minikube", "default", "<none>"}
 	assert.Equal(t, e, r.Fields[:21])
+	assert.False(t, r.Age.IsZero())
+	assert.Equal(t, pom.Raw.GetCreationTimestamp().Time, r.Age)
 }
 
 func BenchmarkPodRender(b *testing.B) {

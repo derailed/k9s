@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
@@ -295,4 +296,20 @@ func TestHydrateArrayIndexOutOfBounds(t *testing.T) {
 	require.ErrorIs(t, err, model1.ErrCustomColumn)
 	assert.Len(t, cols, 1)
 	assert.Equal(t, MissingValue, cols[0].Value)
+}
+
+func TestHydrateCustomAgeClearsRowAge(t *testing.T) {
+	spec := "{.status.startTime}"
+	cc := ColumnSpecs{{Header: model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}}, Spec: spec}}
+	parser := jsonpath.New("column0").AllowMissingKeys(true)
+	require.NoError(t, parser.Parse(spec))
+
+	row := &model1.Row{Fields: model1.Fields{"10m"}, Age: time.Now().Add(-10 * time.Minute)}
+	obj := &unstructured.Unstructured{Object: map[string]any{
+		"status": map[string]any{"startTime": "2026-04-22T12:00:00Z"},
+	}}
+
+	_, err := hydrate(obj, cc, []*jsonpath.JSONPath{parser}, model1.Header{{Name: "AGE"}}, row)
+	require.NoError(t, err)
+	assert.True(t, row.Age.IsZero())
 }

@@ -174,6 +174,11 @@ func hydrate(o runtime.Object, cc ColumnSpecs, parsers []*jsonpath.JSONPath, rh 
 			continue
 		}
 
+		// A custom AGE no longer matches the creation time stashed on the row.
+		if strings.EqualFold(spec.Header.Name, colAge) {
+			row.Age = time.Time{}
+		}
+
 		if o == nil {
 			cols[idx] = RenderedCol{
 				Header: spec.Header,
