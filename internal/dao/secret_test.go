@@ -357,6 +357,7 @@ func TestPrepareEditedSecret_dataStaysBase64(t *testing.T) {
 	plainB64 := base64.StdEncoding.EncodeToString([]byte(plain))
 	doubleB64 := base64.StdEncoding.EncodeToString([]byte(plainB64))
 	const binaryB64 = "AAEB//7wgA=="
+	tokenFB64 := base64.StdEncoding.EncodeToString([]byte("0123456789abcdef"))
 
 	tests := []struct {
 		name       string
@@ -444,7 +445,7 @@ metadata:
 data:
   token-secret-f: MDEyMzQ1Njc4OWFiY2RlZg==
 `,
-			wantData: map[string]string{"token-secret-f": "MDEyMzQ1Njc4OWFiY2RlZg=="},
+			wantData: map[string]string{"token-secret-f": tokenFB64},
 		},
 		{
 			name: "token-plaintext-in-stringdata",

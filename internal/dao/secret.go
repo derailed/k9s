@@ -203,14 +203,19 @@ func (s *Secret) GetEditableYAML(path string) ([]byte, error) {
 		return nil, err
 	}
 
-	out := make([]byte, 0, len(secretEditHeader)+buff.Len())
-	out = append(out, secretEditHeader...)
+	out := make([]byte, 0, len(decodedEditHeader)+buff.Len())
+	out = append(out, decodedEditHeader...)
 	out = append(out, buff.Bytes()...)
 
 	return out, nil
 }
 
-const secretEditHeader = "# data is base64. stringData is plaintext.\n"
+const (
+	decodedEditHeader = "# data is base64. stringData is plaintext.\n"
+	// coreAPIVersion is the core/v1 apiVersion. A literal "v1" here is one
+	// more copy than goconst allows in this package.
+	coreAPIVersion = "v1"
+)
 
 // yamlStringRoundTrips reports whether val survives the editor's YAML printer.
 // Valid UTF-8 is not enough: U+0085 is printed as a space, and some controls
@@ -220,7 +225,7 @@ func yamlStringRoundTrips(val []byte) bool {
 		return false
 	}
 	probe := &unstructured.Unstructured{Object: map[string]any{
-		"apiVersion": "v1",
+		"apiVersion": coreAPIVersion,
 		"kind":       "Secret",
 		"stringData": map[string]any{"k": string(val)},
 	}}
@@ -284,7 +289,7 @@ func PrepareEditedSecret(path, openedResourceVersion string, editedYAML []byte) 
 	if n == "" {
 		return nil, fmt.Errorf("missing resource name in path %q", path)
 	}
-	if obj.GetAPIVersion() != "v1" || obj.GetKind() != "Secret" {
+	if obj.GetAPIVersion() != coreAPIVersion || obj.GetKind() != "Secret" {
 		return nil, fmt.Errorf("edited document must be apiVersion v1, kind Secret")
 	}
 	if openedResourceVersion == "" {
