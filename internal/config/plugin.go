@@ -63,6 +63,7 @@ type Plugin struct {
 	Background      bool          `yaml:"background"`
 	Dangerous       bool          `yaml:"dangerous"`
 	OverwriteOutput bool          `yaml:"overwriteOutput"`
+	RequiresTarget  *bool         `yaml:"requiresTarget"`
 	Inputs          []PluginInput `yaml:"inputs"`
 }
 
@@ -77,6 +78,12 @@ func (p *Plugin) ShouldConfirm() bool {
 		return *p.Confirm
 	}
 	return len(p.Inputs) > 0
+}
+
+// IsTargetRequired returns whether the plugin requires a target (i.e. selection) to run.
+// No items may be selected when the table is empty. Defaults to true.
+func (p *Plugin) IsTargetRequired() bool {
+	return p.RequiresTarget == nil || *p.RequiresTarget
 }
 
 // Validate checks the plugin configuration for errors.

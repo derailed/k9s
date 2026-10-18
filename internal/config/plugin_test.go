@@ -71,6 +71,21 @@ func TestPluginLoad(t *testing.T) {
 			},
 		},
 
+		"no-target-required": {
+			path: "testdata/plugins/without-target.yaml",
+			ee: Plugins{
+				Plugins: plugins{
+					"new-configmap": Plugin{
+						Scopes:         []string{"configmap"},
+						ShortCut:       "Shift-N",
+						Description:    "New ConfigMap",
+						Command:        "bash",
+						RequiresTarget: boolPtr(false),
+					},
+				},
+			},
+		},
+
 		"toast-no-file": {
 			path: "testdata/plugins/plugins-bozo.yaml",
 			ee:   NewPlugins(),
