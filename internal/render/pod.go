@@ -194,7 +194,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		client.ToPercentageStr(c.mem, r.lmem),
 		toMc(r.gpu) + ":" + toMc(r.lgpu),
 		na(st.PodIP),
-		na(spec.NodeName),
+		na(PodNodeName(spec)),
 		na(spec.ServiceAccountName),
 		asNominated(st.NominatedNodeName),
 		asReadinessGate(spec, &st),
@@ -674,4 +674,27 @@ func filterSidecarCO(cc []v1.Container) []v1.Container {
 	}
 
 	return rcc
+}
+
+// PodNodeName returns the node a pod is bound to or, when the pod is not scheduled yet,
+// the node it is pinned to via a metadata.name node affinity (e.g. DaemonSet pods).
+func PodNodeName(spec *v1.PodSpec) string {
+	if spec.NodeName != "" {
+		return spec.NodeName
+	}
+	if spec.Affinity == nil || spec.Affinity.NodeAffinity == nil {
+		return ""
+	}
+	req := spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
+	if req == nil {
+		return ""
+	}
+	for _, term := range req.NodeSelectorTerms {
+		for _, f := range term.MatchFields {
+			if f.Key == "metadata.name" && f.Operator == v1.NodeSelectorOpIn && len(f.Values) == 1 {
+				return f.Values[0]
+			}
+		}
+	}
+	return ""
 }
