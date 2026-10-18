@@ -8,10 +8,12 @@ ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
 
 WORKDIR /k9s
-COPY go.mod go.sum main.go Makefile ./
+COPY go.mod go.sum ./
+RUN go mod download
+COPY main.go Makefile ./
 COPY internal internal
 COPY cmd cmd
-RUN apk --no-cache add --update make libx11-dev git gcc libc-dev curl \
+RUN apk --no-cache add --update make \
   && make build
 
 # -----------------------------------------------------------------------------
