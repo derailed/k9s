@@ -31,6 +31,9 @@ const (
 	// AuthReason tracks an auth reason logger key.
 	AuthReason = "auth-reason"
 
+	// Reason tracks a reason logger key.
+	Reason = "reason"
+
 	// Ports tracks a ports logger key.
 	Port = "port"
 
