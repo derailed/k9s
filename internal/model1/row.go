@@ -3,10 +3,13 @@
 
 package model1
 
+import "time"
+
 // Row represents a collection of columns.
 type Row struct {
 	ID     string
 	Fields Fields
+	Age    time.Time
 }
 
 // NewRow returns a new row with initialized fields.
@@ -17,6 +20,7 @@ func NewRow(size int) Row {
 // Labelize returns a new row based on labels.
 func (r Row) Labelize(cols []int, labelCol int, labels []string) Row {
 	out := NewRow(len(cols) + len(labels))
+	out.Age = r.Age
 	for _, col := range cols {
 		out.Fields = append(out.Fields, r.Fields[col])
 	}
@@ -33,6 +37,7 @@ func (r Row) Customize(cols []int) Row {
 	out := NewRow(len(cols))
 	r.Fields.Customize(cols, out.Fields)
 	out.ID = r.ID
+	out.Age = r.Age
 
 	return out
 }
@@ -50,6 +55,7 @@ func (r Row) Clone() Row {
 	return Row{
 		ID:     r.ID,
 		Fields: r.Fields.Clone(),
+		Age:    r.Age,
 	}
 }
 

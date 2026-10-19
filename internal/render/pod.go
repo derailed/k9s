@@ -203,6 +203,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		AsStatus(p.diagnose(phase, cReady, allCounts, ready, rgr, rgt)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
+	stashAge(row, pwm.Raw.GetCreationTimestamp())
 
 	return nil
 }

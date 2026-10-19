@@ -53,6 +53,7 @@ func TestContainer(t *testing.T) {
 	},
 		r.Fields[:len(r.Fields)-1],
 	)
+	assert.Equal(t, cres.Age.Time, r.Age)
 }
 
 func BenchmarkContainerRender(b *testing.B) {
