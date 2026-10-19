@@ -670,6 +670,21 @@ func TestCheckPhase(t *testing.T) {
 			},
 			e: render.PhaseUnknown,
 		},
+		"scheduling-gated": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodPending,
+					Conditions: []v1.PodCondition{
+						{
+							Type:   v1.PodScheduled,
+							Status: v1.ConditionFalse,
+							Reason: v1.PodReasonSchedulingGated,
+						},
+					},
+				},
+			},
+			e: v1.PodReasonSchedulingGated,
+		},
 		"restartable": {
 			pod: v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
