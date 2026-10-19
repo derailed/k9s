@@ -549,9 +549,9 @@ func checkInitContainerStatus(cs *v1.ContainerStatus, count, initCount int, rest
 		}
 		return "Init:ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
 	case restartable && cs.Started != nil && *cs.Started:
-		if cs.Ready {
-			return ""
-		}
+		// A started sidecar no longer blocks initialization, even while it is
+		// not ready yet (kubectl reports the pod the same way).
+		return ""
 	case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
 		return "Init:" + cs.State.Waiting.Reason
 	}

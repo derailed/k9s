@@ -36,7 +36,6 @@ func Test_checkInitContainerStatus(t *testing.T) {
 				State:   v1.ContainerState{},
 			},
 			restart: true,
-			e:       "Init:0/0",
 		},
 
 		"no-restart": {

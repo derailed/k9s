@@ -695,6 +695,43 @@ func TestCheckPhase(t *testing.T) {
 			},
 			e: "Init:0/1",
 		},
+		"restartable-started-not-ready": {
+			pod: v1.Pod{
+				Spec: v1.PodSpec{
+					InitContainers: []v1.Container{
+						{
+							Name:          "ic1",
+							RestartPolicy: &always,
+						},
+					},
+					Containers: []v1.Container{
+						{Name: "c1"},
+					},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:    "ic1",
+							Started: new(true),
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							Ready: true,
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+				},
+			},
+			e: render.PhaseRunning,
+		},
 		"waiting": {
 			pod: v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
