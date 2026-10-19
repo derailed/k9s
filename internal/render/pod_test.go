@@ -670,6 +670,59 @@ func TestCheckPhase(t *testing.T) {
 			},
 			e: render.PhaseUnknown,
 		},
+		"completed-and-running-ready": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					Conditions: []v1.PodCondition{
+						{Type: v1.PodReady, Status: v1.ConditionTrue},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							Ready: true,
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+						{
+							Name: "c2",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									Reason: "Completed",
+								},
+							},
+						},
+					},
+				},
+			},
+			e: render.PhaseRunning,
+		},
+		"completed-and-running-not-ready": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							Ready: true,
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+						{
+							Name: "c2",
+							State: v1.ContainerState{
+								Terminated: &v1.ContainerStateTerminated{
+									Reason: "Completed",
+								},
+							},
+						},
+					},
+				},
+			},
+			e: render.PhaseNotReady,
+		},
 		"restartable": {
 			pod: v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{

@@ -478,7 +478,13 @@ func (p *Pod) Phase(dt *metav1.Time, spec *v1.PodSpec, st *v1.PodStatus) string 
 
 	status, ok = p.containerPhase(st, status)
 	if ok && status == Completed {
-		status = Running
+		// Some containers completed while others still run: like kubectl,
+		// only call the pod Running when it is actually ready.
+		if hasPodReadyCondition(st.Conditions) {
+			status = Running
+		} else {
+			status = PhaseNotReady
+		}
 	}
 	if dt == nil {
 		return status
