@@ -71,16 +71,16 @@ func TestPluginLoad(t *testing.T) {
 			},
 		},
 
-		"no-target-required": {
-			path: "testdata/plugins/without-target.yaml",
+		"no-selection-required": {
+			path: "testdata/plugins/without-selection.yaml",
 			ee: Plugins{
 				Plugins: plugins{
 					"new-configmap": Plugin{
-						Scopes:         []string{"configmap"},
-						ShortCut:       "Shift-N",
-						Description:    "New ConfigMap",
-						Command:        "bash",
-						RequiresTarget: boolPtr(false),
+						Scopes:            []string{"configmap"},
+						ShortCut:          "Shift-N",
+						Description:       "New ConfigMap",
+						Command:           "bash",
+						RequiresSelection: boolPtr(false),
 					},
 				},
 			},

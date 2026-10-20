@@ -52,19 +52,19 @@ type PluginInput struct {
 
 // Plugin describes a K9s plugin.
 type Plugin struct {
-	Scopes          []string      `yaml:"scopes"`
-	Args            []string      `yaml:"args"`
-	ShortCut        string        `yaml:"shortCut"`
-	Override        bool          `yaml:"override"`
-	Pipes           []string      `yaml:"pipes"`
-	Description     string        `yaml:"description"`
-	Command         string        `yaml:"command"`
-	Confirm         *bool         `yaml:"confirm"`
-	Background      bool          `yaml:"background"`
-	Dangerous       bool          `yaml:"dangerous"`
-	OverwriteOutput bool          `yaml:"overwriteOutput"`
-	RequiresTarget  *bool         `yaml:"requiresTarget"`
-	Inputs          []PluginInput `yaml:"inputs"`
+	Scopes            []string      `yaml:"scopes"`
+	Args              []string      `yaml:"args"`
+	ShortCut          string        `yaml:"shortCut"`
+	Override          bool          `yaml:"override"`
+	Pipes             []string      `yaml:"pipes"`
+	Description       string        `yaml:"description"`
+	Command           string        `yaml:"command"`
+	Confirm           *bool         `yaml:"confirm"`
+	Background        bool          `yaml:"background"`
+	Dangerous         bool          `yaml:"dangerous"`
+	OverwriteOutput   bool          `yaml:"overwriteOutput"`
+	RequiresSelection *bool         `yaml:"requiresSelection"`
+	Inputs            []PluginInput `yaml:"inputs"`
 }
 
 func (p Plugin) String() string {
@@ -80,10 +80,10 @@ func (p *Plugin) ShouldConfirm() bool {
 	return len(p.Inputs) > 0
 }
 
-// IsTargetRequired returns whether the plugin requires a target (i.e. selection) to run.
+// IsSelectionRequired returns whether the plugin requires a selection to run.
 // No items may be selected when the table is empty. Defaults to true.
-func (p *Plugin) IsTargetRequired() bool {
-	return p.RequiresTarget == nil || *p.RequiresTarget
+func (p *Plugin) IsSelectionRequired() bool {
+	return p.RequiresSelection == nil || *p.RequiresSelection
 }
 
 // Validate checks the plugin configuration for errors.

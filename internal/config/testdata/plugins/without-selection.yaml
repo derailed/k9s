@@ -5,4 +5,4 @@ plugins:
     scopes:
       - configmap
     command: bash
-    requiresTarget: false
+    requiresSelection: false

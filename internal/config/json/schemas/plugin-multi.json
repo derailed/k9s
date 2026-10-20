@@ -16,7 +16,7 @@
       "command": { "type": "string" },
       "background": { "type": "boolean" },
       "overwriteOutput": { "type": "boolean", "default": false },
-      "requiresTarget": { "type": "boolean", "default": true },
+      "requiresSelection": { "type": "boolean", "default": true },
       "args": {
         "type": "array",
         "items": { "type": ["string", "number"] }
