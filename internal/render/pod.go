@@ -473,6 +473,7 @@ func (p *Pod) Phase(dt *metav1.Time, spec *v1.PodSpec, st *v1.PodStatus) string 
 	for _, c := range st.Conditions {
 		if c.Type == v1.PodScheduled && c.Reason == v1.PodReasonSchedulingGated {
 			status = v1.PodReasonSchedulingGated
+			break
 		}
 	}
 
