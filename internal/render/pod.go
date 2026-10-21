@@ -103,7 +103,7 @@ func (*Pod) ColorerFunc() model1.ColorerFunc {
 		}
 		status := strings.TrimSpace(re.Row.Fields[idx])
 		switch status {
-		case Pending, ContainerCreating:
+		case Pending, ContainerCreating, v1.PodReasonSchedulingGated:
 			c = model1.PendingColor
 		case PodInitializing:
 			c = model1.AddColor
