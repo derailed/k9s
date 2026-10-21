@@ -77,7 +77,7 @@ func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model
 		strconv.Itoa(int(pdb.Status.DesiredHealthy)),
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
 		mapToStr(pdb.Labels),
-		AsStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
+		AsStatus(p.diagnose(&pdb)),
 		ToAge(pdb.GetCreationTimestamp()),
 	}
 	stashAge(r, pdb.GetCreationTimestamp())
@@ -85,12 +85,19 @@ func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model
 	return nil
 }
 
-func (PodDisruptionBudget) diagnose(v *intstr.IntOrString, healthy int32) error {
+func (PodDisruptionBudget) diagnose(pdb *v1.PodDisruptionBudget) error {
+	v := pdb.Spec.MinAvailable
 	if v == nil {
 		return nil
 	}
-	if v.IntVal > healthy {
-		return fmt.Errorf("expected %d but got %d", v.IntVal, healthy)
+	expected := v.IntVal
+	if v.Type == intstr.String {
+		// A percentage such as "50%" has no IntVal; the controller resolves it
+		// against the expected pods into DesiredHealthy.
+		expected = pdb.Status.DesiredHealthy
+	}
+	if expected > pdb.Status.CurrentHealthy {
+		return fmt.Errorf("expected %d but got %d", expected, pdb.Status.CurrentHealthy)
 	}
 
 	return nil
