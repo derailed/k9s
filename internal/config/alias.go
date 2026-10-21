@@ -159,6 +159,7 @@ func (a *Aliases) LoadFile(path string) error {
 	}
 
 	a.mx.Lock()
+	defer a.mx.Unlock()
 	if err := yaml.Unmarshal(bb, a); err != nil {
 		return err
 	}
@@ -166,7 +167,6 @@ func (a *Aliases) LoadFile(path string) error {
 	for k, v := range a.Alias {
 		a.Alias[k] = client.NewGVR(v.String())
 	}
-	defer a.mx.Unlock()
 
 	return nil
 }
