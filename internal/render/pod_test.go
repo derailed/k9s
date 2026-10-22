@@ -81,6 +81,16 @@ func TestPodColorer(t *testing.T) {
 			},
 			e: model1.HighlightColor,
 		},
+		"scheduling-gated": {
+			h: stdHeader,
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "0/1", "0", "SchedulingGated", "blah"},
+				},
+			},
+			e: model1.PendingColor,
+		},
 		"completed": {
 			h: stdHeader,
 			re: model1.RowEvent{
@@ -669,6 +679,21 @@ func TestCheckPhase(t *testing.T) {
 				},
 			},
 			e: render.PhaseUnknown,
+		},
+		"scheduling-gated": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodPending,
+					Conditions: []v1.PodCondition{
+						{
+							Type:   v1.PodScheduled,
+							Status: v1.ConditionFalse,
+							Reason: v1.PodReasonSchedulingGated,
+						},
+					},
+				},
+			},
+			e: v1.PodReasonSchedulingGated,
 		},
 		"restartable": {
 			pod: v1.Pod{

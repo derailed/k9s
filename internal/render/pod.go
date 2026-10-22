@@ -103,7 +103,7 @@ func (*Pod) ColorerFunc() model1.ColorerFunc {
 		}
 		status := strings.TrimSpace(re.Row.Fields[idx])
 		switch status {
-		case Pending, ContainerCreating:
+		case Pending, ContainerCreating, v1.PodReasonSchedulingGated:
 			c = model1.PendingColor
 		case PodInitializing:
 			c = model1.AddColor
@@ -469,6 +469,12 @@ func (p *Pod) Phase(dt *metav1.Time, spec *v1.PodSpec, st *v1.PodStatus) string 
 			return "Unknown"
 		}
 		status = st.Reason
+	}
+	for _, c := range st.Conditions {
+		if c.Type == v1.PodScheduled && c.Reason == v1.PodReasonSchedulingGated {
+			status = v1.PodReasonSchedulingGated
+			break
+		}
 	}
 
 	status, ok := p.initContainerPhase(spec, st, status)
