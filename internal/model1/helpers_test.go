@@ -116,7 +116,11 @@ func TestDurationToSecond(t *testing.T) {
 		"day_hour_minute_seconds": {s: "2d22h3m50s", e: 252230},
 		"year":                    {s: "3y", e: 94608000},
 		"year_day":                {s: "1y2d", e: 31708800},
-		"n/a":                     {s: NAValue, e: math.MaxInt64},
+		"na":                      {s: NAValue, e: math.MaxInt64},
+		"n/a":                     {s: "n/a", e: math.MaxInt64},
+		"unknown":                 {s: "<unknown>", e: math.MaxInt64},
+		"none":                    {s: "<none>", e: math.MaxInt64},
+		"invalid":                 {s: "<invalid>", e: math.MaxInt64},
 	}
 
 	for k := range uu {
@@ -136,6 +140,9 @@ func TestCapacityToNumber(t *testing.T) {
 		"blank": {s: "  ", e: 0},
 		"1Gi":   {s: "1Gi", e: 1073741824},
 		"10Mi":  {s: "10Mi", e: 10485760},
+		"na":    {s: "n/a", e: math.MaxInt64},
+		"none":  {s: "<none>", e: math.MaxInt64},
+		"ratio": {s: "1/3", e: math.MaxInt64},
 	}
 
 	for k, u := range uu {

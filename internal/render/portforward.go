@@ -86,6 +86,7 @@ func (PortForward) Render(o any, _ string, r *model1.Row) error {
 		"",
 		ToAge(metav1.Time{Time: pf.Age()}),
 	}
+	stashAge(r, metav1.Time{Time: pf.Age()})
 
 	return nil
 }

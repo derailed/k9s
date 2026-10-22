@@ -9,6 +9,7 @@ import (
 	"path"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -114,6 +115,26 @@ func TestAliasesLoad(t *testing.T) {
 	require.NoError(t, a.Load(path.Join(config.AppConfigDir, "plain.yaml")))
 
 	assert.Len(t, a.Alias, 55)
+}
+
+func TestAliasesLoadFileInvalidYAML(t *testing.T) {
+	f := path.Join(t.TempDir(), "aliases.yaml")
+	require.NoError(t, os.WriteFile(f, []byte("aliases: [\n"), 0o600))
+
+	a := testAliases()
+	require.Error(t, a.LoadFile(f))
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, ok := a.Get("a1")
+		assert.True(t, ok)
+	}()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("aliases are still locked after a failed load")
+	}
 }
 
 func TestAliasesSave(t *testing.T) {

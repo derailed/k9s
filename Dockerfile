@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # The base image for building the k9s binary
-FROM --platform=$BUILDPLATFORM golang:1.27.1-alpine3.24@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS build
+FROM --platform=$BUILDPLATFORM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -8,10 +8,12 @@ ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
 
 WORKDIR /k9s
-COPY go.mod go.sum main.go Makefile ./
+COPY go.mod go.sum ./
+RUN go mod download
+COPY main.go Makefile ./
 COPY internal internal
 COPY cmd cmd
-RUN apk --no-cache add --update make libx11-dev git gcc libc-dev curl \
+RUN apk --no-cache add --update make \
   && make build
 
 # -----------------------------------------------------------------------------
