@@ -1,5 +1,7 @@
 k9s:
   liveViewAutoRefresh: false
+  gpuVendors:
+    bozo: bozo/gpu
   screenDumpDir: /Users/fernand/.local/state/k9s/screen-dumps
   refreshRate: 2
   maxConnRetry: 5
