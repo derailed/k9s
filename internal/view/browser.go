@@ -318,6 +318,7 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 		b.app.QueueUpdateDraw(func() {
 			if err != nil {
 				b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
+				b.app.contentReady()
 				return
 			}
 			b.app.Flash().Infof("Synchronizing %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace()))
@@ -337,6 +338,7 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 		}
 		b.refreshActions()
 		b.UpdateUI(cdata, mdata)
+		b.app.contentReady()
 	})
 }
 
@@ -367,6 +369,7 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 		}
 		b.refreshActions()
 		b.UpdateUI(cdata, mdata)
+		b.app.contentReady()
 	})
 }
 
@@ -375,6 +378,7 @@ func (b *Browser) TableLoadFailed(err error) {
 	b.app.QueueUpdateDraw(func() {
 		b.app.Flash().Err(err)
 		b.App().ClearStatus(false)
+		b.app.contentReady()
 	})
 }
 
