@@ -171,12 +171,13 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Err(err)
 		return nil
 	}
-	if pod.Spec.NodeName == "" {
+	nodeName := render.PodNodeName(&pod.Spec)
+	if nodeName == "" {
 		p.App().Flash().Err(errors.New("no node assigned"))
 		return nil
 	}
 	no := NewNode(client.NodeGVR)
-	no.SetInstance(pod.Spec.NodeName)
+	no.SetInstance(nodeName)
 	if err := p.App().inject(no, false); err != nil {
 		p.App().Flash().Err(err)
 	}
