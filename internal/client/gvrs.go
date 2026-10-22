@@ -8,9 +8,9 @@ var (
 	StsGVR = NewGVR("apps/v1/statefulsets")
 	DsGVR  = NewGVR("apps/v1/daemonsets")
 	RsGVR  = NewGVR("apps/v1/replicasets")
-	RcGVR  = NewGVR("apps/v1/replicationcontrollers")
 
 	// Core...
+	RcGVR   = NewGVR("v1/replicationcontrollers")
 	SaGVR   = NewGVR("v1/serviceaccounts")
 	PvcGVR  = NewGVR("v1/persistentvolumeclaims")
 	PvGVR   = NewGVR("v1/persistentvolumes")
