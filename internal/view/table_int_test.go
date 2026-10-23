@@ -20,6 +20,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -167,6 +168,27 @@ func TestTableViewSort(t *testing.T) {
 			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
 		}
 	}
+}
+
+func TestTableViewShiftPages(t *testing.T) {
+	v := NewTable(client.NewGVR("test"))
+	require.NoError(t, v.Init(makeContext(t)))
+	v.SetModel(&mockTableModel{})
+	v.Refresh()
+
+	// vi's terminal keymap treats Shift+Down/Up as Page Down/Up.
+	evt := v.keyboard(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModShift))
+	require.NotNil(t, evt)
+	assert.Equal(t, tcell.KeyPgDn, evt.Key())
+
+	evt = v.keyboard(tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModShift))
+	require.NotNil(t, evt)
+	assert.Equal(t, tcell.KeyPgUp, evt.Key())
+
+	// Plain (unmodified) Up/Down are untouched.
+	evt = v.keyboard(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+	require.NotNil(t, evt)
+	assert.Equal(t, tcell.KeyDown, evt.Key())
 }
 
 // ----------------------------------------------------------------------------
