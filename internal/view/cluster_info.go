@@ -25,6 +25,7 @@ type ClusterInfo struct {
 
 	app    *App
 	styles *config.Styles
+	defCon bool
 }
 
 // NewClusterInfo returns a new cluster info view.
@@ -154,8 +155,13 @@ func (c *ClusterInfo) setDefCon(cpu, mem int) {
 		c.app.Status(flashLevel(l), fmt.Sprintf(defconFmt, flashMessage(l), "Memory"))
 		set = true
 	}
-	if !set && !c.app.IsBenchmarking() {
+	// Only clear the status this view raised so other flashes stay put.
+	switch {
+	case set:
+		c.defCon = true
+	case c.defCon && !c.app.IsBenchmarking():
 		c.app.ClearStatus(true)
+		c.defCon = false
 	}
 }
 
