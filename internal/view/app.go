@@ -244,6 +244,9 @@ func (a *App) contextNames() ([]string, error) {
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	if a.IsPasted(evt) {
+		return ui.PastedKey(a.GetFocus(), evt)
+	}
 	if k, ok := a.HasAction(ui.AsKey(evt)); ok && !a.Content.IsTopDialog() {
 		return k.Action(evt)
 	}
@@ -563,6 +566,9 @@ func (a *App) Run() error {
 	}()
 
 	if err := a.command.defaultCmd(true); err != nil {
+		return err
+	}
+	if err := a.InitScreen(); err != nil {
 		return err
 	}
 	a.SetRunning(true)
