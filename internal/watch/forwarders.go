@@ -72,7 +72,7 @@ func (ff Forwarders) IsPodForwarded(fqn string) bool {
 
 // IsContainerForwarded checks if pod has a forward.
 func (ff Forwarders) IsContainerForwarded(fqn, co string) bool {
-	fqn += "|" + co
+	fqn += "|" + co + "|"
 	for k := range ff {
 		if strings.HasPrefix(k, fqn) {
 			return true
