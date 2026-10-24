@@ -69,8 +69,14 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 	case p.IsCowCmd(), p.IsHelpCmd(), p.IsAliasCmd(), p.IsBailCmd(), p.IsDirCmd():
 		return nil
 
-	case p.IsXrayCmd():
-		_, ns, ok := p.XrayArgs()
+	case p.IsXrayCmd(), p.IsOwnersCmd():
+		var ns string
+		var ok bool
+		if p.IsOwnersCmd() {
+			_, ns, ok = p.OwnersArgs()
+		} else {
+			_, ns, ok = p.XrayArgs()
+		}
 		if !ok || ns == "" {
 			return nil
 		}
