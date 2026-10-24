@@ -88,7 +88,10 @@ func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 
 func (Job) diagnose(ready string, status *batchv1.JobStatus) error {
 	tokens := strings.Split(ready, "/")
-	if tokens[0] != tokens[1] && status.Failed > 0 {
+	// A parallel job without completions reads "1/1 of 3": only the part
+	// before " of" is the target.
+	target, _, _ := strings.Cut(tokens[1], " ")
+	if tokens[0] != target && status.Failed > 0 {
 		return fmt.Errorf("%d pods failed", status.Failed)
 	}
 	return nil
