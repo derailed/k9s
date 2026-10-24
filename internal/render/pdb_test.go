@@ -22,20 +22,20 @@ func TestPodDisruptionBudgetRender(t *testing.T) {
 	assert.Equal(t, model1.Fields{"default", "fred", "2", render.NAValue, "0", "0", "2", "0"}, r.Fields[:8])
 }
 
-func TestPodDisruptionBudgetRenderPercentMinAvailable(t *testing.T) {
+func TestPodDisruptionBudgetRenderValid(t *testing.T) {
 	uu := map[string]struct {
+		spec                           map[string]any
 		currentHealthy, desiredHealthy int64
 		valid                          string
 	}{
-		"healthy": {
-			currentHealthy: 2,
-			desiredHealthy: 2,
-		},
-		"unhealthy": {
-			currentHealthy: 1,
-			desiredHealthy: 2,
-			valid:          "expected 2 but got 1",
-		},
+		"percent-min-ok":  {spec: map[string]any{"minAvailable": "50%"}, currentHealthy: 2, desiredHealthy: 2},
+		"percent-min-bad": {spec: map[string]any{"minAvailable": "50%"}, currentHealthy: 1, desiredHealthy: 2, valid: "expected 2 but got 1"},
+		"int-min-ok":      {spec: map[string]any{"minAvailable": int64(2)}, currentHealthy: 2, desiredHealthy: 2},
+		"int-min-bad":     {spec: map[string]any{"minAvailable": int64(2)}, currentHealthy: 1, desiredHealthy: 2, valid: "expected 2 but got 1"},
+		"int-max-ok":      {spec: map[string]any{"maxUnavailable": int64(1)}, currentHealthy: 1, desiredHealthy: 1},
+		"int-max-bad":     {spec: map[string]any{"maxUnavailable": int64(1)}, currentHealthy: 0, desiredHealthy: 1, valid: "expected 1 but got 0"},
+		"percent-max-bad": {spec: map[string]any{"maxUnavailable": "50%"}, currentHealthy: 1, desiredHealthy: 2, valid: "expected 2 but got 1"},
+		"no-budget":       {spec: map[string]any{}, currentHealthy: 0, desiredHealthy: 2},
 	}
 
 	for k, u := range uu {
@@ -48,9 +48,7 @@ func TestPodDisruptionBudgetRenderPercentMinAvailable(t *testing.T) {
 					"namespace":         "default",
 					"creationTimestamp": "2026-01-01T00:00:00Z",
 				},
-				"spec": map[string]any{
-					"minAvailable": "50%",
-				},
+				"spec": u.spec,
 				"status": map[string]any{
 					"currentHealthy":     u.currentHealthy,
 					"desiredHealthy":     u.desiredHealthy,
@@ -62,7 +60,6 @@ func TestPodDisruptionBudgetRenderPercentMinAvailable(t *testing.T) {
 			var c render.PodDisruptionBudget
 			r := model1.NewRow(11)
 			require.NoError(t, c.Render(o, "", &r))
-			assert.Equal(t, "50%", r.Fields[2])
 			assert.Equal(t, u.valid, r.Fields[9])
 		})
 	}

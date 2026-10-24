@@ -86,18 +86,13 @@ func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model
 }
 
 func (PodDisruptionBudget) diagnose(pdb *v1.PodDisruptionBudget) error {
-	v := pdb.Spec.MinAvailable
-	if v == nil {
+	// The controller resolves ints and percentages of both minAvailable and
+	// maxUnavailable into DesiredHealthy, so one comparison covers all four.
+	if pdb.Spec.MinAvailable == nil && pdb.Spec.MaxUnavailable == nil {
 		return nil
 	}
-	expected := v.IntVal
-	if v.Type == intstr.String {
-		// A percentage such as "50%" has no IntVal; the controller resolves it
-		// against the expected pods into DesiredHealthy.
-		expected = pdb.Status.DesiredHealthy
-	}
-	if expected > pdb.Status.CurrentHealthy {
-		return fmt.Errorf("expected %d but got %d", expected, pdb.Status.CurrentHealthy)
+	if pdb.Status.DesiredHealthy > pdb.Status.CurrentHealthy {
+		return fmt.Errorf("expected %d but got %d", pdb.Status.DesiredHealthy, pdb.Status.CurrentHealthy)
 	}
 
 	return nil
