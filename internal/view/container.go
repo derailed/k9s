@@ -91,6 +91,7 @@ func (c *Container) bindKeys(aa *ui.KeyActions) {
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
 	})
+	aa.Merge(resourceSorters(c.GetTable()))
 }
 
 func (c *Container) k9sEnv() Env {
