@@ -129,6 +129,7 @@ type (
 		Border Border `json:"border" yaml:"border"`
 		Menu   Menu   `json:"menu" yaml:"menu"`
 		Crumb  Crumb  `json:"crumbs" yaml:"crumbs"`
+		Tab    Tab    `json:"tabs" yaml:"tabs"`
 		Status Status `json:"status" yaml:"status"`
 	}
 
@@ -209,6 +210,13 @@ type (
 
 	// Crumb tracks crumbs styles.
 	Crumb struct {
+		FgColor     Color `json:"fgColor" yaml:"fgColor"`
+		BgColor     Color `json:"bgColor" yaml:"bgColor"`
+		ActiveColor Color `json:"activeColor" yaml:"activeColor"`
+	}
+
+	// Tab tracks tab bar styles.
+	Tab struct {
 		FgColor     Color `json:"fgColor" yaml:"fgColor"`
 		BgColor     Color `json:"bgColor" yaml:"bgColor"`
 		ActiveColor Color `json:"activeColor" yaml:"activeColor"`
@@ -332,6 +340,7 @@ func newFrame() Frame {
 		Border: newBorder(),
 		Menu:   newMenu(),
 		Crumb:  newCrumb(),
+		Tab:    newTab(),
 		Status: newStatus(),
 	}
 }
@@ -462,6 +471,14 @@ func newCrumb() Crumb {
 	}
 }
 
+func newTab() Tab {
+	return Tab{
+		FgColor:     colorBlack,
+		BgColor:     colorAqua,
+		ActiveColor: colorOrange,
+	}
+}
+
 func newBorder() Border {
 	return Border{
 		FgColor:    colorDodgerBlue,
@@ -553,6 +570,11 @@ func (s *Styles) Frame() Frame {
 // Crumb returns crumb styles.
 func (s *Styles) Crumb() Crumb {
 	return s.Frame().Crumb
+}
+
+// Tab returns tab styles.
+func (s *Styles) Tab() Tab {
+	return s.Frame().Tab
 }
 
 // Title returns title styles.
@@ -648,6 +670,7 @@ func (f *Frame) Invert() {
 	f.Border.Invert()
 	f.Menu.Invert()
 	f.Crumb.Invert()
+	f.Tab.Invert()
 	f.Status.Invert()
 }
 
@@ -678,6 +701,13 @@ func (c *Crumb) Invert() {
 	c.FgColor = c.FgColor.InvertColor()
 	c.BgColor = c.BgColor.InvertColor()
 	c.ActiveColor = c.ActiveColor.InvertColor()
+}
+
+// Invert inverts all colors in Tab.
+func (t *Tab) Invert() {
+	t.FgColor = t.FgColor.InvertColor()
+	t.BgColor = t.BgColor.InvertColor()
+	t.ActiveColor = t.ActiveColor.InvertColor()
 }
 
 // Invert inverts all colors in Status.
