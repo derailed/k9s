@@ -18,7 +18,7 @@ import (
 )
 
 func Test_checkInitContainerStatus(t *testing.T) {
-	trueVal := true
+	trueVal, falseVal := true, false
 	uu := map[string]struct {
 		status       v1.ContainerStatus
 		e            string
@@ -29,11 +29,29 @@ func Test_checkInitContainerStatus(t *testing.T) {
 			e: "Init:0/0",
 		},
 
-		"restart": {
+		"restart-started-not-ready": {
 			status: v1.ContainerStatus{
 				Name:    "ic1",
 				Started: &trueVal,
 				State:   v1.ContainerState{},
+			},
+			restart: true,
+		},
+
+		"restart-not-started": {
+			status: v1.ContainerStatus{
+				Name:    "ic1",
+				Started: &falseVal,
+				State:   v1.ContainerState{},
+			},
+			restart: true,
+			e:       "Init:0/0",
+		},
+
+		"restart-started-nil": {
+			status: v1.ContainerStatus{
+				Name:  "ic1",
+				State: v1.ContainerState{},
 			},
 			restart: true,
 			e:       "Init:0/0",

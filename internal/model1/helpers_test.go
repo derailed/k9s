@@ -140,6 +140,9 @@ func TestCapacityToNumber(t *testing.T) {
 		"blank": {s: "  ", e: 0},
 		"1Gi":   {s: "1Gi", e: 1073741824},
 		"10Mi":  {s: "10Mi", e: 10485760},
+		"na":    {s: "n/a", e: math.MaxInt64},
+		"none":  {s: "<none>", e: math.MaxInt64},
+		"ratio": {s: "1/3", e: math.MaxInt64},
 	}
 
 	for k, u := range uu {
