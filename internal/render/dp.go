@@ -97,7 +97,7 @@ func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) er
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
 		mapToStr(dp.Labels),
-		AsStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
+		AsStatus(d.diagnose(desired, dp.Status.Replicas, dp.Status.AvailableReplicas)),
 		ToAge(dp.GetCreationTimestamp()),
 	}
 	stashAge(r, dp.GetCreationTimestamp())
@@ -105,9 +105,12 @@ func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) er
 	return nil
 }
 
-func (Deployment) diagnose(desired, avail int32) error {
+func (Deployment) diagnose(desired, current, avail int32) error {
+	if current != avail {
+		return fmt.Errorf("desiring %d replicas got %d available", current, avail)
+	}
 	if desired != avail {
-		return fmt.Errorf("desiring %d replicas got %d available", desired, avail)
+		return fmt.Errorf("want %d replicas got %d available", desired, avail)
 	}
 
 	return nil
