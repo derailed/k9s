@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	cfg "github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
@@ -54,6 +55,51 @@ func TestContainer(t *testing.T) {
 		r.Fields[:len(r.Fields)-1],
 	)
 	assert.Equal(t, cres.Age.Time, r.Age)
+}
+
+func TestContainerCustomColumns(t *testing.T) {
+	uu := map[string]struct {
+		cols    []string
+		eHeader []string
+		eFields model1.Fields
+	}{
+		"none": {
+			eHeader: []string{"IDX", "NAME", "PF", "IMAGE"},
+			eFields: model1.Fields{"", "fred", "●", "img"},
+		},
+		"reorder": {
+			cols:    []string{"NAME", "IMAGE", "STATE"},
+			eHeader: []string{"NAME", "IMAGE", "STATE", "IDX"},
+			eFields: model1.Fields{"fred", "img", "Running", ""},
+		},
+		"jsonpath": {
+			cols:    []string{"NAME", "IMG:.Container.image"},
+			eHeader: []string{"NAME", "IMG", "IDX"},
+			eFields: model1.Fields{"fred", "img", ""},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			c := new(render.Container)
+			if u.cols != nil {
+				c.SetViewSetting(&cfg.ViewSetting{Columns: u.cols})
+			}
+			cres := render.ContainerRes{
+				Container: makeContainer(),
+				Status:    makeContainerStatus(),
+				MX:        makeContainerMetrics(),
+				Age:       makeAge(),
+			}
+			var r model1.Row
+			require.NoError(t, c.Render(cres, "", &r))
+
+			h := c.Header("")
+			require.Len(t, r.Fields, len(h))
+			assert.Equal(t, u.eHeader, h.ColumnNames(true)[:len(u.eHeader)])
+			assert.Equal(t, u.eFields, r.Fields[:len(u.eFields)])
+		})
+	}
 }
 
 func BenchmarkContainerRender(b *testing.B) {
