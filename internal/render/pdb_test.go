@@ -35,7 +35,7 @@ func TestPodDisruptionBudgetRenderValid(t *testing.T) {
 		"int-max-ok":      {spec: map[string]any{"maxUnavailable": int64(1)}, currentHealthy: 1, desiredHealthy: 1},
 		"int-max-bad":     {spec: map[string]any{"maxUnavailable": int64(1)}, currentHealthy: 0, desiredHealthy: 1, valid: "expected 1 but got 0"},
 		"percent-max-bad": {spec: map[string]any{"maxUnavailable": "50%"}, currentHealthy: 1, desiredHealthy: 2, valid: "expected 2 but got 1"},
-		"no-budget":       {spec: map[string]any{}, currentHealthy: 0, desiredHealthy: 2},
+		"no-budget":       {spec: map[string]any{}, currentHealthy: 0, desiredHealthy: 0},
 	}
 
 	for k, u := range uu {
