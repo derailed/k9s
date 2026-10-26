@@ -38,23 +38,13 @@ func BenchmarkDpRender(b *testing.B) {
 func TestDpRenderFlagsMissingReplicas(t *testing.T) {
 	uu := map[string]struct {
 		replicas, statusReplicas, available int64
-		valid                               bool
+		valid                               string
 	}{
-		"happy": {
-			replicas: 1, statusReplicas: 1, available: 1, valid: true,
-		},
-		"no-pods-created": {
-			replicas: 3, statusReplicas: 0, available: 0,
-		},
-		"some-pods-created": {
-			replicas: 3, statusReplicas: 1, available: 1,
-		},
-		"pod-not-available": {
-			replicas: 1, statusReplicas: 1, available: 0,
-		},
-		"scaled-to-zero": {
-			replicas: 0, statusReplicas: 0, available: 0, valid: true,
-		},
+		"happy":             {replicas: 1, statusReplicas: 1, available: 1},
+		"no-pods-created":   {replicas: 3, statusReplicas: 0, available: 0, valid: "want 3 replicas got 0 available"},
+		"some-pods-created": {replicas: 3, statusReplicas: 1, available: 1, valid: "want 3 replicas got 1 available"},
+		"pod-not-available": {replicas: 1, statusReplicas: 1, available: 0, valid: "desiring 1 replicas got 0 available"},
+		"scaled-to-zero":    {replicas: 0, statusReplicas: 0, available: 0},
 	}
 
 	for k, u := range uu {
@@ -68,7 +58,7 @@ func TestDpRenderFlagsMissingReplicas(t *testing.T) {
 			c := render.Deployment{}
 			r := model1.NewRow(9)
 			require.NoError(t, c.Render(o, "", &r))
-			assert.Equal(t, u.valid, r.Fields[7] == "", "valid column %q", r.Fields[7])
+			assert.Equal(t, u.valid, r.Fields[7])
 		})
 	}
 }
