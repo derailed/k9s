@@ -279,7 +279,7 @@ func (a *App) toggleHeader(header, logo bool) {
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.buildHeader(), ui.LogoArtHeight+1, 1, false)
+		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
@@ -322,9 +322,11 @@ func (a *App) buildHeader() tview.Primitive {
 	}
 	header.AddItem(a.clusterInfo(), clWidth, 1, false)
 	header.AddItem(a.Menu(), 0, 1, false)
+
 	if a.showLogo {
-		header.AddItem(a.Logo(), ui.LogoWidth, 0, false)
+		header.AddItem(a.Logo(), 26, 1, false)
 	}
+
 	return header
 }
 
