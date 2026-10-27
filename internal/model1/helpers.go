@@ -220,8 +220,17 @@ func lessRow(isAge, isNumber, isDuration, isCapacity bool, idx int, r1, r2 Row) 
 		// Later creation time means younger, i.e. smaller age, which sorts first.
 		return r1.Age.After(r2.Age)
 	}
-	v1, v2 := r1.Fields[idx], r2.Fields[idx]
-	return Less(isNumber, isDuration, isCapacity, r1.ID, r2.ID, v1, v2)
+	return Less(isNumber, isDuration, isCapacity, r1.ID, r2.ID, fieldAt(r1, idx), fieldAt(r2, idx))
+}
+
+// fieldAt returns the row field at idx, or an empty value when the row has
+// fewer fields than the header it is sorted by.
+func fieldAt(r Row, idx int) string {
+	if idx < len(r.Fields) {
+		return r.Fields[idx]
+	}
+
+	return ""
 }
 
 func lessDuration(s1, s2 string) (less, equal bool) {

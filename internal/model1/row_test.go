@@ -251,6 +251,20 @@ func TestRowsSortText(t *testing.T) {
 				{Fields: []string{"blee", "duh"}},
 			},
 		},
+		"shortRow": {
+			rows: model1.Rows{
+				{Fields: []string{"blee", "duh"}},
+				{Fields: []string{"albert"}},
+				{Fields: []string{"fred", "blee"}},
+			},
+			col: 1,
+			asc: true,
+			e: model1.Rows{
+				{Fields: []string{"albert"}},
+				{Fields: []string{"fred", "blee"}},
+				{Fields: []string{"blee", "duh"}},
+			},
+		},
 		"plainDesc": {
 			rows: model1.Rows{
 				{Fields: []string{"blee", "duh"}},
