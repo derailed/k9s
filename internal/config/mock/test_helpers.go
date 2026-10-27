@@ -149,6 +149,9 @@ func (mockConnection) SwitchContext(string) error {
 func (mockConnection) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	return nil, nil
 }
+func (mockConnection) InvalidateCache() error {
+	return nil
+}
 func (mockConnection) RestConfig() (*restclient.Config, error) {
 	return nil, nil
 }
