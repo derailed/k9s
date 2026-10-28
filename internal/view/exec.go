@@ -552,11 +552,19 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 }
 
 func asResource(r config.Limits) v1.ResourceRequirements {
+	limits := v1.ResourceList{}
+	if cpuStr, ok := r[v1.ResourceCPU]; ok && cpuStr != "" {
+		if q, err := resource.ParseQuantity(cpuStr); err == nil {
+			limits[v1.ResourceCPU] = q
+		}
+	}
+	if memStr, ok := r[v1.ResourceMemory]; ok && memStr != "" {
+		if q, err := resource.ParseQuantity(memStr); err == nil {
+			limits[v1.ResourceMemory] = q
+		}
+	}
 	return v1.ResourceRequirements{
-		Limits: v1.ResourceList{
-			v1.ResourceCPU:    resource.MustParse(r[v1.ResourceCPU]),
-			v1.ResourceMemory: resource.MustParse(r[v1.ResourceMemory]),
-		},
+		Limits: limits,
 	}
 }
 
@@ -609,11 +617,13 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 	}
 
 	last := len(cmds) - 1
+	var pipeWriters []*io.PipeWriter
 	for i := range cmds {
 		cmds[i].Stderr = os.Stderr
 		if i+1 < len(cmds) {
 			r, w := io.Pipe()
 			cmds[i].Stdout, cmds[i+1].Stdin = w, r
+			pipeWriters = append(pipeWriters, w)
 		}
 	}
 	cmds[last].Stdout = os.Stdout
@@ -621,9 +631,22 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 	for _, cmd := range cmds {
 		slog.Debug("Starting command", slogs.Command, cmd)
 		if err := cmd.Start(); err != nil {
+			for _, pw := range pipeWriters {
+				_ = pw.Close()
+			}
 			return err
 		}
 	}
 
-	return cmds[len(cmds)-1].Wait()
+	var waitErr error
+	for i, cmd := range cmds {
+		if err := cmd.Wait(); err != nil && waitErr == nil {
+			waitErr = err
+		}
+		if i < len(pipeWriters) {
+			_ = pipeWriters[i].Close()
+		}
+	}
+
+	return waitErr
 }
