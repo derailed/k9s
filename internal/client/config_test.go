@@ -321,6 +321,7 @@ func TestConfigInCluster(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "https://10.96.0.1:443", rc.Host)
 	assert.NotEmpty(t, rc.BearerTokenFile)
+	assert.True(t, cfg.InCluster())
 }
 
 func TestConfigInClusterKubeConfigWins(t *testing.T) {
@@ -332,6 +333,7 @@ func TestConfigInClusterKubeConfigWins(t *testing.T) {
 	ctx, err := cfg.CurrentContextName()
 	require.NoError(t, err)
 	assert.Equal(t, "fred", ctx)
+	assert.False(t, cfg.InCluster())
 }
 
 func TestConfigNoKubeConfigNotInCluster(t *testing.T) {
@@ -365,4 +367,24 @@ func cp(src, dst string) error {
 	}
 
 	return os.WriteFile(dst, data, 0600)
+}
+
+func TestConfigInClusterHonorsFlags(t *testing.T) {
+	setupInCluster(t)
+	flags := genericclioptions.NewConfigFlags(false)
+	user, uid, ns := "alice", "1234", "team-a"
+	groups := []string{"devs", "ops"}
+	flags.Impersonate, flags.ImpersonateUID, flags.ImpersonateGroup = &user, &uid, &groups
+	flags.Namespace = &ns
+	cfg := client.NewConfig(flags)
+
+	rc, err := cfg.RESTConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "alice", rc.Impersonate.UserName)
+	assert.Equal(t, "1234", rc.Impersonate.UID)
+	assert.Equal(t, []string{"devs", "ops"}, rc.Impersonate.Groups)
+
+	n, err := cfg.CurrentNamespaceName()
+	require.NoError(t, err)
+	assert.Equal(t, "team-a", n)
 }

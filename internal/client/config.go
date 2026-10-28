@@ -94,11 +94,11 @@ func (c *Config) RawConfig() (api.Config, error) {
 }
 
 func (c *Config) clientConfig() clientcmd.ClientConfig {
-	if c.inCluster() {
+	if c.InCluster() {
 		return clientcmd.NewNonInteractiveClientConfig(
 			*inClusterKubeConfig(),
 			InClusterContext,
-			&clientcmd.ConfigOverrides{},
+			c.inClusterOverrides(),
 			&clientcmd.ClientConfigLoadingRules{},
 		)
 	}
@@ -106,10 +106,30 @@ func (c *Config) clientConfig() clientcmd.ClientConfig {
 	return c.flags.ToRawKubeConfigLoader()
 }
 
-// inCluster reports whether no kubeconfig nor api credentials were provided
+// inClusterOverrides carries the namespace and impersonation flags over to
+// the synthesized in-cluster config, as the kubeconfig loader does.
+func (c *Config) inClusterOverrides() *clientcmd.ConfigOverrides {
+	var o clientcmd.ConfigOverrides
+	if isSet(c.flags.Namespace) {
+		o.Context.Namespace = *c.flags.Namespace
+	}
+	if isSet(c.flags.Impersonate) {
+		o.AuthInfo.Impersonate = *c.flags.Impersonate
+	}
+	if isSet(c.flags.ImpersonateUID) {
+		o.AuthInfo.ImpersonateUID = *c.flags.ImpersonateUID
+	}
+	if areSet(c.flags.ImpersonateGroup) {
+		o.AuthInfo.ImpersonateGroups = *c.flags.ImpersonateGroup
+	}
+
+	return &o
+}
+
+// InCluster reports whether no kubeconfig nor api credentials were provided
 // and the pod's service account is mounted, mirroring clientcmd's in-cluster
 // fallback detection.
-func (c *Config) inCluster() bool {
+func (c *Config) InCluster() bool {
 	c.icOnce.Do(func() {
 		if c.flags == nil || isSet(c.flags.APIServer) || isSet(c.flags.BearerToken) {
 			return

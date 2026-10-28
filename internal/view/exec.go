@@ -73,7 +73,7 @@ func runK(a *App, opts *shellOpts) error {
 	if isInsecure := a.Conn().Config().Flags().Insecure; isInsecure != nil && *isInsecure {
 		args = append(args, "--insecure-skip-tls-verify")
 	}
-	args = append(args, "--context", a.Config.K9s.ActiveContextName())
+	args = append(args, contextArgs(a)...)
 	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 		args = append(args, "--kubeconfig", *cfg)
 	}
@@ -269,7 +269,7 @@ func runKu(ctx context.Context, a *App, opts *shellOpts) (string, error) {
 	if g, err := a.Conn().Config().ImpersonateGroups(); err == nil {
 		args = append(args, "--as-group", g)
 	}
-	args = append(args, "--context", a.Config.K9s.ActiveContextName())
+	args = append(args, contextArgs(a)...)
 	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 		args = append(args, "--kubeconfig", *cfg)
 	}
@@ -626,4 +626,14 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 	}
 
 	return cmds[len(cmds)-1].Wait()
+}
+
+// contextArgs selects the active context for kubectl. The in-cluster context
+// exists only inside k9s, so kubectl must use its own in-cluster fallback.
+func contextArgs(a *App) []string {
+	if a.Conn().Config().InCluster() {
+		return nil
+	}
+
+	return []string{"--context", a.Config.K9s.ActiveContextName()}
 }
