@@ -163,24 +163,23 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 		SetLabelColor(styles.LabelFgColor.Color()).
 		SetFieldTextColor(styles.FieldFgColor.Color())
 
-	f.AddInputField("Replicas:", factor, 0, func(textToCheck string, _ rune) bool {
-		_, err := strconv.Atoi(textToCheck)
-		return err == nil
-	}, func(changed string) {
+	// Accept any input and validate it on OK, so invalid characters are reported
+	// instead of being silently dropped (e.g. "$1000" turning into "1000").
+	f.AddInputField("Replicas:", factor, 0, nil, func(changed string) {
 		factor = changed
 	})
 
 	f.AddButton("OK", func() {
-		defer s.dismissDialog()
-		count, err := strconv.Atoi(factor)
+		count, err := parseReplicas(factor)
 		if err != nil {
 			s.App().Flash().Err(err)
 			return
 		}
+		defer s.dismissDialog()
 		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 		defer cancel()
 		for _, fqn := range fqns {
-			if err := s.scale(ctx, fqn, int32(count)); err != nil {
+			if err := s.scale(ctx, fqn, count); err != nil {
 				slog.Error("Unable to scale resource", slogs.FQN, fqn)
 				s.App().Flash().Err(err)
 				return
@@ -226,4 +225,14 @@ func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int32) 
 	}
 
 	return scaler.Scale(ctx, path, replicas)
+}
+
+// parseReplicas parses a replica count, rejecting anything but a non-negative integer.
+func parseReplicas(s string) (int32, error) {
+	n, err := strconv.ParseInt(s, 10, 32)
+	if err != nil || n < 0 {
+		return 0, fmt.Errorf("invalid replicas %q: must be a non-negative integer", s)
+	}
+
+	return int32(n), nil
 }
