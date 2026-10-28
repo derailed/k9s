@@ -545,6 +545,7 @@ func TestConfigLoad(t *testing.T) {
 
 	require.NoError(t, cfg.Load("testdata/configs/k9s.yaml", true))
 	assert.InDelta(t, 2.0, cfg.K9s.RefreshRate, 0.001)
+	assert.Equal(t, "/tmp/k9s-test/downloads", cfg.K9s.DefaultTransferDir)
 	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
 	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
 }

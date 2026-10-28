@@ -486,6 +486,8 @@ Clipboard behavior can also be controlled via environment variables:
       bozo: bozo/gpu  # extends the gpu vendor and add "bozo"
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp/dumps
+    # The default local directory for pod file transfers. Default: unset (relative paths use the current working directory)
+    defaultTransferDir: /tmp/k9s-downloads
     # Represents ui poll intervals in seconds. Default 2.0 secs. Minimum value is 2.0 - values below will be capped to the minimum.
     refreshRate: 2
     # Overrides the default k8s api server requests timeout. Defaults 120s
