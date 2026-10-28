@@ -1,0 +1,216 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
+package model
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"reflect"
+	"strings"
+	"sync/atomic"
+	"time"
+
+	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/slogs"
+	"github.com/sahilm/fuzzy"
+)
+
+// KYAML tracks kyaml resource representations.
+type KYAML struct {
+	gvr       *client.GVR
+	inUpdate  int32
+	path      string
+	query     string
+	lines     []string
+	listeners []ResourceViewerListener
+	options   ViewerToggleOpts
+	decode    bool
+}
+
+// NewKYAML return a new kyaml resource model.
+func NewKYAML(gvr *client.GVR, path string) *KYAML {
+	return &KYAML{
+		gvr:  gvr,
+		path: path,
+	}
+}
+
+// GVR returns the resource gvr.
+func (y *KYAML) GVR() *client.GVR {
+	return y.gvr
+}
+
+// GetPath returns the active resource path.
+func (y *KYAML) GetPath() string {
+	return y.path
+}
+
+// SetOptions toggle model options.
+func (y *KYAML) SetOptions(ctx context.Context, opts ViewerToggleOpts) {
+	y.options = opts
+	if err := y.refresh(ctx); err != nil {
+		y.fireResourceFailed(err)
+	}
+}
+
+// Filter filters the model.
+func (y *KYAML) Filter(q string) {
+	y.query = q
+	y.filterChanged(y.lines)
+}
+
+func (y *KYAML) filterChanged(lines []string) {
+	y.fireResourceChanged(lines, y.filter(y.query, lines))
+}
+
+func (y *KYAML) filter(q string, lines []string) fuzzy.Matches {
+	if q == "" {
+		return nil
+	}
+	if f, ok := internal.IsFuzzySelector(q); ok {
+		return y.fuzzyFilter(strings.TrimSpace(f), lines)
+	}
+	return rxFilter(q, lines)
+}
+
+func (*KYAML) fuzzyFilter(q string, lines []string) fuzzy.Matches {
+	return fuzzy.Find(q, lines)
+}
+
+func (y *KYAML) fireResourceChanged(lines []string, matches fuzzy.Matches) {
+	for _, l := range y.listeners {
+		l.ResourceChanged(lines, matches)
+	}
+}
+
+func (y *KYAML) fireResourceFailed(err error) {
+	for _, l := range y.listeners {
+		l.ResourceFailed(err)
+	}
+}
+
+// ClearFilter clear out the filter.
+func (y *KYAML) ClearFilter() {
+	y.query = ""
+}
+
+// Peek returns the current model data.
+func (y *KYAML) Peek() []string {
+	return y.lines
+}
+
+// Refresh updates model data.
+func (y *KYAML) Refresh(ctx context.Context) error {
+	return y.refresh(ctx)
+}
+
+// Watch watches for KYAML changes.
+func (y *KYAML) Watch(ctx context.Context) error {
+	if err := y.refresh(ctx); err != nil {
+		return err
+	}
+	go y.updater(ctx)
+
+	return nil
+}
+
+func (y *KYAML) updater(ctx context.Context) {
+	defer slog.Debug("KYAML canceled", slogs.GVR, y.gvr)
+
+	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
+	delay := defaultReaderRefreshRate
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(delay):
+			if err := y.refresh(ctx); err != nil {
+				y.fireResourceFailed(err)
+				if delay = backOff.NextBackOff(); delay == backoff.Stop {
+					slog.Error("KYAML gave up!", slogs.Error, err)
+					return
+				}
+			} else {
+				backOff.Reset()
+				delay = defaultReaderRefreshRate
+			}
+		}
+	}
+}
+
+func (y *KYAML) refresh(ctx context.Context) error {
+	if !atomic.CompareAndSwapInt32(&y.inUpdate, 0, 1) {
+		slog.Debug("Dropping update...", slogs.GVR, y.gvr)
+		return nil
+	}
+	defer atomic.StoreInt32(&y.inUpdate, 0)
+
+	if err := y.reconcile(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (y *KYAML) reconcile(ctx context.Context) error {
+	s, err := y.ToKYAML(ctx, y.gvr, y.path, y.options[ManagedFieldsOpts])
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(s, "\n")
+	if reflect.DeepEqual(lines, y.lines) {
+		return nil
+	}
+	y.lines = lines
+	y.fireResourceChanged(y.lines, y.filter(y.query, y.lines))
+
+	return nil
+}
+
+// AddListener adds a new model listener.
+func (y *KYAML) AddListener(l ResourceViewerListener) {
+	y.listeners = append(y.listeners, l)
+}
+
+// RemoveListener delete a listener from the list.
+func (y *KYAML) RemoveListener(l ResourceViewerListener) {
+	victim := -1
+	for i, lis := range y.listeners {
+		if lis == l {
+			victim = i
+			break
+		}
+	}
+
+	if victim >= 0 {
+		y.listeners = append(y.listeners[:victim], y.listeners[victim+1:]...)
+	}
+}
+
+// ToKYAML returns a resource kyaml.
+func (y *KYAML) ToKYAML(ctx context.Context, gvr *client.GVR, path string, showManaged bool) (string, error) {
+	meta, err := getMeta(ctx, gvr)
+	if err != nil {
+		return "", err
+	}
+
+	desc, ok := meta.DAO.(dao.Describer)
+	if !ok {
+		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
+	}
+	if desc, ok := meta.DAO.(*dao.Secret); ok {
+		desc.SetDecodeData(y.decode)
+	}
+
+	return desc.ToKYAML(path, showManaged)
+}
+
+// Toggle toggles the decode flag.
+func (y *KYAML) Toggle() {
+	y.decode = !y.decode
+}
