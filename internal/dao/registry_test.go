@@ -120,3 +120,40 @@ func TestAddCRDPropertiesMarksK8sIOCRD(t *testing.T) {
 	assert.Equal(t, []string{"gateway-api", crdCat}, gatewayMeta.Categories)
 	assert.False(t, IsCRD(ingressMeta))
 }
+
+func TestIsScalableGVR(t *testing.T) {
+	uu := map[string]struct {
+		gvr *client.GVR
+		e   bool
+	}{
+		"deployments": {
+			gvr: client.NewGVR("apps/v1/deployments"),
+			e:   true,
+		},
+		"statefulsets": {
+			gvr: client.NewGVR("apps/v1/statefulsets"),
+			e:   true,
+		},
+		"replicasets": {
+			gvr: client.NewGVR("apps/v1/replicasets"),
+			e:   true,
+		},
+		"replicationcontrollers": {
+			gvr: client.NewGVR("v1/replicationcontrollers"),
+			e:   true,
+		},
+		"apps-replicationcontrollers": {
+			gvr: client.NewGVR("apps/v1/replicationcontrollers"),
+		},
+		"pods": {
+			gvr: client.NewGVR("v1/pods"),
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, isScalable(u.gvr))
+		})
+	}
+}

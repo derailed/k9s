@@ -78,7 +78,7 @@ func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 		jobSelector(&job.Spec),
 		cc,
 		ii,
-		AsStatus(j.diagnose(ready, &job.Status)),
+		AsStatus(j.diagnose(&job.Spec, &job.Status)),
 		ToAge(job.GetCreationTimestamp()),
 	}
 	stashAge(r, job.GetCreationTimestamp())
@@ -86,11 +86,15 @@ func (j Job) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
 	return nil
 }
 
-func (Job) diagnose(ready string, status *batchv1.JobStatus) error {
-	tokens := strings.Split(ready, "/")
-	if tokens[0] != tokens[1] && status.Failed > 0 {
+func (Job) diagnose(spec *batchv1.JobSpec, status *batchv1.JobStatus) error {
+	want := int32(1)
+	if spec.Completions != nil {
+		want = *spec.Completions
+	}
+	if status.Succeeded < want && status.Failed > 0 {
 		return fmt.Errorf("%d pods failed", status.Failed)
 	}
+
 	return nil
 }
 

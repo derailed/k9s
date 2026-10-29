@@ -180,7 +180,12 @@ func capacityToNumber(capacity string) int64 {
 	if strings.TrimSpace(capacity) == "" {
 		return 0
 	}
-	quantity := resource.MustParse(capacity)
+	// Placeholders such as n/a or <none>, or any other text, are not quantities
+	// and sort last, like placeholder ages do.
+	quantity, err := resource.ParseQuantity(strings.TrimSpace(capacity))
+	if err != nil {
+		return math.MaxInt64
+	}
 	return quantity.Value()
 }
 
