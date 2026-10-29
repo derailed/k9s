@@ -39,7 +39,7 @@ func computeFilename(dumpPath, ns, title, path string) (string, error) {
 		fName = fmt.Sprintf(ui.FullFmat, name, ns, now)
 	}
 
-	return strings.ToLower(filepath.Join(dir, fName)), nil
+	return filepath.Join(dir, strings.ToLower(fName)), nil
 }
 
 func saveTable(dir, title, path string, mdata *model1.TableData) (string, error) {
