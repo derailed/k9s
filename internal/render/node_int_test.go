@@ -1,6 +1,7 @@
 package render
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -233,4 +234,40 @@ func makeQ(t *testing.T, v string) *resource.Quantity {
 	}
 
 	return &q
+}
+
+func Test_status(t *testing.T) {
+	uu := map[string]struct {
+		conds  []v1.NodeCondition
+		exempt bool
+		e      []string
+	}{
+		"ready": {
+			conds: []v1.NodeCondition{{Type: v1.NodeReady, Status: v1.ConditionTrue}},
+			e:     []string{"Ready"},
+		},
+		"not-ready": {
+			conds: []v1.NodeCondition{{Type: v1.NodeReady, Status: v1.ConditionFalse}},
+			e:     []string{"NotReady"},
+		},
+		"no-conditions": {
+			e: []string{"Unknown"},
+		},
+		"no-ready-condition": {
+			conds: []v1.NodeCondition{{Type: v1.NodeMemoryPressure, Status: v1.ConditionFalse}},
+			e:     []string{"Unknown"},
+		},
+		"no-conditions-cordoned": {
+			exempt: true,
+			e:      []string{"Unknown", "SchedulingDisabled"},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			ss := make([]string, 10)
+			status(u.conds, u.exempt, ss)
+			assert.Equal(t, u.e, slices.DeleteFunc(ss, func(s string) bool { return s == "" }))
+		})
+	}
 }
