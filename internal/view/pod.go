@@ -554,8 +554,20 @@ func podIsRunning(f dao.Factory, fqn string) bool {
 		return false
 	}
 
+	return isPodRunning(po)
+}
+
+// isPodRunning reports whether a pod can be shelled into or attached to. A
+// pod with some completed containers that is not ready yet renders as
+// NoReady, but its remaining containers are still running.
+func isPodRunning(po *v1.Pod) bool {
 	var re render.Pod
-	return re.Phase(po.DeletionTimestamp, &po.Spec, &po.Status) == render.Running
+	switch re.Phase(po.DeletionTimestamp, &po.Spec, &po.Status) {
+	case render.Running, render.PhaseNotReady:
+		return true
+	default:
+		return false
+	}
 }
 
 func getPodOS(f dao.Factory, fqn string) (string, error) {
