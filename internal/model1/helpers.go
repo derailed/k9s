@@ -177,16 +177,25 @@ func runesToNum(rr []rune) int64 {
 }
 
 func capacityToNumber(capacity string) int64 {
-	if strings.TrimSpace(capacity) == "" {
-		return 0
-	}
-	// Placeholders such as n/a or <none>, or any other text, are not quantities
-	// and sort last, like placeholder ages do.
-	quantity, err := resource.ParseQuantity(strings.TrimSpace(capacity))
-	if err != nil {
+	quantity, ok := parseCapacity(capacity)
+	if !ok {
 		return math.MaxInt64
 	}
 	return quantity.Value()
+}
+
+// parseCapacity reads a capacity cell as a quantity. A blank cell is zero.
+// Placeholders such as n/a or <none>, or any other text, are not quantities.
+func parseCapacity(capacity string) (resource.Quantity, bool) {
+	capacity = strings.TrimSpace(capacity)
+	if capacity == "" {
+		return resource.Quantity{}, true
+	}
+	quantity, err := resource.ParseQuantity(capacity)
+	if err != nil {
+		return resource.Quantity{}, false
+	}
+	return quantity, true
 }
 
 // Less return true if v1 sorts before v2.
@@ -230,9 +239,22 @@ func lessDuration(s1, s2 string) (less, equal bool) {
 }
 
 func lessCapacity(s1, s2 string) (less, equal bool) {
-	c1, c2 := capacityToNumber(s1), capacityToNumber(s2)
-
-	return c1 < c2, c1 == c2
+	// Compare the quantities themselves: Value() rounds up to whole units, so
+	// 100m and 500m (or 0.25 and 0.5) would both read as 1 and tie.
+	q1, ok1 := parseCapacity(s1)
+	q2, ok2 := parseCapacity(s2)
+	switch {
+	case ok1 && ok2:
+		c := q1.Cmp(q2)
+		return c < 0, c == 0
+	case ok1:
+		// Placeholders sort last, like placeholder ages do.
+		return true, false
+	case ok2:
+		return false, false
+	default:
+		return false, true
+	}
 }
 
 func lessNumber(s1, s2 string) bool {
