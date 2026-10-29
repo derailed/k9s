@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	goruntime "runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -137,7 +138,7 @@ func edit(a *App, opts *shellOpts) bool {
 		// followed by some arguments (e.g. "code -w" to make it work with vscode)
 		//
 		// In such cases, the actual binary is only the first token
-		envTokens, shlexErr := shlex.Split(env)
+		envTokens, shlexErr := splitCommand(env)
 		if shlexErr != nil || len(envTokens) == 0 {
 			continue
 		}
@@ -173,11 +174,61 @@ func edit(a *App, opts *shellOpts) bool {
 	return status
 }
 
+// splitCommand splits an editor command into tokens. Backslashes are path
+// separators on Windows, so they are only treated as escapes elsewhere.
+func splitCommand(s string) ([]string, error) {
+	if goruntime.GOOS == "windows" {
+		return splitWindowsCommand(s), nil
+	}
+	return shlex.Split(s)
+}
+
+func splitWindowsCommand(s string) []string {
+	var (
+		tokens          []string
+		b               strings.Builder
+		inQuote, inWord bool
+	)
+	for _, r := range s {
+		switch {
+		case r == '"':
+			inQuote, inWord = !inQuote, true
+		case !inQuote && (r == ' ' || r == '\t'):
+			if inWord {
+				tokens, inWord = append(tokens, b.String()), false
+				b.Reset()
+			}
+		default:
+			b.WriteRune(r)
+			inWord = true
+		}
+	}
+	if inWord {
+		tokens = append(tokens, b.String())
+	}
+
+	return tokens
+}
+
 func shellQuote(s string) string {
 	if !strings.ContainsAny(s, " \t\n\"'\\") {
 		return s
 	}
 	return `"` + strings.ReplaceAll(strings.ReplaceAll(s, `\`, `\\`), `"`, `\"`) + `"`
+}
+
+// kubeEditor joins editor tokens into a KUBE_EDITOR value. kubectl runs a
+// value without spaces as is and hands anything else to a shell, so tokens are
+// only quoted in the latter case.
+func kubeEditor(tokens []string) string {
+	if len(tokens) == 1 && !strings.Contains(tokens[0], " ") {
+		return tokens[0]
+	}
+	for i := range tokens {
+		tokens[i] = shellQuote(tokens[i])
+	}
+
+	return strings.Join(tokens, " ")
 }
 
 func execute(opts *shellOpts, statusChan chan<- string) error {
@@ -216,13 +267,10 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 		// followed by some arguments (e.g. "code -w" to make it work with vscode)
 		//
 		// In such cases, the actual binary is only the first token
-		if binTokens, err := shlex.Split(env); err == nil && len(binTokens) > 0 {
+		if binTokens, err := splitCommand(env); err == nil && len(binTokens) > 0 {
 			if bin, err := exec.LookPath(binTokens[0]); err == nil {
 				binTokens[0] = bin
-				for i := range binTokens {
-					binTokens[i] = shellQuote(binTokens[i])
-				}
-				cmd.Env = append(os.Environ(), fmt.Sprintf("KUBE_EDITOR=%s", strings.Join(binTokens, " ")))
+				cmd.Env = append(os.Environ(), "KUBE_EDITOR="+kubeEditor(binTokens))
 			}
 		}
 	}
