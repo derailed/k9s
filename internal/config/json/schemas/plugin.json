@@ -5,17 +5,18 @@
   "additionalProperties": false,
   "properties": {
       "shortCut": { "type": "string" },
-      "override": { "type": "boolean" },
+      "override": { "type": "boolean", "default": false },
       "description": { "type": "string" },
       "confirm": { "type": "boolean" },
-      "dangerous": { "type": "boolean" },
+      "dangerous": { "type": "boolean", "default": false },
       "scopes": {
         "type": "array",
         "items": { "type": "string" }
       },
       "command": { "type": "string" },
       "background": { "type": "boolean" },
-      "overwriteOutput": { "type": "boolean" },
+      "overwriteOutput": { "type": "boolean", "default": false },
+      "requiresSelection": { "type": "boolean", "default": true },
       "args": {
         "type": "array",
         "items": { "type": ["string", "number"] }

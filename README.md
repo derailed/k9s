@@ -996,7 +996,6 @@ plugins:
     scopes:
       - po
     command: bash
-    background: false
     args:
       - -c
       - >-
@@ -1082,7 +1081,6 @@ plugins:
     scopes:
     - pods
     command: kubectl
-    background: false
     args:
     - logs
     - -f
