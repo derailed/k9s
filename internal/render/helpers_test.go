@@ -440,3 +440,26 @@ func load(t *testing.T, n string) *unstructured.Unstructured {
 	require.NoError(t, err)
 	return &o
 }
+
+func TestPad(t *testing.T) {
+	uu := map[string]struct {
+		s string
+		w int
+		e string
+	}{
+		"ascii-pad":      {s: "fred", w: 6, e: "fred  "},
+		"ascii-exact":    {s: "fred", w: 4, e: "fred"},
+		"ascii-truncate": {s: "fred", w: 3, e: "fr…"},
+		"accent-pad":     {s: "café", w: 6, e: "café  "},
+		"accent-exact":   {s: "café", w: 4, e: "café"},
+		"wide-pad":       {s: "日本", w: 6, e: "日本  "},
+		"wide-truncate":  {s: "日本語", w: 5, e: "日本…"},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, Pad(u.s, u.w))
+		})
+	}
+}
