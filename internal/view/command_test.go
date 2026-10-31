@@ -6,10 +6,27 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/stretchr/testify/assert"
 )
+
+func Test_viewMetaForNoConnection(t *testing.T) {
+	cfg := mock.NewMockConfig(t)
+	cfg.SetConnection(mock.NewMockConnection())
+	_, _ = cfg.K9s.ActivateContext("ct-1-1")
+
+	c := &Command{
+		app: NewApp(cfg),
+		alias: &dao.Alias{
+			Aliases: config.NewAliases(),
+		},
+	}
+
+	_, _, _, err := c.viewMetaFor(cmd.NewInterpreter("v1/pods"))
+	assert.EqualError(t, err, `unable to connect to context "ct-1-1"`)
+}
 
 func Test_viewMetaFor(t *testing.T) {
 	uu := map[string]struct {
