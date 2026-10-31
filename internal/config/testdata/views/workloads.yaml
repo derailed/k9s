@@ -1,0 +1,15 @@
+views:
+  v1/pods:
+    columns:
+      - NAME
+      - AGE
+
+workloads:
+  default:
+    - apps/v1/deployments
+    - v1/pods
+    - examples.demo.io/v1/foos
+  rks:
+    - rks.io/v1/rksinstances
+    - rks.io/v1/workerinstances
+    - v1/pods

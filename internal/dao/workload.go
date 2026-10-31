@@ -14,6 +14,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -77,28 +78,106 @@ func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.
 
 func (a *Workload) fetch(ctx context.Context, gvr *client.GVR, ns string) (*metav1.Table, error) {
 	a.gvr = gvr
-	oo, err := a.Table.List(ctx, ns)
-	if err != nil {
-		return nil, err
+	// ns may be a comma-separated list of namespaces (e.g. "ns1,ns2"); fetch
+	// each and merge their rows so one resource can span several namespaces.
+	// A namespace that fails (typo, no access) is skipped, not fatal.
+	var out *metav1.Table
+	for _, n := range strings.Split(ns, ",") {
+		n = strings.TrimSpace(n)
+		oo, err := a.Table.List(ctx, n)
+		if err != nil {
+			slog.Warn("Skipping namespace for workload resource",
+				"gvr", gvr.String(), "namespace", n, slogs.Error, err)
+			continue
+		}
+		if len(oo) == 0 {
+			continue
+		}
+		tt, ok := oo[0].(*metav1.Table)
+		if !ok {
+			return nil, errors.New("not a metav1.Table")
+		}
+		if out == nil {
+			out = tt
+		} else {
+			out.Rows = append(out.Rows, tt.Rows...)
+		}
 	}
-	if len(oo) == 0 {
+	if out == nil {
 		return nil, fmt.Errorf("no table found for gvr: %s", gvr)
 	}
-	tt, ok := oo[0].(*metav1.Table)
+
+	return out, nil
+}
+
+// workloadGVR pairs a GVR with an optional namespace override. When ns is
+// empty, the aggregated view's active namespace is used for that resource.
+type workloadGVR struct {
+	gvr *client.GVR
+	ns  string
+}
+
+// workloadGVRs resolves the set of GVRs the workload view should aggregate.
+// It prefers a user-configured set (via the view config carried in the
+// context) and falls back to the built-in defaults for backward
+// compatibility. Each configured entry is "<gvr>" or "<gvr> <namespace>"
+// (k9s prompt style), so a resource can be pinned to a specific namespace
+// independent of the view's active namespace.
+func workloadGVRs(ctx context.Context) []workloadGVR {
+	cv, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView)
+	if !ok || cv == nil {
+		return defaultWorkloadGVRs()
+	}
+	names, ok := cv.WorkloadGVRs(config.DefaultWorkloadGVRs)
 	if !ok {
-		return nil, errors.New("not a metav1.Table")
+		return defaultWorkloadGVRs()
 	}
 
-	return tt, nil
+	ww := make([]workloadGVR, 0, len(names))
+	for _, n := range names {
+		fields := strings.Fields(n)
+		if len(fields) == 0 {
+			continue
+		}
+		w := workloadGVR{gvr: client.NewGVR(fields[0])}
+		if len(fields) > 1 {
+			w.ns = fields[1]
+		}
+		ww = append(ww, w)
+	}
+
+	return ww
+}
+
+// defaultWorkloadGVRs wraps the built-in resource list as workloadGVRs with no
+// namespace override.
+func defaultWorkloadGVRs() []workloadGVR {
+	ww := make([]workloadGVR, 0, len(resList))
+	for _, g := range resList {
+		ww = append(ww, workloadGVR{gvr: g})
+	}
+
+	return ww
 }
 
 // List fetch workloads.
 func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo := make([]runtime.Object, 0, 100)
-	for _, gvr := range resList {
-		table, err := a.fetch(ctx, gvr, ns)
+	for _, w := range workloadGVRs(ctx) {
+		gvr := w.gvr
+		fetchNS := ns
+		if w.ns != "" {
+			fetchNS = w.ns
+		}
+		table, err := a.fetch(ctx, gvr, fetchNS)
 		if err != nil {
-			return nil, err
+			// A configured GVR may be absent in this cluster (e.g. CRD not
+			// installed) or transiently unavailable. Skip it rather than
+			// failing the whole aggregated view, so the resources that DO
+			// exist still render.
+			slog.Warn("Skipping unavailable workload resource",
+				"gvr", gvr.String(), slogs.Error, err)
+			continue
 		}
 		var (
 			ns string
@@ -116,10 +195,14 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 				}
 			}
 			stat := status(gvr, &r, table.ColumnDefinitions)
+			name := cellAt(&r, table.ColumnDefinitions, "Name")
+			if name == nil {
+				name = render.MissingValue
+			}
 			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []any{
 				gvr.String(),
 				ns,
-				r.Cells[indexOf("Name", table.ColumnDefinitions)],
+				name,
 				stat,
 				readiness(gvr, &r, table.ColumnDefinitions),
 				validity(stat),
@@ -136,13 +219,23 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 func readiness(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
 	case client.PodGVR, client.DpGVR, client.StsGVR:
-		return r.Cells[indexOf("Ready", h)].(string)
+		if s, ok := cellAt(r, h, "Ready").(string); ok {
+			return s
+		}
 	case client.RsGVR, client.DsGVR:
-		c := r.Cells[indexOf("Ready", h)].(int64)
-		d := r.Cells[indexOf("Desired", h)].(int64)
-		return fmt.Sprintf("%d/%d", c, d)
+		c, ok1 := cellAt(r, h, "Ready").(int64)
+		d, ok2 := cellAt(r, h, "Desired").(int64)
+		if ok1 && ok2 {
+			return fmt.Sprintf("%d/%d", c, d)
+		}
 	case client.SvcGVR:
 		return ""
+	default:
+		// CRDs may expose their own "Ready" printer column; surface it when
+		// present instead of defaulting to N/A.
+		if v := cellAt(r, h, "Ready"); v != nil {
+			return fmt.Sprintf("%v", v)
+		}
 	}
 
 	return render.NAValue
@@ -151,26 +244,28 @@ func readiness(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefini
 func status(gvr *client.GVR, r *metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
 	case client.PodGVR:
-		if status := r.Cells[indexOf("Status", h)]; status == render.PhaseCompleted {
+		ready, _ := cellAt(r, h, "Ready").(string)
+		if status := cellAt(r, h, "Status"); status == render.PhaseCompleted {
 			return StatusOK
-		} else if !isReady(r.Cells[indexOf("Ready", h)].(string)) || status != render.PhaseRunning {
+		} else if !isReady(ready) || status != render.PhaseRunning {
 			return DegradedStatus
 		}
 	case client.DpGVR, client.StsGVR:
-		if !isReady(r.Cells[indexOf("Ready", h)].(string)) {
+		ready, _ := cellAt(r, h, "Ready").(string)
+		if !isReady(ready) {
 			return DegradedStatus
 		}
 	case client.RsGVR, client.DsGVR:
-		rd, ok1 := r.Cells[indexOf("Ready", h)].(int64)
-		de, ok2 := r.Cells[indexOf("Desired", h)].(int64)
+		rd, ok1 := cellAt(r, h, "Ready").(int64)
+		de, ok2 := cellAt(r, h, "Desired").(int64)
 		if ok1 && ok2 {
 			if !isReady(fmt.Sprintf("%d/%d", rd, de)) {
 				return DegradedStatus
 			}
 			break
 		}
-		rds, oks1 := r.Cells[indexOf("Ready", h)].(string)
-		des, oks2 := r.Cells[indexOf("Desired", h)].(string)
+		rds, oks1 := cellAt(r, h, "Ready").(string)
+		des, oks2 := cellAt(r, h, "Desired").(string)
 		if oks1 && oks2 {
 			if !isReady(fmt.Sprintf("%s/%s", rds, des)) {
 				return DegradedStatus
@@ -228,4 +323,16 @@ func indexOf(n string, defs []metav1.TableColumnDefinition) int {
 	}
 
 	return -1
+}
+
+// cellAt safely returns the cell value for the named column or nil when the
+// column is absent or out of range. This guards against resources (notably
+// CRDs) whose printer columns differ from the native workload resources.
+func cellAt(r *metav1.TableRow, defs []metav1.TableColumnDefinition, col string) any {
+	idx := indexOf(col, defs)
+	if idx < 0 || idx >= len(r.Cells) {
+		return nil
+	}
+
+	return r.Cells[idx]
 }
