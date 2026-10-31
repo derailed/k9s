@@ -41,6 +41,19 @@ func TestSeverityValidate(t *testing.T) {
 	}
 }
 
+func TestThresholdValidateNilEntry(t *testing.T) {
+	th := config.Threshold{config.CPU: nil}
+	th.Validate()
+
+	assert.Equal(t, config.NewSeverity(), th[config.CPU])
+}
+
+func TestLevelForNilEntry(t *testing.T) {
+	th := config.Threshold{config.CPU: nil}
+
+	assert.Equal(t, config.SeverityLow, th.LevelFor(config.CPU, 95))
+}
+
 func TestLevelFor(t *testing.T) {
 	uu := map[string]struct {
 		k string
