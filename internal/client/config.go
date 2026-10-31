@@ -31,24 +31,36 @@ const (
 
 // Config tracks a kubernetes configuration.
 type Config struct {
+	// flags back the active connection and stay pinned to the active context.
 	flags *genericclioptions.ConfigFlags
-	mx    sync.RWMutex
-	proxy func(*http.Request) (*url.URL, error)
+	// latest reflects the most recent kubeconfig content.
+	latest *genericclioptions.ConfigFlags
+	mx     sync.RWMutex
+	proxy  func(*http.Request) (*url.URL, error)
+
+	// Kubeconfig reload tracking.
+	primed   bool
+	stamps   []fileStamp
+	active   api.Config
+	revision uint64
+	detached string
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
 func NewConfig(f *genericclioptions.ConfigFlags) *Config {
 	return &Config{
-		flags: f,
+		flags:  f,
+		latest: f,
 	}
 }
 
 // CallTimeout returns the call timeout if set or the default if not set.
 func (c *Config) CallTimeout() time.Duration {
-	if !isSet(c.flags.Timeout) {
+	f := c.Flags()
+	if !isSet(f.Timeout) {
 		return DefaultCallTimeoutDuration
 	}
-	dur, err := time.ParseDuration(*c.flags.Timeout)
+	dur, err := time.ParseDuration(*f.Timeout)
 	if err != nil {
 		return DefaultCallTimeoutDuration
 	}
@@ -57,12 +69,16 @@ func (c *Config) CallTimeout() time.Duration {
 }
 
 func (c *Config) RESTConfig() (*restclient.Config, error) {
-	cfg, err := c.clientConfig().ClientConfig()
+	_, loader := c.activeConfig()
+	cfg, err := loader.ClientConfig()
 	if err != nil {
 		return nil, err
 	}
-	if c.proxy != nil {
-		cfg.Proxy = c.proxy
+	c.mx.RLock()
+	proxy := c.proxy
+	c.mx.RUnlock()
+	if proxy != nil {
+		cfg.Proxy = proxy
 	}
 	if cfg.QPS == 0 {
 		cfg.QPS = defaultQPS
@@ -72,17 +88,30 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 	return cfg, nil
 }
 
-// Flags returns configuration flags.
+// Flags returns the active connection configuration flags.
 func (c *Config) Flags() *genericclioptions.ConfigFlags {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+
 	return c.flags
 }
 
+// RawConfig returns the latest kubeconfig content.
 func (c *Config) RawConfig() (api.Config, error) {
-	return c.clientConfig().RawConfig()
+	c.refresh()
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+
+	return c.latest.ToRawKubeConfigLoader().RawConfig()
 }
 
-func (c *Config) clientConfig() clientcmd.ClientConfig {
-	return c.flags.ToRawKubeConfigLoader()
+// activeConfig returns the flags and loader backing the active connection.
+func (c *Config) activeConfig() (*genericclioptions.ConfigFlags, clientcmd.ClientConfig) {
+	c.refresh()
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+
+	return c.flags, c.flags.ToRawKubeConfigLoader()
 }
 
 func (*Config) reset() {}
@@ -93,6 +122,9 @@ func (c *Config) SwitchContext(name string) error {
 	if err != nil {
 		return fmt.Errorf("context %q does not exist", name)
 	}
+	c.mx.Lock()
+	defer c.mx.Unlock()
+
 	// !!BOZO!! Do you need to reset the flags?
 	flags := genericclioptions.NewConfigFlags(UsePersistentConfig)
 	flags.Context, flags.ClusterName = &name, &ct.Cluster
@@ -105,7 +137,8 @@ func (c *Config) SwitchContext(name string) error {
 	flags.Insecure = c.flags.Insecure
 	flags.BearerToken = c.flags.BearerToken
 
-	c.flags = flags
+	c.flags, c.latest = flags, flags
+	c.primed, c.detached = false, ""
 
 	return nil
 }
@@ -122,18 +155,20 @@ func (c *Config) Clone(ns string) (*genericclioptions.ConfigFlags, error) {
 	}
 	flags.Context, flags.ClusterName = &ct, &cl
 	flags.Namespace = &ns
-	flags.Timeout = c.Flags().Timeout
-	flags.KubeConfig = c.Flags().KubeConfig
+	f := c.Flags()
+	flags.Timeout = f.Timeout
+	flags.KubeConfig = f.KubeConfig
 
 	return flags, nil
 }
 
 // CurrentClusterName returns the currently active cluster name.
 func (c *Config) CurrentClusterName() (string, error) {
-	if isSet(c.flags.ClusterName) {
-		return *c.flags.ClusterName, nil
+	f, loader := c.activeConfig()
+	if isSet(f.ClusterName) {
+		return *f.ClusterName, nil
 	}
-	cfg, err := c.RawConfig()
+	cfg, err := loader.RawConfig()
 	if err != nil {
 		return "", err
 	}
@@ -142,10 +177,10 @@ func (c *Config) CurrentClusterName() (string, error) {
 	if !ok {
 		return "", fmt.Errorf("invalid current context specified: %q", cfg.CurrentContext)
 	}
-	if isSet(c.flags.Context) {
-		ct, ok = cfg.Contexts[*c.flags.Context]
+	if isSet(f.Context) {
+		ct, ok = cfg.Contexts[*f.Context]
 		if !ok {
-			return "", fmt.Errorf("current-cluster - invalid context specified: %q", *c.flags.Context)
+			return "", fmt.Errorf("current-cluster - invalid context specified: %q", *f.Context)
 		}
 	}
 
@@ -154,10 +189,11 @@ func (c *Config) CurrentClusterName() (string, error) {
 
 // CurrentContextName returns the currently active config context.
 func (c *Config) CurrentContextName() (string, error) {
-	if isSet(c.flags.Context) {
-		return *c.flags.Context, nil
+	f, loader := c.activeConfig()
+	if isSet(f.Context) {
+		return *f.Context, nil
 	}
-	cfg, err := c.RawConfig()
+	cfg, err := loader.RawConfig()
 	if err != nil {
 		return "", fmt.Errorf("fail to load rawConfig: %w", err)
 	}
@@ -193,6 +229,9 @@ func (c *Config) GetContext(n string) (*api.Context, error) {
 	if err != nil {
 		return nil, err
 	}
+	if ct, ok := c.detachedContext(n); ok {
+		return ct, nil
+	}
 	if c, ok := cfg.Contexts[n]; ok {
 		return c, nil
 	}
@@ -200,8 +239,32 @@ func (c *Config) GetContext(n string) (*api.Context, error) {
 	return nil, fmt.Errorf("getcontext - invalid context specified: %q", n)
 }
 
+// detachedContext returns the active context while the kubeconfig on disk no
+// longer backs it, so K9s keeps running with the settings it loaded.
+func (c *Config) detachedContext(n string) (*api.Context, bool) {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+
+	if c.detached == "" {
+		return nil, false
+	}
+	name := c.active.CurrentContext
+	if isSet(c.flags.Context) {
+		name = *c.flags.Context
+	}
+	if n != name {
+		return nil, false
+	}
+	ct, ok := c.active.Contexts[n]
+
+	return ct, ok
+}
+
 // SetProxy sets the proxy function.
 func (c *Config) SetProxy(proxy func(*http.Request) (*url.URL, error)) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+
 	c.proxy = proxy
 }
 
@@ -277,8 +340,8 @@ func (c *Config) ContextNames() (map[string]struct{}, error) {
 
 // CurrentGroupNames retrieves the active group names.
 func (c *Config) CurrentGroupNames() ([]string, error) {
-	if areSet(c.flags.ImpersonateGroup) {
-		return *c.flags.ImpersonateGroup, nil
+	if f := c.Flags(); areSet(f.ImpersonateGroup) {
+		return *f.ImpersonateGroup, nil
 	}
 
 	return []string{}, errors.New("unable to locate current group")
@@ -286,8 +349,8 @@ func (c *Config) CurrentGroupNames() ([]string, error) {
 
 // ImpersonateGroups retrieves the active groups if set on the CLI.
 func (c *Config) ImpersonateGroups() (string, error) {
-	if areSet(c.flags.ImpersonateGroup) {
-		return strings.Join(*c.flags.ImpersonateGroup, ","), nil
+	if f := c.Flags(); areSet(f.ImpersonateGroup) {
+		return strings.Join(*f.ImpersonateGroup, ","), nil
 	}
 
 	return "", errors.New("no groups set")
@@ -295,8 +358,8 @@ func (c *Config) ImpersonateGroups() (string, error) {
 
 // ImpersonateUser retrieves the active user name if set on the CLI.
 func (c *Config) ImpersonateUser() (string, error) {
-	if isSet(c.flags.Impersonate) {
-		return *c.flags.Impersonate, nil
+	if f := c.Flags(); isSet(f.Impersonate) {
+		return *f.Impersonate, nil
 	}
 
 	return "", errors.New("no user set")
@@ -304,22 +367,23 @@ func (c *Config) ImpersonateUser() (string, error) {
 
 // CurrentUserName retrieves the active user name.
 func (c *Config) CurrentUserName() (string, error) {
-	if isSet(c.flags.Impersonate) {
-		return *c.flags.Impersonate, nil
+	f, loader := c.activeConfig()
+	if isSet(f.Impersonate) {
+		return *f.Impersonate, nil
 	}
 
-	if isSet(c.flags.AuthInfoName) {
-		return *c.flags.AuthInfoName, nil
+	if isSet(f.AuthInfoName) {
+		return *f.AuthInfoName, nil
 	}
 
-	cfg, err := c.RawConfig()
+	cfg, err := loader.RawConfig()
 	if err != nil {
 		return "", err
 	}
 
 	current := cfg.CurrentContext
-	if isSet(c.flags.Context) {
-		current = *c.flags.Context
+	if isSet(f.Context) {
+		current = *f.Context
 	}
 	if ctx, ok := cfg.Contexts[current]; ok {
 		return ctx.AuthInfo, nil
@@ -330,7 +394,8 @@ func (c *Config) CurrentUserName() (string, error) {
 
 // CurrentNamespaceName retrieves the active namespace.
 func (c *Config) CurrentNamespaceName() (string, error) {
-	ns, overridden, err := c.clientConfig().Namespace()
+	_, loader := c.activeConfig()
+	ns, overridden, err := loader.Namespace()
 	if err != nil {
 		return BlankNamespace, err
 	}
@@ -345,10 +410,11 @@ func (c *Config) CurrentNamespaceName() (string, error) {
 
 // ConfigAccess return the current kubeconfig api server access configuration.
 func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
+	c.refresh()
 	c.mx.RLock()
 	defer c.mx.RUnlock()
 
-	return c.clientConfig().ConfigAccess(), nil
+	return c.latest.ToRawKubeConfigLoader().ConfigAccess(), nil
 }
 
 // ----------------------------------------------------------------------------
