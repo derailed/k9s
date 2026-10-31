@@ -213,6 +213,14 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			}
 		}
 
+		if res, ok := cmd.NewInterpreter(s).OwnersResourceArg(); ok {
+			for alias := range maps.Keys(a.command.alias.Alias) {
+				if suggest, ok := cmd.ShouldAddSuggest(res, alias); ok {
+					entries = append(entries, suggest)
+				}
+			}
+		}
+
 		namespaceNames, err := a.factory.Client().ValidNamespaceNames()
 		if err != nil {
 			slog.Error("Failed to obtain list of namespaces", slogs.Error, err)

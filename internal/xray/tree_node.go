@@ -31,6 +31,9 @@ const (
 	// InfoKey state map key.
 	InfoKey = "info"
 
+	// KindKey stores the resource Kind for display.
+	KindKey = "kind"
+
 	// OkStatus stands for all is cool.
 	OkStatus = "ok"
 
@@ -412,12 +415,15 @@ const (
 func (t TreeNode) toTitle() (title string) {
 	_, n := client.Namespaced(t.ID)
 	color, status := "white", "OK"
+	infoColor := "antiquewhite"
 	if v, ok := t.Extras[StatusKey]; ok {
 		switch v {
+		case CompletedStatus:
+			infoColor = "green"
 		case ToastStatus:
-			color, status = "orangered", toast
+			infoColor, color, status = "orangered", "orangered", toast
 		case MissingRefStatus:
-			color, status = "orange", toast+"_REF"
+			infoColor, color, status = "orange", "orange", toast+"_REF"
 		}
 	}
 	defer func() {
@@ -426,7 +432,10 @@ func (t TreeNode) toTitle() (title string) {
 		}
 	}()
 
-	categ := category(t.GVR)
+	categ := t.Extras[KindKey]
+	if categ == "" {
+		categ = category(t.GVR)
+	}
 	if categ == "" {
 		title = fmt.Sprintf(topTitleFmt, color, n)
 	} else {
@@ -441,7 +450,7 @@ func (t TreeNode) toTitle() (title string) {
 	if !ok {
 		return
 	}
-	title += fmt.Sprintf(" [antiquewhite::][%s][::]", info)
+	title += fmt.Sprintf(" [%s::][%s][::]", infoColor, info)
 
 	return
 }
@@ -451,12 +460,15 @@ const colorFmt = "%s [%s::b]%s[::]"
 func (t TreeNode) toEmojiTitle() (title string) {
 	_, n := client.Namespaced(t.ID)
 	color, status := "white", "OK"
+	infoColor := "antiquewhite"
 	if v, ok := t.Extras[StatusKey]; ok {
 		switch v {
+		case CompletedStatus:
+			infoColor = "green"
 		case ToastStatus:
-			color, status = "orangered", toast
+			infoColor, color, status = "orangered", "orangered", toast
 		case MissingRefStatus:
-			color, status = "orange", toast+"_REF"
+			infoColor, color, status = "orange", "orange", toast+"_REF"
 		}
 	}
 	defer func() {
@@ -465,7 +477,11 @@ func (t TreeNode) toEmojiTitle() (title string) {
 		}
 	}()
 
-	title = fmt.Sprintf(colorFmt, toEmoji(t.GVR), color, n)
+	if kind, ok := t.Extras[KindKey]; ok && kind != "" {
+		title = fmt.Sprintf(titleFmt, kind, color, n)
+	} else {
+		title = fmt.Sprintf(colorFmt, toEmoji(t.GVR), color, n)
+	}
 	if !t.IsLeaf() {
 		title += fmt.Sprintf("[white::d](%d[-::d])[-::-]", t.CountChildren())
 	}
@@ -474,7 +490,7 @@ func (t TreeNode) toEmojiTitle() (title string) {
 	if !ok {
 		return
 	}
-	title += fmt.Sprintf(" [antiquewhite::][%s][::]", info)
+	title += fmt.Sprintf(" [%s::][%s][::]", infoColor, info)
 
 	return
 }
