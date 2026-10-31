@@ -43,6 +43,10 @@ k9s:
       fgColor: black
       bgColor: aqua
       activeColor: orange
+    tabs:
+      fgColor: black
+      bgColor: aqua
+      activeColor: orange
     status:
       newColor: lightskyblue
       modifyColor: greenyellow
