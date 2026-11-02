@@ -684,6 +684,7 @@ func filterSidecarCO(cc []v1.Container) []v1.Container {
 
 // PodNodeName returns the node a pod is bound to or, when the pod is not scheduled yet,
 // the node it is pinned to via a metadata.name node affinity (e.g. DaemonSet pods).
+// Node selector terms are ORed, so a pod is only pinned when every term names the same node.
 func PodNodeName(spec *v1.PodSpec) string {
 	if spec.NodeName != "" {
 		return spec.NodeName
@@ -692,14 +693,24 @@ func PodNodeName(spec *v1.PodSpec) string {
 		return ""
 	}
 	req := spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
-	if req == nil {
+	if req == nil || len(req.NodeSelectorTerms) == 0 {
 		return ""
 	}
+	var node string
 	for _, term := range req.NodeSelectorTerms {
-		for _, f := range term.MatchFields {
-			if f.Key == "metadata.name" && f.Operator == v1.NodeSelectorOpIn && len(f.Values) == 1 {
-				return f.Values[0]
-			}
+		n := termNodeName(term)
+		if n == "" || (node != "" && n != node) {
+			return ""
+		}
+		node = n
+	}
+	return node
+}
+
+func termNodeName(term v1.NodeSelectorTerm) string {
+	for _, f := range term.MatchFields {
+		if f.Key == "metadata.name" && f.Operator == v1.NodeSelectorOpIn && len(f.Values) == 1 {
+			return f.Values[0]
 		}
 	}
 	return ""
