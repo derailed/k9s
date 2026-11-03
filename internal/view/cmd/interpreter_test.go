@@ -198,6 +198,44 @@ func TestClearNS(t *testing.T) {
 	}
 }
 
+func TestMergeKeepsFuzzyFilter(t *testing.T) {
+	uu := map[string]struct {
+		cmd, ns, e, fuzzy string
+	}{
+		"fuzzy": {
+			cmd:   "pod -f fred",
+			e:     "pod -f fred",
+			fuzzy: "fred",
+		},
+
+		"fuzzy-nospace": {
+			cmd:   "pod -ffred",
+			e:     "pod -f fred",
+			fuzzy: "fred",
+		},
+
+		"fuzzy+switch-ns": {
+			cmd:   "pod -f fred",
+			ns:    "blee",
+			e:     "pod -f fred blee",
+			fuzzy: "fred",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			p.Merge(p)
+			p.SwitchNS(u.ns)
+			assert.Equal(t, u.e, p.GetLine())
+			f, ok := p.FuzzyArg()
+			assert.True(t, ok)
+			assert.Equal(t, u.fuzzy, f)
+		})
+	}
+}
+
 func TestFilterCmd(t *testing.T) {
 	uu := map[string]struct {
 		cmd    string

@@ -90,6 +90,8 @@ func (a args) String() string {
 			v = "'" + v + "'"
 		case filterKey:
 			v = filterFlag + v
+		case fuzzyKey:
+			v = fuzzyFlag + " " + v
 		case contextKey:
 			v = contextFlag + v
 		}
