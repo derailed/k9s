@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRbacCmd(t *testing.T) {
@@ -290,6 +291,44 @@ func TestFilterCmd(t *testing.T) {
 			if u.ok {
 				assert.Equal(t, u.filter, f)
 			}
+		})
+	}
+}
+
+func TestLabelFlag(t *testing.T) {
+	uu := map[string]struct {
+		cmd, ns, e, labels string
+	}{
+		"flag": {
+			cmd:    "pod -l app.kubernetes.io/name=fred",
+			ns:     "blee",
+			e:      "pod 'app.kubernetes.io/name=fred' blee",
+			labels: "app.kubernetes.io/name=fred",
+		},
+
+		"flag-nospace": {
+			cmd:    "pod -lfred=blee",
+			e:      "pod 'fred=blee'",
+			labels: "fred=blee",
+		},
+
+		"flag-quoted-set": {
+			cmd:    "pod -l 'fred in (blee,zorg)'",
+			e:      "pod 'fred in (blee,zorg)'",
+			labels: "fred in (blee,zorg)",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			p := cmd.NewInterpreter(u.cmd)
+			p.Merge(p)
+			p.SwitchNS(u.ns)
+			assert.Equal(t, u.e, p.GetLine())
+			sel, err := p.LabelsSelector()
+			require.NoError(t, err)
+			assert.Equal(t, u.labels, sel.String())
 		})
 	}
 }
