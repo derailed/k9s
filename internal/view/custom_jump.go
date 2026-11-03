@@ -81,7 +81,14 @@ func customJump(app *App, sourceGVR *client.GVR, sourcePath string, rule *config
 	}
 
 	// Set up the context for the jump
+	// Capture existing contextFn to chain onto it
+	existingCtxFn := v.GetContextFn()
 	v.SetContextFn(func(ctx context.Context) context.Context {
+		// Apply existing context first (preserves KeyPodCounting, etc)
+		if existingCtxFn != nil {
+			ctx = existingCtxFn(ctx)
+		}
+		// Then add field selector
 		if fieldSel != "" {
 			ctx = context.WithValue(ctx, internal.KeyFields, fieldSel)
 		}
