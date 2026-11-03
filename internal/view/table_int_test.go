@@ -8,6 +8,8 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,6 +84,20 @@ func TestTableSave(t *testing.T) {
 
 	c2, _ := os.ReadDir(dir)
 	assert.Len(t, c2, len(c1)+1)
+}
+
+func TestComputeFilenameKeepsDirCase(t *testing.T) {
+	// Context names often have capitals, and their dump dir is created as is.
+	dir := filepath.Join(t.TempDir(), "MyCluster", "Prod")
+
+	f, err := computeFilename(dir, "default", "Pods", "")
+	require.NoError(t, err)
+	assert.Equal(t, dir, filepath.Dir(f))
+	assert.True(t, strings.HasPrefix(filepath.Base(f), "pods-default-"), filepath.Base(f))
+
+	f, err = saveTable(dir, "Pods", "", model1.NewTableData(client.PodGVR))
+	require.NoError(t, err)
+	assert.FileExists(t, f)
 }
 
 func TestTableNew(t *testing.T) {

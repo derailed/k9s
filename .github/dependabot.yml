@@ -5,6 +5,14 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      kubernetes:
+        patterns:
+          - "k8s.io/*"
+          - "sigs.k8s.io/*"
+      anchore:
+        patterns:
+          - "github.com/anchore/*"
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"

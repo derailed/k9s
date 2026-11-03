@@ -67,6 +67,7 @@ func (ServiceAccount) defaultRow(raw *unstructured.Unstructured, r *model1.Row) 
 		"",
 		ToAge(sa.GetCreationTimestamp()),
 	}
+	stashAge(r, sa.GetCreationTimestamp())
 
 	return nil
 }

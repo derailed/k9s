@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/stale@v11
         with:
-          days-before-issue-stale: 30
-          days-before-issue-close: 14
+          days-before-issue-stale: 180
+          days-before-issue-close: 30
           exempt-issue-labels: "accepted"
           stale-issue-label: "stale"
-          stale-issue-message: "This issue is stale because it has been open for 30 days with no activity."
-          close-issue-message: "This issue was closed because it has been inactive for 14 days since being marked as stale."
+          stale-issue-message: "This issue is stale because it has been open for 180 days with no activity."
+          close-issue-message: "This issue was closed because it has been inactive for 30 days since being marked as stale."
           repo-token: ${{ secrets.GITHUB_TOKEN }}

@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestSanitizeFileName(t *testing.T) {
@@ -75,6 +76,29 @@ func TestEnsureDirPathNone(t *testing.T) {
 	p, err := os.Stat(dir)
 	require.NoError(t, err)
 	assert.Equal(t, "drwxr--r--", p.Mode().String())
+}
+
+func TestSaveYAML(t *testing.T) {
+	type payload struct {
+		Name  string `yaml:"name"`
+		Count int    `yaml:"count"`
+	}
+
+	path := filepath.Join(t.TempDir(), "out.yaml")
+	require.NoError(t, data.SaveYAML(path, payload{Name: "fred", Count: 3}))
+
+	raw, err := os.ReadFile(path)
+	require.NoError(t, err)
+	var out payload
+	require.NoError(t, yaml.Unmarshal(raw, &out))
+	assert.Equal(t, payload{Name: "fred", Count: 3}, out)
+
+	// Rewriting with shorter content must truncate, leaving no stale bytes.
+	require.NoError(t, data.SaveYAML(path, payload{Name: "bo", Count: 7}))
+	raw, err = os.ReadFile(path)
+	require.NoError(t, err)
+	require.NoError(t, yaml.Unmarshal(raw, &out))
+	assert.Equal(t, payload{Name: "bo", Count: 7}, out)
 }
 
 func TestEnsureDirPathNoOpt(t *testing.T) {

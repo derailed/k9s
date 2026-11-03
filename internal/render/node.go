@@ -160,6 +160,7 @@ func (n Node) defaultRow(nwm *NodeWithMetrics, r *model1.Row) error {
 		AsStatus(n.diagnose(statuses)),
 		ToAge(no.GetCreationTimestamp()),
 	}
+	stashAge(r, no.GetCreationTimestamp())
 
 	return nil
 }

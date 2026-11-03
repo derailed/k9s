@@ -26,6 +26,18 @@ func NewConfig(ct *api.Context) *Config {
 	}
 }
 
+// Logo returns a snapshot of the context's header art.
+func (c *Config) Logo() string {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+	if c.Context == nil {
+		return ""
+	}
+	c.Context.mx.RLock()
+	defer c.Context.mx.RUnlock()
+	return c.Context.Logo
+}
+
 // Merge merges configs and updates receiver.
 func (c *Config) Merge(c1 *Config) {
 	if c1 == nil {

@@ -92,6 +92,7 @@ func (r ReplicaSet) defaultRow(raw *unstructured.Unstructured, row *model1.Row) 
 		AsStatus(r.diagnose(&rs)),
 		ToAge(rs.GetCreationTimestamp()),
 	}
+	stashAge(row, rs.GetCreationTimestamp())
 
 	return nil
 }
@@ -102,6 +103,10 @@ func (ReplicaSet) diagnose(rs *appsv1.ReplicaSet) error {
 			return fmt.Errorf("did not phase down correctly expecting 0 replicas but got %d", rs.Status.ReadyReplicas)
 		}
 		return fmt.Errorf("mismatch desired(%d) vs ready(%d)", rs.Status.Replicas, rs.Status.ReadyReplicas)
+	}
+	// Pods that were never created leave status at 0, so compare against spec.
+	if want := *rs.Spec.Replicas; rs.Status.ReadyReplicas < want {
+		return fmt.Errorf("want %d replicas got %d ready", want, rs.Status.ReadyReplicas)
 	}
 
 	return nil

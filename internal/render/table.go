@@ -109,10 +109,12 @@ func (t *Table) Render(o any, ns string, r *model1.Row) error {
 func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error {
 	th := t.header
 	ons, name := ns, UnknownValue
+	var creationTs metav1.Time
 	switch {
 	case row.Object.Object != nil:
 		if m, _ := meta.Accessor(row.Object.Object); m != nil {
 			ons, name = m.GetNamespace(), m.GetName()
+			creationTs = m.GetCreationTimestamp()
 		}
 	case row.Object.Raw != nil:
 		var pm metav1.PartialObjectMetadata
@@ -120,6 +122,7 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 			return err
 		}
 		ons, name = pm.Namespace, pm.Name
+		creationTs = pm.CreationTimestamp
 	default:
 		if idx, ok := th.IndexOf("NAME", true); ok && idx >= 0 && idx < len(row.Cells) {
 			name = row.Cells[idx].(string)
@@ -133,6 +136,7 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 		ons = client.ClusterScope
 	}
 	r.ID = client.FQN(ons, name)
+	stashAge(r, creationTs)
 	r.Fields = make(model1.Fields, 0, len(th))
 	var (
 		age    any
