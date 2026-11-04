@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -143,6 +144,38 @@ func TestLogFilter(t *testing.T) {
 	assert.Equal(t, 1, list.change)
 	assert.Equal(t, 1, list.clear)
 	assert.Equal(t, 0, list.fail)
+}
+
+func TestLogHorizontalScroll(t *testing.T) {
+	opts := dao.LogOptions{
+		Path:      "fred/p1",
+		Container: "blee",
+	}
+	v := NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
+
+	_, c := v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c)
+
+	v.scrollRightCmd(tcell.NewEventKey(tcell.KeyRight, ' ', tcell.ModNone))
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 1, c)
+
+	v.scrollRightCmd(tcell.NewEventKey(tcell.KeyRight, ' ', tcell.ModShift))
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 51, c)
+
+	v.scrollLeftCmd(tcell.NewEventKey(tcell.KeyLeft, ' ', tcell.ModNone))
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 50, c)
+
+	v.scrollLeftCmd(tcell.NewEventKey(tcell.KeyLeft, ' ', tcell.ModShift))
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c)
+
+	v.scrollLeftCmd(tcell.NewEventKey(tcell.KeyLeft, ' ', tcell.ModShift))
+	_, c = v.Logs().GetScrollOffset()
+	assert.Equal(t, 0, c)
 }
 
 // ----------------------------------------------------------------------------
