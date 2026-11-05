@@ -103,7 +103,7 @@ func (*Pod) ColorerFunc() model1.ColorerFunc {
 		}
 		status := strings.TrimSpace(re.Row.Fields[idx])
 		switch status {
-		case Pending, ContainerCreating:
+		case Pending, ContainerCreating, v1.PodReasonSchedulingGated:
 			c = model1.PendingColor
 		case PodInitializing:
 			c = model1.AddColor
@@ -194,7 +194,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		client.ToPercentageStr(c.mem, r.lmem),
 		toMc(r.gpu) + ":" + toMc(r.lgpu),
 		na(st.PodIP),
-		na(spec.NodeName),
+		na(PodNodeName(spec)),
 		na(spec.ServiceAccountName),
 		asNominated(st.NominatedNodeName),
 		asReadinessGate(spec, &st),
@@ -203,6 +203,7 @@ func (p *Pod) defaultRow(pwm *PodWithMetrics, row *model1.Row) error {
 		AsStatus(p.diagnose(phase, cReady, allCounts, ready, rgr, rgt)),
 		ToAge(pwm.Raw.GetCreationTimestamp()),
 	}
+	stashAge(row, pwm.Raw.GetCreationTimestamp())
 
 	return nil
 }
@@ -469,6 +470,12 @@ func (p *Pod) Phase(dt *metav1.Time, spec *v1.PodSpec, st *v1.PodStatus) string 
 		}
 		status = st.Reason
 	}
+	for _, c := range st.Conditions {
+		if c.Type == v1.PodScheduled && c.Reason == v1.PodReasonSchedulingGated {
+			status = v1.PodReasonSchedulingGated
+			break
+		}
+	}
 
 	status, ok := p.initContainerPhase(spec, st, status)
 	if ok {
@@ -548,9 +555,9 @@ func checkInitContainerStatus(cs *v1.ContainerStatus, count, initCount int, rest
 		}
 		return "Init:ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
 	case restartable && cs.Started != nil && *cs.Started:
-		if cs.Ready {
-			return ""
-		}
+		// A started sidecar no longer blocks initialization, even while it is
+		// not ready yet (kubectl reports the pod the same way).
+		return ""
 	case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
 		return "Init:" + cs.State.Waiting.Reason
 	}
@@ -673,4 +680,38 @@ func filterSidecarCO(cc []v1.Container) []v1.Container {
 	}
 
 	return rcc
+}
+
+// PodNodeName returns the node a pod is bound to or, when the pod is not scheduled yet,
+// the node it is pinned to via a metadata.name node affinity (e.g. DaemonSet pods).
+// Node selector terms are ORed, so a pod is only pinned when every term names the same node.
+func PodNodeName(spec *v1.PodSpec) string {
+	if spec.NodeName != "" {
+		return spec.NodeName
+	}
+	if spec.Affinity == nil || spec.Affinity.NodeAffinity == nil {
+		return ""
+	}
+	req := spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
+	if req == nil || len(req.NodeSelectorTerms) == 0 {
+		return ""
+	}
+	var node string
+	for _, term := range req.NodeSelectorTerms {
+		n := termNodeName(term)
+		if n == "" || (node != "" && n != node) {
+			return ""
+		}
+		node = n
+	}
+	return node
+}
+
+func termNodeName(term v1.NodeSelectorTerm) string {
+	for _, f := range term.MatchFields {
+		if f.Key == "metadata.name" && f.Operator == v1.NodeSelectorOpIn && len(f.Values) == 1 {
+			return f.Values[0]
+		}
+	}
+	return ""
 }

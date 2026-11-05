@@ -1,0 +1,38 @@
+plugins:
+  # Render JSON and logfmt logs as readable records with hl (https://github.com/pamburus/hl).
+  # Any other line passes through unchanged, so it works on the logs of any pod.
+  # Requires hl to be installed: https://github.com/pamburus/hl#installation
+  hl-pod:
+    shortCut: Shift-L
+    confirm: false
+    description: "Logs (hl)"
+    scopes:
+      - pods
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        kubectl logs --follow --all-containers --tail=500
+        $NAME
+        -n $NAMESPACE
+        --context $CONTEXT
+        --kubeconfig $KUBECONFIG
+        2>&1 | hl --paging=never
+  hl-container:
+    shortCut: Shift-L
+    confirm: false
+    description: "Logs (hl)"
+    scopes:
+      - containers
+    command: bash
+    background: false
+    args:
+      - -c
+      - >-
+        kubectl logs --follow --tail=500
+        -c $NAME $POD
+        -n $NAMESPACE
+        --context $CONTEXT
+        --kubeconfig $KUBECONFIG
+        2>&1 | hl --paging=never

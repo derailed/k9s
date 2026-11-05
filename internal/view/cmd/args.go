@@ -55,8 +55,15 @@ func newArgs(p *Interpreter, aa []string) args {
 		case strings.HasPrefix(a, sortFlag):
 			arguments[sortKey] = a[len(sortFlag):] // "<COLUMN>:<asc|desc>"
 
+		case a == labelFlag:
+			// Just skip -l, the selector after it is picked up as a label.
+			// Quoted selectors get moved to the end, so don't grab the next word.
+
+		case strings.HasPrefix(a, labelFlag) && isLabelArg(a):
+			arguments[labelKey] = a[len(labelFlag):]
+
 		case isLabelArg(a):
-			arguments[labelKey] = strings.ToLower(a)
+			arguments[labelKey] = a
 
 		default:
 			switch {
@@ -94,6 +101,8 @@ func (a args) String() string {
 			v = "'" + v + "'"
 		case filterKey:
 			v = filterFlag + v
+		case fuzzyKey:
+			v = fuzzyFlag + " " + v
 		case contextKey:
 			v = contextFlag + v
 		case sortKey:

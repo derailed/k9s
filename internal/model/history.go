@@ -123,7 +123,7 @@ func (h *History) Push(c string) {
 	if h.currentIdx < len(h.commands)-1 {
 		h.commands = h.commands[:h.currentIdx+1]
 	}
-	h.commands = append(h.commands, strings.ToLower(c))
+	h.commands = append(h.commands, c)
 	h.currentIdx = len(h.commands) - 1
 }
 
@@ -133,7 +133,7 @@ func (h *History) Update(c string) {
 	if c == "" || h.currentIdx < 0 || h.currentIdx >= len(h.commands) {
 		return
 	}
-	h.commands[h.currentIdx] = strings.ToLower(c)
+	h.commands[h.currentIdx] = c
 }
 
 // Clear clears out the stack.

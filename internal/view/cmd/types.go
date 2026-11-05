@@ -20,10 +20,10 @@ const (
 	labelFlagIn    = " in "
 	labelFlagNotin = " notin "
 	labelFlagQuote = "'"
-	label
-	fuzzyFlag   = "-f"
-	contextFlag = "@"
-	sortFlag    = "sort:" // internal-only: sort:<COLUMN>:<asc|desc>
+	labelFlag      = "-l"
+	fuzzyFlag      = "-f"
+	contextFlag    = "@"
+	sortFlag       = "sort:" // internal-only: sort:<COLUMN>:<asc|desc>
 )
 
 var (

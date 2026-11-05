@@ -510,7 +510,12 @@ func (x *Xray) gotoCmd(*tcell.EventKey) *tcell.EventKey {
 			x.Start()
 		}
 		x.CmdBuff().SetActive(false)
-		x.GetRoot().ExpandAll()
+		// The root is populated asynchronously and may not be set yet.
+		root := x.GetRoot()
+		if root == nil {
+			return nil
+		}
+		root.ExpandAll()
 
 		return nil
 	}

@@ -1,0 +1,6 @@
+# Aliases for the kubectl-ws contexts (workspace.kcp.io/current and /previous),
+# linked into k9s' context dirs by k9s-kcp. kcp serves no pods, so the pods
+# view k9s opens after a context switch shows the workspaces instead.
+aliases:
+  po: tenancy.kcp.io/v1alpha1/workspaces
+  v1/pods: tenancy.kcp.io/v1alpha1/workspaces

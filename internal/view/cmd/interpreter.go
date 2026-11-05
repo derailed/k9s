@@ -364,7 +364,7 @@ func (c *Interpreter) SetLabelArg(sel string) {
 	if sel == "" {
 		delete(c.args, labelKey)
 	} else {
-		c.args[labelKey] = strings.ToLower(sel)
+		c.args[labelKey] = sel
 	}
 	c.rebuild()
 }

@@ -51,13 +51,13 @@ func TestHistoryUpdate(t *testing.T) {
 		assert.Len(t, h.List(), 1)
 	})
 
-	t.Run("lower-cases", func(t *testing.T) {
+	t.Run("keeps-case", func(t *testing.T) {
 		h := model.NewHistory(3)
 		h.Push("pods")
-		h.Update("pods sort:AGE:asc")
+		h.Update("pods app=MyApp sort:AGE:asc")
 
 		top, _ := h.Top()
-		assert.Equal(t, "pods sort:age:asc", top)
+		assert.Equal(t, "pods app=MyApp sort:AGE:asc", top)
 	})
 
 	t.Run("rewrites-back-entry", func(t *testing.T) {
@@ -73,6 +73,18 @@ func TestHistoryUpdate(t *testing.T) {
 		assert.Equal(t, []string{"pods /nginx", "nodes"}, h.List())
 		assert.Len(t, h.List(), 2)
 	})
+}
+
+func TestHistoryPushKeepsCase(t *testing.T) {
+	h := model.NewHistory(3)
+	h.Push("pods app=MyApp")
+	h.Push("pods app=MyApp")
+	h.Push("svc")
+
+	assert.Equal(t, []string{"pods app=MyApp", "svc"}, h.List())
+	c, ok := h.Back()
+	assert.True(t, ok)
+	assert.Equal(t, "pods app=MyApp", c)
 }
 
 func TestHistoryTop(t *testing.T) {

@@ -72,6 +72,7 @@ func (s StorageClass) defaultRow(raw *unstructured.Unstructured, r *model1.Row) 
 		"",
 		ToAge(sc.GetCreationTimestamp()),
 	}
+	stashAge(r, sc.GetCreationTimestamp())
 
 	return nil
 }
