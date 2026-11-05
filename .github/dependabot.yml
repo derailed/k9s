@@ -5,6 +5,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     groups:
       kubernetes:
         patterns:
@@ -19,9 +21,13 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
 
   # Maintain dependencies for docker
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
