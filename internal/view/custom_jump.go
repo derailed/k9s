@@ -20,6 +20,19 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+// chainContext keeps the viewer's own context values (e.g. KeyPodCounting) and adds the field selector.
+func chainContext(existingCtxFn ContextFunc, fieldSelector string) ContextFunc {
+	return func(ctx context.Context) context.Context {
+		if existingCtxFn != nil {
+			ctx = existingCtxFn(ctx)
+		}
+		if fieldSelector != "" {
+			ctx = context.WithValue(ctx, internal.KeyFields, fieldSelector)
+		}
+		return ctx
+	}
+}
+
 // customJump handles custom jumps between CRDs based on user configuration.
 func customJump(app *App, sourceGVR *client.GVR, sourcePath string, rule *config.JumpRule) error {
 	// Get the source resource to extract metadata for templating
@@ -81,12 +94,7 @@ func customJump(app *App, sourceGVR *client.GVR, sourcePath string, rule *config
 	}
 
 	// Set up the context for the jump
-	v.SetContextFn(func(ctx context.Context) context.Context {
-		if fieldSel != "" {
-			ctx = context.WithValue(ctx, internal.KeyFields, fieldSel)
-		}
-		return ctx
-	})
+	v.SetContextFn(chainContext(v.GetContextFn(), fieldSel))
 
 	// Jump to the target namespace if needed
 	if targetNS != "" && targetNS != client.NamespaceAll && targetNS != client.ClusterScope {

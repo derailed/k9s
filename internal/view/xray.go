@@ -683,6 +683,9 @@ func (*Xray) AddBindKeysFn(BindKeysFunc) {}
 // SetContextFn sets custom context.
 func (*Xray) SetContextFn(ContextFunc) {}
 
+// GetContextFn returns the current context function.
+func (*Xray) GetContextFn() ContextFunc { return nil }
+
 // Name returns the component name.
 func (*Xray) Name() string { return "XRay" }
 

@@ -284,6 +284,9 @@ func (b *Browser) Name() string { return b.meta.Kind }
 // SetContextFn populates a custom context.
 func (b *Browser) SetContextFn(f ContextFunc) { b.contextFn = f }
 
+// GetContextFn returns the current context function.
+func (b *Browser) GetContextFn() ContextFunc { return b.contextFn }
+
 // GetTable returns the underlying table.
 func (b *Browser) GetTable() *Table { return b.Table }
 
