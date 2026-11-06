@@ -20,22 +20,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// ChainContextFunctions combines an existing context function with a new field selector.
-// It ensures context values from the existing function are preserved before adding the field selector.
-// This prevents loss of context keys like KeyPodCounting when jumping between resources.
-//
-// Parameters:
-//   - existingCtxFn: the current context function (may be nil)
-//   - fieldSelector: the field selector to add (may be empty)
-//
-// Returns a new context function that applies both in sequence.
-func ChainContextFunctions(existingCtxFn ContextFunc, fieldSelector string) ContextFunc {
+// chainContext keeps the viewer's own context values (e.g. KeyPodCounting) and adds the field selector.
+func chainContext(existingCtxFn ContextFunc, fieldSelector string) ContextFunc {
 	return func(ctx context.Context) context.Context {
-		// Apply existing context first (preserves KeyPodCounting, KeyFactory, etc)
 		if existingCtxFn != nil {
 			ctx = existingCtxFn(ctx)
 		}
-		// Then add field selector for the jump
 		if fieldSelector != "" {
 			ctx = context.WithValue(ctx, internal.KeyFields, fieldSelector)
 		}
@@ -104,9 +94,7 @@ func customJump(app *App, sourceGVR *client.GVR, sourcePath string, rule *config
 	}
 
 	// Set up the context for the jump
-	// Capture existing contextFn and chain it with the new field selector
-	existingCtxFn := v.GetContextFn()
-	v.SetContextFn(ChainContextFunctions(existingCtxFn, fieldSel))
+	v.SetContextFn(chainContext(v.GetContextFn(), fieldSel))
 
 	// Jump to the target namespace if needed
 	if targetNS != "" && targetNS != client.NamespaceAll && targetNS != client.ClusterScope {
