@@ -160,11 +160,17 @@ func (a *Aliases) LoadFile(path string) error {
 
 	a.mx.Lock()
 	defer a.mx.Unlock()
-	if err := yaml.Unmarshal(bb, a); err != nil {
+	var in struct {
+		Alias Alias `yaml:"aliases"`
+	}
+	if err := yaml.Unmarshal(bb, &in); err != nil {
 		return err
 	}
 
-	for k, v := range a.Alias {
+	for k, v := range in.Alias {
+		if v == nil {
+			continue
+		}
 		a.Alias[k] = client.NewGVR(v.String())
 	}
 
