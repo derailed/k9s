@@ -479,9 +479,9 @@ Clipboard behavior can also be controlled via environment variables:
     # Extends the list of supported GPU vendors. The key is the vendor name, the value must correspond to k8s resource driver designation.
     # Default known GPU vendors:
     # nvidia: nvidia.com/gpu
-	  # nvidia-shared: nvidia.com/gpu.shared
-	  # amd: amd.com/gpu
-	  # intel: gpu.intel.com/i915
+    # nvidia-shared: nvidia.com/gpu.shared
+    # amd: amd.com/gpu
+    # intel: gpu.intel.com/i915
     gpuVendors:
       bozo: bozo/gpu  # extends the gpu vendor and add "bozo"
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
@@ -526,8 +526,6 @@ Clipboard behavior can also be controlled via environment variables:
       defaultsToFullScreen: false
       # Show full resource GVR (Group/Version/Resource) vs just R. Default: false.
       useFullGVRTitle: false
-    # Toggles icons display as not all terminal support these chars.
-    noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
     skipLatestRevCheck: false
     # Logs configuration
