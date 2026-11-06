@@ -71,6 +71,9 @@ var (
 	HmGVR  = NewGVR("helm")
 	HmhGVR = NewGVR("helm-history")
 
+	// Explain...
+	ExplainGVR = NewGVR("explain")
+
 	// RBAC...
 	RbacGVR = NewGVR("rbac")
 	PolGVR  = NewGVR("policy")
@@ -105,4 +108,5 @@ var reservedGVRs = sets.New(
 	PolGVR,
 	UsrGVR,
 	GrpGVR,
+	ExplainGVR,
 )
