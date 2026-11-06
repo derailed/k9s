@@ -29,7 +29,7 @@ type Runner interface {
 	// GetSelectedItem returns the current selected item.
 	GetSelectedItem() string
 
-	// Aliases returns all aliases assoxciated with the view GVR.
+	// Aliases returns all aliases associated with the view GVR.
 	Aliases() sets.Set[string]
 
 	// EnvFn returns the current environment function.
@@ -180,7 +180,7 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 func pluginAction(r Runner, p *config.Plugin) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		path := r.GetSelectedItem()
-		if path == "" {
+		if p.IsSelectionRequired() && path == "" {
 			return evt
 		}
 		if r.EnvFn() == nil {

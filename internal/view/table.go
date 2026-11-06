@@ -148,7 +148,10 @@ func (t *Table) defaultEnv() Env {
 	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header(), row)
 	env["FILTER"] = t.CmdBuff().GetText()
 	if env["FILTER"] == "" {
-		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)
+		env["FILTER"] = env["NAME"]
+	}
+	if env["NAMESPACE"] == "" {
+		env["NAMESPACE"] = client.CleanseNamespace(t.GetNamespace())
 	}
 	env["RESOURCE_GROUP"] = t.GVR().G()
 	env["RESOURCE_VERSION"] = t.GVR().V()
