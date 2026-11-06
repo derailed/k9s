@@ -428,7 +428,8 @@ K9s uses aliases to navigate most K8s resources.
 | Shell into container                                                            | `s`                            | Pods only                                                              |
 | Attach to container                                                             | `a`                            | Pods only                                                              |
 | Describe resource                                                               | `d`                            |                                                                        |
-| Edit resource                                                                   | `e`                            | Not available in read-only mode                                        |
+| Edit resource                                                                   | `e`                            | Not available in read-only mode. On Secrets, edits decoded plaintext   |
+| Edit secret as base64                                                           | `shift-e`                      | Secrets list and YAML view. Not available in read-only mode            |
 | Show port-forwards                                                              | `f`                            | Pods/Services/Containers                                               |
 | Port forward                                                                    | `shift-f`                      | Pods/Services/Containers                                               |
 | Warp to namespace                                                               | `w`                            | When namespace column is available                                     |
