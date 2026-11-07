@@ -124,6 +124,7 @@ func TestK9sMerge(t *testing.T) {
 			k1: &config.K9s{
 				LiveViewAutoRefresh: false,
 				ScreenDumpDir:       "",
+				DefaultTransferDir:  "",
 				RefreshRate:         0,
 				MaxConnRetry:        0,
 				ReadOnly:            false,
@@ -138,12 +139,14 @@ func TestK9sMerge(t *testing.T) {
 			},
 			k2: &config.K9s{
 				LiveViewAutoRefresh: true,
+				DefaultTransferDir:  "/tmp/downloads",
 				MaxConnRetry:        100,
 				ShellPod:            config.NewShellPod(),
 			},
 			ek: &config.K9s{
 				LiveViewAutoRefresh: true,
 				ScreenDumpDir:       "",
+				DefaultTransferDir:  "/tmp/downloads",
 				RefreshRate:         0,
 				MaxConnRetry:        100,
 				ReadOnly:            false,
