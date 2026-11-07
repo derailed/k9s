@@ -10,7 +10,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render/helm"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -20,8 +19,6 @@ import (
 // History represents a helm History view.
 type History struct {
 	ResourceViewer
-
-	Values *model.RevValues
 }
 
 // NewHistory returns a new helm-history view.
@@ -34,7 +31,6 @@ func NewHistory(gvr *client.GVR) ResourceViewer {
 	h.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
 	h.AddBindKeysFn(h.bindKeys)
 	h.SetContextFn(h.HistoryContext)
-	h.GetTable().SetEnterFn(h.getValsCmd)
 
 	return &h
 }
@@ -62,21 +58,6 @@ func (h *History) bindKeys(aa *ui.KeyActions) {
 	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftN: ui.NewKeyAction("Sort Revision", h.GetTable().SortColCmd("REVISION", true), false),
 	})
-}
-
-func (h *History) getValsCmd(app *App, _ ui.Tabular, _ *client.GVR, path string) {
-	ns, n := client.Namespaced(path)
-	tt := strings.Split(n, ":")
-	if len(tt) < 2 {
-		app.Flash().Err(fmt.Errorf("unable to parse version in %q", path))
-		return
-	}
-	name, rev := tt[0], tt[1]
-	h.Values = model.NewRevValues(h.GVR(), client.FQN(ns, name), rev)
-	v := NewLiveView(h.App(), "Values", h.Values)
-	if err := v.app.inject(v, false); err != nil {
-		v.app.Flash().Err(err)
-	}
 }
 
 func (h *History) bindDangerousKeys(aa *ui.KeyActions) {
