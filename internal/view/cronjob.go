@@ -124,9 +124,9 @@ func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (c *CronJob) toggleSuspendCmd(evt *tcell.EventKey) *tcell.EventKey {
 	table := c.GetTable()
-	sel := table.GetSelectedItem()
+	sels := table.GetSelectedItems()
 
-	if sel == "" {
+	if len(sels) == 0 {
 		return evt
 	}
 
@@ -140,23 +140,21 @@ func (c *CronJob) toggleSuspendCmd(evt *tcell.EventKey) *tcell.EventKey {
 	c.Stop()
 	defer c.Start()
 
-	c.showSuspendDialog(cell, sel)
+	c.showSuspendDialog(cell, sels)
 
 	return nil
 }
 
-func (c *CronJob) showSuspendDialog(cell *tview.TableCell, sel string) {
+func (c *CronJob) showSuspendDialog(cell *tview.TableCell, sels []string) {
 	title := "Suspend"
 
 	if strings.TrimSpace(cell.Text) == defaultSuspendStatus {
 		title = "Resume"
 	}
+	suspend := title == "Suspend"
 
 	d := c.App().Styles.Dialog()
-	dialog.ShowConfirm(&d, c.App().Content.Pages, title, sel, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
-		defer cancel()
-
+	dialog.ShowConfirm(&d, c.App().Content.Pages, title, suspendDialogMsg(title, sels), func() {
 		res, err := dao.AccessorFor(c.App().factory, c.GVR())
 		if err != nil {
 			c.App().Flash().Err(fmt.Errorf("no accessor for %q", c.GVR()))
@@ -169,9 +167,26 @@ func (c *CronJob) showSuspendDialog(cell *tview.TableCell, sel string) {
 			return
 		}
 
-		if err := cronJob.ToggleSuspend(ctx, sel); err != nil {
-			c.App().Flash().Errf("Cronjob %s failed for %v", strings.ToLower(title), err)
-			return
+		for _, sel := range sels {
+			if err := c.setSuspend(cronJob, sel, suspend); err != nil {
+				c.App().Flash().Errf("Cronjob %s failed for %s: %v", strings.ToLower(title), sel, err)
+			}
 		}
 	}, func() {})
+}
+
+func (c *CronJob) setSuspend(cronJob *dao.CronJob, path string, suspend bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
+	defer cancel()
+
+	return cronJob.SetSuspend(ctx, path, suspend)
+}
+
+// suspendDialogMsg returns the confirmation message for suspending or resuming sels.
+func suspendDialogMsg(title string, sels []string) string {
+	if len(sels) == 1 {
+		return sels[0]
+	}
+
+	return fmt.Sprintf("%s %d CronJobs?", title, len(sels))
 }
