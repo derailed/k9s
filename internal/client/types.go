@@ -108,6 +108,9 @@ type Connection interface {
 	// CachedDiscovery connects to discovery client.
 	CachedDiscovery() (*disk.CachedDiscoveryClient, error)
 
+	// InvalidateCache invalidates the discovery cache.
+	InvalidateCache() error
+
 	// RestConfig connects to rest client.
 	RestConfig() (*restclient.Config, error)
 

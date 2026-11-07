@@ -47,6 +47,7 @@ type APIClient struct {
 	nsClient          dynamic.NamespaceableResourceInterface
 	mxsClient         *versioned.Clientset
 	cachedClient      *disk.CachedDiscoveryClient
+	lastCachedClient  time.Time
 	config            *Config
 	mx                sync.RWMutex
 	cache             *cache.LRUExpireCache
@@ -377,6 +378,11 @@ func (a *APIClient) setCachedClient(c *disk.CachedDiscoveryClient) {
 	defer a.mx.Unlock()
 
 	a.cachedClient = c
+	if c != nil {
+		a.lastCachedClient = time.Now()
+	} else {
+		a.lastCachedClient = time.Time{}
+	}
 }
 
 func (a *APIClient) getDClient() dynamic.Interface {
@@ -492,6 +498,15 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	}
 
 	if c := a.getCachedClient(); c != nil {
+		a.mx.RLock()
+		expired := !a.lastCachedClient.IsZero() && time.Since(a.lastCachedClient) >= cacheExpiry
+		a.mx.RUnlock()
+		if expired {
+			c.Invalidate()
+			a.mx.Lock()
+			a.lastCachedClient = time.Now()
+			a.mx.Unlock()
+		}
 		return c, nil
 	}
 
@@ -556,7 +571,18 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 	return a.getMxsClient(), err
 }
 
-func (a *APIClient) invalidateCache() error {
+// InvalidateCache invalidates the cached discovery client.
+func (a *APIClient) InvalidateCache() error {
+	a.mx.Lock()
+	a.lastCachedClient = time.Now()
+	c := a.cachedClient
+	a.mx.Unlock()
+
+	if c != nil {
+		c.Invalidate()
+		return nil
+	}
+
 	dial, err := a.CachedDiscovery()
 	if err != nil {
 		return err
@@ -564,6 +590,10 @@ func (a *APIClient) invalidateCache() error {
 	dial.Invalidate()
 
 	return nil
+}
+
+func (a *APIClient) invalidateCache() error {
+	return a.InvalidateCache()
 }
 
 // SwitchContext handles kubeconfig context switches.
