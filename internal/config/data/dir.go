@@ -97,6 +97,9 @@ func (d *Dir) loadConfig(path string) (*Config, error) {
 	if err := yaml.Unmarshal(bb, &cfg); err != nil {
 		return nil, fmt.Errorf("context-config yaml load failed: %w\n%s", err, string(bb))
 	}
+	if cfg.Context != nil && cfg.Context.Namespace != nil {
+		cfg.Context.Namespace.migrate()
+	}
 
 	return &cfg, nil
 }
