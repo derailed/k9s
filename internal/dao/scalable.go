@@ -5,11 +5,15 @@ package dao
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/slogs"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/scale"
@@ -50,13 +54,16 @@ func (s *Scaler) Scale(ctx context.Context, path string, replicas int32) error {
 		return err
 	}
 
-	currentScale, err := scaleClient.Scales(ns).Get(ctx, *s.gvr.GR(), name, metav1.GetOptions{})
+	// Apply a merge patch directly to the scale subresource (as kubectl scale
+	// does), so it only requires patch access there and avoids a 409 Conflict
+	// when another actor (e.g. an HPA) updates the scale between the read and
+	// the write.
+	data, err := json.Marshal(&autoscalingv1.Scale{Spec: autoscalingv1.ScaleSpec{Replicas: replicas}})
 	if err != nil {
-		return err
+		return fmt.Errorf("marshaling scale patch: %w", err)
 	}
 
-	currentScale.Spec.Replicas = replicas
-	updatedScale, err := scaleClient.Scales(ns).Update(ctx, *s.gvr.GR(), currentScale, metav1.UpdateOptions{})
+	updatedScale, err := scaleClient.Scales(ns).Patch(ctx, s.gvr.GVR(), name, types.MergePatchType, data, metav1.PatchOptions{})
 	if err != nil {
 		return err
 	}
