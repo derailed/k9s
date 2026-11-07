@@ -116,6 +116,16 @@ func (h *HelmChart) ToYAML(path string, _ bool) (string, error) {
 	return resp.Manifest, nil
 }
 
+// ToKYAML returns the chart manifest as kyaml.
+func (h *HelmChart) ToKYAML(path string, showManaged bool) (string, error) {
+	raw, err := h.ToYAML(path, showManaged)
+	if err != nil {
+		return "", err
+	}
+
+	return YAMLToKYAML(raw)
+}
+
 // Delete uninstall a HelmChart.
 func (h *HelmChart) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	return h.Uninstall(path, false)

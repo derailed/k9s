@@ -47,6 +47,16 @@ func (s *Secret) ToYAML(path string, showManaged bool) (string, error) {
 	return s.Generic.ToYAML(path, showManaged)
 }
 
+// ToKYAML returns a resource kyaml.
+func (s *Secret) ToKYAML(path string, showManaged bool) (string, error) {
+	raw, err := s.ToYAML(path, showManaged)
+	if err != nil {
+		return "", err
+	}
+
+	return YAMLToKYAML(raw)
+}
+
 func (s *Secret) decodeYAML(path string, showManaged bool) (string, error) {
 	o, err := s.Get(context.Background(), path)
 	if err != nil {

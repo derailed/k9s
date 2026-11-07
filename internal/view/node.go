@@ -83,7 +83,8 @@ func (n *Node) bindKeys(aa *ui.KeyActions) {
 	}
 
 	aa.Bulk(ui.KeyMap{
-		ui.KeyY: ui.NewKeyAction(yamlAction, n.yamlCmd, true),
+		ui.KeyY:      ui.NewKeyAction(yamlAction, n.yamlCmd, true),
+		ui.KeyShiftY: ui.NewKeyAction(kyamlAction, n.kyamlCmd, true),
 	})
 }
 
@@ -221,6 +222,44 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	details := NewDetails(n.App(), yamlAction, sel, contentYAML, true).Update(raw)
+	if err := n.App().inject(details, false); err != nil {
+		n.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (n *Node) kyamlCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := n.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	n.Stop()
+	defer n.Start()
+	ctx, cancel := context.WithTimeout(context.Background(), n.App().Conn().Config().CallTimeout())
+	defer cancel()
+
+	sel := n.GetTable().GetSelectedItem()
+	gvr := n.GVR().GVR()
+	dial, err := n.App().factory.Client().DynDial()
+	if err != nil {
+		n.App().Flash().Err(err)
+		return nil
+	}
+	o, err := dial.Resource(gvr).Get(ctx, sel, metav1.GetOptions{})
+	if err != nil {
+		n.App().Flash().Errf("Unable to get resource %q -- %s", n.GVR(), err)
+		return nil
+	}
+
+	raw, err := dao.ToKYAML(o, false)
+	if err != nil {
+		n.App().Flash().Errf("Unable to marshal resource %s", err)
+		return nil
+	}
+
+	details := NewDetails(n.App(), kyamlAction, sel, contentKYAML, true).Update(raw)
 	if err := n.App().inject(details, false); err != nil {
 		n.App().Flash().Err(err)
 	}
