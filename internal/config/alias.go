@@ -158,13 +158,22 @@ func (a *Aliases) LoadFile(path string) error {
 		slog.Warn("Aliases validation failed", slogs.Error, err)
 	}
 
-	a.mx.Lock()
-	defer a.mx.Unlock()
-	if err := yaml.Unmarshal(bb, a); err != nil {
+	var loaded Aliases
+	if err := yaml.Unmarshal(bb, &loaded); err != nil {
 		return err
 	}
 
-	for k, v := range a.Alias {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+	if a.Alias == nil {
+		a.Alias = make(Alias, len(loaded.Alias))
+	}
+	for k, v := range loaded.Alias {
+		// An entry with no value parses to nil: treat it like a missing entry
+		// instead of panicking on String().
+		if v == nil {
+			continue
+		}
 		a.Alias[k] = client.NewGVR(v.String())
 	}
 
