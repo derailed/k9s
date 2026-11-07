@@ -172,8 +172,27 @@ func (c *Command) xrayCmd(p *cmd.Interpreter, pushCmd bool) error {
 	return c.exec(p, client.XGVR, NewXray(gvr), true, pushCmd)
 }
 
+// confirmTabsClose defers a context-switching command until the user agrees to close the other tabs.
+func (c *Command) confirmTabsClose(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) bool {
+	ctx, ok := p.HasContext()
+	if !ok || len(c.app.tabs) < 2 || (!p.IsContextCmd() && ctx == c.app.Config.ActiveContextName()) {
+		return false
+	}
+	c.app.confirmCloseTabs(ctx, func() {
+		c.app.resetTabs()
+		if err := c.run(p, fqn, clearStack, pushCmd); err != nil {
+			c.app.Flash().Err(err)
+		}
+	})
+
+	return true
+}
+
 // Run execs the command by showing associated display.
 func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) error {
+	if c.confirmTabsClose(p, fqn, clearStack, pushCmd) {
+		return nil
+	}
 	if c.specialCmd(p, pushCmd) {
 		return nil
 	}
@@ -183,6 +202,10 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) 
 	}
 	if comd != nil {
 		p.Merge(comd)
+		// Aliases can carry an @context that is only known after the merge.
+		if c.confirmTabsClose(p, fqn, clearStack, pushCmd) {
+			return nil
+		}
 	}
 
 	if context, ok := p.HasContext(); ok {
