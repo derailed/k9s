@@ -5,11 +5,16 @@ package view
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -165,3 +170,94 @@ func (*logList) LogStop()          {}
 func (*logList) LogResume()        {}
 func (l *logList) LogCleared()     { l.clear++ }
 func (l *logList) LogFailed(error) { l.fail++ }
+
+func TestLogClearThenChanged(t *testing.T) {
+	v, _ := runLogView(t)
+
+	for i := range 50 {
+		line := "blee-" + strconv.Itoa(i) + "\n"
+		v.LogCleared()
+		v.LogChanged([][]byte{[]byte(line)})
+		require.Eventually(t, func() bool {
+			return v.logText() == line
+		}, 2*time.Second, time.Millisecond, "round %d", i)
+	}
+}
+
+func TestLogChangedKeepsOrder(t *testing.T) {
+	v, _ := runLogView(t)
+
+	const size = 500
+	want := make([]string, 0, size)
+	for i := range size {
+		want = append(want, strconv.Itoa(i))
+		v.LogChanged([][]byte{[]byte(want[i] + "\n")})
+	}
+	require.Eventually(t, func() bool {
+		return len(strings.Fields(v.logText())) == size
+	}, 5*time.Second, time.Millisecond)
+	assert.Equal(t, want, strings.Fields(v.logText()))
+}
+
+func TestLogChangedCoalescesWhileBusy(t *testing.T) {
+	v, draws := runLogView(t)
+	a := v.app.Application
+
+	busy, release := make(chan struct{}), make(chan struct{})
+	go a.QueueUpdate(func() {
+		close(busy)
+		<-release
+	})
+	<-busy
+	draws.Store(0)
+
+	const size = 100
+	for i := range size {
+		v.LogChanged([][]byte{[]byte(strconv.Itoa(i) + "\n")})
+	}
+	close(release)
+
+	require.Eventually(t, func() bool {
+		return len(strings.Fields(v.logText())) == size
+	}, 5*time.Second, time.Millisecond)
+	assert.Equal(t, int64(1), draws.Load())
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+// runLogView runs a log view on a simulated screen and counts the redraws.
+func runLogView(t *testing.T) (*Log, *atomic.Int64) {
+	t.Helper()
+
+	opts := dao.LogOptions{Path: "fred/p1", Container: "blee"}
+	v := NewLog(client.PodGVR, &opts)
+	require.NoError(t, v.Init(makeContext(t)))
+
+	s := tcell.NewSimulationScreen("UTF-8")
+	require.NoError(t, s.Init())
+
+	var draws atomic.Int64
+	a := v.app.Application
+	a.SetScreen(s).SetRoot(v, true)
+	a.SetAfterDrawFunc(func(tcell.Screen) { draws.Add(1) })
+
+	done := make(chan error, 1)
+	go func() { done <- a.Run() }()
+	t.Cleanup(func() {
+		a.Stop()
+		require.NoError(t, <-done)
+	})
+
+	return v, &draws
+}
+
+// logText reads the text on the UI goroutine.
+func (l *Log) logText() string {
+	var text string
+	l.app.Application.QueueUpdate(func() {
+		text = l.logs.GetText(true)
+	})
+
+	return text
+}
