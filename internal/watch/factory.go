@@ -71,6 +71,20 @@ func (f *Factory) Terminate() {
 	f.forwarders.DeleteAll()
 }
 
+// RestartInformers recreates all informers so they dial with the current
+// connection settings. Port-forwards are left untouched.
+func (f *Factory) RestartInformers(ns string) {
+	f.mx.Lock()
+	if f.stopChan != nil {
+		close(f.stopChan)
+		f.stopChan = nil
+	}
+	clear(f.factories)
+	f.mx.Unlock()
+
+	f.Start(ns)
+}
+
 // List returns a resource collection.
 func (f *Factory) List(gvr *client.GVR, ns string, wait bool, lbls labels.Selector) ([]runtime.Object, error) {
 	if client.IsAllNamespace(ns) {

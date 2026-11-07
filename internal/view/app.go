@@ -53,6 +53,7 @@ type App struct {
 	cmdHistory    *model.History
 	filterHistory *model.History
 	conRetry      int32
+	kubeconfig    kubeconfigTracker
 	showHeader    bool
 	showLogo      bool
 	showCrumbs    bool
@@ -399,14 +400,20 @@ func (a *App) refreshCluster(context.Context) error {
 
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
-		if atomic.LoadInt32(&a.conRetry) > 0 {
-			atomic.StoreInt32(&a.conRetry, 0)
+		reconnected := atomic.SwapInt32(&a.conRetry, 0) > 0
+		restarted, flashed := a.applyKubeconfigChanges()
+		switch {
+		case reconnected:
 			a.Status(model.FlashInfo, "K8s connectivity OK")
 			if c != nil {
 				c.Start()
 			}
-		} else {
-			a.ClearStatus(true)
+		case restarted && c != nil:
+			c.Stop()
+			c.Start()
+		}
+		if !reconnected {
+			a.ClearStatus(!flashed)
 		}
 		a.factory.ValidatePortForwards()
 	} else if c != nil {
@@ -512,6 +519,9 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 			slogs.Namespace, ns,
 			slogs.View, a.Config.ActiveView(),
 		)
+		if conn := a.Conn(); conn != nil {
+			a.kubeconfig.reset(conn.Config().ActiveRevision())
+		}
 		a.Flash().Infof("Switching context to %q::%q", contextName, ns)
 		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true, true)

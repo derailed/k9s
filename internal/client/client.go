@@ -48,6 +48,7 @@ type APIClient struct {
 	mxsClient         *versioned.Clientset
 	cachedClient      *disk.CachedDiscoveryClient
 	config            *Config
+	configRevision    uint64
 	mx                sync.RWMutex
 	cache             *cache.LRUExpireCache
 	connOK            bool
@@ -314,6 +315,12 @@ func (a *APIClient) CheckConnectivity() bool {
 		}
 	}()
 
+	// Rebuild clients dialed with outdated kubeconfig settings.
+	if rev := a.config.ActiveRevision(); rev != a.getConfigRevision() {
+		slog.Debug("Kubeconfig settings changed. Resetting clients", slogs.Context, a.ActiveContext())
+		a.reset()
+		a.setConfigRevision(rev)
+	}
 	cfg, err := a.config.RESTConfig()
 	if err != nil {
 		slog.Error("RestConfig load failed", slogs.Error, err)
@@ -405,6 +412,20 @@ func (a *APIClient) setConnOK(b bool) {
 	defer a.mx.Unlock()
 
 	a.connOK = b
+}
+
+func (a *APIClient) getConfigRevision() uint64 {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.configRevision
+}
+
+func (a *APIClient) setConfigRevision(rev uint64) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.configRevision = rev
 }
 
 func (a *APIClient) setLogClient(k kubernetes.Interface) {
@@ -574,7 +595,8 @@ func (a *APIClient) SwitchContext(name string) error {
 	}
 	a.reset()
 	ResetMetrics()
-	a.config = NewConfig(a.config.flags)
+	a.config = NewConfig(a.config.Flags())
+	a.setConfigRevision(a.config.ActiveRevision())
 	if !a.CheckConnectivity() {
 		slog.Warn("SwitchContext: connectivity check failed", slogs.Context, name)
 	}
