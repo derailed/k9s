@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -23,6 +24,8 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
+
+const nodeSyncWait = 2 * time.Second
 
 var (
 	_ Accessor       = (*Node)(nil)
@@ -290,8 +293,8 @@ func FetchNode(_ context.Context, f Factory, path string) (*v1.Node, error) {
 	return &node, nil
 }
 
-// FetchNodes retrieves all nodes.
-func FetchNodes(_ context.Context, f Factory, _ string) (*v1.NodeList, error) {
+// FetchNodes retrieves all nodes, waiting a bounded time for the node informer to sync.
+func FetchNodes(ctx context.Context, f Factory, _ string) (*v1.NodeList, error) {
 	auth, err := f.Client().CanI(client.ClusterScope, client.NodeGVR, "", client.ListAccess)
 	if err != nil {
 		return nil, err
@@ -300,6 +303,7 @@ func FetchNodes(_ context.Context, f Factory, _ string) (*v1.NodeList, error) {
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
+	awaitInformerSync(ctx, f, client.NodeGVR, client.BlankNamespace, nodeSyncWait)
 	oo, err := f.List(client.NodeGVR, "", false, labels.Everything())
 	if err != nil {
 		return nil, err
