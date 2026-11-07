@@ -81,6 +81,49 @@ func TestIsContainerForwarded(t *testing.T) {
 			fqn: "ns1/fred",
 			co:  "c1",
 		},
+		"container_prefix": {
+			ff: watch.Forwarders{
+				"ns1/p1|app-sidecar|8080:80": newNoOpForwarder(),
+			},
+			fqn: "ns1/p1",
+			co:  "app",
+		},
+		"exact_sidecar": {
+			ff: watch.Forwarders{
+				"ns1/p1|app-sidecar|8080:80": newNoOpForwarder(),
+			},
+			fqn: "ns1/p1",
+			co:  "app-sidecar",
+			e:   true,
+		},
+		"different_pod": {
+			ff: watch.Forwarders{
+				"ns1/p1|app|8080:80": newNoOpForwarder(),
+			},
+			fqn: "ns1/p2",
+			co:  "app",
+		},
+		"different_namespace": {
+			ff: watch.Forwarders{
+				"ns1/p1|app|8080:80": newNoOpForwarder(),
+			},
+			fqn: "ns2/p1",
+			co:  "app",
+		},
+		"empty": {
+			ff:  watch.NewForwarders(),
+			fqn: "ns1/p1",
+			co:  "app",
+		},
+		"multiple_ports": {
+			ff: watch.Forwarders{
+				"ns1/p1|app|8080:80": newNoOpForwarder(),
+				"ns1/p1|app|9090:90": newNoOpForwarder(),
+			},
+			fqn: "ns1/p1",
+			co:  "app",
+			e:   true,
+		},
 	}
 
 	for k := range uu {
