@@ -5,11 +5,15 @@ package dao
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/slogs"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/scale"
@@ -50,13 +54,13 @@ func (s *Scaler) Scale(ctx context.Context, path string, replicas int32) error {
 		return err
 	}
 
-	currentScale, err := scaleClient.Scales(ns).Get(ctx, *s.gvr.GR(), name, metav1.GetOptions{})
-	if err != nil {
-		return err
+	scales := scaleClient.Scales(ns)
+	patch := []byte(fmt.Sprintf(`{"spec":{"replicas":%d}}`, replicas))
+	updatedScale, err := scales.Patch(ctx, s.gvr.GVR(), name, types.MergePatchType, patch, metav1.PatchOptions{})
+	if kerrors.IsForbidden(err) {
+		// Roles granting get+update but not patch on the scale subresource keep working.
+		updatedScale, err = s.getAndUpdate(ctx, scales, name, replicas)
 	}
-
-	currentScale.Spec.Replicas = replicas
-	updatedScale, err := scaleClient.Scales(ns).Update(ctx, *s.gvr.GR(), currentScale, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -66,6 +70,16 @@ func (s *Scaler) Scale(ctx context.Context, path string, replicas int32) error {
 		slogs.Replicas, updatedScale.Spec.Replicas,
 	)
 	return nil
+}
+
+func (s *Scaler) getAndUpdate(ctx context.Context, scales scale.ScaleInterface, name string, replicas int32) (*autoscalingv1.Scale, error) {
+	currentScale, err := scales.Get(ctx, *s.gvr.GR(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	currentScale.Spec.Replicas = replicas
+
+	return scales.Update(ctx, *s.gvr.GR(), currentScale, metav1.UpdateOptions{})
 }
 
 func (s *Scaler) scaleClient() (scale.ScalesGetter, error) {

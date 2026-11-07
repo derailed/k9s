@@ -360,39 +360,22 @@ func containerHasConfigMap(envFrom []v1.EnvFromSource, env []v1.EnvVar, name str
 
 func scaleRes(ctx context.Context, f Factory, gvr *client.GVR, path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
-	auth, err := f.Client().CanI(ns, client.NewGVR(gvr.String()+":scale"), n, []string{client.GetVerb, client.UpdateVerb})
-	if err != nil {
-		return err
-	}
-	if !auth {
-		return fmt.Errorf("user is not authorized to scale: %s", gvr)
+	scaleGVR := client.NewGVR(gvr.String() + ":scale")
+	// Like kubectl, patch is enough. Roles granting get+update keep working too.
+	if canPatch, _ := f.Client().CanI(ns, scaleGVR, n, client.PatchAccess); !canPatch {
+		auth, err := f.Client().CanI(ns, scaleGVR, n, []string{client.GetVerb, client.UpdateVerb})
+		if err != nil {
+			return err
+		}
+		if !auth {
+			return fmt.Errorf("user is not authorized to scale: %s", gvr)
+		}
 	}
 
-	dial, err := f.Client().Dial()
-	if err != nil {
-		return err
-	}
+	var s Scaler
+	s.Init(f, gvr)
 
-	switch gvr {
-	case client.DpGVR:
-		scale, e := dial.AppsV1().Deployments(ns).GetScale(ctx, n, metav1.GetOptions{})
-		if e != nil {
-			return e
-		}
-		scale.Spec.Replicas = replicas
-		_, e = dial.AppsV1().Deployments(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
-		return e
-	case client.StsGVR:
-		scale, e := dial.AppsV1().StatefulSets(ns).GetScale(ctx, n, metav1.GetOptions{})
-		if e != nil {
-			return e
-		}
-		scale.Spec.Replicas = replicas
-		_, e = dial.AppsV1().StatefulSets(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
-		return e
-	default:
-		return fmt.Errorf("unsupported resource for scaling: %s", gvr)
-	}
+	return s.Scale(ctx, path, replicas)
 }
 
 func restartRes[T runtime.Object](ctx context.Context, f Factory, gvr *client.GVR, path string, opts *metav1.PatchOptions) error {
