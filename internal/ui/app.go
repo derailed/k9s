@@ -26,6 +26,7 @@ type App struct {
 	actions *KeyActions
 	views   map[string]tview.Primitive
 	cmdBuff *model.FishBuff
+	screen  *PasteScreen
 	running bool
 	mx      sync.RWMutex
 }
@@ -59,6 +60,32 @@ func (a *App) Init() {
 	a.Styles.AddListener(a)
 
 	a.SetRoot(a.Main, true).EnableMouse(a.Config.K9s.UI.EnableMouse)
+}
+
+// InitScreen initializes the terminal screen with bracketed paste enabled, so that
+// pasted text can be told apart from typed keys.
+func (a *App) InitScreen() error {
+	s, err := tcell.NewScreen()
+	if err != nil {
+		return err
+	}
+	if err := s.Init(); err != nil {
+		return err
+	}
+	// tview only enables the mouse on screens it creates itself.
+	if a.Config.K9s.UI.EnableMouse {
+		s.EnableMouse()
+	}
+	s.EnablePaste()
+	a.screen = NewPasteScreen(s)
+	a.SetScreen(a.screen)
+
+	return nil
+}
+
+// IsPasted reports whether the key event was part of a paste.
+func (a *App) IsPasted(evt *tcell.EventKey) bool {
+	return a.screen != nil && a.screen.IsPasted(evt)
 }
 
 // QueueUpdate queues up a ui action.
