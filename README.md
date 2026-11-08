@@ -240,7 +240,9 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
 #### Building a multi-platform image
 
   The `make imgx` target builds for `linux/amd64` and `linux/arm64` via Docker
-  buildx:
+  buildx. Both `imgx` and `pushx` always tag the image with `latest` *and*
+  the explicit `VERSION` in the same build, so a release can be pinned to a
+  specific tag instead of only `latest`:
 
   ```shell
   make imgx
