@@ -4,6 +4,8 @@
 package view
 
 import (
+	"time"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
@@ -76,14 +78,16 @@ func (n *Namespace) decorate(td *model1.TableData) {
 	}
 	// checks if all ns is in the list if not add it.
 	if _, ok := td.FindRow(client.NamespaceAll); !ok {
-		td.AddRow(model1.RowEvent{
+		re := model1.RowEvent{
 			Kind: model1.EventUnchanged,
 			Row: model1.Row{
 				ID:     client.NamespaceAll,
 				Fields: model1.Fields{client.NamespaceAll, "Active", "", "", ""},
+				// A zero Age would disable timestamp sorting for the whole table.
+				Age: time.Now(),
 			},
-		},
-		)
+		}
+		td.AddRow(&re)
 	}
 
 	var (
@@ -99,7 +103,7 @@ func (n *Namespace) decorate(td *model1.TableData) {
 			re.Row.Fields[0] += defaultNSIndicator
 		}
 		re.Kind = model1.EventUnchanged
-		td.SetRow(i, re)
+		td.SetRow(i, &re)
 		return true
 	})
 }

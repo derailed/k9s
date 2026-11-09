@@ -135,7 +135,8 @@ func durationToSeconds(duration string) int64 {
 	if duration == "" {
 		return 0
 	}
-	if duration == NAValue {
+	// Placeholders like <unknown>, <none> or n/a have no age and sort last.
+	if duration[0] < '0' || duration[0] > '9' {
 		return math.MaxInt64
 	}
 
@@ -179,7 +180,12 @@ func capacityToNumber(capacity string) int64 {
 	if strings.TrimSpace(capacity) == "" {
 		return 0
 	}
-	quantity := resource.MustParse(capacity)
+	// Placeholders such as n/a or <none>, or any other text, are not quantities
+	// and sort last, like placeholder ages do.
+	quantity, err := resource.ParseQuantity(strings.TrimSpace(capacity))
+	if err != nil {
+		return math.MaxInt64
+	}
 	return quantity.Value()
 }
 
@@ -201,6 +207,21 @@ func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 	}
 
 	return less
+}
+
+// lessRow returns true if r1 should sort before r2 in ascending order.
+// When isAge is true, every row must carry a non-zero Row.Age; callers check
+// this so the whole sort uses one comparison and stays transitive.
+func lessRow(isAge, isNumber, isDuration, isCapacity bool, idx int, r1, r2 Row) bool {
+	if isAge {
+		if r1.Age.Equal(r2.Age) {
+			return sortorder.NaturalLess(r1.ID, r2.ID)
+		}
+		// Later creation time means younger, i.e. smaller age, which sorts first.
+		return r1.Age.After(r2.Age)
+	}
+	v1, v2 := r1.Fields[idx], r2.Fields[idx]
+	return Less(isNumber, isDuration, isCapacity, r1.ID, r2.ID, v1, v2)
 }
 
 func lessDuration(s1, s2 string) (less, equal bool) {

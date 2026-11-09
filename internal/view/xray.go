@@ -510,7 +510,12 @@ func (x *Xray) gotoCmd(*tcell.EventKey) *tcell.EventKey {
 			x.Start()
 		}
 		x.CmdBuff().SetActive(false)
-		x.GetRoot().ExpandAll()
+		// The root is populated asynchronously and may not be set yet.
+		root := x.GetRoot()
+		if root == nil {
+			return nil
+		}
+		root.ExpandAll()
 
 		return nil
 	}
@@ -677,6 +682,9 @@ func (*Xray) AddBindKeysFn(BindKeysFunc) {}
 
 // SetContextFn sets custom context.
 func (*Xray) SetContextFn(ContextFunc) {}
+
+// GetContextFn returns the current context function.
+func (*Xray) GetContextFn() ContextFunc { return nil }
 
 // Name returns the component name.
 func (*Xray) Name() string { return "XRay" }

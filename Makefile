@@ -9,6 +9,7 @@ GIT_REV         ?= $(shell git rev-parse --short HEAD)
 
 IMG_NAME        := derailed/k9s
 IMAGE           := ${IMG_NAME}:${VERSION}
+IMAGE_LATEST    := ${IMG_NAME}:latest
 BUILD_PLATFORMS ?= linux/amd64,linux/arm64
 
 SOURCE_DATE_EPOCH ?= $(shell date +%s)
@@ -39,11 +40,11 @@ build:                   ## Builds the CLI
 kubectl-stable-version:  ## Get kubectl latest stable version
 	@curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
 
-imgx:                    ## Build Docker Image
-	@docker buildx build --platform ${BUILD_PLATFORMS} --rm -t ${IMAGE} --load .
+imgx:                    ## Build Docker Image, tagged with both VERSION and latest
+	@docker buildx build --platform ${BUILD_PLATFORMS} --rm -t ${IMAGE} -t ${IMAGE_LATEST} --load .
 
-pushx:                   ## Push Docker image to registry
-	@docker buildx build --platform ${BUILD_PLATFORMS} --rm -t ${IMAGE} --push .
+pushx:                   ## Push Docker image to registry, tagged with both VERSION and latest
+	@docker buildx build --platform ${BUILD_PLATFORMS} --rm -t ${IMAGE} -t ${IMAGE_LATEST} --push .
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":[^:]*?## "}; {printf "\033[38;5;69m%-30s\033[38;5;38m %s\033[0m\n", $$1, $$2}'

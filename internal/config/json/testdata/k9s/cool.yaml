@@ -12,6 +12,9 @@ k9s:
     crumbsless: false
     splashless: false
     noIcons: false
+    logo: |
+      COOL
+      K9S
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:

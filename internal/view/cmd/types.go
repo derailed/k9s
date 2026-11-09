@@ -20,9 +20,9 @@ const (
 	labelFlagIn    = " in "
 	labelFlagNotin = " notin "
 	labelFlagQuote = "'"
-	label
-	fuzzyFlag   = "-f"
-	contextFlag = "@"
+	labelFlag      = "-l"
+	fuzzyFlag      = "-f"
+	contextFlag    = "@"
 )
 
 var (

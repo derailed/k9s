@@ -91,6 +91,9 @@ type ResourceViewer interface {
 	// SetContextFn provision a custom context.
 	SetContextFn(ContextFunc)
 
+	// GetContextFn retrieves the current context function.
+	GetContextFn() ContextFunc
+
 	// AddBindKeysFn provision additional key bindings.
 	AddBindKeysFn(BindKeysFunc)
 
