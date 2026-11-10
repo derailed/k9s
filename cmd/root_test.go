@@ -11,5 +11,13 @@ import (
 )
 
 func TestClientVersion(t *testing.T) {
-	assert.Equal(t, version, client.Version)
+	oldClientVersion := version
+	expectedVersion := "cmd-pkg-test-version"
+	setClientVersion(expectedVersion)
+
+	// validate that setting version via cmd package helper propagates to client.Version
+	assert.Equal(t, "cmd-pkg-test-version", client.Version)
+
+	//cleanup
+	setClientVersion(oldClientVersion)
 }
