@@ -19,6 +19,7 @@ k9s:
     invert: false
     defaultsToFullScreen: false
     useFullGVRTitle: false
+    terminalTitle: false
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:

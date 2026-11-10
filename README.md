@@ -528,6 +528,8 @@ Clipboard behavior can also be controlled via environment variables:
       defaultsToFullScreen: false
       # Show full resource GVR (Group/Version/Resource) vs just R. Default: false.
       useFullGVRTitle: false
+      # Set the terminal window/tab title to "k9s | <context> | <view>" while k9s runs. The previous title is restored on exit. Default: false.
+      terminalTitle: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the GitHub repository releases. Default is false.
