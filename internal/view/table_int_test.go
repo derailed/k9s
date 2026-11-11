@@ -22,6 +22,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,6 +183,51 @@ func TestTableViewSort(t *testing.T) {
 		for i, s := range u.reversed {
 			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
 		}
+	}
+}
+
+func TestTableMouseDoubleClick(t *testing.T) {
+	// The table is bordered, so the header is on screen row 1 and the data
+	// rows follow from screen row 2.
+	uu := map[string]struct {
+		action  tview.MouseAction
+		x, y    int
+		rows    int
+		entered bool
+	}{
+		"first-row":          {action: tview.MouseLeftDoubleClick, x: 5, y: 2, rows: 3, entered: true},
+		"last-row":           {action: tview.MouseLeftDoubleClick, x: 5, y: 3, rows: 3, entered: true},
+		"header":             {action: tview.MouseLeftDoubleClick, x: 5, y: 1, rows: 3},
+		"border":             {action: tview.MouseLeftDoubleClick, x: 5, y: 0, rows: 3},
+		"past-last-row":      {action: tview.MouseLeftDoubleClick, x: 5, y: 6, rows: 3},
+		"outside":            {action: tview.MouseLeftDoubleClick, x: 5, y: 20, rows: 3},
+		"no-rows":            {action: tview.MouseLeftDoubleClick, x: 5, y: 2, rows: 1},
+		"single-click":       {action: tview.MouseLeftClick, x: 5, y: 2, rows: 3},
+		"right-double-click": {action: tview.MouseRightDoubleClick, x: 5, y: 2, rows: 3},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			v := NewTable(client.NewGVR("test"))
+			require.NoError(t, v.Init(makeContext(t)))
+			v.SetRect(0, 0, 40, 10)
+			for r := range u.rows {
+				v.SetCell(r, 0, tview.NewTableCell("cell"))
+			}
+			var entered bool
+			v.Actions().Add(tcell.KeyEnter, ui.NewKeyAction("Test", func(*tcell.EventKey) *tcell.EventKey {
+				entered = true
+				return nil
+			}, true))
+
+			evt := tcell.NewEventMouse(u.x, u.y, tcell.ButtonNone, tcell.ModNone)
+			action, e := v.mouse(u.action, evt)
+
+			assert.Equal(t, u.entered, entered)
+			assert.Equal(t, u.action, action)
+			assert.Equal(t, evt, e)
+		})
 	}
 }
 
