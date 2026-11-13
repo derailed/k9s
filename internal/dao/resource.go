@@ -7,13 +7,17 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+const syncPollRate = 20 * time.Millisecond
 
 var (
 	_ Accessor  = (*Resource)(nil)
@@ -71,6 +75,33 @@ func filterByFieldSelector(ctx context.Context, oo []runtime.Object) ([]runtime.
 	}
 
 	return res, nil
+}
+
+func informerSynced(f Factory, gvr *client.GVR, ns string) bool {
+	if client.IsAllNamespace(ns) {
+		ns = client.BlankNamespace
+	}
+	inf, err := f.CanForResource(ns, gvr, client.ListAccess)
+	if err != nil || inf == nil {
+		return true
+	}
+
+	return inf.Informer().HasSynced()
+}
+
+// awaitInformerSync polls for the informer sync without holding the factory lock.
+func awaitInformerSync(ctx context.Context, f Factory, gvr *client.GVR, ns string, maxWait time.Duration) {
+	deadline := time.NewTimer(maxWait)
+	defer deadline.Stop()
+	for !informerSynced(f, gvr, ns) {
+		select {
+		case <-ctx.Done():
+			return
+		case <-deadline.C:
+			return
+		case <-time.After(syncPollRate):
+		}
+	}
 }
 
 // Get returns a resource instance if found, else an error.
