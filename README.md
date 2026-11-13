@@ -389,6 +389,7 @@ K9s uses aliases to navigate most K8s resources.
 | View a Kubernetes resource using singular/plural or short-name                  | `:`pod⏎                       | accepts singular, plural, short-name or alias ie pod or pods           |
 | View a Kubernetes resource in a given namespace                                 | `:`pod ns-x⏎                  |                                                                        |
 | View filtered pods (New v0.30.0!)                                               | `:`pod /fred⏎                 | View all pods filtered by fred                                         |
+| View fuzzy-filtered pods                                                        | `:`pod ns-x -f fred⏎          | Use `-f` without `/` in command mode. Omit the namespace to use the current one. |
 | View labeled pods (New v0.30.0!)                                                | `:`pod app=fred,env=dev⏎      | View all pods with labels matching app=fred and env=dev                |
 | View pods in a given context (New v0.30.0!)                                     | `:`pod @ctx1⏎                 | View all pods in context ctx1. Switches out your current k9s context!  |
 | Filter out a resource view given a filter                                       | `/`filter⏎                    | Regex2 supported ie `fred|blee` to filter resources named fred or blee |
