@@ -276,15 +276,16 @@ func strPtrToStr(s *string) string {
 	return *s
 }
 
-// Pad a string up to the given length or truncates if greater than length.
+// Pad a string up to the given display width or truncates if wider.
 func Pad(s string, width int) string {
-	if len(s) == width {
+	w := runewidth.StringWidth(s)
+	if w == width {
 		return s
 	}
 
-	if len(s) > width {
+	if w > width {
 		return Truncate(s, width)
 	}
 
-	return s + strings.Repeat(" ", width-len(s))
+	return s + strings.Repeat(" ", width-w)
 }
