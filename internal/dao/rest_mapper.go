@@ -60,11 +60,26 @@ func (r *RestMapper) resourceFor(resourceArg string) (schema.GroupVersionResourc
 
 	fullGVR, gr := schema.ParseResourceArg(strings.ToLower(resourceArg))
 	if fullGVR != nil {
-		return mapper.ResourceFor(*fullGVR)
+		res, err := mapper.ResourceFor(*fullGVR)
+		if err != nil && r.Connection != nil {
+			_ = r.Connection.InvalidateCache()
+			if mapper2, err2 := r.ToRESTMapper(); err2 == nil {
+				return mapper2.ResourceFor(*fullGVR)
+			}
+		}
+		return res, err
 	}
 
 	gvr, err = mapper.ResourceFor(gr.WithVersion(""))
 	if err != nil {
+		if r.Connection != nil {
+			_ = r.Connection.InvalidateCache()
+			if mapper2, err2 := r.ToRESTMapper(); err2 == nil {
+				if gvr2, err2 := mapper2.ResourceFor(gr.WithVersion("")); err2 == nil {
+					return gvr2, nil
+				}
+			}
+		}
 		if gr.Group == "" {
 			return gvr, fmt.Errorf("the server doesn't have a resource type '%s'", gr.Resource)
 		}

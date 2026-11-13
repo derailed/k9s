@@ -195,3 +195,20 @@ func TestCheckCacheBool(t *testing.T) {
 		})
 	}
 }
+
+func TestInvalidateCache(t *testing.T) {
+	c := NewTestAPIClient()
+	assert.True(t, c.lastCachedClient.IsZero())
+
+	// Without active connection, InvalidateCache returns connection error.
+	err := c.InvalidateCache()
+	assert.Error(t, err)
+	assert.False(t, c.lastCachedClient.IsZero())
+
+	firstInvalidate := c.lastCachedClient
+	time.Sleep(10 * time.Millisecond)
+
+	err = c.InvalidateCache()
+	assert.Error(t, err)
+	assert.True(t, c.lastCachedClient.After(firstInvalidate))
+}
