@@ -18,7 +18,11 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
+	"github.com/derailed/tview"
 )
+
+// fixedRows is the number of fixed header rows in a table (see ui.Table.Init).
+const fixedRows = 1
 
 // Table represents a table viewer.
 type Table struct {
@@ -62,6 +66,7 @@ func (t *Table) Init(ctx context.Context) (err error) {
 		}
 	}
 	t.SetInputCapture(t.keyboard)
+	t.SetMouseCapture(t.mouse)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(t.app.Config.K9s.RefreshDuration())
 	t.CmdBuff().AddListener(t)
@@ -124,6 +129,41 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return evt
+}
+
+// mouse maps a double-click on a data row to the Enter key action. The first
+// click of the double-click has already selected the row.
+func (t *Table) mouse(action tview.MouseAction, evt *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	if action != tview.MouseLeftDoubleClick || evt == nil {
+		return action, evt
+	}
+	if x, y := evt.Position(); t.rowAt(x, y) > 0 {
+		t.keyboard(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
+	}
+
+	return action, evt
+}
+
+// rowAt returns the table row under the given screen position or -1 if the
+// position is outside of the table or past the last row.
+func (t *Table) rowAt(x, y int) int {
+	if !t.InRect(x, y) {
+		return -1
+	}
+	_, iy, _, _ := t.GetInnerRect()
+	row := y - iy
+	if row < 0 {
+		return -1
+	}
+	if row >= fixedRows {
+		offset, _ := t.GetOffset()
+		row += offset
+	}
+	if row >= t.GetRowCount() {
+		return -1
+	}
+
+	return row
 }
 
 // Name returns the table name.
