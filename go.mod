@@ -16,7 +16,7 @@ require (
 	github.com/fvbommel/sortorder v1.2.1
 	github.com/go-errors/errors v1.5.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/itchyny/gojq v0.12.19
+	github.com/itchyny/gojq v0.12.20
 	github.com/karrick/godirwalk v1.17.0
 	github.com/lmittmann/tint v1.2.1
 	github.com/lucasb-eyer/go-colorful v1.4.1
@@ -239,7 +239,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/in-toto/attestation v1.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/itchyny/timefmt-go v0.1.8 // indirect
+	github.com/itchyny/timefmt-go v0.1.9 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
