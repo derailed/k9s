@@ -23,6 +23,7 @@ const (
 	labelFlag      = "-l"
 	fuzzyFlag      = "-f"
 	contextFlag    = "@"
+	sortFlag       = "sort:" // internal-only: sort:<COLUMN>:<asc|desc>
 )
 
 var (
