@@ -4,6 +4,7 @@
 package render_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/derailed/k9s/internal/model1"
@@ -178,6 +179,32 @@ func TestPodRender(t *testing.T) {
 	assert.Equal(t, e, r.Fields[:21])
 	assert.False(t, r.Age.IsZero())
 	assert.Equal(t, pom.Raw.GetCreationTimestamp().Time, r.Age)
+}
+
+func TestPodRenderShowsAdditionalContainerStatusWithoutMarkingPodUnhealthy(t *testing.T) {
+	pom := render.PodWithMetrics{Raw: load(t, "po")}
+	status := pom.Raw.Object["status"].(map[string]any)
+	statuses := status["containerStatuses"].([]any)
+	injectedStatus := map[string]any{
+		"name":         "[logtail-ds-supernode]logtail",
+		"ready":        true,
+		"restartCount": int64(0),
+		"state": map[string]any{
+			"running": map[string]any{},
+		},
+	}
+	status["containerStatuses"] = append(statuses, injectedStatus)
+
+	po := render.NewPod()
+	r := model1.NewRow(14)
+	require.NoError(t, po.Render(&pom, "", &r))
+
+	assert.Equal(t, "2/1", r.Fields[4])
+	re := model1.RowEvent{Kind: model1.EventAdd, Row: r}
+	assert.Equal(t, model1.StdColor, po.ColorerFunc()("", po.Header(""), &re))
+
+	injectedStatus["ready"] = false
+	assert.NoError(t, po.Healthy(context.Background(), &pom))
 }
 
 func BenchmarkPodRender(b *testing.B) {
