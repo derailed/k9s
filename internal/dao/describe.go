@@ -4,10 +4,14 @@
 package dao
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/slogs"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/kubectl/pkg/describe"
 )
 
@@ -54,5 +58,54 @@ func Describe(c client.Connection, gvr *client.GVR, path string) (string, error)
 		return "", err
 	}
 
-	return d.Describe(ns, n, describe.DescriberSettings{ShowEvents: true})
+	text, err := d.Describe(ns, n, describe.DescriberSettings{ShowEvents: false})
+	if err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), c.Config().CallTimeout())
+	defer cancel()
+	events, err := describeResourceEvents(ctx, c, gvr, ns, n, gvk.Kind)
+	if err != nil {
+		// Keep the resource description available when events cannot be read.
+		slog.Warn("Unable to describe events", slogs.Error, err)
+		return text + "Events: <unavailable>\n", nil
+	}
+	return text + events, nil
+}
+
+func describeResourceEvents(ctx context.Context, c client.Connection, gvr *client.GVR, ns, name, kind string) (string, error) {
+	dynamic, err := c.DynDial()
+	if err != nil {
+		return "", err
+	}
+	obj, err := dynamic.Resource(gvr.GVR()).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	kube, err := c.Dial()
+	if err != nil {
+		return "", err
+	}
+	uid := string(obj.GetUID())
+	events := kube.CoreV1().Events(ns)
+	selector := fields.Set{
+		"involvedObject.name":      name,
+		"involvedObject.namespace": ns,
+		"involvedObject.kind":      kind,
+		"involvedObject.uid":       uid,
+	}.AsSelector()
+	opts := metav1.ListOptions{FieldSelector: selector.String(), Limit: 500}
+	var items []v1.Event
+	for {
+		list, err := events.List(ctx, opts)
+		if err != nil {
+			return "", err
+		}
+		items = append(items, list.Items...)
+		if list.Continue == "" {
+			break
+		}
+		opts.Continue = list.Continue
+	}
+	return formatDescribeEvents(items), nil
 }
