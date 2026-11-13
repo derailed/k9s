@@ -162,6 +162,21 @@ func (t *Tree) ToYAML(ctx context.Context, gvr *client.GVR, path string) (string
 	return desc.ToYAML(path, false)
 }
 
+// ToKYAML returns a resource kyaml.
+func (t *Tree) ToKYAML(ctx context.Context, gvr *client.GVR, path string) (string, error) {
+	meta, err := t.getMeta(ctx, gvr)
+	if err != nil {
+		return "", err
+	}
+
+	desc, ok := meta.DAO.(dao.Describer)
+	if !ok {
+		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
+	}
+
+	return desc.ToKYAML(path, false)
+}
+
 func (t *Tree) updater(ctx context.Context) {
 	defer slog.Debug("Tree-model canceled", slogs.GVR, t.gvr)
 
