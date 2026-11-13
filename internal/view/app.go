@@ -56,6 +56,7 @@ type App struct {
 	showHeader    bool
 	showLogo      bool
 	showCrumbs    bool
+	termTitle     *termTitle
 }
 
 // NewApp returns a K9s app instance.
@@ -101,6 +102,8 @@ func (a *App) Init(version string, _ int) error {
 	}
 	a.Content.AddListener(a.Crumbs())
 	a.Content.AddListener(a.Menu())
+	a.termTitle = newTermTitle(a)
+	a.Content.AddListener(a.termTitle)
 
 	a.App.Init()
 	a.SetInputCapture(a.keyboard)
@@ -542,6 +545,7 @@ func (a *App) BailOut(exitCode int) {
 
 	a.stopImgScanner()
 	a.factory.Terminate()
+	a.termTitle.restore()
 	a.App.BailOut(exitCode)
 }
 
@@ -566,6 +570,7 @@ func (a *App) Run() error {
 		return err
 	}
 	a.SetRunning(true)
+	defer a.termTitle.restore()
 	if err := a.Application.Run(); err != nil {
 		return err
 	}

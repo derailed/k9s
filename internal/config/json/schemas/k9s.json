@@ -44,6 +44,7 @@
             "logo": {"type": "string"},
             "defaultsToFullScreen": {"type": "boolean"},
             "useFullGVRTitle": {"type": "boolean"},
+            "terminalTitle": {"type": "boolean"},
             "invert": {"type": "boolean"}
           }
         },
