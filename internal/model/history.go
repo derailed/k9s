@@ -83,10 +83,10 @@ func (h *History) Back() (string, bool) {
 
 // Forward moves the history position index forward by one
 func (h *History) Forward() (string, bool) {
-	h.currentIdx++
-	if h.Empty() || h.currentIdx >= len(h.commands) {
+	if h.Empty() || h.currentIdx >= len(h.commands)-1 {
 		return "", false
 	}
+	h.currentIdx++
 
 	return h.at(h.currentIdx)
 }
