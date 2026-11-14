@@ -318,6 +318,9 @@ func (c *Command) viewMetaFor(p *cmd.Interpreter) (*client.GVR, *MetaViewer, *cm
 	}
 	gvr, ok := c.alias.Resolve(p)
 	if !ok {
+		if c.app != nil && c.app.Conn() != nil && !c.app.Conn().ConnectionOK() {
+			return client.NoGVR, nil, nil, fmt.Errorf("unable to connect to context %q", c.app.Config.ActiveContextName())
+		}
 		return client.NoGVR, nil, nil, fmt.Errorf("`%s` command not found", p.Cmd())
 	}
 
