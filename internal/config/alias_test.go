@@ -137,6 +137,33 @@ func TestAliasesLoadFileInvalidYAML(t *testing.T) {
 	}
 }
 
+func TestAliasesLoadFileNilEntry(t *testing.T) {
+	f := path.Join(t.TempDir(), "aliases.yaml")
+	require.NoError(t, os.WriteFile(f, []byte("aliases:\n  pe:\n"), 0o600))
+
+	a := testAliases()
+	require.NoError(t, a.LoadFile(f))
+
+	_, ok := a.Get("pe")
+	assert.False(t, ok, "nil entry should be skipped")
+	_, ok = a.Get("a1")
+	assert.True(t, ok, "existing aliases should be kept")
+}
+
+func TestAliasesLoadFileEmptyMapKeepsAliases(t *testing.T) {
+	f := path.Join(t.TempDir(), "aliases.yaml")
+	require.NoError(t, os.WriteFile(f, []byte("aliases:\n  # nothing\n"), 0o600))
+
+	a := testAliases()
+	require.NoError(t, a.LoadFile(f))
+
+	_, ok := a.Get("a1")
+	assert.True(t, ok, "nil map should not drop existing aliases")
+	a.Define(gvr1, "a4")
+	_, ok = a.Get("a4")
+	assert.True(t, ok)
+}
+
 func TestAliasesSave(t *testing.T) {
 	require.NoError(t, data.EnsureFullPath("/tmp/test-aliases", data.DefaultDirMod))
 	defer require.NoError(t, os.RemoveAll("/tmp/test-aliases"))

@@ -64,7 +64,7 @@ func NewThreshold() Threshold {
 func (t Threshold) Validate() Threshold {
 	for _, k := range []string{CPU, MEM} {
 		v, ok := t[k]
-		if !ok {
+		if !ok || v == nil {
 			t[k] = NewSeverity()
 		} else {
 			v.Validate()
@@ -77,7 +77,7 @@ func (t Threshold) Validate() Threshold {
 // LevelFor returns a defcon level for the current state.
 func (t Threshold) LevelFor(k string, v int) SeverityLevel {
 	s, ok := t[k]
-	if !ok || v < 0 || v > 100 {
+	if !ok || s == nil || v < 0 || v > 100 {
 		return SeverityLow
 	}
 	if v >= s.Critical {
