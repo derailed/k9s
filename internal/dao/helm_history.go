@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/render/helm"
-	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v4/pkg/action"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -50,7 +50,11 @@ func (h *HelmHistory) List(ctx context.Context, _ string) ([]runtime.Object, err
 
 	oo := make([]runtime.Object, 0, len(hh))
 	for _, r := range hh {
-		oo = append(oo, helm.ReleaseRes{Release: r})
+		res, err := helm.NewReleaseRes(r)
+		if err != nil {
+			return nil, err
+		}
+		oo = append(oo, res)
 	}
 
 	return oo, nil
@@ -80,7 +84,7 @@ func (h *HelmHistory) Get(_ context.Context, path string) (runtime.Object, error
 		return nil, err
 	}
 
-	return helm.ReleaseRes{Release: resp}, nil
+	return helm.NewReleaseRes(resp)
 }
 
 // Describe returns the chart notes.

@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/render/helm"
 	"github.com/derailed/k9s/internal/slogs"
-	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v4/pkg/action"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -48,7 +48,11 @@ func (h *HelmChart) List(_ context.Context, ns string) ([]runtime.Object, error)
 
 	oo := make([]runtime.Object, 0, len(rr))
 	for _, r := range rr {
-		oo = append(oo, helm.ReleaseRes{Release: r})
+		res, err := helm.NewReleaseRes(r)
+		if err != nil {
+			return nil, err
+		}
+		oo = append(oo, res)
 	}
 
 	return oo, nil
@@ -66,7 +70,7 @@ func (h *HelmChart) Get(_ context.Context, path string) (runtime.Object, error) 
 		return nil, err
 	}
 
-	return helm.ReleaseRes{Release: resp}, nil
+	return helm.NewReleaseRes(resp)
 }
 
 // GetValues returns values for a release
@@ -97,8 +101,12 @@ func (h *HelmChart) Describe(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	rel, err := helm.NewReleaseRes(resp)
+	if err != nil {
+		return "", err
+	}
 
-	return resp.Info.Notes, nil
+	return rel.Release.Info.Notes, nil
 }
 
 // ToYAML returns the chart manifest.
@@ -112,8 +120,12 @@ func (h *HelmChart) ToYAML(path string, _ bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	rel, err := helm.NewReleaseRes(resp)
+	if err != nil {
+		return "", err
+	}
 
-	return resp.Manifest, nil
+	return rel.Release.Manifest, nil
 }
 
 // Delete uninstall a HelmChart.
@@ -158,15 +170,12 @@ func ensureHelmConfig(flags *genericclioptions.ConfigFlags, ns string) (*action.
 		ImpersonateGroup: flags.ImpersonateGroup,
 		WrapConfigFn:     flags.WrapConfigFn,
 	}
-	cfg := new(action.Configuration)
-	err := cfg.Init(settings, ns, os.Getenv("HELM_DRIVER"), helmLogger)
+	cfg := action.NewConfiguration(action.ConfigurationSetLogger(helmSlogHandler()))
+	err := cfg.Init(settings, ns, os.Getenv("HELM_DRIVER"))
 
 	return cfg, err
 }
 
-func helmLogger(fmat string, args ...any) {
-	slog.Debug("Log",
-		slogs.Log, fmt.Sprintf(fmat, args...),
-		slogs.Subsys, "helm",
-	)
+func helmSlogHandler() slog.Handler {
+	return slog.With(slogs.Subsys, "helm").Handler()
 }
