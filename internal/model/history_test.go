@@ -199,3 +199,28 @@ func TestHistoryForward(t *testing.T) {
 		})
 	}
 }
+
+func TestHistoryForwardAtEndKeepsPosition(t *testing.T) {
+	for _, attempts := range []int{1, 3} {
+		t.Run(fmt.Sprintf("attempts-%d", attempts), func(t *testing.T) {
+			h := model.NewHistory(3)
+			h.Push("pods")
+			h.Push("services")
+			h.Push("deployments")
+
+			for range attempts {
+				cmd, ok := h.Forward()
+				assert.False(t, ok)
+				assert.Empty(t, cmd)
+			}
+
+			cmd, ok := h.Back()
+			assert.True(t, ok)
+			assert.Equal(t, "services", cmd)
+
+			cmd, ok = h.Forward()
+			assert.True(t, ok)
+			assert.Equal(t, "deployments", cmd)
+		})
+	}
+}
