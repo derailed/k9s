@@ -4,7 +4,7 @@ plugins:
 #
 # Since DaemonSets cannot be scaled directly using replicas (unlike Deployments or StatefulSets),
 # and the number of Pods created by a DaemonSet is always derived from the number of eligible nodes,
-# adding a artificial nodeSelector key to the template will have a scaling similiar effect, because no nodes
+# adding an artificial nodeSelector key to the template will have a scaling similar effect, because no nodes
 # are expected to have this label, leading to the DaemonSet controller to terminate all existing Pods.
 #
 # Removing the selector restores normal scheduling behavior.
