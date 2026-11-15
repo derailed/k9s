@@ -1,0 +1,30 @@
+# Draw the selected workload, Service, Pod, Job or Ingress with behold, a picture of
+# that object with what it references and what references it, opened in a browser.
+# Requires the kubectl-behold plugin (kubectl krew install behold) and Node 20 or newer.
+# https://github.com/INTENTIUS/behold/tree/main/surfaces/kubectl-behold
+# Shift-B is also used by kubectl-get-in-shell.yaml; change shortCut if you load both.
+plugins:
+  behold:
+    shortCut: Shift-B
+    description: "Draw with behold (kubectl behold)"
+    scopes:
+      - deployments
+      - statefulsets
+      - daemonsets
+      - replicasets
+      - services
+      - pods
+      - jobs
+      - cronjobs
+      - ingresses
+    command: kubectl
+    background: true
+    args:
+      - behold
+      - $RESOURCE_NAME/$NAME
+      - -n
+      - $NAMESPACE
+      - --context
+      - $CONTEXT
+      - --kubeconfig
+      - $KUBECONFIG
