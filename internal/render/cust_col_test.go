@@ -228,6 +228,18 @@ func TestCustCol_parse(t *testing.T) {
 			},
 		},
 
+		"spec-ending-in-attr-letters": {
+			s: "HOST:.metadata.labels.HOST",
+			e: colDef{
+				name: "HOST",
+				idx:  -1,
+				spec: "{.metadata.labels.HOST}",
+				colAttrs: colAttrs{
+					align: tview.AlignLeft,
+				},
+			},
+		},
+
 		"partial-no-spec-no-wide": {
 			s: "fred|T",
 			e: colDef{
