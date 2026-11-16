@@ -523,6 +523,38 @@ func TestLess(t *testing.T) {
 			v2:         "1Ti",
 			e:          true,
 		},
+		"capacity-millis": {
+			isCapacity: true,
+			id1:        "id1",
+			id2:        "id2",
+			v1:         "500m",
+			v2:         "100m",
+			e:          false,
+		},
+		"capacity-millis-asc": {
+			isCapacity: true,
+			id1:        "id2",
+			id2:        "id1",
+			v1:         "100m",
+			v2:         "500m",
+			e:          true,
+		},
+		"capacity-fraction": {
+			isCapacity: true,
+			id1:        "id1",
+			id2:        "id2",
+			v1:         "0.5",
+			v2:         "0.25",
+			e:          false,
+		},
+		"capacity-placeholder-last": {
+			isCapacity: true,
+			id1:        "id1",
+			id2:        "id2",
+			v1:         "n/a",
+			v2:         "100m",
+			e:          false,
+		},
 	}
 
 	for k := range uu {
