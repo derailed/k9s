@@ -56,3 +56,47 @@ func TestJobRenderValid(t *testing.T) {
 		})
 	}
 }
+
+func TestJobRenderSelector(t *testing.T) {
+	uu := map[string]struct {
+		selector map[string]any
+		e        string
+	}{
+		"labels": {
+			selector: map[string]any{
+				"matchLabels": map[string]any{"controller-uid": "fred"},
+			},
+			e: "controller-uid=fred",
+		},
+		"expressions": {
+			selector: map[string]any{
+				"matchExpressions": []any{
+					map[string]any{"key": "tier", "operator": "In", "values": []any{"a", "b"}},
+				},
+			},
+			e: "tier in (a,b)",
+		},
+		"labels-and-expressions": {
+			selector: map[string]any{
+				"matchLabels": map[string]any{"controller-uid": "fred"},
+				"matchExpressions": []any{
+					map[string]any{"key": "tier", "operator": "NotIn", "values": []any{"c"}},
+					map[string]any{"key": "canary", "operator": "DoesNotExist"},
+				},
+			},
+			e: "!canary,controller-uid=fred,tier notin (c)",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			o := load(t, "job")
+			o.Object["spec"].(map[string]any)["selector"] = u.selector
+
+			c := render.Job{}
+			r := model1.NewRow(10)
+			require.NoError(t, c.Render(o, "", &r))
+			assert.Equal(t, u.e, r.Fields[5])
+		})
+	}
+}

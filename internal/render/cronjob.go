@@ -101,19 +101,8 @@ func jobSelector(spec *batchv1.JobSpec) string {
 	if spec.Selector == nil {
 		return MissingValue
 	}
-	if len(spec.Selector.MatchLabels) > 0 {
-		return mapToStr(spec.Selector.MatchLabels)
-	}
-	if len(spec.Selector.MatchExpressions) == 0 {
-		return ""
-	}
 
-	ss := make([]string, 0, len(spec.Selector.MatchExpressions))
-	for _, e := range spec.Selector.MatchExpressions {
-		ss = append(ss, e.String())
-	}
-
-	return strings.Join(ss, " ")
+	return asSelector(spec.Selector)
 }
 
 func podContainerNames(spec *v1.PodSpec, includeInit bool) string {
