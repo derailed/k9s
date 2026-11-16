@@ -1,0 +1,65 @@
+name: Publish Docker image
+
+# Builds the linux/amd64 + linux/arm64 image with `make pushx` and pushes it as
+# both the version tag and latest. Runs when a release tag is pushed. A manual
+# run publishes the selected branch under the given version.
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to publish (e.g. v0.51.0)"
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: docker-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'derailed/k9s'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      IMG: derailed/k9s
+      VERSION: ${{ inputs.version || github.ref_name }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The binary's version comes from the Makefile, not from the image tag,
+      # so refuse to publish a tag that doesn't match what gets built.
+      - name: Validate version
+        run: |
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "bad version tag"; exit 1; }
+          built="$(sed -n 's/^VERSION[[:space:]]*?=[[:space:]]*//p' Makefile)"
+          [[ "$built" == "$VERSION" ]] || { echo "Makefile VERSION is $built, not $VERSION"; exit 1; }
+
+      # The final image stage runs on the target platform, so arm64 needs emulation.
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push (all platforms)
+        run: make pushx VERSION="$VERSION"
+
+      - name: Verify
+        run: |
+          docker buildx imagetools inspect "$IMG:$VERSION"
+          docker buildx imagetools inspect "$IMG:latest"

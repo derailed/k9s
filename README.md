@@ -259,6 +259,9 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
   make imgx BUILD_PLATFORMS=linux/amd64,linux/arm64 IMG_NAME=your-org/k9s VERSION=v0.0.1
   ```
 
+  Release images are published by the `Publish Docker image` workflow, which
+  runs `make pushx` when a `v*` tag is pushed.
+
 ---
 
 ## PreFlight Checks
