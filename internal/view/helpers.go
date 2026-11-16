@@ -45,10 +45,14 @@ func aliases(m *v1.APIResource, aa sets.Set[string]) sets.Set[string] {
 	return ss
 }
 
-var bracketRX = regexp.MustCompile(`\[(.+?)\[\]`)
+// bracketRX matches tags escaped by tview.Escape, i.e. `[tag[]` or `[tag[[]`.
+// It mirrors the pattern tview uses to unescape tags, so text that was escaped
+// for display can be restored exactly, without touching literal brackets.
+var bracketRX = regexp.MustCompile(`\[([a-zA-Z0-9_,;: \-\."#]+)\[(\[*)\]`)
 
+// sanitizeEsc reverts tview.Escape on text read back from a view.
 func sanitizeEsc(s string) string {
-	return bracketRX.ReplaceAllString(s, `[$1]`)
+	return bracketRX.ReplaceAllString(s, `[$1$2]`)
 }
 
 func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {

@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
+	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -358,11 +359,41 @@ func Test_sanitizeEsc(t *testing.T) {
 			s: "[[:digit:[]]+[[:alpha:[]]+[[:space:[]]+",
 			e: "[[:digit:]]+[[:alpha:]]+[[:space:]]+",
 		},
+		"quoted-keys-same-line": {
+			s: `set(resource.attributes["example"[], attributes["x"[])`,
+			e: `set(resource.attributes["example"], attributes["x"])`,
+		},
+		"literal-empty-brackets-after-brackets": {
+			s: `{"containers":[{"name":"nginx"}],"volumes":[]}`,
+			e: `{"containers":[{"name":"nginx"}],"volumes":[]}`,
+		},
+		"escaped-literal-tag": {
+			s: "[x[[]",
+			e: "[x[]",
+		},
 	}
 
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, sanitizeEsc(u.s))
+		})
+	}
+}
+
+func Test_sanitizeEscRoundTrip(t *testing.T) {
+	uu := []string{
+		`resource.attributes["example"]`,
+		`set(resource.attributes["example"], attributes["x"])`,
+		`{"args":["--v"],"env":[{"name":"A"}],"volumes":[]}`,
+		`[[:space:]]+count:[[:space:]]*`,
+		`a[$b] c["d"] e[]`,
+		`literal [x[] tag`,
+		`args: []`,
+	}
+
+	for _, s := range uu {
+		t.Run(s, func(t *testing.T) {
+			assert.Equal(t, s, sanitizeEsc(tview.Escape(s)))
 		})
 	}
 }
