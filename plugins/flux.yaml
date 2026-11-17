@@ -1,4 +1,4 @@
-# $HOME/.k9s/plugin.yml
+# $HOME/.k9s/plugins.yml
 # move selected line to chosen resource in K9s, then:
 # Shift-T (with confirmation) to toggle helm releases or kustomizations suspend and resume
 # Shift-R (no confirmation) to reconcile a git source or a helm release or a kustomization
@@ -67,14 +67,17 @@ plugins:
       - name: force
         label: Force install/upgrade
         type: bool
+        required: true
         default: false
       - name: reset
         label: Reset failure count
         type: bool
+        required: true
         default: false
       - name: source
         label: Reconcile source as well
         type: bool
+        required: true
         default: false
     args:
       - -c
@@ -131,6 +134,7 @@ plugins:
       - name: source
         label: Reconcile source as well
         type: bool
+        required: true
         default: false
     args:
       - -c
@@ -230,7 +234,7 @@ plugins:
     confirm: false
     description: Flux reconcile
     scopes:
-      - resources
+      - resourcesetinputprovider
     command: bash
     background: false
     args:
