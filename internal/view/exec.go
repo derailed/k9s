@@ -628,8 +628,9 @@ func pipe(_ context.Context, opts *shellOpts, statusChan chan<- string, w, e *by
 	return cmds[len(cmds)-1].Wait()
 }
 
-// contextArgs selects the active context for kubectl. The in-cluster context
-// exists only inside k9s, so kubectl must use its own in-cluster fallback.
+// contextArgs selects the active context for kubectl. It is the only place
+// that adds --context to a kubectl command. The in-cluster context exists
+// only inside k9s, so kubectl must use its own in-cluster fallback.
 func contextArgs(a *App) []string {
 	if a.Conn().Config().InCluster() {
 		return nil

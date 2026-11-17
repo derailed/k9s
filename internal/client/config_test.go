@@ -326,6 +326,26 @@ func TestConfigInCluster(t *testing.T) {
 	assert.True(t, cfg.InCluster())
 }
 
+func TestConfigInClusterSwitchContext(t *testing.T) {
+	setupInCluster(t)
+	cfg := client.NewConfig(genericclioptions.NewConfigFlags(false))
+
+	require.NoError(t, cfg.SwitchContext(client.InClusterContext))
+	require.Error(t, cfg.SwitchContext("no-such-context"))
+
+	// The client rebuilds its config from the switched flags.
+	cfg = client.NewConfig(cfg.Flags())
+	assert.True(t, cfg.InCluster())
+
+	ctx, err := cfg.CurrentContextName()
+	require.NoError(t, err)
+	assert.Equal(t, client.InClusterContext, ctx)
+
+	rc, err := cfg.RESTConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "https://10.96.0.1:443", rc.Host)
+}
+
 func TestConfigInClusterKubeConfigWins(t *testing.T) {
 	setupInCluster(t)
 	flags := genericclioptions.NewConfigFlags(false)
