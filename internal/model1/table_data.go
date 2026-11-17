@@ -84,11 +84,11 @@ func NewTableDataFromTable(td *TableData) *TableData {
 	return t
 }
 
-func (t *TableData) AddRow(re RowEvent) {
+func (t *TableData) AddRow(re *RowEvent) {
 	t.rowEvents.Add(re)
 }
 
-func (t *TableData) SetRow(idx int, re RowEvent) {
+func (t *TableData) SetRow(idx int, re *RowEvent) {
 	t.rowEvents.Set(idx, re)
 }
 
@@ -105,7 +105,7 @@ func (t *TableData) RowsRange(f ReRangeFn) {
 }
 
 func (t *TableData) Sort(sc SortColumn) {
-	col, idx := t.HeadCol(sc.Name, false)
+	col, idx := t.HeadCol(sc.Name, true)
 	if idx < 0 {
 		return
 	}
@@ -115,6 +115,7 @@ func (t *TableData) Sort(sc SortColumn) {
 		col.Time,
 		col.MX,
 		col.Capacity,
+		sc.Name == ageCol,
 		sc.ASC,
 	)
 }
@@ -150,10 +151,10 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 		return td
 	}
 	if f, ok := internal.IsFuzzySelector(f.Filter); ok {
-		td.rowEvents = t.fuzzyFilter(f)
+		td.rowEvents = td.fuzzyFilter(f)
 		return td
 	}
-	rr, err := t.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
+	rr, err := td.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
 	if err == nil {
 		td.rowEvents = rr
 	} else {
@@ -188,7 +189,7 @@ func (t *TableData) rxFilter(q string, inverse bool) (*RowEvents, error) {
 		}
 		match := rx.MatchString(strings.Join(ff, spacer))
 		if (inverse && !match) || (!inverse && match) {
-			rr.Add(re)
+			rr.Add(&re)
 		}
 
 		return true
@@ -211,7 +212,7 @@ func (t *TableData) fuzzyFilter(q string) *RowEvents {
 		if re, ok := t.rowEvents.At(m.Index); !ok {
 			slog.Error("Unable to find event for index in fuzzfilter", slogs.Index, m.Index)
 		} else {
-			rr.Add(re)
+			rr.Add(&re)
 		}
 	}
 
@@ -226,7 +227,7 @@ func (t *TableData) filterToast() *RowEvents {
 	}
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
 		if re.Row.Fields[idx] != "" {
-			rr.Add(re)
+			rr.Add(&re)
 		}
 		return true
 	})
@@ -430,7 +431,8 @@ func (t *TableData) Update(rows Rows) {
 	for _, row := range rows {
 		kk.Insert(row.ID)
 		if empty {
-			t.rowEvents.Add(NewRowEvent(EventAdd, row))
+			re := NewRowEvent(EventAdd, row)
+			t.rowEvents.Add(&re)
 			continue
 		}
 		if index, ok := t.rowEvents.FindIndex(row.ID); ok {
@@ -441,13 +443,15 @@ func (t *TableData) Update(rows Rows) {
 			delta := NewDeltaRow(ev.Row, row, t.header)
 			if delta.IsBlank() {
 				ev.Kind, ev.Deltas, ev.Row = EventUnchanged, blankDelta, row
-				t.rowEvents.Set(index, ev)
+				t.rowEvents.Set(index, &ev)
 			} else {
-				t.rowEvents.Set(index, NewRowEventWithDeltas(row, delta))
+				re := NewRowEventWithDeltas(row, delta)
+				t.rowEvents.Set(index, &re)
 			}
 			continue
 		}
-		t.rowEvents.Add(NewRowEvent(EventAdd, row))
+		re := NewRowEvent(EventAdd, row)
+		t.rowEvents.Add(&re)
 	}
 	t.mx.Unlock()
 
@@ -461,24 +465,17 @@ func (t *TableData) Delete(newKeys sets.Set[string]) {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 
-	victims := sets.New[string]()
+	victims := make([]string, 0)
 	t.rowEvents.Range(func(_ int, e RowEvent) bool {
 		if newKeys.Has(e.Row.ID) {
 			delete(newKeys, e.Row.ID)
 		} else {
-			victims.Insert(e.Row.ID)
+			victims = append(victims, e.Row.ID)
 		}
 		return true
 	})
 
-	for _, id := range victims.UnsortedList() {
-		if err := t.rowEvents.Delete(id); err != nil {
-			slog.Error("Table delete failed",
-				slogs.Error, err,
-				slogs.Message, id,
-			)
-		}
-	}
+	t.rowEvents.DeleteBatch(victims)
 }
 
 // Diff checks if two tables are equal.

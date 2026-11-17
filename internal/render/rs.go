@@ -32,17 +32,17 @@ func (r ReplicaSet) Header(_ string) model1.Header {
 }
 
 var defaultRSHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
-	model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
-	model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
-	model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
-	model1.HeaderColumn{Name: "CONTAINERS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "IMAGES", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "SELECTOR", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colVS, Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: colDesired, Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: colCurrent, Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: colReady, Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: colContainers, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colImages, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colSelector, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Render renders a K8s resource to screen.
@@ -58,12 +58,9 @@ func (r ReplicaSet) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := r.specs.realize(raw, defaultRSHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (r ReplicaSet) defaultRow(raw *unstructured.Unstructured, row *model1.Row) error {
@@ -95,6 +92,7 @@ func (r ReplicaSet) defaultRow(raw *unstructured.Unstructured, row *model1.Row) 
 		AsStatus(r.diagnose(&rs)),
 		ToAge(rs.GetCreationTimestamp()),
 	}
+	stashAge(row, rs.GetCreationTimestamp())
 
 	return nil
 }
@@ -105,6 +103,10 @@ func (ReplicaSet) diagnose(rs *appsv1.ReplicaSet) error {
 			return fmt.Errorf("did not phase down correctly expecting 0 replicas but got %d", rs.Status.ReadyReplicas)
 		}
 		return fmt.Errorf("mismatch desired(%d) vs ready(%d)", rs.Status.Replicas, rs.Status.ReadyReplicas)
+	}
+	// Pods that were never created leave status at 0, so compare against spec.
+	if want := *rs.Spec.Replicas; rs.Status.ReadyReplicas < want {
+		return fmt.Errorf("want %d replicas got %d ready", want, rs.Status.ReadyReplicas)
 	}
 
 	return nil

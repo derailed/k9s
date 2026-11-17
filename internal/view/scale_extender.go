@@ -163,7 +163,7 @@ func (s *ScaleExtender) makeScaleForm(fqns []string) (*tview.Form, error) {
 		SetLabelColor(styles.LabelFgColor.Color()).
 		SetFieldTextColor(styles.FieldFgColor.Color())
 
-	f.AddInputField("Replicas:", factor, 4, func(textToCheck string, _ rune) bool {
+	f.AddInputField("Replicas:", factor, 0, func(textToCheck string, _ rune) bool {
 		_, err := strconv.Atoi(textToCheck)
 		return err == nil
 	}, func(changed string) {

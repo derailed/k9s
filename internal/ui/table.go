@@ -208,7 +208,7 @@ func (t *Table) moveSelectedColumn(delta int) {
 	}
 	t.mx.Unlock()
 
-	t.Refresh()
+	t.refreshHeaders(data)
 }
 
 // SelectNextColumn moves the column selection to the right.
@@ -471,20 +471,7 @@ func (t *Table) shouldExcludeColumn(h model1.HeaderColumn) bool {
 
 func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.Clear()
-	fg := t.styles.Table().Header.FgColor.Color()
-	bg := t.styles.Table().Header.BgColor.Color()
-
-	var col int
-	for _, h := range cdata.Header() {
-		if t.shouldExcludeColumn(h) {
-			continue
-		}
-		t.AddHeaderCell(col, h)
-		c := t.GetCell(0, col)
-		c.SetBackgroundColor(bg)
-		c.SetTextColor(fg)
-		col++
-	}
+	t.refreshHeaders(cdata)
 	cdata.Sort(t.getSortCol())
 
 	pads := make(MaxyPad, cdata.HeaderCount())
@@ -495,7 +482,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 			slog.Error("Unable to find original row event", slogs.RowID, re.Row.ID)
 			return true
 		}
-		t.buildRow(row+1, re, ore, cdata.Header(), pads)
+		t.buildRow(row+1, &re, &ore, cdata.Header(), pads)
 
 		return true
 	})
@@ -504,7 +491,7 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 	t.UpdateTitle()
 }
 
-func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads MaxyPad) {
+func (t *Table) buildRow(r int, re, ore *model1.RowEvent, h model1.Header, pads MaxyPad) {
 	color := model1.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn
@@ -547,7 +534,7 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 		cell := tview.NewTableCell(field)
 		cell.SetExpansion(1)
 		cell.SetAlign(h[c].Align)
-		fgColor := color(ns, h, &re)
+		fgColor := color(ns, h, re)
 		cell.SetTextColor(fgColor)
 		if marked {
 			cell.SetTextColor(t.styles.Table().MarkColor.Color())
@@ -639,6 +626,26 @@ func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
 	c.SetSelectable(false)
 	c.SetAlign(h.Align)
 	t.SetCell(0, col, c)
+}
+
+// refreshHeaders updates only the header row cells without rebuilding the entire table.
+func (t *Table) refreshHeaders(data *model1.TableData) {
+	if data == nil || data.HeaderCount() == 0 {
+		return
+	}
+	fg := t.styles.Table().Header.FgColor.Color()
+	bg := t.styles.Table().Header.BgColor.Color()
+	var col int
+	for _, h := range data.Header() {
+		if t.shouldExcludeColumn(h) {
+			continue
+		}
+		t.AddHeaderCell(col, h)
+		c := t.GetCell(0, col)
+		c.SetBackgroundColor(bg)
+		c.SetTextColor(fg)
+		col++
+	}
 }
 
 func (t *Table) filtered(data *model1.TableData) *model1.TableData {

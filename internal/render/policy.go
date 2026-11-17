@@ -45,13 +45,13 @@ func (Policy) ColorerFunc() model1.ColorerFunc {
 // Header returns a header row.
 func (Policy) Header(string) model1.Header {
 	h := model1.Header{
-		model1.HeaderColumn{Name: "NAMESPACE"},
-		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: colNamespace},
+		model1.HeaderColumn{Name: colName},
 		model1.HeaderColumn{Name: "API-GROUP"},
 		model1.HeaderColumn{Name: "BINDING"},
 	}
 	h = append(h, rbacVerbHeader()...)
-	h = append(h, model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}})
+	h = append(h, model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}})
 
 	return h
 }

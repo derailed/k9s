@@ -41,7 +41,10 @@
                 }
               },
               "required": ["name", "type"],
-              "if": { "required": ["default"] },
+              "if": {
+                "required": ["default"],
+                "properties": { "type": { "enum": ["string", "number", "dropdown"] } }
+              },
               "then": {
                 "properties": { "required": { "const": true } },
                 "required": ["required"]

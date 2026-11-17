@@ -43,6 +43,34 @@ func Test_defaultHeader(t *testing.T) {
 			},
 		},
 
+		"age-case-insensitive": {
+			cdefs: []metav1.TableColumnDefinition{
+				{Name: "Fred"},
+				{Name: "Blee"},
+				{Name: "age"},
+			},
+			e: model1.Header{
+				model1.HeaderColumn{Name: "FRED"},
+				model1.HeaderColumn{Name: "BLEE"},
+				model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+			},
+		},
+
+		"time-cols-case-insensitive": {
+			cdefs: []metav1.TableColumnDefinition{
+				{Name: "LAST SEEN"},
+				{Name: "Fred"},
+				{Name: "AGE"},
+				{Name: "first seen"},
+			},
+			e: model1.Header{
+				model1.HeaderColumn{Name: "LAST SEEN", Attrs: model1.Attrs{Time: true}},
+				model1.HeaderColumn{Name: "FRED"},
+				model1.HeaderColumn{Name: "FIRST SEEN", Attrs: model1.Attrs{Time: true}},
+				model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+			},
+		},
+
 		"time-cols": {
 			cdefs: []metav1.TableColumnDefinition{
 				{Name: "Last Seen"},

@@ -18,15 +18,15 @@ import (
 )
 
 var defaultDPHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "VS", Attrs: model1.Attrs{VS: true}},
-	model1.HeaderColumn{Name: "READY", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colVS, Attrs: model1.Attrs{VS: true}},
+	model1.HeaderColumn{Name: colReady, Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "UP-TO-DATE", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Deployment renders a K8s Deployment to screen.
@@ -71,12 +71,9 @@ func (d Deployment) Render(o any, _ string, row *model1.Row) error {
 		return nil
 	}
 	cols, err := d.specs.realize(raw, defaultDPHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 // defaultRow populates the row fields with Deployment data.
@@ -100,16 +97,20 @@ func (d Deployment) defaultRow(raw *unstructured.Unstructured, r *model1.Row) er
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
 		mapToStr(dp.Labels),
-		AsStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
+		AsStatus(d.diagnose(desired, dp.Status.Replicas, dp.Status.AvailableReplicas)),
 		ToAge(dp.GetCreationTimestamp()),
 	}
+	stashAge(r, dp.GetCreationTimestamp())
 
 	return nil
 }
 
-func (Deployment) diagnose(desired, avail int32) error {
+func (Deployment) diagnose(desired, current, avail int32) error {
+	if current != avail {
+		return fmt.Errorf("desiring %d replicas got %d available", current, avail)
+	}
 	if desired != avail {
-		return fmt.Errorf("desiring %d replicas got %d available", desired, avail)
+		return fmt.Errorf("want %d replicas got %d available", desired, avail)
 	}
 
 	return nil

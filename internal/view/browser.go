@@ -35,14 +35,15 @@ import (
 type Browser struct {
 	*Table
 
-	namespaces map[int]string
-	meta       *metav1.APIResource
-	accessor   dao.Accessor
-	contextFn  ContextFunc
-	cancelFn   context.CancelFunc
-	mx         sync.RWMutex
-	updating   bool
-	firstView  atomic.Int32
+	namespaces    map[int]string
+	meta          *metav1.APIResource
+	accessor      dao.Accessor
+	contextFn     ContextFunc
+	cancelFn      context.CancelFunc
+	mx            sync.RWMutex
+	updating      bool
+	actionsLoaded atomic.Bool
+	firstView     atomic.Int32
 }
 
 // NewBrowser returns a new browser.
@@ -134,7 +135,6 @@ func (b *Browser) suggestFilter() model.SuggestionFunc {
 			return b.App().filterHistory.List()
 		}
 
-		s = strings.ToLower(s)
 		for _, h := range b.App().filterHistory.List() {
 			if s == h {
 				continue
@@ -173,6 +173,7 @@ func (b *Browser) Start() {
 
 	b.Stop()
 	b.firstView.Store(0) // Reset first view counter on each start
+	b.actionsLoaded.Store(false)
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -283,6 +284,9 @@ func (b *Browser) Name() string { return b.meta.Kind }
 // SetContextFn populates a custom context.
 func (b *Browser) SetContextFn(f ContextFunc) { b.contextFn = f }
 
+// GetContextFn returns the current context function.
+func (b *Browser) GetContextFn() ContextFunc { return b.contextFn }
+
 // GetTable returns the underlying table.
 func (b *Browser) GetTable() *Table { return b.Table }
 
@@ -312,8 +316,12 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 
 	// While the informer cache hasn't synced yet, show a neutral status
 	// instead of a misleading "no resources found" warning.
-	if synced, _ := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
+	if synced, err := b.app.factory.HasSynced(b.GVR(), b.GetNamespace()); !synced {
 		b.app.QueueUpdateDraw(func() {
+			if err != nil {
+				b.app.Flash().Warnf("Unable to sync %s: %s", b.GVR(), err)
+				return
+			}
 			b.app.Flash().Infof("Synchronizing %s in %q namespace...", b.GVR(), client.PrintNamespace(b.GetNamespace()))
 		})
 		return
@@ -683,13 +691,20 @@ func (b *Browser) refreshActions() {
 	}
 	b.Actions().Merge(aa)
 
-	if err := pluginActions(b, b.Actions()); err != nil {
-		slog.Warn("Plugins load failed", slogs.Error, err)
-		b.app.Logo().Warn("Plugins load failed!")
-	}
-	if err := hotKeyActions(b, b.Actions()); err != nil {
-		slog.Warn("Hotkeys load failed", slogs.Error, err)
-		b.app.Logo().Warn("HotKeys load failed!")
+	if !b.actionsLoaded.Load() {
+		// pluginActions no-ops without a live connection: don't cache until one actually loads.
+		connOK := b.app.Conn() != nil && b.app.Conn().ConnectionOK()
+		if err := pluginActions(b, b.Actions()); err != nil {
+			slog.Warn("Plugins load failed", slogs.Error, err)
+			b.app.Logo().Warn("Plugins load failed!")
+		}
+		if err := hotKeyActions(b, b.Actions()); err != nil {
+			slog.Warn("Hotkeys load failed", slogs.Error, err)
+			b.app.Logo().Warn("HotKeys load failed!")
+		}
+		if connOK {
+			b.actionsLoaded.Store(true)
+		}
 	}
 	b.app.Menu().HydrateMenu(b.Hints())
 }

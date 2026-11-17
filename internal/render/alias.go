@@ -17,7 +17,7 @@ import (
 var defaultAliasHeader = model1.Header{
 	model1.HeaderColumn{Name: "RESOURCE"},
 	model1.HeaderColumn{Name: "GROUP"},
-	model1.HeaderColumn{Name: "VERSION"},
+	model1.HeaderColumn{Name: colVersion},
 	model1.HeaderColumn{Name: "COMMAND"},
 }
 

@@ -6,6 +6,7 @@ package model1
 import (
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -15,6 +16,78 @@ import (
 
 func init() {
 	slog.SetDefault(slog.New(slog.DiscardHandler))
+}
+
+func TestTableDataSortWideColumn(t *testing.T) {
+	const (
+		nameColumn      = "NAME"
+		ownerKindColumn = "OWNER_KIND"
+		statefulSetID   = "statefulset"
+		daemonSetID     = "daemonset"
+		jobID           = "job"
+	)
+
+	wideSortColumn := SortColumn{Name: ownerKindColumn, ASC: true}
+	expectedIDs := []string{daemonSetID, jobID, statefulSetID}
+	newTableData := func() *TableData {
+		return NewTableDataWithRows(
+			client.NewGVR("test"),
+			Header{
+				HeaderColumn{Name: nameColumn},
+				HeaderColumn{Name: ownerKindColumn, Attrs: Attrs{Wide: true}},
+			},
+			NewRowEventsWithEvts(
+				RowEvent{Row: Row{ID: statefulSetID, Fields: Fields{statefulSetID, "StatefulSet"}}},
+				RowEvent{Row: Row{ID: daemonSetID, Fields: Fields{daemonSetID, "DaemonSet"}}},
+				RowEvent{Row: Row{ID: jobID, Fields: Fields{jobID, "Job"}}},
+			),
+		)
+	}
+
+	tests := map[string]struct {
+		viewSetting        *config.ViewSetting
+		initialSortColumn  SortColumn
+		manual             bool
+		expectedSortColumn SortColumn
+		expectedIDs        []string
+	}{
+		"sorts selected wide column": {
+			initialSortColumn:  wideSortColumn,
+			expectedSortColumn: wideSortColumn,
+			expectedIDs:        expectedIDs,
+		},
+		"keeps manual sort after wide view is hidden": {
+			viewSetting: &config.ViewSetting{
+				Columns:    []string{nameColumn, ownerKindColumn},
+				SortColumn: "NAME:asc",
+			},
+			initialSortColumn:  wideSortColumn,
+			manual:             true,
+			expectedSortColumn: wideSortColumn,
+			expectedIDs:        expectedIDs,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			data := newTableData()
+			sortColumn := test.initialSortColumn
+			if test.viewSetting != nil {
+				sortColumn = data.ComputeSortCol(test.viewSetting, sortColumn, test.manual)
+			}
+			if !assert.Equal(t, test.expectedSortColumn, sortColumn, "unexpected resolved sort column") {
+				return
+			}
+
+			data.Sort(sortColumn)
+			var ids []string
+			data.RowsRange(func(_ int, re RowEvent) bool {
+				ids = append(ids, re.Row.ID)
+				return true
+			})
+			assert.Equal(t, test.expectedIDs, ids, "unexpected row order after sorting by %q", sortColumn.Name)
+		})
+	}
 }
 
 func TestTableDataComputeSortCol(t *testing.T) {
@@ -366,6 +439,55 @@ func TestTableDataDelete(t *testing.T) {
 			table.SetRowEvents(u.re)
 			table.Delete(u.kk)
 			assert.Equal(t, u.e, table.GetRowEvents())
+		})
+	}
+}
+
+func TestTableDataSortAge(t *testing.T) {
+	now := time.Now()
+	header := Header{
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "AGE", Attrs: Attrs{Time: true}},
+	}
+	ids := func(td *TableData) []string {
+		var out []string
+		td.RowsRange(func(_ int, re RowEvent) bool {
+			out = append(out, re.Row.ID)
+			return true
+		})
+		return out
+	}
+
+	uu := map[string]struct {
+		rows []Row
+		e    []string
+	}{
+		"same_text_uses_timestamp": {
+			rows: []Row{
+				{ID: "a", Fields: Fields{"a", "12m"}, Age: now.Add(-12*time.Minute - 45*time.Second)},
+				{ID: "b", Fields: Fields{"b", "12m"}, Age: now.Add(-12*time.Minute - 15*time.Second)},
+			},
+			e: []string{"b", "a"},
+		},
+		"missing_timestamp_uses_text": {
+			rows: []Row{
+				{ID: "a", Fields: Fields{"a", "10m"}, Age: now.Add(-10 * time.Minute)},
+				{ID: "b", Fields: Fields{"b", "2m"}},
+				{ID: "c", Fields: Fields{"c", "5m"}, Age: now.Add(-5 * time.Minute)},
+			},
+			e: []string{"b", "c", "a"},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			re := NewRowEvents(len(u.rows))
+			for _, r := range u.rows {
+				re.Add(&RowEvent{Row: r})
+			}
+			td := NewTableDataWithRows(client.NewGVR("test"), header, re)
+			td.Sort(SortColumn{Name: "AGE", ASC: true})
+			assert.Equal(t, u.e, ids(td))
 		})
 	}
 }

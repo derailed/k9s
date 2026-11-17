@@ -1,0 +1,45 @@
+plugins:
+  # kcp: browse the full workspace tree and switch with Enter (kubectl ws -i).
+  # kcp-ws is found via PATH: kcp/k9s-kcp adds the kcp dir to it and restarts k9s
+  # on the new workspace automatically.
+  kcp-ws-tree:
+    shortCut: Shift-W
+    description: kcp workspace tree
+    scopes:
+      - all
+    command: kcp-ws
+    background: false
+    args:
+      - tree
+      - $CONTEXT
+      - $RESOURCE_NAME
+
+  # kcp: in the :ws view (child workspaces of the current one), Enter switches into the selected workspace.
+  kcp-ws-use:
+    shortCut: Enter
+    override: true
+    description: Use workspace
+    scopes:
+      - workspaces
+    command: kcp-ws
+    background: false
+    args:
+      - use
+      - $CONTEXT
+      - $NAME
+      - ws
+
+  # kcp: go to the parent workspace.
+  kcp-ws-parent:
+    shortCut: Shift-P
+    description: Parent workspace
+    scopes:
+      - workspaces
+      - contexts
+    command: kcp-ws
+    background: false
+    args:
+      - use
+      - $CONTEXT
+      - ..
+      - ws

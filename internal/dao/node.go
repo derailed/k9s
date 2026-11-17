@@ -154,8 +154,8 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 	podCount := -1
 	if shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool); shouldCountPods {
-		if pp, err := n.GetPods(path); err == nil {
-			podCount = len(pp)
+		if counts, err := n.podCounts(); err == nil {
+			podCount = counts[path]
 		}
 	}
 
@@ -175,11 +175,11 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 
 	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)
-	var pods []runtime.Object
+	var podCounts map[string]int
 	if shouldCountPods {
-		pods, err = n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
+		podCounts, err = n.podCounts()
 		if err != nil {
-			slog.Error("Unable to list pods", slogs.Error, err)
+			slog.Error("Unable to get pods count", slogs.Error, err)
 		}
 	}
 	res := make([]runtime.Object, 0, len(oo))
@@ -193,13 +193,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		_, name := client.Namespaced(fqn)
 		podCount := -1
 		if shouldCountPods {
-			podCount, err = n.CountPods(pods, name)
-			if err != nil {
-				slog.Error("Unable to get pods count",
-					slogs.ResName, name,
-					slogs.Error, err,
-				)
-			}
+			podCount = podCounts[name]
 		}
 		res = append(res, &render.NodeWithMetrics{
 			Raw:      u,
@@ -211,45 +205,29 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	return res, nil
 }
 
-// CountPods counts the pods scheduled on a given node.
-func (*Node) CountPods(oo []runtime.Object, nodeName string) (int, error) {
-	var count int
-	for _, o := range oo {
-		u, ok := o.(*unstructured.Unstructured)
-		if !ok {
-			return count, fmt.Errorf("expecting *Unstructured but got `%T", o)
-		}
-		spec, ok := u.Object["spec"].(map[string]any)
-		if !ok {
-			return count, fmt.Errorf("expecting spec interface map but got `%T", o)
-		}
-		if node, ok := spec["nodeName"]; ok && node == nodeName {
-			count++
-		}
-	}
-
-	return count, nil
-}
-
-// GetPods returns all pods running on given node.
-func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
+// podCounts returns the number of pods scheduled on each node.
+func (n *Node) podCounts() (map[string]int, error) {
 	oo, err := n.getFactory().List(client.PodGVR, client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
 
-	pp := make([]*v1.Pod, 0, len(oo))
+	counts := make(map[string]int)
 	for _, o := range oo {
-		po := new(v1.Pod)
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, po); err != nil {
-			return nil, err
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return counts, fmt.Errorf("expecting *Unstructured but got `%T", o)
 		}
-		if po.Spec.NodeName == nodeName {
-			pp = append(pp, po)
+		spec, ok := u.Object["spec"].(map[string]any)
+		if !ok {
+			return counts, fmt.Errorf("expecting spec interface map but got `%T", o)
+		}
+		if node, ok := spec["nodeName"].(string); ok {
+			counts[node]++
 		}
 	}
 
-	return pp, nil
+	return counts, nil
 }
 
 // ensureCordoned returns whether the given node has been cordoned

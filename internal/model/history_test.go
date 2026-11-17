@@ -33,6 +33,18 @@ func TestHistoryPush(t *testing.T) {
 	assert.Equal(t, []string{"cmd1", "cmd2", "cmd3"}, h.List())
 }
 
+func TestHistoryPushKeepsCase(t *testing.T) {
+	h := model.NewHistory(3)
+	h.Push("pods app=MyApp")
+	h.Push("pods app=MyApp")
+	h.Push("svc")
+
+	assert.Equal(t, []string{"pods app=MyApp", "svc"}, h.List())
+	c, ok := h.Back()
+	assert.True(t, ok)
+	assert.Equal(t, "pods app=MyApp", c)
+}
+
 func TestHistoryTop(t *testing.T) {
 	uu := map[string]struct {
 		push []string

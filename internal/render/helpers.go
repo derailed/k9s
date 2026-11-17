@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
@@ -191,6 +192,11 @@ func ToAge(t metav1.Time) string {
 	}
 
 	return duration.HumanDuration(time.Since(t.Time))
+}
+
+// stashAge records the timestamp on the row so AGE can be sorted without the humanized string.
+func stashAge(r *model1.Row, t metav1.Time) {
+	r.Age = t.Time
 }
 
 func toAgeHuman(s string) string {

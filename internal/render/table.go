@@ -17,9 +17,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const ageTableCol = "Age"
+const ageTableCol = "age"
 
-var ageCols = sets.New("Last Seen", "First Seen", "Age")
+var ageCols = sets.New("last seen", "first seen", "age")
 
 // Table renders a tabular resource to screen.
 type Table struct {
@@ -69,15 +69,15 @@ func (t *Table) defaultHeader() model1.Header {
 	}
 	h := make(model1.Header, 0, len(t.table.ColumnDefinitions))
 	for i, c := range t.table.ColumnDefinitions {
-		if c.Name == ageTableCol {
+		if strings.EqualFold(c.Name, ageTableCol) {
 			t.setAgeIndex(i)
 			continue
 		}
-		timeCol := ageCols.Has(c.Name)
+		timeCol := ageCols.Has(strings.ToLower(c.Name))
 		h = append(h, model1.HeaderColumn{Name: strings.ToUpper(c.Name), Attrs: model1.Attrs{Time: timeCol, Wide: c.Priority > 0}})
 	}
 	if t.getAgeIndex() > 0 {
-		h = append(h, model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}})
+		h = append(h, model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}})
 	}
 
 	return h
@@ -101,21 +101,20 @@ func (t *Table) Render(o any, ns string, r *model1.Row) error {
 		obj = obj.DeepCopyObject()
 	}
 	cols, err := t.specs.realize(obj, t.defaultHeader(), r)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(r)
 
-	return nil
+	return err
 }
 
 func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error {
 	th := t.header
 	ons, name := ns, UnknownValue
+	var creationTs metav1.Time
 	switch {
 	case row.Object.Object != nil:
 		if m, _ := meta.Accessor(row.Object.Object); m != nil {
 			ons, name = m.GetNamespace(), m.GetName()
+			creationTs = m.GetCreationTimestamp()
 		}
 	case row.Object.Raw != nil:
 		var pm metav1.PartialObjectMetadata
@@ -123,6 +122,7 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 			return err
 		}
 		ons, name = pm.Namespace, pm.Name
+		creationTs = pm.CreationTimestamp
 	default:
 		if idx, ok := th.IndexOf("NAME", true); ok && idx >= 0 && idx < len(row.Cells) {
 			name = row.Cells[idx].(string)
@@ -136,6 +136,7 @@ func (t *Table) defaultRow(row *metav1.TableRow, ns string, r *model1.Row) error
 		ons = client.ClusterScope
 	}
 	r.ID = client.FQN(ons, name)
+	stashAge(r, creationTs)
 	r.Fields = make(model1.Fields, 0, len(th))
 	var (
 		age    any

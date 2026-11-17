@@ -69,7 +69,7 @@ func (c *Interpreter) grok() {
 	var lbls string
 	line := strings.TrimSpace(strings.Replace(c.line, ff[0], "", 1))
 	if strings.Contains(line, "'") {
-		start, end, ok := quoteIndicies(line)
+		start, end, ok := quoteIndices(line)
 		if ok {
 			lbls = line[start+1 : end]
 			line = strings.TrimSpace(strings.Replace(line, "'"+lbls+"'", "", 1))
@@ -85,7 +85,7 @@ func (c *Interpreter) grok() {
 	c.args = newArgs(c, ff)
 }
 
-func quoteIndicies(s string) (start, end int, ok bool) {
+func quoteIndices(s string) (start, end int, ok bool) {
 	start, end = -1, -1
 	for i, r := range s {
 		if r == '\'' {

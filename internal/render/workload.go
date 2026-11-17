@@ -15,13 +15,13 @@ import (
 )
 
 var defaultWKHeader = model1.Header{
-	model1.HeaderColumn{Name: "KIND"},
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
-	model1.HeaderColumn{Name: "STATUS"},
-	model1.HeaderColumn{Name: "READY"},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colKind},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
+	model1.HeaderColumn{Name: colStatus},
+	model1.HeaderColumn{Name: colReady},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // Workload renders a workload to screen.
@@ -69,6 +69,7 @@ func (Workload) Render(o any, _ string, r *model1.Row) error {
 		res.Row.Cells[5].(string),
 		ToAge(res.Row.Cells[6].(metav1.Time)),
 	}
+	stashAge(r, res.Row.Cells[6].(metav1.Time))
 
 	return nil
 }

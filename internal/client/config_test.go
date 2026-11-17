@@ -5,9 +5,11 @@ package client_test
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -345,6 +347,39 @@ func TestConfigNoKubeConfigNotInCluster(t *testing.T) {
 	ctx, err := cfg.CurrentContextName()
 	require.NoError(t, err)
 	assert.Empty(t, ctx)
+}
+
+func TestConfigRestConfigUserAgent(t *testing.T) {
+	defaultVersion := client.Version
+	defer func() { client.Version = defaultVersion }()
+
+	uu := map[string]struct {
+		version string
+		e       string
+	}{
+		"release": {
+			version: "v1.2.3-test",
+			e:       fmt.Sprintf("k9s/v1.2.3-test (%s/%s)", runtime.GOOS, runtime.GOARCH),
+		},
+		"dev": {
+			version: "dev",
+			e:       fmt.Sprintf("k9s/dev (%s/%s)", runtime.GOOS, runtime.GOARCH),
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			client.Version = u.version
+			flags := genericclioptions.ConfigFlags{
+				KubeConfig: &kubeConfig,
+			}
+			cfg := client.NewConfig(&flags)
+			rc, err := cfg.RESTConfig()
+			require.NoError(t, err)
+			assert.Equal(t, u.e, rc.UserAgent)
+		})
+	}
 }
 
 func TestConfigBadConfig(t *testing.T) {

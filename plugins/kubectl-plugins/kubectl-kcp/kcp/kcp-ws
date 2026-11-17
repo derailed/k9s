@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Switches the kcp workspace from a k9s plugin and asks the k9s-kcp wrapper to
+# restart k9s, since k9s caches the kubeconfig and won't pick up the new URL.
+#
+#   kcp-ws use  <context> <workspace> <view>
+#   kcp-ws tree <context> <view>
+set -uo pipefail
+
+action=$1 ctx=$2
+
+kube_state() {
+	kubectl config view --minify -o jsonpath='{.current-context} {.clusters[0].cluster.server}' 2>/dev/null
+}
+
+pause() {
+	read -rsn1 -p "${1:-Press any key to return to k9s...}"
+}
+
+case $action in
+use)
+	view=${4:-ws}
+	if ! kubectl ws --context "$ctx" use "$3"; then
+		pause
+		exit 1
+	fi
+	;;
+tree)
+	view=${3:-ws}
+	before=$(kube_state)
+	kubectl ws --context "$ctx" -i || exit 0
+	[[ $(kube_state) != "$before" ]] || exit 0
+	;;
+*)
+	echo "unknown action: $action" >&2
+	exit 1
+	;;
+esac
+
+# Not started via k9s-kcp: fall back to the manual reconnect.
+if [[ -z ${K9S_KCP_RESTART_FILE:-} || $(ps -o ppid= -p "$PPID" | tr -d ' ') != "${K9S_KCP_PID:-}" ]]; then
+	pause "Reconnect via :ctx -> workspace.kcp.io/current. Press any key..."
+	exit 0
+fi
+
+printf '%s\n' "$view" >"$K9S_KCP_RESTART_FILE"
+kill -HUP "$PPID"

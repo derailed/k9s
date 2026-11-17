@@ -5,15 +5,33 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # Fork tags v2.3.1/v2.3.2 declare the upstream gdamore/tcell module path,
+      # which makes dependabot fail with go_module_path_mismatch. Bump manually.
+      - dependency-name: "github.com/derailed/tcell/v2"
+    cooldown:
+      default-days: 7
+    groups:
+      kubernetes:
+        patterns:
+          - "k8s.io/*"
+          - "sigs.k8s.io/*"
+      anchore:
+        patterns:
+          - "github.com/anchore/*"
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
 
   # Maintain dependencies for docker
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7

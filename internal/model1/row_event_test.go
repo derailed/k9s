@@ -8,7 +8,6 @@ import (
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRowEventCustomize(t *testing.T) {
@@ -172,7 +171,7 @@ func TestRowEventDiff(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.re1.Diff(u.re2, -1))
+			assert.Equal(t, u.e, u.re1.Diff(&u.re2, -1))
 		})
 	}
 }
@@ -287,7 +286,7 @@ func TestRowEventsUpsert(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.ee.Upsert(u.re)
+			u.ee.Upsert(&u.re)
 			assert.Equal(t, u.e, u.ee)
 		})
 	}
@@ -360,53 +359,76 @@ func TestRowEventsCustomize(t *testing.T) {
 	}
 }
 
-func TestRowEventsDelete(t *testing.T) {
+func TestRowEventsDeleteBatch(t *testing.T) {
 	uu := map[string]struct {
 		re, e *model1.RowEvents
-		id    string
+		ids   []string
 	}{
-		"first": {
+		"single": {
 			re: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
 			),
-			id: "A",
-			e: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
-			),
-		},
-		"middle": {
-			re: model1.NewRowEventsWithEvts(
-				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
-				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
-				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
-			),
-			id: "B",
+			ids: []string{"B"},
 			e: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
 			),
 		},
-		"last": {
+		"multiple": {
 			re: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"10", "2", "3"}}},
 			),
-			id: "C",
+			ids: []string{"A", "C"},
 			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
+			),
+		},
+		"duplicate_ids": {
+			re: model1.NewRowEventsWithEvts(
 				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
 				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
 			),
+			ids: []string{"A", "A"},
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
+			),
+		},
+		"unknown_ids": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+			),
+			ids: []string{"X", "Y"},
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+			),
+		},
+		"empty_ids": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+			),
+			ids: []string{},
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+			),
+		},
+		"all": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"1", "2", "3"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"0", "2", "3"}}},
+			),
+			ids: []string{"A", "B"},
+			e:   model1.NewRowEvents(2),
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			require.NoError(t, u.re.Delete(u.id))
+			u.re.DeleteBatch(u.ids)
 			assert.Equal(t, u.e, u.re)
 		})
 	}
@@ -509,7 +531,7 @@ func TestRowEventsSort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, u.duration, u.num, u.capacity, u.asc)
+			u.re.Sort("", u.col, u.duration, u.num, u.capacity, false, u.asc)
 			assert.Equal(t, u.e, u.re)
 		})
 	}

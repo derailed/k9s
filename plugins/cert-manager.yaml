@@ -3,6 +3,7 @@
 plugins:
   cert-status:
     shortCut: Shift-S
+    override: true
     confirm: false
     description: Certificate status
     scopes:

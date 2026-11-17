@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Runs k9s and restarts it on the new kcp workspace whenever the kcp-ws plugin
+# switches workspaces.
+restart_file=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/k9s-kcp.XXXXXX")
+trap 'rm -f "$restart_file"' EXIT
+export K9S_KCP_RESTART_FILE=$restart_file
+# kcp-ws checks that its k9s is a child of this wrapper. The k9s binary name
+# can't be used for that (on NixOS it is .k9s-wrapped).
+export K9S_KCP_PID=$$
+
+kcp_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+# The plugins in plugins.yaml call kcp-ws by name.
+export PATH=$kcp_dir:$PATH
+
+# kcp workspaces serve no pods, but k9s falls back to the pods view when
+# switching contexts (e.g. from :ctx). Point that view at workspaces for the
+# kubectl-ws contexts through context-specific aliases.
+for ctx in workspace.kcp.io-current workspace.kcp.io-previous; do
+	dir=${XDG_DATA_HOME:-$HOME/.local/share}/k9s/clusters/$ctx/$ctx
+	mkdir -p "$dir" && ln -sfn "$kcp_dir/context-aliases.yaml" "$dir/aliases.yaml"
+done
+
+args=("$@")
+while :; do
+	: >"$restart_file"
+	k9s "${args[@]}"
+	rc=$?
+	view=$(<"$restart_file")
+	[[ -n $view ]] || exit "$rc"
+	stty sane 2>/dev/null
+	args=(--context workspace.kcp.io/current --command "$view")
+done

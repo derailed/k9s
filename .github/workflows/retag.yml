@@ -1,0 +1,62 @@
+name: Retag Docker image
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Existing image tag"
+        required: true
+        default: "latest"
+        type: string
+      version:
+        description: "New version tag (e.g. v0.51.0)"
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: docker-retag
+  cancel-in-progress: false
+
+jobs:
+  retag:
+    if: github.repository == 'derailed/k9s' && github.ref == 'refs/heads/master' && github.actor == 'uozalp' && github.triggering_actor == 'uozalp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      IMG: derailed/k9s
+      SOURCE: ${{ inputs.source }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - name: Validate inputs
+        run: |
+          [[ "$SOURCE" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ ]] || { echo "bad source tag"; exit 1; }
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "bad version tag"; exit 1; }
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Inspect the public image before logging in, so it never runs with credentials present.
+      - name: Show source
+        run: |
+          docker buildx imagetools inspect "$IMG:$SOURCE"
+          docker run --rm --network none "$IMG:$SOURCE" version -s
+          docker image rm "$IMG:$SOURCE"
+
+      - name: Refuse to overwrite existing tag
+        run: |
+          if docker buildx imagetools inspect "$IMG:$VERSION" >/dev/null 2>&1; then
+            echo "$IMG:$VERSION already exists"
+            exit 1
+          fi
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Retag (all platforms)
+        run: docker buildx imagetools create -t "$IMG:$VERSION" "$IMG:$SOURCE"
+
+      - name: Verify
+        run: docker buildx imagetools inspect "$IMG:$VERSION"

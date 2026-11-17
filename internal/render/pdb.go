@@ -17,17 +17,17 @@ import (
 )
 
 var defaultPDBHeader = model1.Header{
-	model1.HeaderColumn{Name: "NAMESPACE"},
-	model1.HeaderColumn{Name: "NAME"},
+	model1.HeaderColumn{Name: colNamespace},
+	model1.HeaderColumn{Name: colName},
 	model1.HeaderColumn{Name: "MIN-AVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "MAX-UNAVAILABLE", Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "ALLOWED-DISRUPTIONS", Attrs: model1.Attrs{Align: tview.AlignRight}},
-	model1.HeaderColumn{Name: "CURRENT", Attrs: model1.Attrs{Align: tview.AlignRight}},
-	model1.HeaderColumn{Name: "DESIRED", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: colCurrent, Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: colDesired, Attrs: model1.Attrs{Align: tview.AlignRight}},
 	model1.HeaderColumn{Name: "EXPECTED", Attrs: model1.Attrs{Align: tview.AlignRight}},
-	model1.HeaderColumn{Name: "LABELS", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "VALID", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "AGE", Attrs: model1.Attrs{Time: true}},
+	model1.HeaderColumn{Name: colLabels, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colValid, Attrs: model1.Attrs{Wide: true}},
+	model1.HeaderColumn{Name: colAge, Attrs: model1.Attrs{Time: true}},
 }
 
 // PodDisruptionBudget renders a K8s PodDisruptionBudget to screen.
@@ -54,12 +54,9 @@ func (p PodDisruptionBudget) Render(o any, _ string, row *model1.Row) error {
 	}
 
 	cols, err := p.specs.realize(raw, defaultPDBHeader, row)
-	if err != nil {
-		return err
-	}
 	cols.hydrateRow(row)
 
-	return nil
+	return err
 }
 
 func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model1.Row) error {
@@ -80,19 +77,20 @@ func (p PodDisruptionBudget) defaultRow(raw *unstructured.Unstructured, r *model
 		strconv.Itoa(int(pdb.Status.DesiredHealthy)),
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
 		mapToStr(pdb.Labels),
-		AsStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
+		AsStatus(p.diagnose(&pdb)),
 		ToAge(pdb.GetCreationTimestamp()),
 	}
+	stashAge(r, pdb.GetCreationTimestamp())
 
 	return nil
 }
 
-func (PodDisruptionBudget) diagnose(v *intstr.IntOrString, healthy int32) error {
-	if v == nil {
-		return nil
-	}
-	if v.IntVal > healthy {
-		return fmt.Errorf("expected %d but got %d", v.IntVal, healthy)
+func (PodDisruptionBudget) diagnose(pdb *v1.PodDisruptionBudget) error {
+	// The controller resolves ints and percentages of both minAvailable and
+	// maxUnavailable into DesiredHealthy, and leaves it at 0 when neither is
+	// set, so one comparison covers every budget.
+	if pdb.Status.DesiredHealthy > pdb.Status.CurrentHealthy {
+		return fmt.Errorf("expected %d but got %d", pdb.Status.DesiredHealthy, pdb.Status.CurrentHealthy)
 	}
 
 	return nil

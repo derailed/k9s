@@ -81,6 +81,16 @@ func TestPodColorer(t *testing.T) {
 			},
 			e: model1.HighlightColor,
 		},
+		"scheduling-gated": {
+			h: stdHeader,
+			re: model1.RowEvent{
+				Kind: model1.EventAdd,
+				Row: model1.Row{
+					Fields: model1.Fields{"blee", "fred", "0/1", "0", "SchedulingGated", "blah"},
+				},
+			},
+			e: model1.PendingColor,
+		},
 		"completed": {
 			h: stdHeader,
 			re: model1.RowEvent{
@@ -166,6 +176,8 @@ func TestPodRender(t *testing.T) {
 	assert.Equal(t, "default/nginx", r.ID)
 	e := model1.Fields{"default", "nginx", "n/a", "●", "1/1", "Running", "0", "<unknown>", "100", "100:0", "100", "n/a", "50", "70:170", "71", "29", "0:0", "172.17.0.6", "minikube", "default", "<none>"}
 	assert.Equal(t, e, r.Fields[:21])
+	assert.False(t, r.Age.IsZero())
+	assert.Equal(t, pom.Raw.GetCreationTimestamp().Time, r.Age)
 }
 
 func BenchmarkPodRender(b *testing.B) {
@@ -668,6 +680,21 @@ func TestCheckPhase(t *testing.T) {
 			},
 			e: render.PhaseUnknown,
 		},
+		"scheduling-gated": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: v1.PodPending,
+					Conditions: []v1.PodCondition{
+						{
+							Type:   v1.PodScheduled,
+							Status: v1.ConditionFalse,
+							Reason: v1.PodReasonSchedulingGated,
+						},
+					},
+				},
+			},
+			e: v1.PodReasonSchedulingGated,
+		},
 		"restartable": {
 			pod: v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -692,6 +719,43 @@ func TestCheckPhase(t *testing.T) {
 				},
 			},
 			e: "Init:0/1",
+		},
+		"restartable-started-not-ready": {
+			pod: v1.Pod{
+				Spec: v1.PodSpec{
+					InitContainers: []v1.Container{
+						{
+							Name:          "ic1",
+							RestartPolicy: &always,
+						},
+					},
+					Containers: []v1.Container{
+						{Name: "c1"},
+					},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:    "ic1",
+							Started: new(true),
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							Ready: true,
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+				},
+			},
+			e: render.PhaseRunning,
 		},
 		"waiting": {
 			pod: v1.Pod{
