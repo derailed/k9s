@@ -5,6 +5,7 @@ package render
 
 import (
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -112,7 +113,7 @@ func UrlFor(host, path, port, address string) string {
 		path = "/"
 	}
 
-	return "http://" + host + ":" + port + path
+	return "http://" + net.JoinHostPort(host, port) + path
 }
 
 // BenchCfg represents a benchmark configuration.

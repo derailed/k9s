@@ -40,6 +40,36 @@ func TestPortForwardRender(t *testing.T) {
 	}, r.Fields[:8])
 }
 
+func TestUrlFor(t *testing.T) {
+	uu := map[string]struct {
+		host, path, port, address string
+		e                         string
+	}{
+		"address": {
+			port: "8080", address: "localhost",
+			e: "http://localhost:8080/",
+		},
+		"host-path": {
+			host: "zorg", path: "/fred", port: "8080", address: "localhost",
+			e: "http://zorg:8080/fred",
+		},
+		"ipv6-address": {
+			port: "8080", address: "::1",
+			e: "http://[::1]:8080/",
+		},
+		"ipv6-host": {
+			host: "fd00::1", path: "/fred", port: "8080", address: "localhost",
+			e: "http://[fd00::1]:8080/fred",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, render.UrlFor(u.host, u.path, u.port, u.address))
+		})
+	}
+}
+
 // Helpers...
 
 type fwd struct{}
