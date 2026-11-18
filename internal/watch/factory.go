@@ -4,6 +4,7 @@
 package watch
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -130,6 +132,17 @@ func (f *Factory) Get(gvr *client.GVR, fqn string, wait bool, _ labels.Selector)
 	}
 
 	f.waitForCacheSync(ns)
+	if !inf.Informer().HasSynced() {
+		// Cold cache on a large LIST would report not found, so ask the api server.
+		dial, err := f.client.DynDial()
+		if err != nil {
+			return nil, err
+		}
+		if client.IsClusterScoped(ns) {
+			return dial.Resource(gvr.GVR()).Get(context.Background(), n, metav1.GetOptions{})
+		}
+		return dial.Resource(gvr.GVR()).Namespace(ns).Get(context.Background(), n, metav1.GetOptions{})
+	}
 	if client.IsClusterScoped(ns) {
 		return inf.Lister().Get(n)
 	}
