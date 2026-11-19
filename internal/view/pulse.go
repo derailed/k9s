@@ -186,7 +186,7 @@ func (p *Pulse) SeriesChanged(tt dao.TimeSeries) {
 	if !ok {
 		return
 	}
-	mem := p.charts[client.MemGVR]
+	mem, ok := p.charts[client.MemGVR]
 	if !ok {
 		return
 	}
