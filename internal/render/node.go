@@ -47,7 +47,7 @@ var defaultNOHeader = model1.Header{
 	model1.HeaderColumn{Name: "KERNEL", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "INTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
 	model1.HeaderColumn{Name: "EXTERNAL-IP", Attrs: model1.Attrs{Wide: true}},
-	model1.HeaderColumn{Name: "PODS", Attrs: model1.Attrs{Align: tview.AlignRight}},
+	model1.HeaderColumn{Name: "PODS", Attrs: model1.Attrs{Align: tview.AlignRight, Wide: true}},
 	model1.HeaderColumn{Name: colCPU, Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "CPU/A", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},
 	model1.HeaderColumn{Name: "%CPU", Attrs: model1.Attrs{Align: tview.AlignRight, MX: true}},

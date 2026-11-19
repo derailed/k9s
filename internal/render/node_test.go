@@ -28,6 +28,11 @@ func TestNodeRender(t *testing.T) {
 	assert.Equal(t, "minikube", r.ID)
 	e := model1.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "Buildroot 2018.05.3", "4.15.0", "192.168.64.107", "<none>", "0", "10", "4000", "0", "20", "7874", "0", "n/a", "n/a"}
 	assert.Equal(t, e, r.Fields[:19])
+
+	h := no.Header("")
+	idx, ok := h.IndexOf("PODS", true)
+	require.True(t, ok)
+	assert.True(t, h[idx].Wide)
 }
 
 func BenchmarkNodeRender(b *testing.B) {

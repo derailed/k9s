@@ -290,10 +290,16 @@ func (t *Table) GetViewSetting() *config.ViewSetting {
 }
 
 func (t *Table) GetContext() context.Context {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
 	return t.ctx
 }
 
 func (t *Table) SetContext(ctx context.Context) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
 	t.ctx = ctx
 }
 
@@ -353,9 +359,19 @@ func (t *Table) ToggleToast() {
 	t.Refresh()
 }
 
+// IsWide returns true if wide col display is enabled.
+func (t *Table) IsWide() bool {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.wide
+}
+
 // ToggleWide toggles wide col display.
 func (t *Table) ToggleWide() {
+	t.mx.Lock()
 	t.wide = !t.wide
+	t.mx.Unlock()
 	t.Refresh()
 }
 

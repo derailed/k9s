@@ -15,8 +15,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+type countingFactory struct {
+	dao.Factory
+	podListCalls int
+}
+
+func (f *countingFactory) List(gvr *client.GVR, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
+	if gvr == client.PodGVR {
+		f.podListCalls++
+	}
+	return f.Factory.List(gvr, ns, wait, sel)
+}
 
 func makeNodeFactory(nodes, podsPerNode int) dao.Factory {
 	nn := make([]runtime.Object, 0, nodes)
@@ -76,6 +89,41 @@ func TestNodeGetPodCount(t *testing.T) {
 	nmx, ok := o.(*render.NodeWithMetrics)
 	require.True(t, ok)
 	assert.Equal(t, 2, nmx.PodCount)
+}
+
+func TestNodePodCountingFunc(t *testing.T) {
+	cf := &countingFactory{Factory: makeNodeFactory(2, 3)}
+	var n dao.Node
+	n.Init(cf, client.NodeGVR)
+
+	enabled := false
+	ctx := context.WithValue(context.Background(), internal.KeyWithMetrics, false)
+	ctx = context.WithValue(ctx, internal.KeyPodCounting, func() bool { return enabled })
+
+	nn, err := n.List(ctx, client.BlankNamespace)
+	require.NoError(t, err)
+	assert.Zero(t, cf.podListCalls)
+	for _, o := range nn {
+		assert.Equal(t, -1, o.(*render.NodeWithMetrics).PodCount)
+	}
+
+	o, err := n.Get(ctx, "node-0")
+	require.NoError(t, err)
+	assert.Zero(t, cf.podListCalls)
+	assert.Equal(t, -1, o.(*render.NodeWithMetrics).PodCount)
+
+	enabled = true
+	nn, err = n.List(ctx, client.BlankNamespace)
+	require.NoError(t, err)
+	assert.Equal(t, 1, cf.podListCalls)
+	for _, o := range nn {
+		assert.Equal(t, 3, o.(*render.NodeWithMetrics).PodCount)
+	}
+
+	o, err = n.Get(ctx, "node-0")
+	require.NoError(t, err)
+	assert.Equal(t, 2, cf.podListCalls)
+	assert.Equal(t, 3, o.(*render.NodeWithMetrics).PodCount)
 }
 
 func BenchmarkNodeList(b *testing.B) {
