@@ -58,6 +58,9 @@ var (
 	// PatchAccess patch a resource.
 	PatchAccess = []string{PatchVerb}
 
+	// UpdateAccess update a resource.
+	UpdateAccess = []string{UpdateVerb}
+
 	// GetAccess reads a resource.
 	GetAccess = []string{GetVerb}
 
