@@ -153,13 +153,24 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	podCount := -1
-	if shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool); shouldCountPods {
+	if shouldCountPods(ctx) {
 		if counts, err := n.podCounts(); err == nil {
 			podCount = counts[path]
 		}
 	}
 
 	return &render.NodeWithMetrics{Raw: raw, MX: nmx, PodCount: podCount}, nil
+}
+
+func shouldCountPods(ctx context.Context) bool {
+	switch v := ctx.Value(internal.KeyPodCounting).(type) {
+	case bool:
+		return v
+	case func() bool:
+		return v()
+	default:
+		return false
+	}
 }
 
 // List returns a collection of node resources.
@@ -174,9 +185,9 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
 	}
 
-	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)
+	countPods := shouldCountPods(ctx)
 	var podCounts map[string]int
-	if shouldCountPods {
+	if countPods {
 		podCounts, err = n.podCounts()
 		if err != nil {
 			slog.Error("Unable to get pods count", slogs.Error, err)
@@ -192,7 +203,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		fqn := extractFQN(o)
 		_, name := client.Namespaced(fqn)
 		podCount := -1
-		if shouldCountPods {
+		if countPods {
 			podCount = podCounts[name]
 		}
 		res = append(res, &render.NodeWithMetrics{

@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -37,7 +38,28 @@ func NewNode(gvr *client.GVR) ResourceViewer {
 }
 
 func (n *Node) nodeContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, internal.KeyPodCounting, !n.App().Config.K9s.DisablePodCounting)
+	return context.WithValue(ctx, internal.KeyPodCounting, n.shouldCountPods)
+}
+
+func (n *Node) shouldCountPods() bool {
+	if n.App().Config.K9s.DisablePodCounting {
+		return false
+	}
+
+	return n.isPodsColVisible()
+}
+
+func (n *Node) isPodsColVisible() bool {
+	var r render.Node
+	r.SetViewSetting(n.GetTable().GetViewSetting())
+	h := r.Header(client.ClusterScope)
+	idx, ok := h.IndexOf("PODS", true)
+	if !ok {
+		return false
+	}
+	col := h[idx]
+
+	return !col.Hide && (n.GetTable().IsWide() || !col.Wide)
 }
 
 func (n *Node) bindDangerousKeys(aa *ui.KeyActions) {
@@ -83,8 +105,29 @@ func (n *Node) bindKeys(aa *ui.KeyActions) {
 	}
 
 	aa.Bulk(ui.KeyMap{
-		ui.KeyY: ui.NewKeyAction(yamlAction, n.yamlCmd, true),
+		ui.KeyY:        ui.NewKeyAction(yamlAction, n.yamlCmd, true),
+		tcell.KeyCtrlW: ui.NewKeyAction("Toggle Wide", n.toggleWideCmd, false),
 	})
+}
+
+func (n *Node) toggleWideCmd(*tcell.EventKey) *tcell.EventKey {
+	n.ToggleWide()
+	return nil
+}
+
+// ToggleWide toggles wide col display and refreshes pod counts when becoming visible.
+func (n *Node) ToggleWide() {
+	wasCounting := n.shouldCountPods()
+	n.GetTable().ToggleWide()
+	if !wasCounting && n.shouldCountPods() {
+		if ctx := n.GetTable().GetContext(); ctx != nil && ctx != context.Background() {
+			go func() {
+				if err := n.GetTable().GetModel().Refresh(ctx); err != nil {
+					slog.Error("Node refresh failed", slogs.Error, err)
+				}
+			}()
+		}
+	}
 }
 
 func (n *Node) showPods(a *App, _ ui.Tabular, _ *client.GVR, path string) {
