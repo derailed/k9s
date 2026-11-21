@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/view/cmd"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,4 +82,70 @@ func Test_viewMetaFor(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockClientWithInvalidate struct {
+	client.Connection
+	invalidated  bool
+	onInvalidate func()
+}
+
+func (m *mockClientWithInvalidate) InvalidateCache() error {
+	m.invalidated = true
+	if m.onInvalidate != nil {
+		m.onInvalidate()
+	}
+	return nil
+}
+
+func Test_viewMetaFor_MissingResourceRefreshes(t *testing.T) {
+	oldMeta := dao.MetaAccess
+	dao.MetaAccess = dao.NewMeta()
+	defer func() {
+		dao.MetaAccess = oldMeta
+	}()
+
+	clt := &mockClientWithInvalidate{}
+	f := watch.NewFactory(clt)
+	app := &App{factory: f}
+	c := &Command{
+		app: app,
+		alias: &dao.Alias{
+			Aliases: config.NewAliases(),
+		},
+	}
+
+	p := cmd.NewInterpreter("hr")
+	_, _, _, err := c.viewMetaFor(p)
+	assert.Error(t, err)
+	assert.Equal(t, "`hr` command not found", err.Error())
+	assert.True(t, clt.invalidated)
+}
+
+func Test_viewMetaFor_MissingResourceDiscovered(t *testing.T) {
+	oldMeta := dao.MetaAccess
+	dao.MetaAccess = dao.NewMeta()
+	defer func() {
+		dao.MetaAccess = oldMeta
+	}()
+
+	hrGVR := client.NewGVR("helm.toolkit.fluxcd.io/v2beta1/helmreleases")
+	clt := &mockClientWithInvalidate{}
+	f := watch.NewFactory(clt)
+	app := &App{factory: f}
+	c := &Command{
+		app: app,
+		alias: &dao.Alias{
+			Aliases: config.NewAliases(),
+		},
+	}
+	clt.onInvalidate = func() {
+		c.alias.Define(hrGVR, "hr", "helmrelease")
+	}
+
+	p := cmd.NewInterpreter("hr")
+	gvr, _, _, err := c.viewMetaFor(p)
+	assert.NoError(t, err)
+	assert.Equal(t, hrGVR, gvr)
+	assert.True(t, clt.invalidated)
 }

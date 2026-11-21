@@ -52,6 +52,7 @@ func (*conn) DialLogs() (kubernetes.Interface, error)                  { return 
 func (*conn) ConnectionOK() bool                                       { return true }
 func (*conn) SwitchContext(string) error                               { return nil }
 func (*conn) CachedDiscovery() (*disk.CachedDiscoveryClient, error)    { return nil, nil }
+func (*conn) InvalidateCache() error                                    { return nil }
 func (*conn) RestConfig() (*restclient.Config, error)                  { return nil, nil }
 func (*conn) MXDial() (*versioned.Clientset, error)                    { return nil, nil }
 func (*conn) DynDial() (dynamic.Interface, error)                      { return nil, nil }

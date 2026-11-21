@@ -157,3 +157,40 @@ func TestIsScalableGVR(t *testing.T) {
 		})
 	}
 }
+
+func TestAddCRDPropertiesSynthesizesMissingCRD(t *testing.T) {
+	metas := ResourceMetas{}
+	crd := apiext.CustomResourceDefinition{
+		Spec: apiext.CustomResourceDefinitionSpec{
+			Group: "helm.toolkit.fluxcd.io",
+			Scope: apiext.NamespaceScoped,
+			Names: apiext.CustomResourceDefinitionNames{
+				Plural:     "helmreleases",
+				Singular:   "helmrelease",
+				Kind:       "HelmRelease",
+				ShortNames: []string{"hr"},
+			},
+			Versions: []apiext.CustomResourceDefinitionVersion{
+				{
+					Name:   "v2beta1",
+					Served: true,
+				},
+			},
+		},
+	}
+
+	missing := addCRDProperties(metas, &crd)
+	assert.True(t, missing)
+
+	hrGVR := client.NewGVR("helm.toolkit.fluxcd.io/v2beta1/helmreleases")
+	meta, ok := metas[hrGVR]
+	assert.True(t, ok)
+	assert.Equal(t, "helmreleases", meta.Name)
+	assert.Equal(t, "helmrelease", meta.SingularName)
+	assert.Equal(t, "HelmRelease", meta.Kind)
+	assert.Equal(t, "helm.toolkit.fluxcd.io", meta.Group)
+	assert.Equal(t, "v2beta1", meta.Version)
+	assert.True(t, meta.Namespaced)
+	assert.Equal(t, []string{"hr"}, meta.ShortNames)
+	assert.True(t, IsCRD(meta))
+}
