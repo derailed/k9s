@@ -71,6 +71,21 @@ func TestPluginLoad(t *testing.T) {
 			},
 		},
 
+		"no-selection-required": {
+			path: "testdata/plugins/without-selection.yaml",
+			ee: Plugins{
+				Plugins: plugins{
+					"new-configmap": Plugin{
+						Scopes:            []string{"configmap"},
+						ShortCut:          "Shift-N",
+						Description:       "New ConfigMap",
+						Command:           "bash",
+						RequiresSelection: boolPtr(false),
+					},
+				},
+			},
+		},
+
 		"toast-no-file": {
 			path: "testdata/plugins/plugins-bozo.yaml",
 			ee:   NewPlugins(),

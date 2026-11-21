@@ -1,0 +1,8 @@
+plugins:
+  new-configmap:
+    shortCut: Shift-N
+    description: New ConfigMap
+    scopes:
+      - configmap
+    command: bash
+    requiresSelection: false
