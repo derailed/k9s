@@ -4,6 +4,8 @@
 package config_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
@@ -84,4 +86,15 @@ Invalid type. Expected: object, given: array`,
 			assert.Equal(t, tcell.ColorBlack.TrueColor(), tview.Styles.PrimitiveBackgroundColor)
 		})
 	}
+}
+
+func TestTabSkinLoad(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "skin.yaml")
+	require.NoError(t, os.WriteFile(f, []byte("k9s:\n  frame:\n    tabs:\n      activeColor: red\n"), 0o600))
+
+	s := config.NewStyles()
+	require.NoError(t, s.Load(f, false))
+
+	assert.Equal(t, config.Color("red"), s.Tab().ActiveColor)
+	assert.Equal(t, config.Color("aqua"), s.Tab().BgColor)
 }

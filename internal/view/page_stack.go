@@ -34,6 +34,12 @@ func (p *PageStack) Init(ctx context.Context) (err error) {
 	return nil
 }
 
+// Close stops and drops every page without restarting the ones underneath.
+func (p *PageStack) Close() {
+	p.RemoveListener(p)
+	p.Clear()
+}
+
 // StackPushed notifies a new page was added.
 func (p *PageStack) StackPushed(c model.Component) {
 	c.Start()

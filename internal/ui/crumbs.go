@@ -43,6 +43,15 @@ func (c *Crumbs) StylesChanged(s *config.Styles) {
 	c.refresh(c.stack.Flatten())
 }
 
+// Reset replaces the crumbs with the given component chain.
+func (c *Crumbs) Reset(cc []model.Component) {
+	c.stack.Clear()
+	for _, comp := range cc {
+		c.stack.Push(comp)
+	}
+	c.refresh(c.stack.Flatten())
+}
+
 // StackPushed indicates a new item was added.
 func (c *Crumbs) StackPushed(comp model.Component) {
 	c.stack.Push(comp)

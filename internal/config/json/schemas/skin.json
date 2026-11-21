@@ -83,6 +83,14 @@
                 "activeColor": {"type": "string"}
               }
             },
+            "tabs": {
+              "type": "object",
+              "properties": {
+                "fgColor": {"type": "string"},
+                "bgColor": {"type": "string"},
+                "activeColor": {"type": "string"}
+              }
+            },
             "status": {
               "type": "object",
               "properties": {
