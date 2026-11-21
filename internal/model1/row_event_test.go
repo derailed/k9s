@@ -526,6 +526,34 @@ func TestRowEventsSort(t *testing.T) {
 				model1.RowEvent{Row: model1.Row{ID: "ns2/C", Fields: model1.Fields{"C", "2", "3", "0.1Ei"}}},
 			),
 		},
+		"short_row": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"A", "2", "b"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"B"}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"C", "2", "a"}}},
+			),
+			col: 2,
+			asc: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{"B"}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"C", "2", "a"}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"A", "2", "b"}}},
+			),
+		},
+		"short_row_capacity_desc": {
+			re: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"A", "1Gi"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{}}},
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"C", "2Gi"}}},
+			),
+			col:      1,
+			capacity: true,
+			e: model1.NewRowEventsWithEvts(
+				model1.RowEvent{Row: model1.Row{ID: "C", Fields: model1.Fields{"C", "2Gi"}}},
+				model1.RowEvent{Row: model1.Row{ID: "A", Fields: model1.Fields{"A", "1Gi"}}},
+				model1.RowEvent{Row: model1.Row{ID: "B", Fields: model1.Fields{}}},
+			),
+		},
 	}
 
 	for k := range uu {
