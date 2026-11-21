@@ -195,6 +195,7 @@ func execute(opts *shellOpts, statusChan chan<- string) error {
 	var interrupted bool
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sigChan)
 	go func(cancel context.CancelFunc) {
 		defer slog.Debug("Got signal canceled")
 		select {
