@@ -58,7 +58,7 @@ func (t PortTunnel) PortMap() string {
 // IsPortFree checks if a address/port pair is available on host.
 func IsPortFree(ctx context.Context, t PortTunnel) bool {
 	var ncfg net.ListenConfig
-	s, err := ncfg.Listen(ctx, "tcp", fmt.Sprintf("%s:%s", t.Address, t.LocalPort))
+	s, err := ncfg.Listen(ctx, "tcp", net.JoinHostPort(t.Address, t.LocalPort))
 	if err != nil {
 		slog.Warn("Port is not available", slogs.Port, t.LocalPort, slogs.Address, t.Address)
 		return false
