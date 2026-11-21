@@ -51,6 +51,9 @@ type Log struct {
 	follow            bool
 	columnLock        bool
 	requestOneRefresh bool
+	pendingClear      bool
+	pendingLines      [][]byte
+	updateQueued      bool
 }
 
 var _ model.Component = (*Log)(nil)
@@ -141,9 +144,7 @@ func (l *Log) LogResume() {
 
 // LogCleared clears the logs.
 func (l *Log) LogCleared() {
-	l.app.QueueUpdateDraw(func() {
-		l.logs.Clear()
-	})
+	l.queueUpdate(true, nil)
 }
 
 // LogFailed notifies an error occurred.
@@ -161,12 +162,38 @@ func (l *Log) LogFailed(err error) {
 
 // LogChanged updates the logs.
 func (l *Log) LogChanged(lines [][]byte) {
-	l.app.QueueUpdateDraw(func() {
-		if l.logs.GetText(true) == logMessage {
-			l.logs.Clear()
-		}
-		l.Flush(lines)
-	})
+	l.queueUpdate(false, lines)
+}
+
+// queueUpdate records a log change and schedules a redraw, unless one is already
+// queued to pick it up. QueueUpdateDraw runs on its own goroutine, so separate
+// updates can land in any order, and they pile up when a redraw outlasts the
+// flush timer.
+func (l *Log) queueUpdate(clearLogs bool, lines [][]byte) {
+	l.mx.Lock()
+	if clearLogs {
+		l.pendingClear, l.pendingLines = true, nil
+	}
+	l.pendingLines = append(l.pendingLines, lines...)
+	queued := l.updateQueued
+	l.updateQueued = true
+	l.mx.Unlock()
+
+	if !queued {
+		l.app.QueueUpdateDraw(l.applyUpdate)
+	}
+}
+
+func (l *Log) applyUpdate() {
+	l.mx.Lock()
+	clearLogs, lines := l.pendingClear, l.pendingLines
+	l.pendingClear, l.pendingLines, l.updateQueued = false, nil, false
+	l.mx.Unlock()
+
+	if clearLogs || l.logs.GetText(true) == logMessage {
+		l.logs.Clear()
+	}
+	l.Flush(lines)
 }
 
 // BufferCompleted indicates input was accepted.
