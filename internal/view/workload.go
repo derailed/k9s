@@ -62,6 +62,7 @@ func (w *Workload) bindKeys(aa *ui.KeyActions) {
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", w.GetTable().SortColCmd("READY", true), false),
 		ui.KeyShiftA: ui.NewKeyAction("Sort Age", w.GetTable().SortColCmd(ageCol, true), false),
 		ui.KeyY:      ui.NewKeyAction(yamlAction, w.yamlCmd, true),
+		ui.KeyShiftY: ui.NewKeyAction(kyamlAction, w.kyamlCmd, true),
 		ui.KeyD:      ui.NewKeyAction("Describe", w.describeCmd, true),
 	})
 }
@@ -201,6 +202,25 @@ func (w *Workload) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v := NewLiveView(w.App(), yamlAction, model.NewYAML(gvr, fqn))
+	if err := v.app.inject(v, false); err != nil {
+		v.app.Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (w *Workload) kyamlCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := w.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+	gvr, fqn, ok := parsePath(path)
+	if !ok {
+		w.App().Flash().Err(fmt.Errorf("unable to parse path: %q", path))
+		return evt
+	}
+
+	v := NewLiveView(w.App(), kyamlAction, model.NewKYAML(gvr, fqn))
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
 	}

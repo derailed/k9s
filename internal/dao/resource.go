@@ -91,3 +91,17 @@ func (r *Resource) ToYAML(path string, showManaged bool) (string, error) {
 	}
 	return raw, nil
 }
+
+// ToKYAML returns a resource kyaml.
+func (r *Resource) ToKYAML(path string, showManaged bool) (string, error) {
+	o, err := r.Get(context.Background(), path)
+	if err != nil {
+		return "", err
+	}
+
+	raw, err := ToKYAML(o, showManaged)
+	if err != nil {
+		return "", fmt.Errorf("unable to marshal resource %w", err)
+	}
+	return raw, nil
+}
