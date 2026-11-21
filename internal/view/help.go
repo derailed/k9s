@@ -79,7 +79,7 @@ func (h *Help) StylesChanged(s *config.Styles) {
 }
 
 func (h *Help) bindKeys() {
-	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS, ui.KeySlash)
+	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlA, tcell.KeyCtrlS, ui.KeySlash)
 	h.Actions().Bulk(ui.KeyMap{
 		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, true),
 		ui.KeyQ:         ui.NewKeyAction("Back", h.app.PrevCmd, false),
@@ -235,7 +235,7 @@ func (*Help) showGeneral() model.MenuHints {
 			Description: "Help",
 		},
 		{
-			Mnemonic:    "Ctrl-a",
+			Mnemonic:    "Ctrl-x",
 			Description: "Aliases",
 		},
 		{
@@ -289,6 +289,10 @@ func (*Help) showGeneral() model.MenuHints {
 		{
 			Mnemonic:    "Ctrl-space",
 			Description: "Mark Range",
+		},
+		{
+			Mnemonic:    "Ctrl-a",
+			Description: "Mark All",
 		},
 		{
 			Mnemonic:    "Ctrl-\\",
