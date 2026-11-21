@@ -83,6 +83,10 @@ type ClusterInfo struct {
 	listeners []ClusterInfoListener
 	cache     *cache.LRUExpireCache
 	mx        sync.RWMutex
+	// refreshMx serializes refreshes.
+	refreshMx sync.Mutex
+	// gen counts resets so a refresh started before one is dropped.
+	gen uint64
 }
 
 // NewClusterInfo returns a new instance.
@@ -123,6 +127,7 @@ func (c *ClusterInfo) Reset(f dao.Factory) {
 
 	c.mx.Lock()
 	c.cluster, c.data = NewCluster(f), NewClusterMeta()
+	c.gen++
 	c.mx.Unlock()
 
 	c.Refresh()
@@ -130,16 +135,23 @@ func (c *ClusterInfo) Reset(f dao.Factory) {
 
 // Refresh fetches the latest cluster meta.
 func (c *ClusterInfo) Refresh() {
+	c.refreshMx.Lock()
+	defer c.refreshMx.Unlock()
+
+	c.mx.RLock()
+	cluster, gen := c.cluster, c.gen
+	c.mx.RUnlock()
+
 	data := NewClusterMeta()
 	if c.factory.Client().ConnectionOK() {
-		data.Context = c.cluster.ContextName()
-		data.Cluster = c.cluster.ClusterName()
-		data.User = c.cluster.UserName()
-		data.K8sVer = c.cluster.Version()
-		ctx, cancel := context.WithTimeout(context.Background(), c.cluster.factory.Client().Config().CallTimeout())
+		data.Context = cluster.ContextName()
+		data.Cluster = cluster.ClusterName()
+		data.User = cluster.UserName()
+		data.K8sVer = cluster.Version()
+		ctx, cancel := context.WithTimeout(context.Background(), cluster.factory.Client().Config().CallTimeout())
 		defer cancel()
 		var mx client.ClusterMetrics
-		if err := c.cluster.Metrics(ctx, &mx); err == nil {
+		if err := cluster.Metrics(ctx, &mx); err == nil {
 			data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
 		}
 	}
@@ -157,14 +169,20 @@ func (c *ClusterInfo) Refresh() {
 		data.K9sLatest = ""
 	}
 
-	if c.data.Deltas(data) {
-		c.fireMetaChanged(c.data, data)
+	c.mx.Lock()
+	if gen != c.gen {
+		c.mx.Unlock()
+		return
+	}
+	prev := c.data
+	c.data = data
+	c.mx.Unlock()
+
+	if prev.Deltas(data) {
+		c.fireMetaChanged(prev, data)
 	} else {
 		c.fireNoMetaChanged(data)
 	}
-	c.mx.Lock()
-	c.data = data
-	c.mx.Unlock()
 }
 
 // AddListener adds a new model listener.
