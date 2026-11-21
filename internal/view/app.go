@@ -36,6 +36,7 @@ var ExitStatus = ""
 
 const (
 	splashDelay      = 1 * time.Second
+	firstPaintWait   = 2 * time.Second
 	clusterRefresh   = 15 * time.Second
 	clusterInfoWidth = 50
 	clusterInfoPad   = 15
@@ -56,6 +57,7 @@ type App struct {
 	showHeader    bool
 	showLogo      bool
 	showCrumbs    bool
+	mainShown     atomic.Bool
 }
 
 // NewApp returns a K9s app instance.
@@ -550,16 +552,13 @@ func (a *App) Run() error {
 	a.Resume()
 
 	go func() {
-		if !a.Config.K9s.IsSplashless() {
-			<-time.After(splashDelay)
+		// Without a splash, contentReady shows the main page sooner; this bounds the wait.
+		delay := splashDelay
+		if a.Config.K9s.IsSplashless() {
+			delay = firstPaintWait
 		}
-		a.QueueUpdateDraw(func() {
-			a.Main.SwitchToPage("main")
-			// if command bar is already active, focus it
-			if a.CmdBuff().IsActive() {
-				a.SetFocus(a.Prompt())
-			}
-		})
+		<-time.After(delay)
+		a.QueueUpdateDraw(a.showMain)
 	}()
 
 	if err := a.command.defaultCmd(true); err != nil {
@@ -571,6 +570,25 @@ func (a *App) Run() error {
 	}
 
 	return nil
+}
+
+// showMain switches to the main page once, from the UI goroutine or before Run.
+func (a *App) showMain() {
+	if !a.mainShown.CompareAndSwap(false, true) {
+		return
+	}
+	a.Main.SwitchToPage("main")
+	// if command bar is already active, focus it
+	if a.CmdBuff().IsActive() {
+		a.SetFocus(a.Prompt())
+	}
+}
+
+// contentReady reports that the first view has content to show.
+func (a *App) contentReady() {
+	if a.Config.K9s.IsSplashless() {
+		a.showMain()
+	}
 }
 
 // Status reports a new app status for display.
@@ -808,6 +826,10 @@ func (a *App) inject(c model.Component, clearStack bool) error {
 		a.Content.Clear()
 	}
 	a.Content.Push(c)
+	// Resource views report their content when the first data arrives.
+	if _, ok := c.(ResourceViewer); !ok {
+		a.contentReady()
+	}
 
 	return nil
 }
