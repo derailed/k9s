@@ -45,3 +45,33 @@ func TestCronJobBindKeysReadOnly(t *testing.T) {
 		})
 	}
 }
+
+func TestSuspendDialogMsg(t *testing.T) {
+	uu := map[string]struct {
+		title string
+		sels  []string
+		e     string
+	}{
+		"single": {
+			title: "Suspend",
+			sels:  []string{"default/cj-a"},
+			e:     "default/cj-a",
+		},
+		"marked-suspend": {
+			title: "Suspend",
+			sels:  []string{"default/cj-a", "default/cj-b"},
+			e:     "Suspend 2 CronJobs?",
+		},
+		"marked-resume": {
+			title: "Resume",
+			sels:  []string{"default/cj-a", "default/cj-b", "default/cj-c"},
+			e:     "Resume 3 CronJobs?",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, suspendDialogMsg(u.title, u.sels))
+		})
+	}
+}

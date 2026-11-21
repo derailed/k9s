@@ -142,6 +142,22 @@ func (c *CronJob) GetInstance(fqn string) (*batchv1.CronJob, error) {
 
 // ToggleSuspend toggles suspend/resume on a CronJob.
 func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
+	return c.updateSuspend(ctx, path, toggledSuspend)
+}
+
+// SetSuspend suspends or resumes a CronJob.
+func (c *CronJob) SetSuspend(ctx context.Context, path string, suspend bool) error {
+	return c.updateSuspend(ctx, path, func(*bool) bool {
+		return suspend
+	})
+}
+
+// toggledSuspend returns the opposite of the current suspend state; an unset state counts as resumed.
+func toggledSuspend(cur *bool) bool {
+	return cur == nil || !*cur
+}
+
+func (c *CronJob) updateSuspend(ctx context.Context, path string, next func(*bool) bool) error {
 	ns, n := client.Namespaced(path)
 	auth, err := c.Client().CanI(ns, c.gvr, n, []string{client.GetVerb, client.UpdateVerb})
 	if err != nil {
@@ -159,13 +175,8 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	if cj.Spec.Suspend != nil {
-		current := !*cj.Spec.Suspend
-		cj.Spec.Suspend = &current
-	} else {
-		trueVal := true
-		cj.Spec.Suspend = &trueVal
-	}
+	suspend := next(cj.Spec.Suspend)
+	cj.Spec.Suspend = &suspend
 	_, err = dial.BatchV1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
 
 	return err
