@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -68,7 +69,16 @@ func TestComputeShellArgs(t *testing.T) {
 				Context:     newStr("coolContext"),
 				BearerToken: newStr("coolToken"),
 			},
-			e: "exec -it -n fred blee --kubeconfig coolConfig --context coolContext --token coolToken -c c1 -- cmd /c " + winShellCheck,
+			e: "exec -it -n fred blee --kubeconfig coolConfig --token coolToken -c c1 -- cmd /c " + winShellCheck,
+		},
+
+		"in-cluster-context": {
+			fqn: "fred/blee",
+			os:  "linux",
+			cfg: &genericclioptions.ConfigFlags{
+				Context: newStr(client.InClusterContext),
+			},
+			e: "exec -it -n fred blee -- sh -c " + shellCheck,
 		},
 	}
 

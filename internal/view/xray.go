@@ -470,7 +470,6 @@ func (x *Xray) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 			"edit",
 			spec.GVR().R(),
 			"-n", ns,
-			"--context", x.app.Config.K9s.ActiveContextName(),
 		)
 		if cfg := x.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
