@@ -185,6 +185,11 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack, pushCmd bool) 
 		p.Merge(comd)
 	}
 
+	// For explain command, use the arguments as the fqn if fqn is empty
+	if gvr == client.ExplainGVR && fqn == "" {
+		fqn = strings.TrimSpace(p.Args())
+	}
+
 	if context, ok := p.HasContext(); ok {
 		if context != c.app.Config.ActiveContextName() {
 			if err := c.app.Config.Save(true); err != nil {
@@ -250,7 +255,17 @@ func (c *Command) defaultCmd(isRoot bool) error {
 	if isRoot {
 		defCmd = ctxCmd
 	}
-	p := cmd.NewInterpreter(c.app.Config.ActiveView())
+
+	activeView := c.app.Config.ActiveView()
+	p := cmd.NewInterpreter(activeView)
+
+	// Don't restore explain view on startup -redirect to default view instead
+	if p.Cmd() == "explain" || p.Cmd() == "exp" {
+		slog.Info("Explain view detected on startup - redirecting to default view")
+		c.app.Config.SetActiveView(client.PodGVR.String())
+		p = cmd.NewInterpreter(client.PodGVR.String())
+	}
+
 	if p.IsBlank() {
 		return c.run(p.Reset(defCmd, ""), "", true, true)
 	}
