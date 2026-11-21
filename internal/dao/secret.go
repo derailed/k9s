@@ -12,17 +12,64 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/slogs"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
+	"k8s.io/client-go/metadata"
 )
 
 // Secret represents a secret K8s resource.
 type Secret struct {
 	Resource
 	decodeData bool
+}
+
+// List returns only Secret metadata. Fetching complete Secret objects just to
+// populate the table transfers every value in data and stringData, which can
+// be both expensive and unnecessary. Get still uses Resource.Get so actions
+// that inspect a selected Secret continue to retrieve the complete object.
+func (s *Secret) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	cfg, err := s.Client().RestConfig()
+	if err != nil {
+		return nil, err
+	}
+	c, err := metadata.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	labelSelector := labels.Everything().String()
+	if sel, ok := ctx.Value(internal.KeyLabels).(labels.Selector); ok {
+		labelSelector = sel.String()
+	}
+	fieldSelector, _ := ctx.Value(internal.KeyFields).(string)
+	opts := metav1.ListOptions{LabelSelector: labelSelector, FieldSelector: fieldSelector}
+
+	dial := c.Resource(s.gvr.GVR())
+	if client.IsAllNamespace(ns) {
+		ns = client.BlankNamespace
+	}
+	var list *metav1.PartialObjectMetadataList
+	if client.IsClusterScoped(ns) {
+		list, err = dial.List(ctx, opts)
+	} else {
+		list, err = dial.Namespace(ns).List(ctx, opts)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	objects := make([]runtime.Object, len(list.Items))
+	for i := range list.Items {
+		objects[i] = &list.Items[i]
+	}
+	return objects, nil
 }
 
 // Describe describes a secret that can be encoded or decoded.
