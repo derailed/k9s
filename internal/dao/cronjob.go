@@ -159,16 +159,17 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	if cj.Spec.Suspend != nil {
-		current := !*cj.Spec.Suspend
-		cj.Spec.Suspend = &current
-	} else {
-		trueVal := true
-		cj.Spec.Suspend = &trueVal
-	}
+	cj.Spec.Suspend = toggledSuspend(cj.Spec.Suspend)
 	_, err = dial.BatchV1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
 
 	return err
+}
+
+// toggledSuspend returns the opposite of a suspend setting, treating an unset one as not suspended.
+func toggledSuspend(suspend *bool) *bool {
+	toggled := suspend == nil || !*suspend
+
+	return &toggled
 }
 
 // Scan scans for cluster resource refs.

@@ -4,11 +4,15 @@
 package view
 
 import (
+	"context"
 	"errors"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/tcell/v2"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -29,10 +33,47 @@ func NewJob(gvr *client.GVR) ResourceViewer {
 			NewLogsExtender(NewBrowser(gvr), j.logOptions),
 		),
 	)
+	j.AddBindKeysFn(j.bindKeys)
 	j.GetTable().SetEnterFn(j.showPods)
 	j.GetTable().SetSortCol("AGE", true)
 
 	return &j
+}
+
+func (j *Job) bindKeys(aa *ui.KeyActions) {
+	aa.Add(ui.KeyS, ui.NewKeyAction("Suspend/Resume", j.toggleSuspendCmd, true))
+}
+
+func (j *Job) toggleSuspendCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := j.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	job, err := j.getInstance(path)
+	if err != nil {
+		j.App().Flash().Err(err)
+		return nil
+	}
+
+	title := "Suspend"
+	if job.Spec.Suspend != nil && *job.Spec.Suspend {
+		title = "Resume"
+	}
+
+	d := j.App().Styles.Dialog()
+	dialog.ShowConfirm(&d, j.App().Content.Pages, title, path, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), j.App().Conn().Config().CallTimeout())
+		defer cancel()
+
+		var job dao.Job
+		job.Init(j.App().factory, client.JobGVR)
+		if err := job.ToggleSuspend(ctx, path); err != nil {
+			j.App().Flash().Errf("Job %s failed: %v", strings.ToLower(title), err)
+		}
+	}, func() {})
+
+	return nil
 }
 
 func (*Job) showPods(app *App, _ ui.Tabular, gvr *client.GVR, path string) {
