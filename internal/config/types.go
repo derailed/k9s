@@ -54,6 +54,9 @@ type UI struct {
 	// UseFullGVRTitle toggles the display of full GVR (group/version/resource) vs R in views title.
 	UseFullGVRTitle bool `json:"useFullGVRTitle" yaml:"useFullGVRTitle"`
 
+	// TerminalTitle sets the terminal window/tab title to the active context and view.
+	TerminalTitle bool `json:"terminalTitle" yaml:"terminalTitle"`
+
 	manualHeadless   *bool
 	manualLogoless   *bool
 	manualCrumbsless *bool
