@@ -18,7 +18,13 @@
         },
         "required": ["columns"]
       }
+    },
+    "workloads": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
     }
-  },
-  "required": ["views"]
+  }
 }

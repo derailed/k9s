@@ -73,9 +73,17 @@ func (v *ViewSetting) Equals(vs *ViewSetting) bool {
 	return cmp.Compare(v.SortColumn, vs.SortColumn) == 0
 }
 
+// DefaultWorkloadGVRs is the name of the workload GVR set used by the
+// built-in workload (:wk) view.
+const DefaultWorkloadGVRs = "default"
+
 // CustomView represents a collection of view customization.
 type CustomView struct {
-	Views     map[string]ViewSetting `yaml:"views"`
+	Views map[string]ViewSetting `yaml:"views"`
+	// Workloads maps a named aggregation to a list of GVRs that the workload
+	// view should display. The "default" entry overrides the built-in
+	// workload resource set. When unset, the built-in defaults are used.
+	Workloads map[string][]string `yaml:"workloads,omitempty"`
 	listeners map[string]ViewConfigListener
 }
 
@@ -83,6 +91,7 @@ type CustomView struct {
 func NewCustomView() *CustomView {
 	return &CustomView{
 		Views:     make(map[string]ViewSetting),
+		Workloads: make(map[string][]string),
 		listeners: make(map[string]ViewConfigListener),
 	}
 }
@@ -92,6 +101,28 @@ func (v *CustomView) Reset() {
 	for k := range v.Views {
 		delete(v.Views, k)
 	}
+	for k := range v.Workloads {
+		delete(v.Workloads, k)
+	}
+}
+
+// WorkloadGVRs returns the list of GVRs configured for the given workload
+// aggregation name. The second return value reports whether a non-empty
+// configuration was found. When false, callers should fall back to the
+// built-in defaults to preserve backward compatibility.
+func (v *CustomView) WorkloadGVRs(name string) ([]string, bool) {
+	if v == nil || len(v.Workloads) == 0 {
+		return nil, false
+	}
+	if name == "" {
+		name = DefaultWorkloadGVRs
+	}
+	gvrs, ok := v.Workloads[name]
+	if !ok || len(gvrs) == 0 {
+		return nil, false
+	}
+
+	return gvrs, true
 }
 
 // Load loads view configurations.
@@ -114,6 +145,7 @@ func (v *CustomView) Load(path string) error {
 		return err
 	}
 	v.Views = in.Views
+	v.Workloads = in.Workloads
 	v.fireConfigChanged()
 
 	return nil

@@ -49,6 +49,71 @@ func TestCustomViewLoad(t *testing.T) {
 	}
 }
 
+func TestWorkloadGVRsLoad(t *testing.T) {
+	cfg := config.NewCustomView()
+	require.NoError(t, cfg.Load("testdata/views/workloads.yaml"))
+
+	gvrs, ok := cfg.WorkloadGVRs(config.DefaultWorkloadGVRs)
+	require.True(t, ok)
+	assert.Equal(t, []string{"apps/v1/deployments", "v1/pods", "examples.demo.io/v1/foos"}, gvrs)
+
+	rks, ok := cfg.WorkloadGVRs("rks")
+	require.True(t, ok)
+	assert.Equal(t, []string{"rks.io/v1/rksinstances", "rks.io/v1/workerinstances", "v1/pods"}, rks)
+}
+
+func TestWorkloadGVRs(t *testing.T) {
+	uu := map[string]struct {
+		cv   *config.CustomView
+		name string
+		e    []string
+		ok   bool
+	}{
+		"nil": {
+			cv: nil,
+		},
+		"empty": {
+			cv: config.NewCustomView(),
+		},
+		"default-fallback-on-blank-name": {
+			cv: func() *config.CustomView {
+				cv := config.NewCustomView()
+				cv.Workloads[config.DefaultWorkloadGVRs] = []string{"v1/pods"}
+				return cv
+			}(),
+			name: "",
+			e:    []string{"v1/pods"},
+			ok:   true,
+		},
+		"named": {
+			cv: func() *config.CustomView {
+				cv := config.NewCustomView()
+				cv.Workloads["rks"] = []string{"rks.io/v1/rksinstances"}
+				return cv
+			}(),
+			name: "rks",
+			e:    []string{"rks.io/v1/rksinstances"},
+			ok:   true,
+		},
+		"unknown-name": {
+			cv: func() *config.CustomView {
+				cv := config.NewCustomView()
+				cv.Workloads[config.DefaultWorkloadGVRs] = []string{"v1/pods"}
+				return cv
+			}(),
+			name: "nope",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			gvrs, ok := u.cv.WorkloadGVRs(u.name)
+			assert.Equal(t, u.ok, ok)
+			assert.Equal(t, u.e, gvrs)
+		})
+	}
+}
+
 func TestViewSettingEquals(t *testing.T) {
 	uu := map[string]struct {
 		v1, v2 *config.ViewSetting
