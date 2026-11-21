@@ -20,6 +20,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// loadingMarker is shown while release details are being fetched.
+const loadingMarker = "…"
+
 // Chart renders a helm chart to screen.
 type Chart struct{}
 
@@ -56,14 +59,21 @@ func (c Chart) Render(o any, _ string, r *model1.Row) error {
 		return fmt.Errorf("expected ReleaseRes, but got %T", o)
 	}
 
+	// Chart details are loaded lazily and may not be available yet.
+	chart, appVersion := loadingMarker, loadingMarker
+	if c := h.Release.Chart; c != nil && c.Metadata != nil {
+		chart = c.Metadata.Name + "-" + c.Metadata.Version
+		appVersion = c.Metadata.AppVersion
+	}
+
 	r.ID = client.FQN(h.Release.Namespace, h.Release.Name)
 	r.Fields = model1.Fields{
 		h.Release.Namespace,
 		h.Release.Name,
 		strconv.Itoa(h.Release.Version),
 		h.Release.Info.Status.String(),
-		h.Release.Chart.Metadata.Name + "-" + h.Release.Chart.Metadata.Version,
-		h.Release.Chart.Metadata.AppVersion,
+		chart,
+		appVersion,
 		render.AsStatus(c.diagnose(h.Release.Info.Status.String())),
 		render.ToAge(metav1.Time{Time: h.Release.Info.LastDeployed.Time}),
 	}

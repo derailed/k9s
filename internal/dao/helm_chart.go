@@ -32,7 +32,20 @@ type HelmChart struct {
 }
 
 // List returns a collection of resources.
-func (h *HelmChart) List(_ context.Context, ns string) ([]runtime.Object, error) {
+func (h *HelmChart) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	if useHelmMetadata() {
+		oo, err := h.listMeta(ctx, ns)
+		if err == nil {
+			return oo, nil
+		}
+		slog.Warn("Helm metadata list failed. Falling back to helm list", slogs.Error, err)
+	}
+
+	return h.listFull(ns)
+}
+
+// listFull lists releases using helm, downloading every release revision.
+func (h *HelmChart) listFull(ns string) ([]runtime.Object, error) {
 	cfg, err := ensureHelmConfig(h.Client().Config().Flags(), ns)
 	if err != nil {
 		return nil, err
