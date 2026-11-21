@@ -87,9 +87,19 @@ func (l *Log) IsHead() bool {
 	return l.logOptions.Head
 }
 
+// ShowTimestamp returns show timestamp option.
+func (l *Log) ShowTimestamp() bool {
+	l.mx.RLock()
+	defer l.mx.RUnlock()
+
+	return l.logOptions.ShowTimestamp
+}
+
 // ToggleShowTimestamp toggles to logs timestamps.
 func (l *Log) ToggleShowTimestamp(b bool) {
+	l.mx.Lock()
 	l.logOptions.ShowTimestamp = b
+	l.mx.Unlock()
 	l.Refresh()
 }
 
@@ -102,12 +112,17 @@ func (l *Log) Head(ctx context.Context) {
 
 // SetSinceSeconds sets the logs retrieval time.
 func (l *Log) SetSinceSeconds(ctx context.Context, i int64) {
+	l.mx.Lock()
 	l.logOptions.SinceSeconds, l.logOptions.Head = i, false
+	l.mx.Unlock()
 	l.Restart(ctx)
 }
 
 // Configure sets logger configuration.
 func (l *Log) Configure(opts config.Logger) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
+
 	l.logOptions.Lines = opts.TailCount
 	l.logOptions.SinceSeconds = opts.SinceSeconds
 	l.logOptions.LogBufferSize = opts.LogBufferSize
@@ -115,16 +130,25 @@ func (l *Log) Configure(opts config.Logger) {
 
 // GetPath returns resource path.
 func (l *Log) GetPath() string {
+	l.mx.RLock()
+	defer l.mx.RUnlock()
+
 	return l.logOptions.Path
 }
 
 // GetContainer returns the resource container if any or "" otherwise.
 func (l *Log) GetContainer() string {
+	l.mx.RLock()
+	defer l.mx.RUnlock()
+
 	return l.logOptions.Container
 }
 
 // HasDefaultContainer returns true if the pod has a default container, false otherwise.
 func (l *Log) HasDefaultContainer() bool {
+	l.mx.RLock()
+	defer l.mx.RUnlock()
+
 	return l.logOptions.DefaultContainer != ""
 }
 
@@ -274,7 +298,9 @@ func (l *Log) Notify() {
 
 // ToggleAllContainers toggles to show all containers logs.
 func (l *Log) ToggleAllContainers(ctx context.Context) {
+	l.mx.Lock()
 	l.logOptions.ToggleAllContainers()
+	l.mx.Unlock()
 	l.Restart(ctx)
 }
 
