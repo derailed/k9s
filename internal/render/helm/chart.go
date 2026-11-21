@@ -14,7 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
-	"helm.sh/helm/v3/pkg/release"
+	release "helm.sh/helm/v4/pkg/release/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -65,9 +65,9 @@ func (c Chart) Render(o any, _ string, r *model1.Row) error {
 		h.Release.Chart.Metadata.Name + "-" + h.Release.Chart.Metadata.Version,
 		h.Release.Chart.Metadata.AppVersion,
 		render.AsStatus(c.diagnose(h.Release.Info.Status.String())),
-		render.ToAge(metav1.Time{Time: h.Release.Info.LastDeployed.Time}),
+		render.ToAge(metav1.Time{Time: h.Release.Info.LastDeployed}),
 	}
-	r.Age = h.Release.Info.LastDeployed.Time
+	r.Age = h.Release.Info.LastDeployed
 
 	return nil
 }
@@ -92,6 +92,16 @@ func (Chart) diagnose(s string) error {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+// NewReleaseRes asserts a Helm Releaser (any) is the v1 concrete release type.
+func NewReleaseRes(r any) (ReleaseRes, error) {
+	rel, ok := r.(*release.Release)
+	if !ok {
+		return ReleaseRes{}, fmt.Errorf("unexpected Helm release type %T", r)
+	}
+
+	return ReleaseRes{Release: rel}, nil
+}
 
 // ReleaseRes represents a helm chart resource.
 type ReleaseRes struct {
