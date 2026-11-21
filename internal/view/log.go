@@ -29,11 +29,13 @@ import (
 )
 
 const (
-	logTitle            = "logs"
-	logMessage          = "Waiting for logs...\n"
-	logFmt              = "([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
-	logCoFmt            = "([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
-	defaultFlushTimeout = 50 * time.Millisecond
+	logTitle                 = "logs"
+	logMessage               = "Waiting for logs...\n"
+	logFmt                   = "([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
+	logCoFmt                 = "([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
+	defaultFlushTimeout      = 50 * time.Millisecond
+	horizontalScrollStep     = 1
+	fastHorizontalScrollStep = 50
 )
 
 // Log represents a generic log viewer.
@@ -257,6 +259,8 @@ func (l *Log) bindKeys() {
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", l.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, false),
 		ui.KeyQ:         ui.NewKeyAction("Back", l.resetCmd, false),
+		tcell.KeyLeft:   ui.NewSharedKeyAction("Scroll Left", l.scrollLeftCmd, false),
+		tcell.KeyRight:  ui.NewSharedKeyAction("Scroll Right", l.scrollRightCmd, false),
 		ui.KeyShiftC:    ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyM:         ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
@@ -498,6 +502,43 @@ func (l *Log) toggleTextWrapCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.indicator.ToggleTextWrap()
 	l.logs.SetWrap(l.indicator.textWrap)
 	l.indicator.Refresh()
+
+	return nil
+}
+
+func (l *Log) scrollLeftCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() || l.indicator.textWrap {
+		return evt
+	}
+
+	step := horizontalScrollStep
+	if evt.Modifiers()&tcell.ModShift != 0 {
+		step = fastHorizontalScrollStep
+	}
+
+	r, c := l.logs.GetScrollOffset()
+	c -= step
+	if c < 0 {
+		c = 0
+	}
+	l.logs.ScrollTo(r, c)
+
+	return nil
+}
+
+func (l *Log) scrollRightCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() || l.indicator.textWrap {
+		return evt
+	}
+
+	step := horizontalScrollStep
+	if evt.Modifiers()&tcell.ModShift != 0 {
+		step = fastHorizontalScrollStep
+	}
+
+	r, c := l.logs.GetScrollOffset()
+	c += step
+	l.logs.ScrollTo(r, c)
 
 	return nil
 }
