@@ -2,8 +2,7 @@ k9s:
   cluster: arn:aws:eks:eu-central-1:xxx:cluster/fred-blee
   namespace:
     active: default
-    lockFavorites: false
-    favorites:
+    recent:
     - default
   view:
     active: po

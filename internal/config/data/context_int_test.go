@@ -48,25 +48,26 @@ func Test_contextMerge(t *testing.T) {
 				},
 			},
 		},
-		"deltas-locked": {
+		"recent": {
 			c1: &Context{
 				Namespace: &Namespace{
-					Active:        "ns1",
-					LockFavorites: true,
-					Favorites:     []string{"ns1", "ns2", "ns3"},
+					Active:    "ns1",
+					Favorites: []string{"ns1"},
+					Recent:    []string{"ns2"},
 				},
 			},
 			c2: &Context{
 				Namespace: &Namespace{
 					Active:    "ns10",
-					Favorites: []string{"ns10", "ns11", "ns12"},
+					Favorites: []string{"ns10"},
+					Recent:    []string{"ns11"},
 				},
 			},
 			e: &Context{
 				Namespace: &Namespace{
-					Active:        "ns1",
-					LockFavorites: true,
-					Favorites:     []string{"ns1", "ns2", "ns3"},
+					Active:    "ns1",
+					Favorites: []string{"ns1", "ns10"},
+					Recent:    []string{"ns2", "ns11"},
 				},
 			},
 		},
@@ -101,6 +102,33 @@ func Test_contextMerge(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			u.c1.merge(u.c2)
 			assert.Equal(t, u.e, u.c1)
+		})
+	}
+}
+
+func Test_nsMigrate(t *testing.T) {
+	lockOn, lockOff := true, false
+	uu := map[string]struct {
+		ns, e *Namespace
+	}{
+		"none": {
+			ns: &Namespace{Favorites: []string{"ns1"}},
+			e:  &Namespace{Favorites: []string{"ns1"}},
+		},
+		"locked": {
+			ns: &Namespace{LockFavorites: &lockOn, Favorites: []string{"ns1"}},
+			e:  &Namespace{Favorites: []string{"ns1"}},
+		},
+		"unlocked": {
+			ns: &Namespace{LockFavorites: &lockOff, Favorites: []string{"ns1"}},
+			e:  &Namespace{Recent: []string{"ns1"}},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			u.ns.migrate()
+			assert.Equal(t, u.e, u.ns)
 		})
 	}
 }
