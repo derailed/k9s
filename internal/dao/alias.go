@@ -67,11 +67,11 @@ func (*Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
 }
 
 // Ensure makes sure alias are loaded.
-func (a *Alias) Ensure(path string) (config.Alias, error) {
+func (a *Alias) Ensure(path string) error {
 	if err := MetaAccess.LoadResources(a.Factory); err != nil {
-		return config.Alias{}, err
+		return err
 	}
-	return a.Alias, a.load(path)
+	return a.load(path)
 }
 
 func (a *Alias) load(path string) error {

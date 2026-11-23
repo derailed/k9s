@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"maps"
 	"os"
 	"os/signal"
 	"sort"
@@ -207,7 +206,7 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 		}
 
 		ls := strings.ToLower(s)
-		for alias := range maps.Keys(a.command.alias.Alias) {
+		for _, alias := range a.command.alias.Keys() {
 			if suggest, ok := cmd.ShouldAddSuggest(ls, alias); ok {
 				entries = append(entries, suggest)
 			}
