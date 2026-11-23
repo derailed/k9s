@@ -1,0 +1,17 @@
+plugins:
+  diff-path:
+    shortCut: Shift-D
+    description: Diff against a local path
+    scopes:
+      - kustomizations
+    command: bash
+    confirm: false
+    args:
+      - -c
+      - "flux diff kustomization $NAME --path $INPUT_PATH"
+    inputs:
+      - name: path
+        label: Local path
+        type: path
+        required: true
+        default: .

@@ -66,11 +66,27 @@ func ShowPluginInputs(
 			values[input.Name] = input.Default
 			inputName := input.Name
 			f.AddInputField(label, input.Default, 40, nil, func(text string) {
-				if strings.Contains(text, " ") {
-					text = fmt.Sprintf("%q", text)
-				}
-				values[inputName] = text
+				values[inputName] = shellValue(text)
 			})
+
+		case config.InputTypePath:
+			values[input.Name] = input.Default
+			inputName := input.Name
+			field := tview.NewInputField().
+				SetLabel(label).
+				SetText(input.Default).
+				SetFieldWidth(40)
+			// Arm completion on the first edit, so the dialog does not pop a
+			// completion list for the default value on open.
+			var armed bool
+			field.SetChangedFunc(func(text string) {
+				values[inputName] = shellValue(text)
+				if !armed {
+					armed = true
+					field.SetAutocompleteFunc(completePath)
+				}
+			})
+			f.AddFormItem(field)
 
 		case config.InputTypeNumber:
 			values[input.Name] = input.Default
@@ -180,4 +196,13 @@ func ShowPluginInputs(
 
 func dismissPluginInputs(pages *ui.Pages) {
 	pages.RemovePage(pluginInputsKey)
+}
+
+// shellValue quotes text containing spaces so it expands as a single shell argument.
+func shellValue(text string) string {
+	if strings.Contains(text, " ") {
+		return fmt.Sprintf("%q", text)
+	}
+
+	return text
 }
