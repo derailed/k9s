@@ -7,7 +7,9 @@ import (
 	"errors"
 	"io/fs"
 	"log/slog"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 
@@ -70,6 +72,14 @@ func (a *Aliases) ShortNames() ShortNames {
 	}
 
 	return m
+}
+
+// Keys returns all alias names.
+func (a *Aliases) Keys() []string {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return slices.Collect(maps.Keys(a.Alias))
 }
 
 // Clear remove all aliases.

@@ -57,7 +57,7 @@ func (c *Command) AliasesFor(gvr *client.GVR) sets.Set[string] {
 func (c *Command) Init(path string) error {
 	if c.app.factory != nil {
 		c.alias = dao.NewAlias(c.app.factory)
-		if _, err := c.alias.Ensure(path); err != nil {
+		if err := c.alias.Ensure(path); err != nil {
 			slog.Error("Ensure aliases failed", slogs.Error, err)
 			return err
 		}
@@ -79,7 +79,7 @@ func (c *Command) Reset(path string, nuke bool) error {
 	if nuke {
 		c.alias.Clear()
 	}
-	if _, err := c.alias.Ensure(path); err != nil {
+	if err := c.alias.Ensure(path); err != nil {
 		return err
 	}
 
