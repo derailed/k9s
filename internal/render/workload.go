@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,8 +35,18 @@ func (Workload) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
-		idx, ok := h.IndexOf("STATUS", true)
-		if !ok {
+		switch workloadRowKind(h, re) {
+		case client.DpGVR.String():
+			if isScaledToZero(h, re) {
+				return model1.PendingColor
+			}
+			return c
+		case client.StsGVR.String():
+			return c
+		}
+
+		idx, ok := h.IndexOf(colStatus, true)
+		if !ok || idx >= len(re.Row.Fields) {
 			return c
 		}
 		status := strings.TrimSpace(re.Row.Fields[idx])
@@ -47,13 +58,35 @@ func (Workload) ColorerFunc() model1.ColorerFunc {
 	}
 }
 
-// Header returns a header rbw.
-func (Workload) Header(string) model1.Header {
-	return defaultWKHeader
+func workloadRowKind(h model1.Header, re *model1.RowEvent) string {
+	if gvr, _, ok := strings.Cut(re.Row.ID, "|"); ok && gvr != "" {
+		return gvr
+	}
+	if idx, ok := h.IndexOf(colKind, true); ok && idx < len(re.Row.Fields) {
+		return strings.TrimSpace(re.Row.Fields[idx])
+	}
+
+	return ""
+}
+
+func isScaledToZero(h model1.Header, re *model1.RowEvent) bool {
+	idx, ok := h.IndexOf(colReady, true)
+	if !ok || idx >= len(re.Row.Fields) {
+		return false
+	}
+	ready := strings.TrimSpace(re.Row.Fields[idx])
+	tt := strings.Split(ready, "/")
+
+	return len(tt) == 2 && tt[1] == "0"
+}
+
+// Header returns a header row.
+func (w Workload) Header(string) model1.Header {
+	return w.doHeader(defaultWKHeader)
 }
 
 // Render renders a K8s resource to screen.
-func (Workload) Render(o any, _ string, r *model1.Row) error {
+func (w Workload) Render(o any, _ string, r *model1.Row) error {
 	res, ok := o.(*WorkloadRes)
 	if !ok {
 		return fmt.Errorf("expected WorkloadRes but got %T", o)
@@ -70,8 +103,18 @@ func (Workload) Render(o any, _ string, r *model1.Row) error {
 		ToAge(res.Row.Cells[6].(metav1.Time)),
 	}
 	stashAge(r, res.Row.Cells[6].(metav1.Time))
+	if w.specs.isEmpty() {
+		return nil
+	}
 
-	return nil
+	obj := res.Row.Object.Object
+	if obj != nil {
+		obj = obj.DeepCopyObject()
+	}
+	cols, err := w.specs.realize(obj, defaultWKHeader, r)
+	cols.hydrateRow(r)
+
+	return err
 }
 
 type WorkloadRes struct {
