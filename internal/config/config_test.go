@@ -596,6 +596,50 @@ func TestConfigReset(t *testing.T) {
 	assert.Equal(t, string(ee), string(bb))
 }
 
+func TestConfigViewsPaths(t *testing.T) {
+	uu := map[string]struct {
+		ct           string
+		clusterParts []string
+		contextParts []string
+	}{
+		"no-active-context": {},
+		"cluster-and-context": {
+			ct:           "ct-1-1",
+			clusterParts: []string{"cl-1", "views.yaml"},
+			contextParts: []string{"cl-1", "ct-1-1", "views.yaml"},
+		},
+		"second-context-same-cluster": {
+			ct:           "ct-1-2",
+			clusterParts: []string{"cl-1", "views.yaml"},
+			contextParts: []string{"cl-1", "ct-1-2", "views.yaml"},
+		},
+		"sanitized-cluster-name": {
+			ct:           "fred-blee",
+			clusterParts: []string{"arn-aws-eks-eu-central-1-xxx-cluster-fred-blee", "views.yaml"},
+			contextParts: []string{"arn-aws-eks-eu-central-1-xxx-cluster-fred-blee", "fred-blee", "views.yaml"},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			cfg := mock.NewMockConfig(t)
+			if u.ct != "" {
+				_, err := cfg.K9s.ActivateContext(u.ct)
+				require.NoError(t, err)
+			}
+			var wantCluster, wantContext string
+			if len(u.clusterParts) > 0 {
+				wantCluster = filepath.Join(append([]string{config.AppContextsDir}, u.clusterParts...)...)
+			}
+			if len(u.contextParts) > 0 {
+				wantContext = filepath.Join(append([]string{config.AppContextsDir}, u.contextParts...)...)
+			}
+			assert.Equal(t, wantCluster, cfg.ClusterViewsPath())
+			assert.Equal(t, wantContext, cfg.ContextViewsPath())
+		})
+	}
+}
+
 // Helpers...
 
 func TestSetup(t *testing.T) {

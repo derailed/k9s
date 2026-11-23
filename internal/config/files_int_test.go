@@ -35,6 +35,8 @@ func Test_initXDGLocs(t *testing.T) {
 		benchmarksDir      string
 		contextsDir        string
 		contextHotkeysFile string
+		clusterViewsFile   string
+		contextViewsFile   string
 		contextConfig      string
 		dumpsDir           string
 		benchDir           string
@@ -46,6 +48,8 @@ func Test_initXDGLocs(t *testing.T) {
 			benchmarksDir:      filepath.Join(tmp, "k9s-xdg", "state", "k9s", "benchmarks"),
 			contextsDir:        filepath.Join(tmp, "k9s-xdg", "data", "k9s", "clusters"),
 			contextHotkeysFile: filepath.Join(tmp, "k9s-xdg", "data", "k9s", "clusters", "cl-1", "ct-1-1", "hotkeys.yaml"),
+			clusterViewsFile:   filepath.Join(tmp, "k9s-xdg", "data", "k9s", "clusters", "cl-1", "views.yaml"),
+			contextViewsFile:   filepath.Join(tmp, "k9s-xdg", "data", "k9s", "clusters", "cl-1", "ct-1-1", "views.yaml"),
 			contextConfig:      filepath.Join(tmp, "k9s-xdg", "data", "k9s", "clusters", "cl-1", "ct-1-1", data.MainConfigFile),
 			dumpsDir:           filepath.Join(tmp, "k9s-xdg", "state", "k9s", "screen-dumps", "cl-1", "ct-1-1"),
 			benchDir:           filepath.Join(tmp, "k9s-xdg", "state", "k9s", "benchmarks", "cl-1", "ct-1-1"),
@@ -62,6 +66,12 @@ func Test_initXDGLocs(t *testing.T) {
 			assert.Equal(t, u.benchmarksDir, AppBenchmarksDir)
 			assert.Equal(t, u.contextsDir, AppContextsDir)
 			assert.Equal(t, u.contextHotkeysFile, AppContextHotkeysFile("cl-1", "ct-1-1"))
+			assert.Equal(t, u.clusterViewsFile, AppClusterViewsFile("cl-1"))
+			assert.Equal(t, u.contextViewsFile, AppContextViewsFile("cl-1", "ct-1-1"))
+			assert.Equal(t,
+				filepath.Join(u.contextsDir, "arn-aws-eks-us-east-1-123-cluster-prod", "views.yaml"),
+				AppClusterViewsFile("arn:aws:eks:us-east-1:123:cluster/prod"),
+			)
 			assert.Equal(t, u.contextConfig, AppContextConfig("cl-1", "ct-1-1"))
 			dir, err := DumpsDir("cl-1", "ct-1-1")
 			require.NoError(t, err)

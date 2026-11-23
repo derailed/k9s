@@ -61,27 +61,62 @@ func (c *Configurator) HasSkin() bool {
 
 // CustomViewsWatcher watches for view config file changes.
 func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) error {
+	paths := c.customViewPaths()
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
 	}
 
+	watchedFiles := make(map[string]struct{}, len(paths))
+	watchedDirs := make(map[string]struct{}, len(paths))
+	var addErr error
+	for _, p := range paths {
+		clean := filepath.Clean(p)
+		watchedFiles[clean] = struct{}{}
+		dir := filepath.Dir(clean)
+		if _, seen := watchedDirs[dir]; seen {
+			continue
+		}
+		if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err := w.Add(dir); err != nil {
+			addErr = errors.Join(addErr, err)
+			continue
+		}
+		watchedDirs[dir] = struct{}{}
+		slog.Debug("Watching custom views", slogs.FileName, clean)
+	}
+
+	if len(watchedDirs) == 0 {
+		if err := w.Close(); err != nil {
+			slog.Error("Closing CustomView watcher", slogs.Error, err)
+		}
+		return errors.Join(addErr, c.RefreshCustomViews())
+	}
+
 	go func() {
 		for {
 			select {
-			case evt := <-w.Events:
-				if evt.Name == config.AppViewsFile && evt.Op != fsnotify.Chmod {
+			case evt, ok := <-w.Events:
+				if !ok {
+					return
+				}
+				if _, match := watchedFiles[filepath.Clean(evt.Name)]; match && evt.Op != fsnotify.Chmod {
 					s.QueueUpdateDraw(func() {
 						if err := c.RefreshCustomViews(); err != nil {
 							slog.Warn("Custom views refresh failed", slogs.Error, err)
 						}
 					})
 				}
-			case err := <-w.Errors:
+			case err, ok := <-w.Errors:
+				if !ok {
+					return
+				}
 				slog.Warn("CustomView watcher failed", slogs.Error, err)
 				return
 			case <-ctx.Done():
-				slog.Debug("CustomViewWatcher canceled", slogs.FileName, config.AppViewsFile)
+				slog.Debug("CustomViewWatcher canceled")
 				if err := w.Close(); err != nil {
 					slog.Error("Closing CustomView watcher", slogs.Error, err)
 				}
@@ -90,19 +125,31 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 		}
 	}()
 
-	if err := w.Add(config.AppViewsFile); err != nil {
-		return err
-	}
-	slog.Debug("Loading custom views", slogs.FileName, config.AppViewsFile)
-
-	return c.RefreshCustomViews()
+	return errors.Join(addErr, c.RefreshCustomViews())
 }
 
 // RefreshCustomViews load view configuration changes.
 func (c *Configurator) RefreshCustomViews() error {
 	c.CustomView().Reset()
 
-	return c.CustomView().Load(config.AppViewsFile)
+	return c.CustomView().LoadFiles(c.customViewPaths()...)
+}
+
+func (c *Configurator) customViewPaths() []string {
+	paths := make([]string, 0, 3)
+	if config.AppViewsFile != "" {
+		paths = append(paths, config.AppViewsFile)
+	}
+	if c.Config != nil {
+		if p := c.Config.ClusterViewsPath(); p != "" {
+			paths = append(paths, p)
+		}
+		if p := c.Config.ContextViewsPath(); p != "" {
+			paths = append(paths, p)
+		}
+	}
+
+	return paths
 }
 
 // CustomJumpsWatcher watches for jump config file changes.

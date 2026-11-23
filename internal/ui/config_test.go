@@ -4,6 +4,7 @@
 package ui_test
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -105,4 +106,140 @@ func TestRefreshStylesLogo(t *testing.T) {
 	ct.Logo = " \n\t"
 	cfg.RefreshStyles(s)
 	assert.Contains(t, s.Logo().Logo().GetText(false), "GLOBAL")
+}
+
+type channelSynchronizer struct {
+	synchronizer
+	draws chan func()
+}
+
+func (c channelSynchronizer) QueueUpdateDraw(fn func()) {
+	c.draws <- fn
+}
+
+func TestRefreshCustomViewsClusterAndContextLayering(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv(config.K9sEnvConfigDir, tmpDir)
+	require.NoError(t, config.InitLocs())
+
+	cfg := ui.Configurator{Config: mock.NewMockConfig(t)}
+	// Restore AppContextsDir pointing to our temp dir since NewMockConfig overrides it.
+	config.AppContextsDir = filepath.Join(tmpDir, "clusters")
+
+	// Global views.yaml
+	require.NoError(t, os.WriteFile(config.AppViewsFile, []byte(`views:
+  v1/pods:
+    columns:
+      - NAME
+      - STATUS
+  v1/services:
+    columns:
+      - NAME
+      - TYPE
+`), data.DefaultFileMod))
+
+	// Cluster-level (context-agnostic) views.yaml for cl-1
+	clusterViews := config.AppClusterViewsFile("cl-1")
+	require.NoError(t, os.MkdirAll(filepath.Dir(clusterViews), data.DefaultDirMod))
+	require.NoError(t, os.WriteFile(clusterViews, []byte(`views:
+  v1/pods:
+    columns:
+      - NAME
+      - NODE
+  apps/v1/deployments:
+    columns:
+      - NAME
+      - READY
+`), data.DefaultFileMod))
+
+	// Context-level views.yaml only for ct-1-1 (ct-1-2 has none)
+	ctxViews := config.AppContextViewsFile("cl-1", "ct-1-1")
+	require.NoError(t, os.MkdirAll(filepath.Dir(ctxViews), data.DefaultDirMod))
+	require.NoError(t, os.WriteFile(ctxViews, []byte(`views:
+  v1/pods:
+    columns:
+      - NAME
+      - IP
+`), data.DefaultFileMod))
+
+	// Context ct-1-1: context > cluster > global
+	_, err := cfg.Config.K9s.ActivateContext("ct-1-1")
+	require.NoError(t, err)
+	require.NoError(t, cfg.RefreshCustomViews())
+	assert.Equal(t, []string{"NAME", "IP"}, cfg.CustomView().Views["v1/pods"].Columns)
+	assert.Equal(t, []string{"NAME", "READY"}, cfg.CustomView().Views["apps/v1/deployments"].Columns)
+	assert.Equal(t, []string{"NAME", "TYPE"}, cfg.CustomView().Views["v1/services"].Columns)
+
+	// Different context ct-1-2 on the SAME cluster cl-1 shares cluster-level views.yaml
+	_, err = cfg.Config.K9s.ActivateContext("ct-1-2")
+	require.NoError(t, err)
+	require.NoError(t, cfg.RefreshCustomViews())
+	assert.Equal(t, []string{"NAME", "NODE"}, cfg.CustomView().Views["v1/pods"].Columns)
+	assert.Equal(t, []string{"NAME", "READY"}, cfg.CustomView().Views["apps/v1/deployments"].Columns)
+	assert.Equal(t, []string{"NAME", "TYPE"}, cfg.CustomView().Views["v1/services"].Columns)
+
+	// Switching to a different cluster without cluster views falls back to global only
+	_, err = cfg.Config.K9s.ActivateContext("fred-blee")
+	require.NoError(t, err)
+	require.NoError(t, cfg.RefreshCustomViews())
+	assert.Equal(t, []string{"NAME", "STATUS"}, cfg.CustomView().Views["v1/pods"].Columns)
+	assert.Equal(t, []string{"NAME", "TYPE"}, cfg.CustomView().Views["v1/services"].Columns)
+	assert.NotContains(t, cfg.CustomView().Views, "apps/v1/deployments")
+}
+
+func TestCustomViewsWatcherClusterLevelWithoutGlobal(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv(config.K9sEnvConfigDir, tmpDir)
+	require.NoError(t, config.InitLocs())
+
+	cfg := ui.Configurator{
+		Config: mock.NewMockConfig(t),
+		Styles: config.NewStyles(),
+	}
+	config.AppContextsDir = filepath.Join(tmpDir, "clusters")
+
+	_, err := cfg.Config.K9s.ActivateContext("ct-1-2")
+	require.NoError(t, err)
+
+	// Only cluster-level views.yaml exists (no global AppViewsFile).
+	clusterViews := config.AppClusterViewsFile("cl-1")
+	require.NoError(t, os.MkdirAll(filepath.Dir(clusterViews), data.DefaultDirMod))
+	require.NoError(t, os.WriteFile(clusterViews, []byte(`views:
+  v1/pods:
+    columns:
+      - NAME
+      - NODE
+`), data.DefaultFileMod))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	syncer := channelSynchronizer{
+		synchronizer: newMockSynchronizer(cfg.Styles),
+		draws:        make(chan func(), 16),
+	}
+	require.NoError(t, cfg.CustomViewsWatcher(ctx, syncer))
+	assert.Equal(t, []string{"NAME", "NODE"}, cfg.CustomView().Views["v1/pods"].Columns)
+
+	// Updating cluster-level views.yaml triggers live reload via watcher.
+	require.NoError(t, os.WriteFile(clusterViews, []byte(`views:
+  v1/pods:
+    columns:
+      - NAME
+      - IP
+      - AGE
+`), data.DefaultFileMod))
+
+	deadline := time.After(3 * time.Second)
+	for {
+		select {
+		case fn := <-syncer.draws:
+			fn()
+			if assert.ObjectsAreEqual([]string{"NAME", "IP", "AGE"}, cfg.CustomView().Views["v1/pods"].Columns) {
+				return
+			}
+		case <-deadline:
+			t.Fatalf("timed out waiting for cluster views reload; got %v", cfg.CustomView().Views["v1/pods"].Columns)
+		}
+	}
 }
