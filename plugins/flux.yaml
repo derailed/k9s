@@ -2,6 +2,7 @@
 # move selected line to chosen resource in K9s, then:
 # Shift-T (with confirmation) to toggle helm releases or kustomizations suspend and resume
 # Shift-R (no confirmation) to reconcile a git source or a helm release or a kustomization
+# Shift-D (prompts for a path) to diff a kustomization against local manifests
 plugins:
   toggle-helmrelease:
     shortCut: Shift-T
@@ -140,6 +141,29 @@ plugins:
         --context $CONTEXT
         -n $NAMESPACE $NAME
         $([ "$INPUT_SOURCE" = "true" ] && echo "--with-source")
+        | less -K
+  diff-kustomization:
+    shortCut: Shift-D
+    confirm: false
+    description: Diff against a local path
+    scopes:
+      - kustomizations
+    command: bash
+    background: false
+    inputs:
+      - name: path
+        label: Local path
+        type: path
+        required: true
+        default: .
+    args:
+      - -c
+      - >-
+        flux
+        diff kustomization
+        --context $CONTEXT
+        -n $NAMESPACE $NAME
+        --path $INPUT_PATH
         | less -K
   reconcile-ir:
     shortCut: Shift-R
