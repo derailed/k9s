@@ -973,7 +973,7 @@ Each input has the following properties:
 
 * `name` (required) -- the input identifier used to reference the value in args as `$INPUT_<NAME>` (uppercase)
 * `label` -- the label shown to the user in the input dialog
-* `type` (required) -- the input type: `string`, `number`, `bool`, or `dropdown`
+* `type` (required) -- the input type: `string`, `number`, `bool`, `dropdown`, or `path`
 * `required` -- when true, the user must provide a value before the plugin can execute
 * `default` -- a default value pre-filled in the input field (must be a valid option for `dropdown`, `"true"`/`"false"` for `bool`, or a valid number for `number`)
 * `options` -- for `dropdown` type only, defines the list of available choices
@@ -988,6 +988,9 @@ Input values are available in plugin args using the format `$INPUT_<NAME>` where
 | `number` | Numeric input (integers and floats) | Text field with numeric validation |
 | `bool` | Boolean toggle | Checkbox |
 | `dropdown` | Selection from predefined options | Dropdown menu |
+| `path` | File system path | Text field with Tab completion |
+
+`path` inputs complete file system entries as you press `Tab`. Directory entries are suffixed with a separator, so repeated `Tab` presses drill down into them. Completions resolve relative to the directory K9s was started from, and a leading `~` expands to your home directory. Press `Escape` to dismiss the completion list.
 
 **Example:**
 

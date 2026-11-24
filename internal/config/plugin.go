@@ -38,6 +38,7 @@ const (
 	InputTypeNumber   PluginInputType = "number"
 	InputTypeBool     PluginInputType = "bool"
 	InputTypeDropdown PluginInputType = "dropdown"
+	InputTypePath     PluginInputType = "path"
 )
 
 // PluginInput describes an input field for a plugin.

@@ -44,6 +44,10 @@ func TestValidatePlugins(t *testing.T) {
 			path:   "testdata/plugins/snippets.yaml",
 			schema: json.PluginMultiSchema,
 		},
+		"path-input": {
+			path:   "testdata/plugins/path-input.yaml",
+			schema: json.PluginsSchema,
+		},
 	}
 
 	for k := range uu {
