@@ -19,7 +19,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -489,7 +488,7 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 	for {
 		bytes, err := r.ReadBytes('\n')
 		if err == nil {
-			item := opts.ToLogItem(tview.EscapeBytes(bytes))
+			item := opts.ToLogItem(bytes)
 			select {
 			case <-ctx.Done():
 				return streamCanceled
@@ -516,7 +515,7 @@ func readLogs(ctx context.Context, stream io.ReadCloser, out chan<- *LogItem, op
 		if errors.Is(err, io.EOF) {
 			if len(bytes) > 0 {
 				// Emit trailing partial line before EOF
-				out <- opts.ToLogItem(tview.EscapeBytes(bytes))
+				out <- opts.ToLogItem(bytes)
 			}
 			slog.Debug("Log reader reached EOF", slogs.Container, opts.Info())
 			out <- opts.ToErrLogItem(fmt.Errorf("stream closed: %w for %s", err, opts.Info()))

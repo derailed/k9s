@@ -28,6 +28,17 @@ type LogOptions struct {
 	ShowTimestamp    bool
 	AllContainers    bool
 	LogBufferSize    int
+
+	// PrettyJSON indents log lines holding a JSON object or array.
+	PrettyJSON bool
+}
+
+// RenderOpts returns the options used to render log lines.
+func (o *LogOptions) RenderOpts() RenderOpts {
+	return RenderOpts{
+		ShowTime:   o.ShowTimestamp,
+		PrettyJSON: o.PrettyJSON,
+	}
 }
 
 // Info returns the option pod and container info.
@@ -51,6 +62,7 @@ func (o *LogOptions) Clone() *LogOptions {
 		SingleContainer:  o.SingleContainer,
 		MultiPods:        o.MultiPods,
 		ShowTimestamp:    o.ShowTimestamp,
+		PrettyJSON:       o.PrettyJSON,
 		SinceTime:        o.SinceTime,
 		SinceSeconds:     o.SinceSeconds,
 		AllContainers:    o.AllContainers,
@@ -115,8 +127,9 @@ func (o *LogOptions) ToPodLogOptions() *v1.PodLogOptions {
 }
 
 // ToLogItem add a log header to display po/co information along with the log message.
+// The given bytes are the raw log line, see NewRawLogItem.
 func (o *LogOptions) ToLogItem(bytes []byte) *LogItem {
-	item := NewLogItem(bytes)
+	item := NewRawLogItem(bytes)
 	if len(bytes) == 0 {
 		return item
 	}

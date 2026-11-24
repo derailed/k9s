@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -162,7 +163,7 @@ func TestLogBasic(t *testing.T) {
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	ll := make([][]byte, data.Len())
-	data.Lines(0, false, ll)
+	data.Lines(0, dao.RenderOpts{}, ll)
 	assert.Equal(t, ll, v.data)
 }
 
@@ -176,7 +177,7 @@ func TestLogAppend(t *testing.T) {
 	items.Add(dao.NewLogItemFromString("blah blah"))
 	m.Set(items)
 	ll := make([][]byte, items.Len())
-	items.Lines(0, false, ll)
+	items.Lines(0, dao.RenderOpts{}, ll)
 	assert.Equal(t, ll, v.data)
 
 	data := dao.NewLogItems()
@@ -189,7 +190,7 @@ func TestLogAppend(t *testing.T) {
 	}
 	assert.Equal(t, 1, v.dataCalled)
 	ll = make([][]byte, items.Len())
-	items.Lines(0, false, ll)
+	items.Lines(0, dao.RenderOpts{}, ll)
 	assert.Equal(t, ll, v.data)
 
 	m.Notify()
@@ -222,6 +223,52 @@ func TestLogTimedout(t *testing.T) {
 	assert.Equal(t, 0, v.errCalled)
 	const e = "\x1b[38;5;209ml\x1b[0m\x1b[38;5;209mi\x1b[0m\x1b[38;5;209mn\x1b[0m\x1b[38;5;209me\x1b[0m\x1b[38;5;209m1\x1b[0m"
 	assert.Equal(t, e, string(v.data[0]))
+}
+
+func TestTogglePrettyJSON(t *testing.T) {
+	opts := makeLogOpts(10)
+	opts.Container = ""
+	m := model.NewLog(client.NewGVR("fred"), opts, 10*time.Millisecond)
+	m.Init(makeFactory())
+
+	v := newTestView()
+	m.AddListener(v)
+
+	m.Append(dao.NewRawLogItem([]byte(`2018-12-14T10:36:43.326972-07:00 {"a":1}` + "\n")))
+	m.Append(dao.NewRawLogItem([]byte(`2018-12-14T10:36:43.326972-07:00 {"b":2}` + "\n")))
+	m.Notify()
+	assert.Equal(t, []string{`{"a":1}` + "\n", `{"b":2}` + "\n"}, toStrings(v.data))
+
+	m.TogglePrettyJSON(true)
+	assert.Equal(t, 1, v.clearCalled)
+	assert.Equal(t, []string{"{\n  \"a\": 1\n}\n", "{\n  \"b\": 2\n}\n"}, toStrings(v.data))
+
+	// Re-rendering honors the active filter (matches are ANSI highlighted).
+	m.Filter(`"b"`)
+	m.TogglePrettyJSON(false)
+	assert.Equal(t, []string{`{"b":2}` + "\n"}, stripANSI(toStrings(v.data)))
+
+	m.TogglePrettyJSON(true)
+	assert.Equal(t, []string{"{\n  \"b\": 2\n}\n"}, stripANSI(toStrings(v.data)))
+}
+
+func toStrings(ll [][]byte) []string {
+	ss := make([]string, 0, len(ll))
+	for _, l := range ll {
+		ss = append(ss, string(l))
+	}
+
+	return ss
+}
+
+var ansiRX = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+func stripANSI(ss []string) []string {
+	for i := range ss {
+		ss[i] = ansiRX.ReplaceAllString(ss[i], "")
+	}
+
+	return ss
 }
 
 func TestToggleAllContainers(t *testing.T) {

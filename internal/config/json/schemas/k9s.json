@@ -136,6 +136,7 @@
             "disableAutoscroll": {"type": "boolean"},
             "columnLock": {"type": "boolean"},
             "showTime": {"type": "boolean"},
+            "prettyJSON": {"type": "boolean"},
             "logBufferSize": {"type": "integer"}
           }
         },

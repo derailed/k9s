@@ -26,6 +26,7 @@ type LogIndicator struct {
 	allContainers              bool
 	shouldDisplayAllContainers bool
 	columnLock                 bool
+	prettyJSON                 bool
 }
 
 // NewLogIndicator returns a new indicator.
@@ -40,6 +41,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		showTime:                   cfg.K9s.Logger.ShowTime,
 		shouldDisplayAllContainers: allContainers,
 		columnLock:                 cfg.K9s.Logger.ColumnLock,
+		prettyJSON:                 cfg.K9s.Logger.PrettyJSON,
 	}
 
 	if cfg.K9s.Logger.DisableAutoscroll {
@@ -81,6 +83,11 @@ func (l *LogIndicator) TextWrap() bool {
 	return l.textWrap
 }
 
+// PrettyJSON reports the current JSON formatting mode.
+func (l *LogIndicator) PrettyJSON() bool {
+	return l.prettyJSON
+}
+
 // FullScreen reports the current screen mode.
 func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
@@ -94,6 +101,11 @@ func (l *LogIndicator) ToggleColumnLock() {
 // ToggleTimestamp toggles the current timestamp mode.
 func (l *LogIndicator) ToggleTimestamp() {
 	l.showTime = !l.showTime
+}
+
+// TogglePrettyJSON toggles the JSON formatting mode.
+func (l *LogIndicator) TogglePrettyJSON() {
+	l.prettyJSON = !l.prettyJSON
 }
 
 // ToggleFullScreen toggles the screen mode.
@@ -169,6 +181,12 @@ func (l *LogIndicator) Refresh() {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Timestamps", spacer)...)
 	} else {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Timestamps", spacer)...)
+	}
+
+	if l.PrettyJSON() {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "JSON", spacer)...)
+	} else {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "JSON", spacer)...)
 	}
 
 	if l.TextWrap() {

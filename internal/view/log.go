@@ -263,6 +263,7 @@ func (l *Log) bindKeys() {
 		ui.KeyShiftL:    ui.NewKeyAction("Toggle ColumnLock", l.toggleColumnLockCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
+		ui.KeyShiftJ:    ui.NewKeyAction("Toggle JSON", l.togglePrettyJSONCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
@@ -485,6 +486,20 @@ func (l *Log) toggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	l.indicator.ToggleTimestamp()
 	l.model.ToggleShowTimestamp(l.indicator.showTime)
+	l.indicator.Refresh()
+
+	return nil
+}
+
+func (l *Log) togglePrettyJSONCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+
+	l.indicator.TogglePrettyJSON()
+	// Forces the re-render through even when autoscroll is off.
+	l.requestOneRefresh = true
+	l.model.TogglePrettyJSON(l.indicator.PrettyJSON())
 	l.indicator.Refresh()
 
 	return nil

@@ -441,6 +441,7 @@ K9s uses aliases to navigate most K8s resources.
 | Benchmark (run/stop)                                                            | `b`                            | Services/Port-forwards                                                 |
 | Toggle text wrap                                                                | `w`                            | Log view                                                               |
 | Toggle timestamp                                                                | `t`                            | Log view                                                               |
+| Toggle JSON log lines formatting                                                | `shift-j`                      | Log view                                                               |
 | Toggle fullscreen                                                               | `f`                            | Log/YAML/Details view                                                  |
 | Refresh/reload view                                                             | `ctrl-r`                       |                                                                        |
 | Trigger (CronJob)                                                               | `t`                            | CronJob view                                                           |
@@ -549,6 +550,8 @@ Clipboard behavior can also be controlled via environment variables:
       columnLock: false
       # Toggles log line timestamp info. Default false
       showTime: false
+      # Pretty prints log lines holding a JSON object or array. Toggle in the log view with shift-j. Default false
+      prettyJSON: false
       # Sets the internal log channel buffer size. Increase when log lines are dropped under high throughput. Default 50
       logBufferSize: 100
     # Provide shell pod customization when nodeShell feature gate is enabled!
@@ -1397,6 +1400,7 @@ k9s:
     columnLock: false
     showTime: false
     logBufferSize: 50
+    prettyJSON: false
   thresholds:
     cpu:
       critical: 90

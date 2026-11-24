@@ -41,6 +41,7 @@ k9s:
     columnLock: false
     showTime: false
     logBufferSize: 50
+    prettyJSON: false
   thresholds:
     cpu:
       critical: 90

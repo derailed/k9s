@@ -93,6 +93,17 @@ func (l *Log) ToggleShowTimestamp(b bool) {
 	l.Refresh()
 }
 
+// TogglePrettyJSON toggles JSON log lines formatting.
+func (l *Log) TogglePrettyJSON(b bool) {
+	l.mx.Lock()
+	l.logOptions.PrettyJSON = b
+	l.mx.Unlock()
+
+	// Re-renders the whole buffer while honoring the active filter, if any.
+	l.fireLogCleared()
+	l.fireLogBuffChanged(0)
+}
+
 func (l *Log) Head(ctx context.Context) {
 	l.mx.Lock()
 	l.logOptions.Head = true
@@ -111,6 +122,7 @@ func (l *Log) Configure(opts config.Logger) {
 	l.logOptions.Lines = opts.TailCount
 	l.logOptions.SinceSeconds = opts.SinceSeconds
 	l.logOptions.LogBufferSize = opts.LogBufferSize
+	l.logOptions.PrettyJSON = opts.PrettyJSON
 }
 
 // GetPath returns resource path.
@@ -147,7 +159,7 @@ func (l *Log) Clear() {
 func (l *Log) Refresh() {
 	l.fireLogCleared()
 	ll := make([][]byte, l.lines.Len())
-	l.lines.Render(0, l.logOptions.ShowTimestamp, ll)
+	l.lines.Render(0, l.logOptions.RenderOpts(), ll)
 	l.fireLogChanged(ll)
 }
 
@@ -180,7 +192,7 @@ func (l *Log) Set(lines *dao.LogItems) {
 
 	l.fireLogCleared()
 	ll := make([][]byte, l.lines.Len())
-	l.lines.Render(0, l.logOptions.ShowTimestamp, ll)
+	l.lines.Render(0, l.logOptions.RenderOpts(), ll)
 	l.fireLogChanged(ll)
 }
 
@@ -192,7 +204,7 @@ func (l *Log) ClearFilter() {
 
 	l.fireLogCleared()
 	ll := make([][]byte, l.lines.Len())
-	l.lines.Render(0, l.logOptions.ShowTimestamp, ll)
+	l.lines.Render(0, l.logOptions.RenderOpts(), ll)
 	l.fireLogChanged(ll)
 }
 
@@ -337,7 +349,7 @@ func (l *Log) applyFilter(index int, q string) ([][]byte, error) {
 	if q == "" {
 		return nil, nil
 	}
-	matches, indices, err := l.lines.Filter(index, q, l.logOptions.ShowTimestamp)
+	matches, indices, err := l.lines.Filter(index, q, l.logOptions.RenderOpts())
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +357,7 @@ func (l *Log) applyFilter(index int, q string) ([][]byte, error) {
 	// No filter!
 	if matches == nil {
 		ll := make([][]byte, l.lines.Len())
-		l.lines.Render(index, l.logOptions.ShowTimestamp, ll)
+		l.lines.Render(index, l.logOptions.RenderOpts(), ll)
 		return ll, nil
 	}
 	// Blank filter
@@ -354,7 +366,7 @@ func (l *Log) applyFilter(index int, q string) ([][]byte, error) {
 	}
 	filtered := make([][]byte, 0, len(matches))
 	ll := make([][]byte, l.lines.Len())
-	l.lines.Lines(index, l.logOptions.ShowTimestamp, ll)
+	l.lines.Lines(index, l.logOptions.RenderOpts(), ll)
 	for i, idx := range matches {
 		filtered = append(filtered, color.Highlight(ll[idx], indices[i], 209))
 	}
@@ -365,7 +377,7 @@ func (l *Log) applyFilter(index int, q string) ([][]byte, error) {
 func (l *Log) fireLogBuffChanged(index int) {
 	ll := make([][]byte, l.lines.Len()-index)
 	if l.filter == "" {
-		l.lines.Render(index, l.logOptions.ShowTimestamp, ll)
+		l.lines.Render(index, l.logOptions.RenderOpts(), ll)
 	} else {
 		ff, err := l.applyFilter(index, l.filter)
 		if err != nil {

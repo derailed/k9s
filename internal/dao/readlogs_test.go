@@ -130,3 +130,54 @@ func TestReadLogs_PartialLineAtEOF(t *testing.T) {
 	}
 	assert.True(t, foundPartial, "partial line at EOF should be emitted")
 }
+
+func TestReadLogs_RawLinesRenderJSON(t *testing.T) {
+	input := `2018-12-14T10:36:43.326972-07:00 {"level":"info","tags":["a","b"]}` + "\n" +
+		`2018-12-14T10:36:44.326972-07:00 [INFO] plain line` + "\n"
+	stream := io.NopCloser(strings.NewReader(input))
+	out := make(chan *LogItem, 100)
+	opts := &LogOptions{Path: "ns/pod", Container: "c1", SingleContainer: true}
+
+	result := readLogs(context.Background(), stream, out, opts)
+	close(out)
+	assert.Equal(t, streamEOF, result)
+
+	ii := NewLogItems()
+	for item := range out {
+		if !item.IsError {
+			ii.Add(item)
+		}
+	}
+
+	// Exact text is asserted (not JSON equivalence) since formatting is under test.
+	uu := map[string]struct {
+		opts RenderOpts
+		e    []string
+	}{
+		"raw": {
+			e: []string{
+				`{"level":"info","tags":["a","b"[]}` + "\n",
+				"[INFO[] plain line\n",
+			},
+		},
+		"pretty": {
+			opts: RenderOpts{PrettyJSON: true},
+			e: []string{
+				"{\n  \"level\": \"info\",\n  \"tags\": [\n    \"a\",\n    \"b\"\n  ]\n}\n",
+				"[INFO[] plain line\n",
+			},
+		},
+	}
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			ll := make([][]byte, ii.Len())
+			ii.Render(0, u.opts, ll)
+			ss := make([]string, 0, len(ll))
+			for _, l := range ll {
+				ss = append(ss, string(l))
+			}
+			assert.Equal(t, u.e, ss)
+		})
+	}
+}

@@ -27,6 +27,9 @@ type Logger struct {
 	ColumnLock        bool  `json:"columnLock" yaml:"columnLock"`
 	ShowTime          bool  `json:"showTime" yaml:"showTime"`
 	LogBufferSize     int   `json:"logBufferSize" yaml:"logBufferSize"`
+
+	// PrettyJSON indents log lines holding a JSON object or array.
+	PrettyJSON bool `json:"prettyJSON" yaml:"prettyJSON"`
 }
 
 // NewLogger returns a new instance.
