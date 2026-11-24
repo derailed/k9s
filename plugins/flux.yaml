@@ -176,52 +176,59 @@ plugins:
     background: false
     inputs:
       - name: compact
-        label: Flux resources only
+        label: Flux resources only (optional)
         type: bool
         default: false
       - name: dump_path
-        label: Dump directory
+        label: Dump directory (optional)
         type: path
       - name: show_managed_fields
-        label: Show managed fields
+        label: Show managed fields (optional)
         type: bool
         default: false
     args:
       - -c
       - >-
-        echo "TREE: plugin script started" >&2;
         dump_path="$INPUT_DUMP_PATH";
         show_managed_fields="$INPUT_SHOW_MANAGED_FIELDS";
         compact="$INPUT_COMPACT";
+        show_error() { echo "$1" | less -K; };
         if [ "$show_managed_fields" = "true" ] && [ -z "$dump_path" ]; then
-          echo "TREE: managed fields selected without dump path" >&2;
-          echo "A dump path is required when showing managed fields" >&2;
+          show_error "A dump path is required when showing managed fields";
           exit 1;
         fi;
-        echo "TREE: dump_path=[$dump_path] show_managed_fields=[$show_managed_fields] compact=[$compact]" >&2;
         if [ -n "$dump_path" ]; then
           case "$dump_path" in
             "~") dump_path="$HOME" ;;
             "~/"*) dump_path="$HOME/${dump_path#~/}" ;;
           esac;
-          echo "TREE: creating dump directory: $dump_path" >&2;
-          mkdir -p "$dump_path" || exit 1;
-          dump_path=$(cd "$dump_path" && pwd -P) || exit 1;
+          mkdir -p "$dump_path" || { show_error "Failed to create dump directory: $dump_path"; exit 1; };
+          dump_path=$(cd "$dump_path" && pwd -P) || { show_error "Failed to resolve dump directory: $dump_path"; exit 1; };
           output_file="$dump_path/$NAME.yaml";
+          if [ -e "$output_file" ]; then
+            show_error "Refusing to overwrite $output_file: this file may contain valuable information; delete it before retrying";
+            exit 1;
+          fi;
+          tmp_output_file="${output_file}.tmp";
+          rm -f "$tmp_output_file";
           dump_args=(tree kustomization "$NAME" --context "$CONTEXT" -n "$NAMESPACE");
           if [ "$compact" = "true" ]; then dump_args+=(--compact); fi;
           if [ "$show_managed_fields" = "true" ]; then dump_args+=(--show-managed-fields); fi;
           dump_args+=(-o full);
-          if flux "${dump_args[@]}" > "$output_file"; then
-            if [ -s "$output_file" ]; then
-              echo "TREE: dump written to: $output_file" >&2;
+          if flux "${dump_args[@]}" > "$tmp_output_file"; then
+            if [ -s "$tmp_output_file" ]; then
+              timestamp_output_file="${output_file}.timestamped";
+              { echo "# Generated at $(date '+%Y-%m-%d %H:%M:%S %Z')"; cat "$tmp_output_file"; } > "$timestamp_output_file" &&
+                mv "$timestamp_output_file" "$output_file" ||
+                { show_error "Failed to timestamp Flux tree dump: $output_file"; rm -f "$timestamp_output_file" "$output_file"; };
+              rm -f "$tmp_output_file";
             else
-              echo "TREE: Flux tree produced no output for $output_file" >&2;
-              rm -f "$output_file";
+              show_error "Flux tree produced no output";
+              rm -f "$tmp_output_file";
             fi;
           else
-            echo "TREE: Flux tree dump command failed" >&2;
-            rm -f "$output_file";
+            show_error "Failed to create Flux tree dump: $output_file";
+            rm -f "$tmp_output_file";
           fi;
         fi;
         view_args=(tree kustomization --context "$CONTEXT" -n "$NAMESPACE" "$NAME");
