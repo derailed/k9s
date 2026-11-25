@@ -146,8 +146,10 @@ func (t *Table) defaultEnv() Env {
 	path := t.GetSelectedItem()
 	row := t.GetSelectedRow(path)
 	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header(), row)
-	env["FILTER"] = t.CmdBuff().GetText()
-	if env["FILTER"] == "" {
+	rawFilter := t.CmdBuff().GetText()
+	env["RAW_FILTER"] = rawFilter
+	env["FILTER"] = rawFilter
+	if rawFilter == "" {
 		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)
 	}
 	env["RESOURCE_GROUP"] = t.GVR().G()

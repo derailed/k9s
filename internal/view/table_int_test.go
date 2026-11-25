@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func TestHeaderIndex(t *testing.T) {
@@ -141,6 +142,114 @@ func TestTableViewFilter(t *testing.T) {
 	v.CmdBuff().SetText("blee", "", true)
 
 	assert.Equal(t, 5, v.GetRowCount())
+}
+
+func TestTableDefaultEnvFilter(t *testing.T) {
+	uu := map[string]struct {
+		gvr           *client.GVR
+		rowID         string
+		fields        model1.Fields
+		filter        string
+		resetFilter   bool
+		wantFilter    string
+		wantRawFilter string
+		wantNS        string
+		wantName      string
+	}{
+		"no-filter-falls-back-to-selected-name": {
+			gvr:           client.PodGVR,
+			rowID:         "kube-system/coredns-559f6c778d-z5d7w",
+			fields:        model1.Fields{"kube-system", "coredns-559f6c778d-z5d7w", "Running"},
+			wantFilter:    "coredns-559f6c778d-z5d7w",
+			wantRawFilter: "",
+			wantNS:        "kube-system",
+			wantName:      "coredns-559f6c778d-z5d7w",
+		},
+		"active-filter": {
+			gvr:           client.PodGVR,
+			rowID:         "kube-system/coredns-559f6c778d-z5d7w",
+			fields:        model1.Fields{"kube-system", "coredns-559f6c778d-z5d7w", "Running"},
+			filter:        "coredns",
+			wantFilter:    "coredns",
+			wantRawFilter: "coredns",
+			wantNS:        "kube-system",
+			wantName:      "coredns-559f6c778d-z5d7w",
+		},
+		"label-selector-filter": {
+			gvr:           client.PodGVR,
+			rowID:         "kube-system/coredns-559f6c778d-z5d7w",
+			fields:        model1.Fields{"kube-system", "coredns-559f6c778d-z5d7w", "Running"},
+			filter:        "-l k8s-app=kube-dns",
+			wantFilter:    "-l k8s-app=kube-dns",
+			wantRawFilter: "-l k8s-app=kube-dns",
+			wantNS:        "kube-system",
+			wantName:      "coredns-559f6c778d-z5d7w",
+		},
+		"inverse-filter": {
+			gvr:           client.PodGVR,
+			rowID:         "default/nginx-1",
+			fields:        model1.Fields{"default", "nginx-1", "Running"},
+			filter:        "!kube-system",
+			wantFilter:    "!kube-system",
+			wantRawFilter: "!kube-system",
+			wantNS:        "default",
+			wantName:      "nginx-1",
+		},
+		"reset-filter-restores-empty-raw-filter": {
+			gvr:           client.PodGVR,
+			rowID:         "kube-system/coredns-559f6c778d-z5d7w",
+			fields:        model1.Fields{"kube-system", "coredns-559f6c778d-z5d7w", "Running"},
+			filter:        "coredns",
+			resetFilter:   true,
+			wantFilter:    "coredns-559f6c778d-z5d7w",
+			wantRawFilter: "",
+			wantNS:        "kube-system",
+			wantName:      "coredns-559f6c778d-z5d7w",
+		},
+		"cluster-scoped-no-filter": {
+			gvr:           client.NodeGVR,
+			rowID:         "worker-node-1",
+			fields:        model1.Fields{"", "worker-node-1", "Ready"},
+			wantFilter:    "worker-node-1",
+			wantRawFilter: "",
+			wantNS:        "",
+			wantName:      "worker-node-1",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			v := NewTable(u.gvr)
+			require.NoError(t, v.Init(makeEnvContext(t)))
+			v.CmdBuff().RemoveListener(v)
+
+			td := makeEnvTableData(u.gvr, u.rowID, u.fields)
+			v.SetModel(&envTableModel{data: td})
+			v.UpdateUI(td, td)
+			v.Select(1, 0)
+
+			if u.filter != "" {
+				v.CmdBuff().SetText(u.filter, "", true)
+			}
+			if u.resetFilter {
+				v.CmdBuff().Reset()
+			}
+
+			env := v.EnvFn()()
+			assert.Contains(t, env, "RAW_FILTER")
+			assert.Equal(t, u.wantRawFilter, env["RAW_FILTER"])
+			assert.Equal(t, u.wantFilter, env["FILTER"])
+			assert.Equal(t, u.wantNS, env["NAMESPACE"])
+			assert.Equal(t, u.wantName, env["NAME"])
+			assert.Equal(t, u.gvr.G(), env["RESOURCE_GROUP"])
+			assert.Equal(t, u.gvr.V(), env["RESOURCE_VERSION"])
+			assert.Equal(t, u.gvr.R(), env["RESOURCE_NAME"])
+
+			sub, err := env.Substitute(`FILTER=[$FILTER] RAW_FILTER=[$RAW_FILTER]`)
+			require.NoError(t, err)
+			assert.Equal(t, "FILTER=["+u.wantFilter+"] RAW_FILTER=["+u.wantRawFilter+"]", sub)
+		})
+	}
 }
 
 func TestTableViewSort(t *testing.T) {
@@ -262,6 +371,73 @@ func makeContext(t *testing.T) context.Context {
 	a := NewApp(mock.NewMockConfig(t))
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
+}
+
+type envTestConn struct {
+	client.Connection
+
+	cfg *client.Config
+}
+
+func (c envTestConn) Config() *client.Config {
+	return c.cfg
+}
+
+type envTableModel struct {
+	mockTableModel
+
+	data *model1.TableData
+}
+
+func (m *envTableModel) Peek() *model1.TableData {
+	return m.data
+}
+
+func makeEnvApp(t *testing.T) *App {
+	t.Helper()
+
+	cl, ct, cfgPath, usr := "cl-1", "ct-1-1", "cfg-1", "user-1"
+	flags := genericclioptions.ConfigFlags{
+		ClusterName:  &cl,
+		Context:      &ct,
+		AuthInfoName: &usr,
+		KubeConfig:   &cfgPath,
+	}
+	cfg := mock.NewMockConfig(t)
+	cfg.SetConnection(envTestConn{
+		Connection: mock.NewMockConnection(),
+		cfg:        client.NewConfig(&flags),
+	})
+
+	return NewApp(cfg)
+}
+
+func makeEnvContext(t *testing.T) context.Context {
+	t.Helper()
+
+	a := makeEnvApp(t)
+	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
+
+	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
+}
+
+func makeEnvTableData(gvr *client.GVR, rowID string, fields model1.Fields) *model1.TableData {
+	return model1.NewTableDataWithRows(
+		gvr,
+		model1.Header{
+			model1.HeaderColumn{Name: "NAMESPACE"},
+			model1.HeaderColumn{Name: "NAME"},
+			model1.HeaderColumn{Name: "STATUS"},
+		},
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{
+				Row: model1.Row{
+					ID:     rowID,
+					Fields: fields,
+				},
+			},
+		),
+	)
 }
 
 func ensureDumpDir(n string) error {
