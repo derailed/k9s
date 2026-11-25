@@ -124,6 +124,56 @@ func TestSetActiveView(t *testing.T) {
 	}
 }
 
+func TestSetActiveViewNamespace(t *testing.T) {
+	uu := map[string]struct {
+		ct   string
+		view string
+		ns   string
+		e    string
+	}{
+		"no-context": {
+			view: "pod default",
+			ns:   client.NamespaceAll,
+			e:    data.DefaultView,
+		},
+		"to-all": {
+			ct:   "ct-1-1",
+			view: "pod default",
+			ns:   client.NamespaceAll,
+			e:    "pod all",
+		},
+		"from-all": {
+			ct:   "ct-1-1",
+			view: "pod all",
+			ns:   "kube-system",
+			e:    "pod kube-system",
+		},
+		"keeps-filter": {
+			ct:   "ct-1-1",
+			view: "dp default /fred",
+			ns:   "kube-system",
+			e:    "dp kube-system /fred",
+		},
+		"no-ns-arg": {
+			ct:   "ct-1-1",
+			view: "pod",
+			ns:   "kube-system",
+			e:    "pod",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			c := mock.NewMockConfig(t)
+			_, _ = c.K9s.ActivateContext(u.ct)
+			c.SetActiveView(u.view)
+			c.SetActiveViewNamespace(u.ns)
+			assert.Equal(t, u.e, c.ActiveView())
+		})
+	}
+}
+
 func TestActiveContextName(t *testing.T) {
 	var (
 		cfgFile = "testdata/kubes/test.yaml"
