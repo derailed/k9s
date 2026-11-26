@@ -131,23 +131,30 @@ func TestDurationToSecond(t *testing.T) {
 	}
 }
 
-func TestCapacityToNumber(t *testing.T) {
+func TestCapacityToQuantity(t *testing.T) {
 	uu := map[string]struct {
-		s string
-		e int64
+		s  string
+		e  string
+		ok bool
 	}{
-		"empty": {s: "", e: 0},
-		"blank": {s: "  ", e: 0},
-		"1Gi":   {s: "1Gi", e: 1073741824},
-		"10Mi":  {s: "10Mi", e: 10485760},
-		"na":    {s: "n/a", e: math.MaxInt64},
-		"none":  {s: "<none>", e: math.MaxInt64},
-		"ratio": {s: "1/3", e: math.MaxInt64},
+		"empty":  {s: "", e: "0", ok: true},
+		"blank":  {s: "  ", e: "0", ok: true},
+		"1Gi":    {s: "1Gi", e: "1Gi", ok: true},
+		"10Mi":   {s: "10Mi", e: "10Mi", ok: true},
+		"millis": {s: "250m", e: "250m", ok: true},
+		"dec":    {s: "0.5", e: "500m", ok: true},
+		"na":     {s: "n/a"},
+		"none":   {s: "<none>"},
+		"ratio":  {s: "1/3"},
 	}
 
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, capacityToNumber(u.s))
+			q, ok := capacityToQuantity(u.s)
+			assert.Equal(t, u.ok, ok)
+			if u.ok {
+				assert.Equal(t, u.e, q.String())
+			}
 		})
 	}
 }
