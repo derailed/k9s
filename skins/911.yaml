@@ -1,0 +1,129 @@
+# 911 (992.2) Precision Night Cockpit skin for K9s (v0.51+)
+# 4-plane surface hierarchy:
+#   Plane 0 (Recessed carbon):   #0f1114  prompt input, chart wells
+#   Plane 1 (Race-Tex canvas):   #141619  body, tables, logs, xray, charts
+#   Plane 2 (Chrome / Vanadium): #131519  table header, title chrome
+#                                #1a1d23  help overlay, log indicator bar, dials
+#                                #1d2026  modal dialogs
+#   Plane 3 (Active selection):  #261b1f  Smoked Carmine cursor row (+ #edede9 ink)
+#                                #292d36  inactive dialog buttons
+# Accents (90/9/1 discipline):   #e55c5a  Guards Red instrument needle (focus, sort, command)
+#                                #bf3b3e  Guards Red filled AA badge/button (+ #f4f3ef ink)
+k9s:
+  body:
+    fgColor: "#dadad6"
+    bgColor: "#141619"
+    logoColor: "#e55c5a"
+    logoColorMsg: "#edede9"
+    logoColorInfo: "#7fb887"
+    logoColorWarn: "#e0be66"
+    logoColorError: "#e56c6a"
+  prompt:
+    fgColor: "#edede9"
+    bgColor: "#0f1114"
+    suggestColor: "#858a96"
+    border:
+      command: "#e55c5a"
+      default: "#6ac4cb"
+  help:
+    fgColor: "#b4b7be"
+    bgColor: "#1a1d23"
+    sectionColor: "#e55c5a"
+    keyColor: "#6fa2de"
+    numKeyColor: "#e0be66"
+  info:
+    fgColor: "#edede9"
+    sectionColor: "#9297a2"
+    cpuColor: "#7fb887"
+    memColor: "#6ac4cb"
+    k9sRevColor: "#6fa2de"
+  dialog:
+    fgColor: "#dadad6"
+    bgColor: "#1d2026"
+    buttonFgColor: "#dadad6"
+    buttonBgColor: "#292d36"
+    buttonFocusFgColor: "#f4f3ef"
+    buttonFocusBgColor: "#bf3b3e"
+    labelFgColor: "#b4b7be"
+    fieldFgColor: "#edede9"
+  frame:
+    border:
+      fgColor: "#434854"
+      focusColor: "#e55c5a"
+    menu:
+      fgColor: "#9297a2"
+      fgStyle: "normal"
+      keyColor: "#6fa2de"
+      numKeyColor: "#e0be66"
+    crumbs:
+      fgColor: "#f4f3ef"
+      bgColor: "#363b47"
+      activeColor: "#bf3b3e"
+    status:
+      newColor: "#6ac4cb"
+      modifyColor: "#6fa2de"
+      addColor: "#7fb887"
+      pendingColor: "#e0be66"
+      errorColor: "#e56c6a"
+      highlightColor: "#f0d282"
+      killColor: "#f48583"
+      completedColor: "#858a96"
+    title:
+      fgColor: "#edede9"
+      bgColor: "#131519"
+      highlightColor: "#e55c5a"
+      counterColor: "#e0be66"
+      filterColor: "#6ac4cb"
+  views:
+    charts:
+      bgColor: "#141619"
+      dialBgColor: "#1a1d23"
+      chartBgColor: "#0f1114"
+      defaultDialColors:
+        - "#6fa2de"
+        - "#e55c5a"
+      defaultChartColors:
+        - "#6fa2de"
+        - "#e55c5a"
+      focusFgColor: "#f4f3ef"
+      focusBgColor: "#bf3b3e"
+      resourceColors:
+        cpu:
+          - "#7fb887"
+          - "#6fa2de"
+        mem:
+          - "#e0be66"
+          - "#e55c5a"
+    table:
+      fgColor: "#dadad6"
+      bgColor: "#141619"
+      cursorFgColor: "#edede9"
+      cursorBgColor: "#261b1f"
+      markColor: "#e0be66"
+      header:
+        fgColor: "#9297a2"
+        bgColor: "#131519"
+        sorterColor: "#e55c5a"
+        selectedSortColumnColor: "#edede9"
+    xray:
+      fgColor: "#dadad6"
+      bgColor: "#141619"
+      cursorColor: "#261b1f"
+      cursorTextColor: "#edede9"
+      graphicColor: "#858a96"
+    yaml:
+      keyColor: "#6fa2de"
+      colonColor: "#858a96"
+      valueColor: "#dadad6"
+    picker:
+      mainColor: "#dadad6"
+      focusColor: "#e55c5a"
+      shortcutColor: "#6ac4cb"
+    logs:
+      fgColor: "#dadad6"
+      bgColor: "#141619"
+      indicator:
+        fgColor: "#b4b7be"
+        bgColor: "#1a1d23"
+        toggleOnColor: "#7fb887"
+        toggleOffColor: "#858a96"
