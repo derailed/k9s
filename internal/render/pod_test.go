@@ -232,6 +232,58 @@ func TestCheckPodStatus(t *testing.T) {
 		pod v1.Pod
 		e   string
 	}{
+		"succeeded-being-deleted": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodSucceeded,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							State: v1.ContainerState{Terminated: &v1.ContainerStateTerminated{Reason: "Completed"}},
+						},
+					},
+				},
+			},
+			e: render.PhaseCompleted,
+		},
+		"failed-being-deleted": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodFailed,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							State: v1.ContainerState{Terminated: &v1.ContainerStateTerminated{Reason: "Error", ExitCode: 1}},
+						},
+					},
+				},
+			},
+			e: "Error",
+		},
+		"running-being-deleted": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							Ready: true,
+							State: v1.ContainerState{Running: &v1.ContainerStateRunning{}},
+						},
+					},
+				},
+			},
+			e: render.PhaseTerminating,
+		},
 		"unknown": {
 			pod: v1.Pod{
 				Status: v1.PodStatus{
@@ -648,6 +700,58 @@ func TestCheckPhase(t *testing.T) {
 		pod v1.Pod
 		e   string
 	}{
+		"succeeded-being-deleted": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodSucceeded,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							State: v1.ContainerState{Terminated: &v1.ContainerStateTerminated{Reason: "Completed"}},
+						},
+					},
+				},
+			},
+			e: render.PhaseCompleted,
+		},
+		"failed-being-deleted": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodFailed,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							State: v1.ContainerState{Terminated: &v1.ContainerStateTerminated{Reason: "Error", ExitCode: 1}},
+						},
+					},
+				},
+			},
+			e: "Error",
+		},
+		"running-being-deleted": {
+			pod: v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: testTime()},
+				},
+				Status: v1.PodStatus{
+					Phase: v1.PodRunning,
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "c1",
+							Ready: true,
+							State: v1.ContainerState{Running: &v1.ContainerStateRunning{}},
+						},
+					},
+				},
+			},
+			e: render.PhaseTerminating,
+		},
 		"unknown": {
 			pod: v1.Pod{
 				Status: v1.PodStatus{
