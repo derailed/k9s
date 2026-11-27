@@ -486,7 +486,7 @@ func (p *Pod) Phase(dt *metav1.Time, spec *v1.PodSpec, st *v1.PodStatus) string 
 	if ok && status == Completed {
 		status = Running
 	}
-	if dt == nil {
+	if dt == nil || isPodPhaseTerminal(st.Phase) {
 		return status
 	}
 
@@ -613,11 +613,18 @@ func PodStatus(pod *v1.Pod) string {
 
 	if pod.DeletionTimestamp != nil && pod.Status.Reason == NodeUnreachablePodReason {
 		reason = PhaseUnknown
-	} else if pod.DeletionTimestamp != nil {
+	} else if pod.DeletionTimestamp != nil && !isPodPhaseTerminal(pod.Status.Phase) {
 		reason = PhaseTerminating
 	}
 
 	return reason
+}
+
+// isPodPhaseTerminal returns true if the pod already ran to completion.
+// Like kubectl, a Succeeded or Failed pod that is awaiting deletion, for
+// example while a finalizer is pending, keeps its final status.
+func isPodPhaseTerminal(p v1.PodPhase) bool {
+	return p == v1.PodSucceeded || p == v1.PodFailed
 }
 
 func hasPodReadyCondition(conditions []v1.PodCondition) bool {
