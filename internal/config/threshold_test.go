@@ -41,6 +41,36 @@ func TestSeverityValidate(t *testing.T) {
 	}
 }
 
+func TestThresholdValidate(t *testing.T) {
+	custom := func() *config.Severity {
+		return &config.Severity{Warn: 10, Critical: 20}
+	}
+
+	uu := map[string]struct {
+		d, e config.Threshold
+	}{
+		"nil-cpu": {
+			d: config.Threshold{config.CPU: nil, config.MEM: custom()},
+			e: config.Threshold{config.CPU: config.NewSeverity(), config.MEM: custom()},
+		},
+		"nil-memory": {
+			d: config.Threshold{config.CPU: custom(), config.MEM: nil},
+			e: config.Threshold{config.CPU: custom(), config.MEM: config.NewSeverity()},
+		},
+		"nil-both": {
+			d: config.Threshold{config.CPU: nil, config.MEM: nil},
+			e: config.NewThreshold(),
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, u.d.Validate())
+		})
+	}
+}
+
 func TestLevelFor(t *testing.T) {
 	uu := map[string]struct {
 		k string
@@ -89,6 +119,15 @@ func TestLevelFor(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, o.LevelFor(u.k, u.v))
+		})
+	}
+}
+
+func TestLevelForNilSeverity(t *testing.T) {
+	o := config.Threshold{config.CPU: nil, config.MEM: nil}
+	for _, k := range []string{config.CPU, config.MEM} {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, config.SeverityLow, o.LevelFor(k, 95))
 		})
 	}
 }
