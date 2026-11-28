@@ -176,17 +176,18 @@ func runesToNum(rr []rune) int64 {
 	return r
 }
 
-func capacityToNumber(capacity string) int64 {
+// capacityToQuantity parses a capacity cell. A blank cell is a zero quantity.
+// It returns false for placeholders such as n/a or <none>, or any other text,
+// since those are not quantities.
+func capacityToQuantity(capacity string) (resource.Quantity, bool) {
 	if strings.TrimSpace(capacity) == "" {
-		return 0
+		return resource.Quantity{}, true
 	}
-	// Placeholders such as n/a or <none>, or any other text, are not quantities
-	// and sort last, like placeholder ages do.
 	quantity, err := resource.ParseQuantity(strings.TrimSpace(capacity))
 	if err != nil {
-		return math.MaxInt64
+		return resource.Quantity{}, false
 	}
-	return quantity.Value()
+	return quantity, true
 }
 
 // Less return true if v1 sorts before v2.
@@ -229,10 +230,18 @@ func lessDuration(s1, s2 string) (less, equal bool) {
 	return d1 < d2, d1 == d2
 }
 
+// lessCapacity compares the quantities themselves rather than their integer
+// values, which round fractions up (250m and 500m would both be 1).
+// Text that is not a quantity sorts last, like placeholder ages do.
 func lessCapacity(s1, s2 string) (less, equal bool) {
-	c1, c2 := capacityToNumber(s1), capacityToNumber(s2)
+	q1, ok1 := capacityToQuantity(s1)
+	q2, ok2 := capacityToQuantity(s2)
+	if !ok1 || !ok2 {
+		return ok1 && !ok2, ok1 == ok2
+	}
+	c := q1.Cmp(q2)
 
-	return c1 < c2, c1 == c2
+	return c < 0, c == 0
 }
 
 func lessNumber(s1, s2 string) bool {
