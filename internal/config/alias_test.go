@@ -137,6 +137,45 @@ func TestAliasesLoadFileInvalidYAML(t *testing.T) {
 	}
 }
 
+func TestAliasesLoadFileEmptyEntries(t *testing.T) {
+	uu := map[string]struct {
+		yaml string
+		e    config.Alias
+	}{
+		"entry-without-value": {
+			yaml: "aliases:\n  pe:\n  a1:\n  dp: deployments\n",
+			e: config.Alias{
+				"a1":  gvr1,
+				"a11": gvr1,
+				"a2":  gvr2,
+				"a3":  gvr3,
+				"dp":  client.NewGVR("deployments"),
+			},
+		},
+		"no-entries": {
+			yaml: "aliases:\n  # dp: deployments\n",
+			e: config.Alias{
+				"a1":  gvr1,
+				"a11": gvr1,
+				"a2":  gvr2,
+				"a3":  gvr3,
+			},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			f := path.Join(t.TempDir(), "aliases.yaml")
+			require.NoError(t, os.WriteFile(f, []byte(u.yaml), 0o600))
+
+			a := testAliases()
+			require.NoError(t, a.LoadFile(f))
+			assert.Equal(t, u.e, a.Alias)
+		})
+	}
+}
+
 func TestAliasesSave(t *testing.T) {
 	require.NoError(t, data.EnsureFullPath("/tmp/test-aliases", data.DefaultDirMod))
 	defer require.NoError(t, os.RemoveAll("/tmp/test-aliases"))
