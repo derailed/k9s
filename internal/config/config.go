@@ -80,6 +80,40 @@ func (c *Config) ContextPluginsPath() (string, error) {
 	return AppContextPluginsFile(ct.GetClusterName(), c.K9s.activeContextName), nil
 }
 
+// ClusterViewsPath returns a cluster specific views file spec.
+func (c *Config) ClusterViewsPath() string {
+	if c == nil || c.K9s == nil {
+		return ""
+	}
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+	cl := ct.GetClusterName()
+	if cl == "" {
+		return ""
+	}
+
+	return AppClusterViewsFile(cl)
+}
+
+// ContextViewsPath returns a context specific views file spec.
+func (c *Config) ContextViewsPath() string {
+	if c == nil || c.K9s == nil {
+		return ""
+	}
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+	cl := ct.GetClusterName()
+	if cl == "" || c.K9s.activeContextName == "" {
+		return ""
+	}
+
+	return AppContextViewsFile(cl, c.K9s.activeContextName)
+}
+
 func setK8sTimeout(flags *genericclioptions.ConfigFlags, d time.Duration) {
 	v := d.String()
 	flags.Timeout = &v

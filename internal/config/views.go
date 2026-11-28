@@ -94,14 +94,43 @@ func (v *CustomView) Reset() {
 	}
 }
 
-// Load loads view configurations.
+// Load loads view configurations, merging into existing views.
 func (v *CustomView) Load(path string) error {
+	loaded, err := v.loadFile(path)
+	if err != nil {
+		return err
+	}
+	if loaded {
+		v.fireConfigChanged()
+	}
+
+	return nil
+}
+
+// LoadFiles loads and merges view configurations from the given paths in order,
+// notifying listeners once after all files are processed.
+func (v *CustomView) LoadFiles(paths ...string) error {
+	var errs error
+	for _, p := range paths {
+		if _, err := v.loadFile(p); err != nil {
+			errs = errors.Join(errs, err)
+		}
+	}
+	v.fireConfigChanged()
+
+	return errs
+}
+
+func (v *CustomView) loadFile(path string) (bool, error) {
+	if path == "" {
+		return false, nil
+	}
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
-		return nil
+		return false, nil
 	}
 	bb, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if err := data.JSONValidator.Validate(json.ViewsSchema, bb); err != nil {
 		slog.Warn("Validation failed. Please update your config and restart!",
@@ -111,12 +140,14 @@ func (v *CustomView) Load(path string) error {
 	}
 	var in CustomView
 	if err := yaml.Unmarshal(bb, &in); err != nil {
-		return err
+		return false, err
 	}
-	v.Views = in.Views
-	v.fireConfigChanged()
+	if v.Views == nil {
+		v.Views = make(map[string]ViewSetting, len(in.Views))
+	}
+	maps.Copy(v.Views, in.Views)
 
-	return nil
+	return true, nil
 }
 
 // AddListeners registers a new listener for various commands.

@@ -235,6 +235,16 @@ func AppContextHotkeysFile(cluster, context string) string {
 	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "hotkeys.yaml")
 }
 
+// AppClusterViewsFile generates a valid cluster specific views file path.
+func AppClusterViewsFile(cluster string) string {
+	return filepath.Join(AppContextsDir, data.SanitizeFileName(cluster), "views.yaml")
+}
+
+// AppContextViewsFile generates a valid context specific views file path.
+func AppContextViewsFile(cluster, context string) string {
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "views.yaml")
+}
+
 // AppContextConfig generates a valid context config file path.
 func AppContextConfig(cluster, context string) string {
 	return filepath.Join(AppContextDir(cluster, context), data.MainConfigFile)
