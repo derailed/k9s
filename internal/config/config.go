@@ -246,6 +246,21 @@ func (c *Config) SetActiveView(view string) {
 	}
 }
 
+// SetActiveViewNamespace sets the namespace argument of the current context active
+// view to ns. Views without a namespace argument are left as is.
+func (c *Config) SetActiveViewNamespace(ns string) {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return
+	}
+	p := cmd.NewInterpreter(ct.View.Active)
+	if _, ok := p.NSArg(); !ok {
+		return
+	}
+	p.SwitchNS(ns)
+	ct.View.Active = p.GetLine()
+}
+
 // GetConnection return an api server connection.
 func (c *Config) GetConnection() client.Connection {
 	return c.conn

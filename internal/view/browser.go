@@ -617,6 +617,9 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := b.app.Config.SetActiveNamespace(b.GetModel().GetNamespace()); err != nil {
 		slog.Error("Unable to set active namespace during ns switch", slogs.Error, err)
 	}
+	// The active view carries its namespace (e.g. `pod default`) and is restored on
+	// startup, so update it too or the switch is lost on restart.
+	b.app.Config.SetActiveViewNamespace(ns)
 
 	return nil
 }
