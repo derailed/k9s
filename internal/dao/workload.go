@@ -116,15 +116,18 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 				}
 			}
 			stat := status(gvr, &r, table.ColumnDefinitions)
-			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []any{
-				gvr.String(),
-				ns,
-				r.Cells[indexOf("Name", table.ColumnDefinitions)],
-				stat,
-				readiness(gvr, &r, table.ColumnDefinitions),
-				validity(stat),
-				ts,
-			}}})
+			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{
+				Object: r.Object,
+				Cells: []any{
+					gvr.String(),
+					ns,
+					r.Cells[indexOf("Name", table.ColumnDefinitions)],
+					stat,
+					readiness(gvr, &r, table.ColumnDefinitions),
+					validity(stat),
+					ts,
+				},
+			}})
 		}
 	}
 
