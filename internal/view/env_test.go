@@ -47,6 +47,11 @@ func TestEnvReplace(t *testing.T) {
 		"invert_braces":    {arg: "${!COL-BOOL}", e: "true"},
 		"special_braces":   {arg: "${COL-%CPU/L}/${COL-MEM/R:L}", e: "10/32:32"},
 		"space_braces":     {arg: "${READINESS GATES}", e: "bar"},
+		"raw_filter_empty": {arg: `if [[ -n "$RAW_FILTER" ]]; then echo "$FILTER"; fi`, e: `if [[ -n "" ]]; then echo "pod-1"; fi`},
+		"raw_filter_braces": {
+			arg: `${FILTER}/${RAW_FILTER}`,
+			e:   `pod-1/`,
+		},
 	}
 
 	e := Env{
@@ -63,6 +68,8 @@ func TestEnvReplace(t *testing.T) {
 		"COL-MEM/R:L":     "32:32",
 		"RESOURCE_GROUP":  "foo",
 		"READINESS GATES": "bar",
+		"FILTER":          "pod-1",
+		"RAW_FILTER":      "",
 	}
 
 	for k := range uu {

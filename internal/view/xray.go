@@ -274,8 +274,10 @@ func (x *Xray) k9sEnv() Env {
 		return env
 	}
 
-	env["FILTER"] = x.CmdBuff().GetText()
-	if env["FILTER"] == "" {
+	rawFilter := x.CmdBuff().GetText()
+	env["RAW_FILTER"] = rawFilter
+	env["FILTER"] = rawFilter
+	if rawFilter == "" {
 		ns, n := client.Namespaced(spec.Path())
 		env["NAMESPACE"], env["FILTER"] = ns, n
 	}
