@@ -173,7 +173,9 @@ func (m *Meta) LoadResources(f Factory) error {
 
 	// We've actually loaded all the CRDs in loadPreferred, and we're now adding
 	// some additional CRD properties on top of that.
-	loadCRDs(f, m.resMetas)
+	if loadCRDs(f, m.resMetas) && f != nil && f.Client() != nil {
+		_ = f.Client().InvalidateCache()
+	}
 
 	return nil
 }
@@ -376,17 +378,18 @@ func isDeprecated(gvr *client.GVR) bool {
 }
 
 // loadCRDs Wait for the cache to synced and then add some additional properties to CRD.
-func loadCRDs(f Factory, m ResourceMetas) {
+func loadCRDs(f Factory, m ResourceMetas) bool {
 	if f == nil || f.Client() == nil || !f.Client().ConnectionOK() {
-		return
+		return false
 	}
 
 	oo, err := f.List(client.CrdGVR, client.ClusterScope, true, labels.Everything())
 	if err != nil {
 		slog.Warn("CRDs load Fail", slogs.Error, err)
-		return
+		return false
 	}
 
+	var hasMissing bool
 	for _, o := range oo {
 		var crd apiext.CustomResourceDefinition
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crd)
@@ -394,15 +397,33 @@ func loadCRDs(f Factory, m ResourceMetas) {
 			slog.Error("CRD conversion failed", slogs.Error, err)
 			continue
 		}
-		addCRDProperties(m, &crd)
+		if addCRDProperties(m, &crd) {
+			hasMissing = true
+		}
 	}
+
+	return hasMissing
 }
 
-func addCRDProperties(m ResourceMetas, crd *apiext.CustomResourceDefinition) {
+func addCRDProperties(m ResourceMetas, crd *apiext.CustomResourceDefinition) bool {
+	var missing bool
 	for gvr, version := range client.NewGVRFromCRD(crd) {
 		meta, ok := m[gvr]
 		if !ok {
-			continue
+			missing = true
+			meta = &metav1.APIResource{
+				Name:         crd.Spec.Names.Plural,
+				SingularName: crd.Spec.Names.Singular,
+				Namespaced:   crd.Spec.Scope == apiext.NamespaceScoped,
+				Group:        crd.Spec.Group,
+				Version:      version.Name,
+				Kind:         crd.Spec.Names.Kind,
+				ShortNames:   crd.Spec.Names.ShortNames,
+				Categories:   crd.Spec.Names.Categories,
+			}
+			if meta.SingularName == "" {
+				meta.SingularName = strings.ToLower(meta.Kind)
+			}
 		}
 		if !slices.Contains(meta.Categories, crdCat) {
 			meta.Categories = append(meta.Categories, crdCat)
@@ -412,4 +433,6 @@ func addCRDProperties(m ResourceMetas, crd *apiext.CustomResourceDefinition) {
 		}
 		m[gvr] = meta
 	}
+
+	return missing
 }
